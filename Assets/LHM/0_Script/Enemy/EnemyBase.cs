@@ -56,8 +56,7 @@ public class EnemyBase : MonoBehaviour
 
     void Update()
     {
-        if(isDead = true)
-        {
+        if(isDead == true) {
             return;
         }
         enemyMovement.DetectPlayer();
@@ -67,8 +66,21 @@ public class EnemyBase : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        // 노란색 detectionRange 원 탐지
-        // 빨간색 dashRange 원 돌진
-        // 파란색 attackRange 원 공격
+        if (isDead == true)
+            return;
+
+        if (enemyCombat != null) {
+            // 노란색 detectionRange 원 탐지
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(enemyCombat.transform.position, detectionRange);
+
+            // 빨간색 dashRange 원 돌진
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(enemyCombat.transform.position, dashRange);
+
+            // 파란색 attackRange 원 공격
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireSphere(enemyCombat.transform.position, attackRange);
+        }
     }
 }

@@ -54,7 +54,7 @@ public class EnemyMovement : MonoBehaviour
     {
         while(true)
         {
-            if(isMovingToB = true)//pointb
+            if(isMovingToB == true)//pointb
             {
                 Vector2.MoveTowards(transform.position, enemyBase.pointB.position,enemyBase.moveSpeed * Time.deltaTime);
             }
@@ -97,13 +97,13 @@ public class EnemyMovement : MonoBehaviour
 
         while (timer < enemyBase.dashDuration)
         {
-            enemyBase.rigid2d.velocity = dashDirection * enemyBase.dashSpeed;
+            enemyBase.rigid2d.linearVelocity = dashDirection * enemyBase.dashSpeed;
             timer += Time.deltaTime;
             yield return null;
         }
 
 
-        enemyBase.rigid2d.velocity = Vector2.zero;
+        enemyBase.rigid2d.linearVelocity = Vector2.zero;
 
         float distanceToPlayer = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
 
@@ -119,9 +119,9 @@ public class EnemyMovement : MonoBehaviour
 
     public void FlipSprite()
     {
-        if (enemyBase.rigid2d.velocity.x != 0)
+        if (enemyBase.rigid2d.linearVelocity.x != 0)
         {
-            float direction = (enemyBase.rigid2d.velocity.x > 0) ? 1f : -1f;
+            float direction = (enemyBase.rigid2d.linearVelocity.x > 0) ? 1f : -1f;
             transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * direction,
                                                transform.localScale.y,
                                                transform.localScale.z);
@@ -142,7 +142,7 @@ public class EnemyMovement : MonoBehaviour
 
         if (enemyBase.rigid2d != null)
         {
-            enemyBase.rigid2d.velocity = Vector2.zero;
+            enemyBase.rigid2d.linearVelocity = Vector2.zero;
         }
 
     }
