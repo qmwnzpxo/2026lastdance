@@ -1,11 +1,11 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public class EnemyCombat : MonoBehaviour
 {
     EnemyBase enemyBase;
     EnemyMovement enemyMovement;
-
+    PlayerMove playerMove;
     private void Start()
     {
         enemyBase = GetComponent<EnemyBase>();
@@ -28,7 +28,7 @@ public class EnemyCombat : MonoBehaviour
         float distance = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
         if (distance <= enemyBase.attackRange)
         {
-            //enemyBase.playerTransform.GetComponent<Player>().TakeDamage(enemyBase.attackDamage);
+           // enemyBase.playerTransform.GetComponent<PlayerMove>().TakeDamage(enemyBase.attackDamage);
         }
 
         yield return new WaitForSeconds(enemyBase.attackCooldown);

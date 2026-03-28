@@ -16,7 +16,7 @@ public class EnemyMovement : MonoBehaviour
     public void Init()
     {
         enemyBase = GetComponent<EnemyBase>();
-        EnemyNormalMove();
+        enemyCombat = GetComponent<EnemyCombat>();
         currentMoveCoroutine = StartCoroutine(EnemyNormalMove());
     }
 
@@ -24,43 +24,58 @@ public class EnemyMovement : MonoBehaviour
 
     public void DetectPlayer()
     {
-        if(enemyBase.isDead)
-        {
-            return;
-        }
+        if (enemyBase == null || enemyBase.isDead) return;
+        if (enemyBase.playerTransform == null) return;
 
         float distancePlayer = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
+        bool detected = distancePlayer <= enemyBase.detectionRange;
 
+        if (detected == enemyBase.isPlayerDetected) return;
 
-        // 거리가 detectionRange 이내이면
-        if (distancePlayer > 0)
-        {
-            enemyBase.isPlayerDetected = true;
+        enemyBase.isPlayerDetected = detected;
+
+        if (currentMoveCoroutine != null)
             StopCoroutine(currentMoveCoroutine);
-            currentMoveCoroutine = StartCoroutine(EnemyChaseMove());
-        }
-        else
-        {
-            enemyBase.isPlayerDetected= false;
-            StopCoroutine(currentMoveCoroutine);
-            currentMoveCoroutine = StartCoroutine(EnemyNormalMove());
-        }
-        
+
+        currentMoveCoroutine = StartCoroutine(detected ? EnemyChaseMove() : EnemyNormalMove());
     }
 
+    //public void DetectPlayer()
+    //{
+    //    if (enemyBase == null || enemyBase.isDead) return;
+    //    if (enemyBase.playerTransform == null) return;
 
+    //    float distancePlayer = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
+    //    if (distancePlayer <= enemyBase.detectionRange)
+    //    {
+    //        enemyBase.isPlayerDetected = true;
+
+    //        if (currentMoveCoroutine != null)
+    //            StopCoroutine(currentMoveCoroutine);
+
+    //        currentMoveCoroutine = StartCoroutine(EnemyChaseMove());
+    //    }
+    //    else
+    //    {
+    //        enemyBase.isPlayerDetected = false;
+
+    //        if (currentMoveCoroutine != null)
+    //            StopCoroutine(currentMoveCoroutine);
+
+    //        currentMoveCoroutine = StartCoroutine(EnemyNormalMove());
+    //    }
+    //}
     IEnumerator EnemyNormalMove()
-
     {
-        while(true)
+        while (true)
         {
-            if(isMovingToB == true)//pointb
+            Vector2 target = isMovingToB ? enemyBase.pointB.position : enemyBase.pointA.position;
+
+            transform.position = Vector2.MoveTowards(transform.position, target, enemyBase.moveSpeed * Time.deltaTime);
+
+            if (Vector2.Distance(transform.position, target) < 0.1f)
             {
-                Vector2.MoveTowards(transform.position, enemyBase.pointB.position,enemyBase.moveSpeed * Time.deltaTime);
-            }
-            else if(Vector2.Distance(transform.position, enemyBase.pointB.position)< 0.1f)
-            {
-                isMovingToB = false;
+                isMovingToB = !isMovingToB;
             }
 
             yield return null;

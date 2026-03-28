@@ -46,7 +46,7 @@ public class EnemyBase : MonoBehaviour
         animator = GetComponent<Animator>();
         enemyCombat = GetComponent<EnemyCombat>();
         enemyMovement = GetComponent<EnemyMovement>();
-        GameObject playerTransform = GameObject.FindWithTag("Player");
+        playerTransform = GameObject.FindWithTag("Player").transform;
         currentHp = maxHp;
         enemyMovement.Init();
 
