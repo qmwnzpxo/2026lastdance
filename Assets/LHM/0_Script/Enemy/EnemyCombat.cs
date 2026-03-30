@@ -38,7 +38,7 @@ public class EnemyCombat : MonoBehaviour
         float distanceAfterWait = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
         if (distanceAfterWait <= enemyBase.detectionRange)
         {
-            enemyMovement.StartCoroutine(enemyMovement.EnemyChaseMove());
+            enemyMovement.StartChase();
         }
     }
     public void TakeDamage(float damage)
