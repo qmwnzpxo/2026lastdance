@@ -1,14 +1,14 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class PlayerMove : MonoBehaviour
 {
-    [Header("ÀÌµ¿")]
+    [Header("ì´ë™")]
     [SerializeField] private float moveSpeed = 7f;
     [SerializeField] private float runSpeed = 15f;
     [SerializeField] private bool run = false;
     [SerializeField] private bool notbattle = true;
 
-    [Header("Á¡ÇÁ")]
+    [Header("ì í”„")]
     [SerializeField] private float jumpForce = 12f;
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private Transform groundCheck;
@@ -16,7 +16,7 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float groundCheckRadius = 0.2f;
     [SerializeField] private float ceilingCheckRadius = 0.2f;
 
-    [Header("º®Å¸±â")]
+    [Header("ë²½íƒ€ê¸°")]
     [SerializeField] private Transform wallCheck;
     [SerializeField] private Vector3 wallCheckOffset = new Vector3(0.5f, 0, 0f);
     [SerializeField] private float wallCheckDistance = 0.3f;
@@ -27,7 +27,7 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float wallJumpForceY = 12f; 
     
 
-    [Header("ÃµÀå ºÙ±â")]
+    [Header("ì²œì¥ ë¶™ê¸°")]
     [SerializeField] private float defaultGravityScale = 1.2f;
     [SerializeField] private float ceilingGravityScale = -1.2f;
     [SerializeField] private float ceilingTimer;
@@ -36,7 +36,7 @@ public class PlayerMove : MonoBehaviour
     private Vector3 spriteScale = new Vector3(1, 1, 1);
     private Vector3 ceilingSpriteScale = new Vector3(1, -1, 1);
 
-    [Header("´ë½¬")]
+    [Header("ëŒ€ì‰¬")]
     private float dashSpeed = 60f;
     private float dashDuration = 0.1f;
     private Vector2 dashBoxSize = new Vector2(1f, 0.4f);
@@ -58,17 +58,18 @@ public class PlayerMove : MonoBehaviour
     private float wallJumpTime = 0.2f;
     private float wallJumpCounter;
     private int wallJumpDirection;
+    Vector2 mouseWorldPos;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
     }
 
-    // ÇÔ¼ö ¿¬»ê ¹× ÀÔ·Â Ã³¸®¿ë update
+    // í•¨ìˆ˜ ì—°ì‚° ë° ì…ë ¥ ì²˜ë¦¬ìš© update
     void Update()
     {
         moveInput = Input.GetAxis("Horizontal");
-        moveInput *= isGrounded || isOnCeiling ? 1f : 0.5f; // °øÁß¿¡¼­ ÀÌµ¿ ¼Óµµ °¨¼Ò
+        moveInput *= isGrounded || isOnCeiling ? 1f : 0.5f; // ê³µì¤‘ì—ì„œ ì´ë™ ì†ë„ ê°ì†Œ
 
         CheckGround();
         CheckCeiling();
@@ -81,7 +82,7 @@ public class PlayerMove : MonoBehaviour
         callingHitstop();
     }
 
-    // ¹°¸® ¿¬»ê¿ë fixedUpdate
+    // ë¬¼ë¦¬ ì—°ì‚°ìš© fixedUpdate
     void FixedUpdate()
     {
         if (!isWallJumping && !isDashing)
@@ -115,7 +116,7 @@ public class PlayerMove : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.H))
         {
-            HitstopManager.Instance.TriggerHitstop(); // 0.1ÃÊ µ¿¾È 0.05¹è¼Ó È÷Æ®½ºÅ¾
+            HitstopManager.Instance.TriggerHitstop(); // 0.1ì´ˆ ë™ì•ˆ 0.05ë°°ì† íˆíŠ¸ìŠ¤íƒ‘
         }
     }
 
@@ -206,7 +207,7 @@ public class PlayerMove : MonoBehaviour
     }
 
 
-    // ´ë½¬ ½ÃÀÛÇÒ ¶§ ±âÁ¸ »óÅÂ ÃÊ±âÈ­
+    // ëŒ€ì‰¬ ì‹œì‘í•  ë•Œ ê¸°ì¡´ ìƒíƒœ ì´ˆê¸°í™”
     void HandleDash()
     {
         if (Input.GetMouseButtonDown(1) && !isDashing)
@@ -217,14 +218,14 @@ public class PlayerMove : MonoBehaviour
                 rb.position += new Vector2(0f, -0.05f);
             if(isTouchingWall)
                 rb.position += new Vector2(-Mathf.Sign(rb.linearVelocity.x) * 0.05f, 0f);
-            // ´ë½¬ ½ÃÀÛ ½Ã ±âÁ¸ »óÅÂ ÃÊ±âÈ­
+            // ëŒ€ì‰¬ ì‹œì‘ ì‹œ ê¸°ì¡´ ìƒíƒœ ì´ˆê¸°í™”
             isWallJumping = false;
             isWallSliding = false;
             wallJumpCounter = 0f;
 
             Vector3 mouseScreenPos = Input.mousePosition;
             mouseScreenPos.z = -Camera.main.transform.position.z;
-            Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+            mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
             dashDirection = (mouseWorldPos - (Vector2)transform.position).normalized;
 
             isDashing = true;
@@ -239,7 +240,8 @@ public class PlayerMove : MonoBehaviour
         if (isDashing)
         {
             dashCounter -= Time.deltaTime;
-
+            RaycastHit2D rayhit=Physics2D.Raycast(wallCheck.position + wallCheckOffset,
+            mouseWorldPos, wallCheckDistance, groundLayer);
             Collider2D hit = Physics2D.OverlapBox(transform.position, dashBoxSize, 0f, groundLayer);
             if (hit != null)
             {
@@ -257,7 +259,7 @@ public class PlayerMove : MonoBehaviour
         isDashing = false;
         rb.gravityScale = isOnCeiling ? ceilingGravityScale : defaultGravityScale;
 
-        // ÃµÀå¿¡ ºÙÀº »óÅÂ¸é velocity À¯Áö, ¾Æ´Ï¸é 0
+        // ì²œì¥ì— ë¶™ì€ ìƒíƒœë©´ velocity ìœ ì§€, ì•„ë‹ˆë©´ 0
         if (!isOnCeiling)
             rb.linearVelocity = Vector2.up*0.05f;
     }
