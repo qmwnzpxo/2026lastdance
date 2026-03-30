@@ -9,7 +9,13 @@ public class CameraFollow : MonoBehaviour
 
     private void Awake()
     {
-        player=target.GetComponent<PlayerMove>();
+        if (target != null)
+            player = target.GetComponent<PlayerMove>();
+        else if (player == null)
+        {
+            target = GameObject.FindGameObjectWithTag("Player").transform;
+            player = target.GetComponent<PlayerMove>();
+        }
     }
 
     void LateUpdate()

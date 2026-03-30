@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
+using UnityEngine;
 
 public class PlayerMove : MonoBehaviour
 {
@@ -18,7 +20,6 @@ public class PlayerMove : MonoBehaviour
 
     [Header("벽타기")]
     [SerializeField] private Transform wallCheck;
-    [SerializeField] private Vector3 wallCheckOffset = new Vector3(0.5f, 0, 0f);
     [SerializeField] private float wallCheckDistance = 0.3f;
     [SerializeField] private float wallSlideSpeed = 1.5f;
     [SerializeField] private float wallSlideSpeedUp = 0f;
@@ -37,28 +38,46 @@ public class PlayerMove : MonoBehaviour
     private Vector3 ceilingSpriteScale = new Vector3(1, -1, 1);
 
     [Header("대쉬")]
-    private float dashSpeed = 60f;
+    [SerializeField] private float dashGauge = 0f;
+    [SerializeField] private float maxDashGauge = 5f;
+    [SerializeField] private List<Collider2D> hitEnemiesInDash = new List<Collider2D>();
+    private float dashSpeed = 8f;           
+    private float enhancedDashSpeed = 40f;  
     private float dashDuration = 0.1f;
+    private float normalDashCooldown = 0.8f;
+    private float dashCooldownCounter = 0f;
+    private int pendingDashes = 0;          
     private Vector2 dashBoxSize = new Vector2(1f, 0.4f);
-    private bool isDashing;
     private float dashCounter;
     private Vector2 dashDirection;
+    private float dashGaugePerAttack = 0.1f;
+    private bool dashHitEnemy = false;
+
+    [Header("공격")]
+    [SerializeField] private Transform attackTransform;
+    [SerializeField] private Vector2 attackBoxSize = new Vector2(1f, 1f);
+    [SerializeField] private float attackBoxDistance = 1f;
+    [SerializeField] private float attackSecondHitDelay = 0.15f;
+    [SerializeField] private LayerMask enemyLayer;
 
     private Rigidbody2D rb;
     private float moveInput;
 
+    [Header("불값 모음")]
     [SerializeField] private bool isGrounded;
     [SerializeField] private bool isTouchingCeiling;
     [SerializeField] private bool isOnCeiling;
     private bool wasTouchingCeiling;
-    [SerializeField] private bool isTouchingWall;
+    [SerializeField] private bool isTouchingRWall;
+    [SerializeField] private bool isTouchingLWall;
     [SerializeField] private bool isWallSliding;
-
     [SerializeField] private bool isWallJumping;
+    [SerializeField] private bool isDashing;
+    [SerializeField] private bool isAttack;
+
     private float wallJumpTime = 0.2f;
     private float wallJumpCounter;
     private int wallJumpDirection;
-    Vector2 mouseWorldPos;
 
     void Awake()
     {
@@ -69,17 +88,21 @@ public class PlayerMove : MonoBehaviour
     void Update()
     {
         moveInput = Input.GetAxis("Horizontal");
-        moveInput *= isGrounded || isOnCeiling ? 1f : 0.5f; // 공중에서 이동 속도 감소
+        //moveInput *= isGrounded || isOnCeiling ? 1f : 0.5f; // 공중에서 이동 속도 감소
 
         CheckGround();
         CheckCeiling();
         CheckWall();
+
+        RotateAttackPivot();
+        HandleAttack();
         HandleCeilingAttach();
         HandleWallSlide();
         HandleJump();
-        HandleWallJumpTimer();
         HandleDash();
+
         callingHitstop();
+
     }
 
     // 물리 연산용 fixedUpdate
@@ -87,7 +110,7 @@ public class PlayerMove : MonoBehaviour
     {
         if (!isWallJumping && !isDashing)
         {
-            float xMove = (isTouchingWall && !isGrounded && !isOnCeiling) ? 0f : moveInput * moveSpeed;
+            float xMove = ((isTouchingLWall||isTouchingRWall) && !isGrounded && !isOnCeiling) ? 0f : moveInput * moveSpeed;
             rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
         }
 
@@ -116,7 +139,7 @@ public class PlayerMove : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.H))
         {
-            HitstopManager.Instance.TriggerHitstop(); // 0.1초 동안 0.05배속 히트스탑
+            HitstopManager.Instance.TriggerHitstop(); // 기본: 0.1초 동안 0.05배속 히트스탑
         }
     }
 
@@ -134,21 +157,26 @@ public class PlayerMove : MonoBehaviour
 
     void CheckWall()
     {
-        float dir = moveInput != 0 ? moveInput : transform.localScale.x;
-        isTouchingWall = Physics2D.Raycast(wallCheck.position + wallCheckOffset,
-            Vector2.right * dir, wallCheckDistance, groundLayer);
+        isTouchingLWall = Physics2D.Raycast(wallCheck.position,
+            Vector2.left, wallCheckDistance, groundLayer);
+        isTouchingRWall = Physics2D.Raycast(wallCheck.position,
+            Vector2.right, wallCheckDistance, groundLayer);
 
     }
     void HandleWallSlide()
     {
-        isWallSliding = isTouchingWall && !isGrounded && !isOnCeiling && !isDashing && rb.linearVelocity.y < 0;
+        isWallSliding = (isTouchingLWall || isTouchingRWall) && !isGrounded && !isOnCeiling && !isDashing && rb.linearVelocity.y < 0;
     }
 
     void HandleJump()
     {
-        if (isOnCeiling) return;
-
         if (!Input.GetKeyDown(KeyCode.Space) || isDashing) return;
+
+        if (isOnCeiling)
+        {
+            DetachFromCeiling();
+            return;
+        }
 
         if (isGrounded)
         {
@@ -164,15 +192,6 @@ public class PlayerMove : MonoBehaviour
         }
     }
 
-    void HandleWallJumpTimer()
-    {
-        if (!isWallJumping) return;
-
-        wallJumpCounter -= Time.deltaTime;
-        if (wallJumpCounter <= 0)
-            isWallJumping = false;
-    }
-
     void DetachFromCeiling()
     {
         isOnCeiling = false;
@@ -186,7 +205,8 @@ public class PlayerMove : MonoBehaviour
 
         if (justTouchedCeiling && !isOnCeiling)
         {
-            if (isDashing && rb.linearVelocity.magnitude > moveSpeed)
+            if (isDashing
+                /* && rb.linearVelocity.magnitude >= moveSpeed*/)
             {
                 isOnCeiling = true;
                 rb.gravityScale = ceilingGravityScale;
@@ -206,26 +226,44 @@ public class PlayerMove : MonoBehaviour
         wasTouchingCeiling = isTouchingCeiling;
     }
 
-
-    // 대쉬 시작할 때 기존 상태 초기화
     void HandleDash()
     {
-        if (Input.GetMouseButtonDown(1) && !isDashing)
+        if (dashCooldownCounter > 0)
+            dashCooldownCounter -= Time.deltaTime;
+
+        if (Input.GetMouseButtonDown(1))
         {
-            if(isGrounded)
+            if (dashGauge >= 1f)
+            {
+                TriggerDash(true);
+            }
+            else if (dashCooldownCounter <= 0)
+            {
+                TriggerDash(false);
+            }
+            else
+            {
+                if (dashGauge >= 1f + pendingDashes)
+                    pendingDashes++;
+            }
+
+
+            if (isGrounded)
                 rb.position += new Vector2(0f, 0.05f);
-            if(isOnCeiling)
+            if (isOnCeiling)
                 rb.position += new Vector2(0f, -0.05f);
-            if(isTouchingWall)
-                rb.position += new Vector2(-Mathf.Sign(rb.linearVelocity.x) * 0.05f, 0f);
-            // 대쉬 시작 시 기존 상태 초기화
+            if (isTouchingLWall)
+                rb.position += new Vector2(-0.05f, 0f);
+            if (isTouchingRWall)
+                rb.position += new Vector2(0.05f, 0f);
+
             isWallJumping = false;
             isWallSliding = false;
             wallJumpCounter = 0f;
 
             Vector3 mouseScreenPos = Input.mousePosition;
             mouseScreenPos.z = -Camera.main.transform.position.z;
-            mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+            Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
             dashDirection = (mouseWorldPos - (Vector2)transform.position).normalized;
 
             isDashing = true;
@@ -240,10 +278,26 @@ public class PlayerMove : MonoBehaviour
         if (isDashing)
         {
             dashCounter -= Time.deltaTime;
-            RaycastHit2D rayhit=Physics2D.Raycast(wallCheck.position + wallCheckOffset,
-            mouseWorldPos, wallCheckDistance, groundLayer);
-            Collider2D hit = Physics2D.OverlapBox(transform.position, dashBoxSize, 0f, groundLayer);
-            if (hit != null)
+
+            Collider2D[] enemyHits = Physics2D.OverlapBoxAll(transform.position, dashBoxSize, 0f, enemyLayer);
+            foreach (Collider2D enemy in enemyHits)
+            {
+                if (!hitEnemiesInDash.Contains(enemy))
+                {
+                    hitEnemiesInDash.Add(enemy);
+                    // hit.GetComponent<Enemy>()?.TakeDamage(10);
+                    Debug.Log($"대쉬 공격 적중: {enemy.name}");
+
+                    if (!dashHitEnemy)
+                    {
+                        dashHitEnemy = true;
+                        dashGauge = Mathf.Min(dashGauge + 1f, maxDashGauge);
+                    }
+                }
+            }
+
+            Collider2D wallHit = Physics2D.OverlapBox(transform.position, dashBoxSize, 0f, groundLayer);
+            if (wallHit != null)
             {
                 StopDash();
                 return;
@@ -259,9 +313,55 @@ public class PlayerMove : MonoBehaviour
         isDashing = false;
         rb.gravityScale = isOnCeiling ? ceilingGravityScale : defaultGravityScale;
 
-        // 천장에 붙은 상태면 velocity 유지, 아니면 0
         if (!isOnCeiling)
-            rb.linearVelocity = Vector2.up*0.05f;
+            rb.linearVelocity = Vector2.up * 0.05f;
+
+        if (pendingDashes > 0 && dashGauge >= 1f)
+        {
+            pendingDashes--;
+            TriggerDash(true);
+        }
+        else
+        {
+            pendingDashes = 0;
+        }
+    }
+    void TriggerDash(bool enhanced)
+    {
+        if (isGrounded)
+            rb.position += new Vector2(0f, 0.05f);
+        if (isOnCeiling)
+            rb.position += new Vector2(0f, -0.05f);
+        if (isTouchingLWall)
+            rb.position += new Vector2(-0.05f, 0f);
+        if (isTouchingRWall)
+            rb.position += new Vector2(0.05f, 0f);
+
+        isWallJumping = false;
+        isWallSliding = false;
+        wallJumpCounter = 0f;
+
+        if (enhanced)
+            dashGauge -= 1f;
+        else
+            dashCooldownCounter = normalDashCooldown; 
+
+
+        dashHitEnemy = false;
+        hitEnemiesInDash.Clear();
+
+        Vector3 mouseScreenPos = Input.mousePosition;
+        mouseScreenPos.z = -Camera.main.transform.position.z;
+        Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+        dashDirection = (mouseWorldPos - (Vector2)transform.position).normalized;
+
+        isDashing = true;
+        dashCounter = dashDuration;
+
+        rb.gravityScale = 0f;
+        rb.linearVelocity = dashDirection * (enhanced ? enhancedDashSpeed : dashSpeed);
+
+        Debug.DrawRay(transform.position, dashDirection * 5f, Color.red, 1f);
     }
 
     void OnCollisionStay2D(Collision2D collision)
@@ -272,6 +372,53 @@ public class PlayerMove : MonoBehaviour
         Vector2 normal = collision.contacts[0].normal;
         Vector2 slideVelocity = dashDirection - (Vector2.Dot(dashDirection, normal) * normal);
         rb.linearVelocity = slideVelocity * dashSpeed;
+    }
+
+    void RotateAttackPivot()
+    {
+        Vector3 mouseScreenPos = Input.mousePosition;
+        mouseScreenPos.z = -Camera.main.transform.position.z;
+        Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+
+        Vector2 dir = (mouseWorldPos - (Vector2)transform.position).normalized;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        attackTransform.rotation = Quaternion.Euler(0f, 0f, angle);
+    }
+    void HandleAttack()
+    {
+        if (!Input.GetMouseButtonDown(0) || isAttack) return;
+
+        PerformAttack().Forget();
+    }
+    private async UniTaskVoid PerformAttack()
+    {
+        isAttack = true;
+
+        ExecuteAttackBox();
+        await UniTask.WaitForSeconds(attackSecondHitDelay);
+
+        ExecuteAttackBox();
+        await UniTask.WaitForSeconds(attackSecondHitDelay);
+
+        ExecuteAttackBox();
+        isAttack = false;
+    }
+    void ExecuteAttackBox()
+    {
+        Vector2 attackPos = (Vector2)attackTransform.position
+            + (Vector2)attackTransform.right * attackBoxDistance;
+
+        Collider2D[] hits = Physics2D.OverlapBoxAll(
+            attackPos, attackBoxSize, attackTransform.eulerAngles.z, enemyLayer);
+
+        foreach (Collider2D hit in hits)
+        {
+            Debug.Log($"공격 적중: {hit.name}");
+            // hit.GetComponent<Enemy>()?.TakeDamage(10);
+            dashGauge = Mathf.Min(dashGauge + dashGaugePerAttack, maxDashGauge);
+        }
+
+        Debug.DrawRay(attackTransform.position, attackTransform.right * attackBoxDistance, Color.magenta, 0.3f);
     }
 
     void OnDrawGizmosSelected()
@@ -289,11 +436,18 @@ public class PlayerMove : MonoBehaviour
         if (wallCheck != null)
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawRay(wallCheck.position + wallCheckOffset, Vector2.right * wallCheckDistance);
+            Gizmos.DrawRay(wallCheck.position, Vector2.right * wallCheckDistance);
+            Gizmos.DrawRay(wallCheck.position, Vector2.left * wallCheckDistance);
         }
         if(wallCheckDistance > 0) {
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireCube(transform.position, dashBoxSize);
+        }
+        if (isAttack)
+        {
+            Gizmos.color = Color.magenta;
+            Vector2 attackPos = (Vector2)attackTransform.position + (Vector2)attackTransform.right * attackBoxDistance;
+            Gizmos.DrawWireCube(attackPos, attackBoxSize);
         }
     }
 }
