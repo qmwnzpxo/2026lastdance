@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 
-public class playerState : MonoBehaviour
+public class PlayerState : MonoBehaviour
 {
-    
+    public float hp;
+    public float maxhp;
     void Start()
     {
         

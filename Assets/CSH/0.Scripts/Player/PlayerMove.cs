@@ -98,8 +98,8 @@ public class PlayerMove : MonoBehaviour
         HandleAttack();
         HandleCeilingAttach();
         HandleWallSlide();
-        HandleJump();
         HandleDash();
+        HandleJump();
 
         callingHitstop();
 
@@ -108,16 +108,16 @@ public class PlayerMove : MonoBehaviour
     // 물리 연산용 fixedUpdate
     void FixedUpdate()
     {
-        if (!isWallJumping && !isDashing)
+        if (!isDashing)
         {
             float xMove = ((isTouchingLWall||isTouchingRWall) && !isGrounded && !isOnCeiling) ? 0f : moveInput * moveSpeed;
             rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
         }
 
-        if (isWallSliding && !isDashing)
+        if (isWallSliding)
         {
             float wallDir = moveInput != 0 ? moveInput : transform.localScale.x;
-            if (moveInput != 0 && moveInput != wallDir)
+            if (moveInput != 0 || moveInput != wallDir)
                 isWallSliding = false;
 
             float verticalInput = Input.GetAxisRaw("Vertical");
@@ -132,6 +132,7 @@ public class PlayerMove : MonoBehaviour
 
             float smoothedY = Mathf.Lerp(rb.linearVelocity.y, targetSlideSpeed, Time.fixedDeltaTime * 10f);
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, smoothedY);
+            
         }
     }
 
@@ -149,10 +150,7 @@ public class PlayerMove : MonoBehaviour
     }
     void CheckCeiling()
     {
-        if (isDashing)
-        {
-            isTouchingCeiling = Physics2D.OverlapCircle(ceilingCheck.position, ceilingCheckRadius, groundLayer);
-        }
+        isTouchingCeiling = Physics2D.OverlapCircle(ceilingCheck.position, ceilingCheckRadius, groundLayer);
     }
 
     void CheckWall()
@@ -177,16 +175,17 @@ public class PlayerMove : MonoBehaviour
             DetachFromCeiling();
             return;
         }
-
+        
+        
         if (isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
-        else if (isWallSliding)
+        else if (isWallSliding&&wallJumpCounter<=0)
         {
             wallJumpDirection = -(int)Mathf.Sign(rb.linearVelocity.x);
             rb.linearVelocity = new Vector2(wallJumpDirection * wallJumpForceX, wallJumpForceY);
-
+            Debug.Log("wallJump");
             isWallJumping = true;
             wallJumpCounter = wallJumpTime;
         }
@@ -233,19 +232,6 @@ public class PlayerMove : MonoBehaviour
 
         if (Input.GetMouseButtonDown(1))
         {
-            if (dashGauge >= 1f)
-            {
-                TriggerDash(true);
-            }
-            else if (dashCooldownCounter <= 0)
-            {
-                TriggerDash(false);
-            }
-            else
-            {
-                if (dashGauge >= 1f + pendingDashes)
-                    pendingDashes++;
-            }
 
 
             if (isGrounded)
@@ -272,6 +258,20 @@ public class PlayerMove : MonoBehaviour
             rb.gravityScale = 0f;
             rb.linearVelocity = dashDirection * dashSpeed;
 
+            if (dashGauge >= 1f)
+            {
+                TriggerDash(true);
+            }
+            else if (dashCooldownCounter <= 0)
+            {
+                TriggerDash(false);
+            }
+            else
+            {
+                if (dashGauge >= 1f + pendingDashes)
+                    pendingDashes++;
+            }
+
             Debug.DrawRay(transform.position, dashDirection * 5f, Color.red, 1f);
         }
 
@@ -279,7 +279,8 @@ public class PlayerMove : MonoBehaviour
         {
             dashCounter -= Time.deltaTime;
 
-            Collider2D[] enemyHits = Physics2D.OverlapBoxAll(transform.position, dashBoxSize, 0f, enemyLayer);
+            Collider2D[] enemyHits = Physics2D.OverlapBoxAll(transform.position,
+                dashBoxSize+(Vector2.one*0.1f), 0f, enemyLayer);
             foreach (Collider2D enemy in enemyHits)
             {
                 if (!hitEnemiesInDash.Contains(enemy))
@@ -394,19 +395,20 @@ public class PlayerMove : MonoBehaviour
     {
         isAttack = true;
 
-        ExecuteAttackBox();
-        await UniTask.WaitForSeconds(attackSecondHitDelay);
-
-        ExecuteAttackBox();
-        await UniTask.WaitForSeconds(attackSecondHitDelay);
-
-        ExecuteAttackBox();
-        isAttack = false;
-    }
-    void ExecuteAttackBox()
-    {
         Vector2 attackPos = (Vector2)attackTransform.position
             + (Vector2)attackTransform.right * attackBoxDistance;
+
+        ExecuteAttackBox(attackPos);
+        await UniTask.WaitForSeconds(attackSecondHitDelay);
+
+        ExecuteAttackBox(attackPos);
+        await UniTask.WaitForSeconds(attackSecondHitDelay);
+
+        //ExecuteAttackBox();
+        isAttack = false;
+    }
+    void ExecuteAttackBox(Vector2 attackPos)
+    {
 
         Collider2D[] hits = Physics2D.OverlapBoxAll(
             attackPos, attackBoxSize, attackTransform.eulerAngles.z, enemyLayer);
@@ -418,7 +420,7 @@ public class PlayerMove : MonoBehaviour
             dashGauge = Mathf.Min(dashGauge + dashGaugePerAttack, maxDashGauge);
         }
 
-        Debug.DrawRay(attackTransform.position, attackTransform.right * attackBoxDistance, Color.magenta, 0.3f);
+        Debug.DrawRay(attackTransform.position, attackTransform.right * attackBoxDistance, Color.magenta, 0.15f);
     }
 
     void OnDrawGizmosSelected()

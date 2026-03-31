@@ -117,7 +117,7 @@ MonoBehaviour:
   runSpeed: 15
   run: 0
   notbattle: 1
-  jumpForce: 10
+  jumpForce: 8
   groundLayer:
     serializedVersion: 2
     m_Bits: 1024
@@ -137,6 +137,9 @@ MonoBehaviour:
   ceilingTimer: 0
   ceilingTimeMultiplier: 0
   spriteTransform: {fileID: 2957920387103072243}
+  dashGauge: 5
+  maxDashGauge: 5
+  hitEnemiesInDash: []
   attackTransform: {fileID: 1681497214142862811}
   attackBoxSize: {x: 1, y: 1}
   attackBoxDistance: 1
