@@ -1,8 +1,8 @@
-using Cysharp.Threading.Tasks;
-using System;
+﻿using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.U2D;
+using UnityEngine.Rendering.Universal;
+//using UnityEngine.U2D;
 
 public class CameraFollow : MonoBehaviour
 {
@@ -10,11 +10,12 @@ public class CameraFollow : MonoBehaviour
     private PlayerMove player;
     [SerializeField] private float smoothSpeed = 5f;
     [SerializeField] private Vector3 offset = new Vector3(0f, 2f, -10f);
-    [SerializeField] UnityEngine.U2D.PixelPerfectCamera perfectCamera;
     private CancellationTokenSource _cts;
-    //[SerializeField] UnityEditor.Rendering.Universal.PixelPerfectCamera pixelPerfectCamera;
+    private CancellationTokenSource start_cts;
+    [SerializeField] PixelPerfectCamera pixelPerfectCamera;
     bool rescaling;
 
+    private int SnapToEven(int value) => value & ~1;
     private void Awake()
     {
         if (target != null)
@@ -25,50 +26,64 @@ public class CameraFollow : MonoBehaviour
             player = target.GetComponent<PlayerMove>();
         }
 
-        if(perfectCamera == null)
+        if(pixelPerfectCamera == null)
         {
-            perfectCamera = GetComponent<PixelPerfectCamera>();
+            pixelPerfectCamera = GetComponent<PixelPerfectCamera>();
         }
+
     }
 
     private void Start()
     {
         TriggerHitstop();
+
+        start_cts?.Cancel();
+        start_cts?.Dispose();
+        start_cts = new CancellationTokenSource();
+        CameraSizeRescale(start_cts.Token).Forget();
     }
+
     public void TriggerHitstop(float duration = 0.08f, float timeScale = 0.05f)
     {
         _cts?.Cancel();
         _cts?.Dispose();
 
         _cts = new CancellationTokenSource();
-
-        CameraSizeRescale(_cts.Token).Forget();
     }
 
 
     public async UniTaskVoid CameraSizeRescale(CancellationToken _ct)
     {
         float timer = 0;
-        try
+        float duration = 3f;
+    float fromPPU = 128f;
+    float toPPU = 64f;
+        pixelPerfectCamera.assetsPPU = 64;
+        pixelPerfectCamera.cropFrame = PixelPerfectCamera.CropFrame.Letterbox;
+        while (!_ct.IsCancellationRequested)
         {
-            await UniTask.WaitForSeconds(1.25f,ignoreTimeScale:true,cancellationToken:_ct);
+            await UniTask.WaitForFixedUpdate(cancellationToken: _ct).SuppressCancellationThrow();
+
+            if (_ct.IsCancellationRequested) break;
+
+            timer += Time.fixedDeltaTime;
+            float t = Mathf.Clamp01(timer / duration);
+            float smoothT = Mathf.SmoothStep(0f, 1f, t); // ease-in-out
+
+            // refResolution: 짝수 스냅
+            pixelPerfectCamera.refResolutionX = SnapToEven(Mathf.RoundToInt(Mathf.Lerp(1024f, 1920f, Mathf.Min(smoothT + 0.1f, 1f))));
+            pixelPerfectCamera.refResolutionY = SnapToEven(Mathf.RoundToInt(Mathf.Lerp(192f, 1080f, smoothT)));
+            offset.y = Mathf.Min(t * 2f, 2);
+
+            // PPU: float 보간 후 마지막에만 정수 적용
+            float ppu = Mathf.Lerp(fromPPU, toPPU, smoothT);
+            pixelPerfectCamera.assetsPPU = Mathf.RoundToInt(ppu);
+
+            if (t >= 1f) break;
         }
-        catch (Exception) { }
-        finally
-        {
-            timer = Mathf.Min(timer + Time.fixedDeltaTime, 1);
-            
-            Debug.Log("perfect.X" + perfectCamera.refResolutionX);
-            perfectCamera.refResolutionX = (int)Mathf.Lerp(1600f, 1920f, timer);
-
-            Debug.Log("perfect.Y" + perfectCamera.refResolutionY);
-            perfectCamera.refResolutionY = (int)Mathf.Lerp(900, 1080, timer);
-
-            Debug.Log("perfect.assetsPPU" + perfectCamera.assetsPPU);
-            perfectCamera.assetsPPU = (int)Mathf.Lerp(128, 64, timer);
-        }
-
-        Debug.Log("CameraSizeRescale() end");
+        pixelPerfectCamera.refResolutionX = 1920;
+        pixelPerfectCamera.refResolutionY = 1080;
+        offset.y = 2f;
     }
 
     void LateUpdate()
