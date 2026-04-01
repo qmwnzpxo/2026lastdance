@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class LazerPatten : MonoBehaviour
@@ -30,10 +31,13 @@ public class LazerPatten : MonoBehaviour
 
     private LineRenderer[] lineRenderers;
     private bool[] prevDestroyTest = new bool[4];
-
-
+    public bool allDestory = false;
+    public bool[] imDestory = new bool[4];
+    
     private void Awake()
     {
+      
+       
         foreach (GameObject lazer in lazerObject)
             if (lazer != null) lazer.SetActive(false);
 
@@ -101,7 +105,7 @@ public class LazerPatten : MonoBehaviour
         UpdateLines();
     }
 
-    private void ApplyDestroyTests()
+    public void ApplyDestroyTests()
     {
         bool[] current = { destroyTest0, destroyTest1, destroyTest2, destroyTest3 };
 
@@ -110,14 +114,59 @@ public class LazerPatten : MonoBehaviour
             if (lazerObject[i] == null) continue;
 
             if (current[i] && !prevDestroyTest[i])
+            {
                 lazerObject[i].SetActive(false);
 
+            }
             if (!current[i] && prevDestroyTest[i])
+            {
                 lazerObject[i].SetActive(true);
 
+            }
+
+
             prevDestroyTest[i] = current[i];
+
+            Debug.Log(imDestory[i]);
+            for (int j = 0; j < current.Length; j++)
+            {
+                {
+                    imDestory[j] = current[j];
+                    
+                }
+            }
+
+            bool allTrue = imDestory.All(x => x);
+            if(allTrue)
+            {
+                allDestory = true;
+            }
+         
         }
+            
+
+
+
+
+        //int lo = 0;
+        //foreach(var i in lazerObject)
+        //{
+        //    if (i.activeInHierarchy)
+        //    {
+        //        lo++;
+        //        continue;
+        //    }
+
+        //    if (lo>=4)
+        //    allDestory = true;
+        //    Debug.Log("  레이저 다 주금");
+
+
+        //}
+        
     }
+
+    
 
     private void UpdateLines()
     {
@@ -196,5 +245,6 @@ public class LazerPatten : MonoBehaviour
                 lazers[i].SetActive(false);
             }
         }
+       
     }
 }
