@@ -23,6 +23,7 @@ public class Panel : MonoBehaviour
 
     public Transform bossTransform;
     Vector2 currentPos;
+    private int currentOffset = 0;
 
     private CancellationToken tk1;
     async UniTask Start()
@@ -47,11 +48,7 @@ public class Panel : MonoBehaviour
             {
                 await PanelSpawn();
             }
-            if (Input.GetKey(KeyCode.C))
-            {
-                ChangeSet();
-            }
-            await UniTask.Delay(TimeSpan.FromSeconds(0.2f));
+            await UniTask.Yield(); 
         }
     }
     async UniTask PanelSpawn()
@@ -59,15 +56,26 @@ public class Panel : MonoBehaviour
         for (int i = 0; i < panel.Length; i++)
         {
             if (bossTransform != null)
-                panel[i].transform.position = bossTransform.position; 
+                panel[i].transform.position = bossTransform.position;
 
-            panel[i].SetActive(true); 
+            panel[i].SetActive(true);
             await UniTask.Delay(TimeSpan.FromSeconds(0.2f));
         }
 
-        await PanelMove(); 
+        await PanelMove(currentOffset);
+        await AutoRotateLoop(tk1);
     }
-    async UniTask PanelMove()
+    async UniTask AutoRotateLoop(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            await UniTask.Delay(TimeSpan.FromSeconds(3f), cancellationToken: token);
+            currentOffset = (currentOffset + 1) % panel.Length;
+            await PanelMove(currentOffset);
+        }
+    }
+
+    async UniTask PanelMove(int offset)
     {
         bool[] arrived = new bool[panel.Length];
 
@@ -78,7 +86,7 @@ public class Panel : MonoBehaviour
                 if (arrived[i]) continue;
 
                 Vector2 current = panel[i].transform.position;
-                Vector2 target = panelTransform[i].position;
+                Vector2 target = panelTransform[(i + offset) % panel.Length].position;
 
                 panel[i].transform.position = Vector2.MoveTowards(
                     current,
@@ -89,9 +97,34 @@ public class Panel : MonoBehaviour
                 if (Vector2.Distance(current, target) < 0.01f)
                     arrived[i] = true;
             }
-            await UniTask.Yield(); 
+            await UniTask.Yield();
         }
     }
+    //async UniTask PanelMove()
+    //{
+    //    bool[] arrived = new bool[panel.Length];
+
+    //    while (!arrived.All(x => x))
+    //    {
+    //        for (int i = 0; i < panel.Length; i++)
+    //        {
+    //            if (arrived[i]) continue;
+
+    //            Vector2 current = panel[i].transform.position;
+    //            Vector2 target = panelTransform[i].position;
+
+    //            panel[i].transform.position = Vector2.MoveTowards(
+    //                current,
+    //                target,
+    //                panelmoveSpeed * Time.deltaTime
+    //            );
+
+    //            if (Vector2.Distance(current, target) < 0.01f)
+    //                arrived[i] = true;
+    //        }
+    //        await UniTask.Yield(); 
+    //    }
+    //}
     //async UniTask PanelMove()
     //{
 

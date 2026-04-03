@@ -2737,7 +2737,7 @@ MonoBehaviour:
   - {fileID: 77260446}
   - {fileID: 351209763}
   - {fileID: 551836308}
-  panelmoveSpeed: 1
+  panelmoveSpeed: 4
   enemyBase: {fileID: 101601673}
   bossTransform: {fileID: 1382195997}
 --- !u!4 &1382195997
@@ -4327,7 +4327,7 @@ MonoBehaviour:
   target: {fileID: 1968961779}
   smoothSpeed: 10
   offset: {x: 0, y: 2.1, z: -10}
-  perfectCamera: {fileID: 0}
+  pixelPerfectCamera: {fileID: 0}
 --- !u!114 &1839685742
 MonoBehaviour:
   m_ObjectHideFlags: 0
