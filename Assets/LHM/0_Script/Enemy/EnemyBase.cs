@@ -6,8 +6,8 @@ public class EnemyBase : MonoBehaviour
 {
     public Rigidbody2D rigid2d;
     Animator animator;
-    EnemyMovement enemyMovement;
-    EnemyCombat enemyCombat;
+    protected EnemyMovement enemyMovement;
+    protected EnemyCombat enemyCombat;
 
     public Transform playerTransform;
 
@@ -18,7 +18,7 @@ public class EnemyBase : MonoBehaviour
     public Transform pointB;
 
     //탐지
-    public float detectionRange = 1.0f; //(플레이어 탐지 거리)
+    public float detectionRange = 5.0f; //(플레이어 탐지 거리)
     public float dashRange = 1.0f; //(돌진 시작 거리)
 
     //전투
@@ -40,7 +40,7 @@ public class EnemyBase : MonoBehaviour
     string ANIM_HIT;
     string ANIM_DEAD;
 
-    void Start()
+    protected virtual void Start()
     {
         rigid2d = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
@@ -53,8 +53,7 @@ public class EnemyBase : MonoBehaviour
     }
 
 
-
-    void Update()
+    protected virtual void Update()
     {
         if(isDead == true) {
             return;
@@ -64,7 +63,7 @@ public class EnemyBase : MonoBehaviour
     }
 
 
-    void OnDrawGizmos()
+    protected virtual void OnDrawGizmos()
     {
         if (isDead == true)
             return;
@@ -72,7 +71,8 @@ public class EnemyBase : MonoBehaviour
         if (enemyCombat != null) {
             // 노란색 detectionRange 원 탐지
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(enemyCombat.transform.position, detectionRange);
+            //Gizmos.DrawWireSphere(enemyCombat.transform.position, detectionRange);
+            Gizmos.DrawWireCube(enemyCombat.transform.position, new Vector3(enemyMovement.detectionRangeX, enemyMovement.detectionRangeY));
 
             // 빨간색 dashRange 원 돌진
             Gizmos.color = Color.red;
@@ -81,6 +81,18 @@ public class EnemyBase : MonoBehaviour
             // 파란색 attackRange 원 공격
             Gizmos.color = Color.blue;
             Gizmos.DrawWireSphere(enemyCombat.transform.position, attackRange);
+        }
+    }
+
+    public void OnDamage(float damage)
+    {
+        if(isDead == true) {
+            return;
+        }
+        currentHp -= damage;
+        if(currentHp <= 0) {
+            isDead = true;
+            gameObject.SetActive(false);
         }
     }
 }

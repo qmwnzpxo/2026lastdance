@@ -4,30 +4,32 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
-    EnemyBase enemyBase;
-    EnemyCombat enemyCombat;
-    bool isMovingToB;
-    Coroutine currentMoveCoroutine;
+    protected EnemyBase enemyBase;
+    protected EnemyCombat enemyCombat;
+    protected bool isMovingToB;
+    protected Coroutine currentMoveCoroutine;
 
-    public void Init()
+    public float detectionRangeX = 10f; // 플레이어 탐지 범위 (X축)
+    public float detectionRangeY = 3f;  // 플레이어 탐지 범위 (Y축)
+    public virtual void Init()
     {
         enemyBase = GetComponent<EnemyBase>();
         enemyCombat = GetComponent<EnemyCombat>();
         currentMoveCoroutine = StartCoroutine(EnemyNormalMove());
     }
 
-    public void DetectPlayer()
+    public virtual void DetectPlayer()
     {
         if (enemyBase == null || enemyBase.isDead) return;
         if (enemyBase.playerTransform == null) return;
-        if (enemyBase.isAttacking) return; // 공격 중엔 감지 무시
 
         Vector2 diff = enemyBase.playerTransform.position - transform.position;
-        bool detected = Mathf.Abs(diff.x) <= 10f && Mathf.Abs(diff.y) <= 3f;
+        bool detected = Mathf.Abs(diff.x) <= detectionRangeX && Mathf.Abs(diff.y) <= detectionRangeY;
 
         if (detected == enemyBase.isPlayerDetected) return;
 
         enemyBase.isPlayerDetected = detected;
+        if (enemyBase.isAttacking) return; // 공격 중엔 감지 무시
 
         if (currentMoveCoroutine != null)
             StopCoroutine(currentMoveCoroutine);
@@ -35,7 +37,7 @@ public class EnemyMovement : MonoBehaviour
         currentMoveCoroutine = StartCoroutine(detected ? EnemyChaseMove() : EnemyNormalMove());
     }
 
-    IEnumerator EnemyNormalMove()
+    protected virtual IEnumerator EnemyNormalMove()
     {
         while (true)
         {
@@ -63,13 +65,13 @@ public class EnemyMovement : MonoBehaviour
         }
     }
 
-    public IEnumerator EnemyChaseMove()
+    public virtual IEnumerator EnemyChaseMove()
     {
         while (true)
         {
             float chaseDistance = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
 
-            if (chaseDistance < enemyBase.dashRange)
+            if (chaseDistance < Mathf.Abs(enemyBase.dashRange))
             {
                 // X velocity 정지 후 대시
                 enemyBase.rigid2d.linearVelocity = new Vector2(0f, enemyBase.rigid2d.linearVelocity.y);
@@ -79,23 +81,28 @@ public class EnemyMovement : MonoBehaviour
 
             // 플레이어 X 방향으로만 추적
             float dirX = enemyBase.playerTransform.position.x - transform.position.x;
-            enemyBase.rigid2d.linearVelocity = new Vector2(
-                Mathf.Sign(dirX) * enemyBase.moveSpeed,
-                enemyBase.rigid2d.linearVelocity.y
-            );
+            if (Mathf.Abs(dirX) < enemyBase.dashRange/2)
+            {
+                enemyBase.rigid2d.linearVelocity = new Vector2(0f, enemyBase.rigid2d.linearVelocity.y);
+
+                enemyBase.rigid2d.linearVelocity = new Vector2(
+                    Mathf.Sign(dirX) * enemyBase.moveSpeed,
+                    enemyBase.rigid2d.linearVelocity.y
+                );
+            }
 
             yield return new WaitForFixedUpdate();
         }
     }
 
-    public void StartChase()
+    public virtual void StartChase()
     {
         if (currentMoveCoroutine != null)
             StopCoroutine(currentMoveCoroutine);
         currentMoveCoroutine = StartCoroutine(EnemyChaseMove());
     }
 
-    IEnumerator EnemyDash()
+    protected virtual IEnumerator EnemyDash()
     {
         float dirX = enemyBase.playerTransform.position.x - transform.position.x;
         Vector2 dashDirection = new Vector2(Mathf.Sign(dirX), 0f);
@@ -122,7 +129,7 @@ public class EnemyMovement : MonoBehaviour
         // 공격 범위 밖이면 EnemyChaseMove가 continue로 자동 재개
     }
 
-    public void FlipSprite()
+    public virtual void FlipSprite()
     {
         if (enemyBase.rigid2d.linearVelocity.x != 0)
         {
@@ -135,7 +142,7 @@ public class EnemyMovement : MonoBehaviour
         }
     }
 
-    public void StopAllMove()
+    public virtual void StopAllMove()
     {
         if (currentMoveCoroutine != null)
         {

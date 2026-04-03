@@ -1,5 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 public class PlayerMove : MonoBehaviour
@@ -7,8 +8,8 @@ public class PlayerMove : MonoBehaviour
     [Header("이동")]
     [SerializeField] private float moveSpeed = 7f;
     [SerializeField] private float runSpeed = 15f;
-    [SerializeField] private bool run = false;
-    [SerializeField] private bool notbattle = true;
+    //[SerializeField] private bool run = false;
+    //[SerializeField] private bool notbattle = true;
 
     [Header("점프")]
     [SerializeField] private float jumpForce = 12f;
@@ -52,6 +53,11 @@ public class PlayerMove : MonoBehaviour
     private Vector2 dashDirection;
     private float dashGaugePerAttack = 0.1f;
     private bool dashHitEnemy = false;
+    private CancellationTokenSource dashCooldownCts;
+
+    Camera mainCamera;
+    Camera subCamera;
+
 
     [Header("공격")]
     [SerializeField] private Transform attackTransform;
@@ -78,10 +84,19 @@ public class PlayerMove : MonoBehaviour
     private float wallJumpTime = 0.2f;
     private float wallJumpCounter;
     private int wallJumpDirection;
+    private CancellationTokenSource wallJumpCts;
+    private PlayerState playerState;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        if(playerState == null)
+            playerState = GetComponent<PlayerState>();
+
+        if (enemyLayer == 0)
+        {
+            enemyLayer= LayerMask.GetMask("enemy");
+        }
     }
 
     // 함수 연산 및 입력 처리용 update
@@ -108,10 +123,13 @@ public class PlayerMove : MonoBehaviour
     // 물리 연산용 fixedUpdate
     void FixedUpdate()
     {
-        if (!isDashing)
+        if (!isWallJumping)
         {
-            float xMove = ((isTouchingLWall||isTouchingRWall) && !isGrounded && !isOnCeiling) ? 0f : moveInput * moveSpeed;
-            rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
+            if (!isDashing)
+            {
+                float xMove = ((isTouchingLWall || isTouchingRWall) && !isGrounded && !isOnCeiling) ? 0f : moveInput * moveSpeed;
+                rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
+            }
         }
 
         if (isWallSliding)
@@ -183,12 +201,22 @@ public class PlayerMove : MonoBehaviour
         }
         else if (isWallSliding&&wallJumpCounter<=0)
         {
-            wallJumpDirection = -(int)Mathf.Sign(rb.linearVelocity.x);
+            wallJumpDirection = isTouchingLWall? 1 : -1;
             rb.linearVelocity = new Vector2(wallJumpDirection * wallJumpForceX, wallJumpForceY);
             Debug.Log("wallJump");
             isWallJumping = true;
-            wallJumpCounter = wallJumpTime;
+
+            wallJumpCts?.Cancel();
+            wallJumpCts = new CancellationTokenSource();
+            StartWallJumpCooldown(wallJumpCts.Token).Forget();
         }
+    }
+    private async UniTaskVoid StartWallJumpCooldown(CancellationToken ct)
+    {
+        wallJumpCounter = wallJumpTime;
+        await UniTask.WaitForSeconds(wallJumpTime, cancellationToken: ct);
+        wallJumpCounter = 0f;
+        isWallJumping = false;
     }
 
     void DetachFromCeiling()
@@ -227,13 +255,8 @@ public class PlayerMove : MonoBehaviour
 
     void HandleDash()
     {
-        if (dashCooldownCounter > 0)
-            dashCooldownCounter -= Time.deltaTime;
-
         if (Input.GetMouseButtonDown(1))
         {
-
-
             if (isGrounded)
                 rb.position += new Vector2(0f, 0.05f);
             if (isOnCeiling)
@@ -280,13 +303,13 @@ public class PlayerMove : MonoBehaviour
             dashCounter -= Time.deltaTime;
 
             Collider2D[] enemyHits = Physics2D.OverlapBoxAll(transform.position,
-                dashBoxSize+(Vector2.one*0.1f), 0f, enemyLayer);
+                attackBoxSize+(Vector2.one*0.1f), 0f, enemyLayer);
             foreach (Collider2D enemy in enemyHits)
             {
                 if (!hitEnemiesInDash.Contains(enemy))
                 {
                     hitEnemiesInDash.Add(enemy);
-                    // hit.GetComponent<Enemy>()?.TakeDamage(10);
+                    enemy.GetComponent<EnemyBase>()?.OnDamage(playerState.damage*5);
                     Debug.Log($"대쉬 공격 적중: {enemy.name}");
 
                     if (!dashHitEnemy)
@@ -345,8 +368,11 @@ public class PlayerMove : MonoBehaviour
         if (enhanced)
             dashGauge -= 1f;
         else
-            dashCooldownCounter = normalDashCooldown; 
-
+        {
+            dashCooldownCts?.Cancel();
+            dashCooldownCts = new CancellationTokenSource();
+            StartDashCooldown(dashCooldownCts.Token).Forget();
+        }
 
         dashHitEnemy = false;
         hitEnemiesInDash.Clear();
@@ -363,6 +389,12 @@ public class PlayerMove : MonoBehaviour
         rb.linearVelocity = dashDirection * (enhanced ? enhancedDashSpeed : dashSpeed);
 
         Debug.DrawRay(transform.position, dashDirection * 5f, Color.red, 1f);
+    }
+    protected async UniTaskVoid StartDashCooldown(CancellationToken ct)
+    {
+        dashCooldownCounter = normalDashCooldown;
+        await UniTask.WaitForSeconds(normalDashCooldown, cancellationToken: ct);
+        dashCooldownCounter = 0f;
     }
 
     void OnCollisionStay2D(Collision2D collision)
@@ -385,12 +417,14 @@ public class PlayerMove : MonoBehaviour
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         attackTransform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
+
     void HandleAttack()
     {
         if (!Input.GetMouseButtonDown(0) || isAttack) return;
 
         PerformAttack().Forget();
     }
+
     private async UniTaskVoid PerformAttack()
     {
         isAttack = true;
@@ -407,6 +441,7 @@ public class PlayerMove : MonoBehaviour
         //ExecuteAttackBox();
         isAttack = false;
     }
+
     void ExecuteAttackBox(Vector2 attackPos)
     {
 
@@ -416,7 +451,7 @@ public class PlayerMove : MonoBehaviour
         foreach (Collider2D hit in hits)
         {
             Debug.Log($"공격 적중: {hit.name}");
-            // hit.GetComponent<Enemy>()?.TakeDamage(10);
+            hit.GetComponent<EnemyBase>()?.OnDamage(playerState.damage);
             dashGauge = Mathf.Min(dashGauge + dashGaugePerAttack, maxDashGauge);
         }
 
@@ -451,5 +486,21 @@ public class PlayerMove : MonoBehaviour
             Vector2 attackPos = (Vector2)attackTransform.position + (Vector2)attackTransform.right * attackBoxDistance;
             Gizmos.DrawWireCube(attackPos, attackBoxSize);
         }
+    }
+
+    public void CancelAllTask()
+    {
+        dashCooldownCts?.Cancel();
+        dashCooldownCts?.Dispose();
+        wallJumpCts?.Cancel();
+        wallJumpCts?.Dispose();
+    }
+
+    private void OnDestroy()
+    {
+        dashCooldownCts?.Cancel();
+        dashCooldownCts?.Dispose();
+        wallJumpCts?.Cancel();
+        wallJumpCts?.Dispose();
     }
 }
