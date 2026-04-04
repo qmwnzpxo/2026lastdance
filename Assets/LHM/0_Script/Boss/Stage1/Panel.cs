@@ -1,12 +1,13 @@
-using UnityEngine;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
+ï»¿using Cysharp.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using static UnityEngine.GraphicsBuffer;
 using System.Threading;
 using Unity.VisualScripting.Antlr3.Runtime;
-
+using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
+using static UnityEditor.Experimental.GraphView.GraphView;
+using static UnityEngine.GraphicsBuffer;
 using Random = UnityEngine.Random;
 
 public class Panel : MonoBehaviour
@@ -16,7 +17,13 @@ public class Panel : MonoBehaviour
 
     public float panelmoveSpeed = 1.0f;
 
+    public float lineWidth = 0.05f;
+    public Color lineColor = Color.red;
+
+    bool NextPatten = false;
+
     [SerializeField] EnemyBase enemyBase;
+    private LineRenderer[] lineRenderer;
 
     bool AllonPanel = false;
     bool[] testbool;
@@ -26,9 +33,27 @@ public class Panel : MonoBehaviour
     private int currentOffset = 0;
 
     private CancellationToken tk1;
-    async UniTask Start()
+    void Awake()
     {
-        tk1 = this.GetCancellationTokenOnDestroy(); // Ãß°¡
+        lineRenderer = new LineRenderer[panel.Length];
+        for (int i = 0; i < panel.Length; i++)
+        {
+            if (panel[i] == null) continue;
+
+            LineRenderer lr = panel[i].GetComponent<LineRenderer>();
+            if (lr == null) lr = panel[i].AddComponent<LineRenderer>();
+
+            lr.positionCount = panel.Length;
+            lr.useWorldSpace = true;
+            lr.startWidth = lineWidth;
+            lr.endWidth = lineWidth;
+            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.startColor = lineColor;
+            lr.endColor = lineColor;
+
+            lineRenderer[i] = lr;
+        }
+        tk1 = this.GetCancellationTokenOnDestroy(); // ì¶”ê°€
         testbool = new bool[panel.Length];
 
 
@@ -129,10 +154,10 @@ public class Panel : MonoBehaviour
     //{
 
 
-    //    //Á¤ÇØÁø ºó ¿ÀºêÁ§Æ®ÀÇ À§Ä¡·Î ÀÌµ¿ÇÑµÚ
-    //    //±¤¼± ¹ß»ç 
-    //    //¹ß»çÈÄ ·£´ıÀ¸·Î ÀÚ¸®°¡ ºñ¾îÀÖ´Â ºó¿ÀºêÁ§Æ®ÀÇ À§Ä¡·Î ÀÌµ¿
-    //    //¹İº¹
+    //    //ì •í•´ì§„ ë¹ˆ ì˜¤ë¸Œì íŠ¸ì˜ ìœ„ì¹˜ë¡œ ì´ë™í•œë’¤
+    //    //ê´‘ì„  ë°œì‚¬ 
+    //    //ë°œì‚¬í›„ ëœë¤ìœ¼ë¡œ ìë¦¬ê°€ ë¹„ì–´ìˆëŠ” ë¹ˆì˜¤ë¸Œì íŠ¸ì˜ ìœ„ì¹˜ë¡œ ì´ë™
+    //    //ë°˜ë³µ
     //    for (int i = 0; i < panel.Length; i++)
     //    { 
     //        Vector2 g = panel[i].transform.position;
@@ -169,7 +194,15 @@ public class Panel : MonoBehaviour
             }
             
         }
-        
+        LazerShoot();
         
     }
+    async UniTask LazerShoot()
+    {
+        while(NextPatten)
+        {
+
+        }
+    }
 }
+
