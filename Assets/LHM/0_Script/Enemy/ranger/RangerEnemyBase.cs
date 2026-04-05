@@ -6,7 +6,7 @@ public class RangerEnemyBase : EnemyBase
     protected override void Start()
     {
         base.Start();
-        detectionRange = 5f;
+        //detectionRange = 5f;
         attackRange = 4f;
     }
 

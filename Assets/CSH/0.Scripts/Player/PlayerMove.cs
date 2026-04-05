@@ -7,7 +7,7 @@ public class PlayerMove : MonoBehaviour
 {
     [Header("이동")]
     [SerializeField] private float moveSpeed = 7f;
-    [SerializeField] private float runSpeed = 15f;
+    //[SerializeField] private float runSpeed = 15f;
     //[SerializeField] private bool run = false;
     //[SerializeField] private bool notbattle = true;
 

@@ -18,7 +18,7 @@ public class EnemyBase : MonoBehaviour
     public Transform pointB;
 
     //탐지
-    public float detectionRange = 5.0f; //(플레이어 탐지 거리)
+    //public float detectionRange = 5.0f; //(플레이어 탐지 거리)
     public float dashRange = 1.0f; //(돌진 시작 거리)
 
     //전투
@@ -69,7 +69,7 @@ public class EnemyBase : MonoBehaviour
             return;
 
         if (enemyCombat != null) {
-            // 노란색 detectionRange 원 탐지
+            // 노란색 detectionRange 큐브 탐지
             Gizmos.color = Color.yellow;
             //Gizmos.DrawWireSphere(enemyCombat.transform.position, detectionRange);
             Gizmos.DrawWireCube(enemyCombat.transform.position, new Vector3(enemyMovement.detectionRangeX, enemyMovement.detectionRangeY));

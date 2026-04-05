@@ -8,8 +8,9 @@ public class RangerEnemyCombat : EnemyCombat
         base.Start();
         attackDelay = 0.5f;
     }
-    protected override async UniTaskVoid PerformAttack()
+    protected override async UniTask PerformAttack()
     {
+        RotateAttackPivot();
         float distanceAfterWait = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
         Vector2 attackPos = (Vector2)attackTransform.position
             + (Vector2)attackTransform.right * rangeCheck(distanceAfterWait);

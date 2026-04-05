@@ -35,12 +35,13 @@ public class EnemyCombat : MonoBehaviour
             return;
         }
 
-        StartCoroutine(AttackCooldown());
+        //StartCoroutine(AttackCooldown());
+        AttackCooldown().Forget();
 
     }
 
     #region 코루틴
-    
+    /*
     protected virtual IEnumerator AttackCooldown()
     {
         enemyBase.isAttacking = true;
@@ -69,28 +70,29 @@ public class EnemyCombat : MonoBehaviour
         yield return new WaitForSeconds(1);
         Destroy(gameObject);
     }
-    
+    */
     #endregion
+
 
     #region 유니태스크
 
-    protected virtual async UniTaskVoid AttackCooldown(CancellationToken cancellationToken)
+    protected virtual async UniTaskVoid AttackCooldown()
     {
         enemyBase.isAttacking = true;
+
         float distance = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
         if (distance <= Mathf.Abs(enemyBase.attackRange))
         {
             Debug.Log(distance);
-            PerformAttack().Forget();
+            await PerformAttack();
         }
-        await UniTask.WaitForSeconds(enemyBase.attackCooldown);
+
+        await UniTask.WaitForSeconds(enemyBase.attackCooldown,
+            cancellationToken: this.GetCancellationTokenOnDestroy());
+
         enemyBase.isAttacking = false;
-        float distanceAfterWait = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
-        if (distanceAfterWait <= Mathf.Abs(enemyBase.detectionRange))
-        {
-            enemyMovement.StartChase();
-        }
     }
+
     protected virtual async UniTaskVoid DestroyAfterDeath()
     {
         await UniTask.WaitForSeconds(1f);
@@ -98,16 +100,20 @@ public class EnemyCombat : MonoBehaviour
     }
 
     #endregion
-    protected virtual async UniTaskVoid PerformAttack()
-    {
-        float distanceAfterWait = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
-        Vector2 attackPos = (Vector2)attackTransform.position
-            + (Vector2)attackTransform.right * rangeCheck(distanceAfterWait);
 
-        await UniTask.WaitForSeconds(attackDelay, cancellationToken: this.GetCancellationTokenOnDestroy());
+    protected virtual async UniTask PerformAttack()
+    {
+        RotateAttackPivot();
+        float signedDistX = enemyBase.playerTransform.position.x - transform.position.x;
+        Vector2 attackPos = (Vector2)attackTransform.position
+            + (Vector2)attackTransform.right * rangeCheck(signedDistX);
+        Vector2 debugStart = attackTransform.position;
+
+        await UniTask.WaitForSeconds(attackDelay,
+            cancellationToken: this.GetCancellationTokenOnDestroy());
 
         ExecuteAttackBox(attackPos);
-        Debug.DrawRay(attackTransform.position, attackTransform.right * distanceAfterWait, Color.magenta, 0.5f);
+        Debug.DrawRay(debugStart, attackTransform.right * signedDistX, Color.magenta, 0.5f);
     }
 
     protected virtual float rangeCheck(float value)
@@ -128,7 +134,13 @@ public class EnemyCombat : MonoBehaviour
             Debug.Log($"공격 적중: {hit.name}");
             hit.GetComponent<PlayerState>()?.TakeDamage(enemyBase.attackDamage);
         }
-    
+
+    }
+    protected virtual void RotateAttackPivot()
+    {
+        Vector2 dir = (enemyBase.playerTransform.position-attackTransform.position).normalized;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        attackTransform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 
 
@@ -151,8 +163,8 @@ public class EnemyCombat : MonoBehaviour
         enemyBase.isDead = true;
         enemyMovement.StopAllMove();
 
-        StartCoroutine(DestoryAfterDeath());
-        //DestroyAfterDeath().Forget();
+        //StartCoroutine(DestoryAfterDeath());
+        DestroyAfterDeath().Forget();
     }
 
     public virtual void OnDestroy()
