@@ -16,14 +16,19 @@ public class Panel : MonoBehaviour
     public Transform[] panelTransform;
 
     public float panelmoveSpeed = 1.0f;
+    float projectileSpeed = 5f;
 
-    public float lineWidth = 0.05f;
-    public Color lineColor = Color.red;
+    [SerializeField] Color lineColor = Color.red;
+    [SerializeField] float lineWidth = 0.05f;
 
     bool NextPatten = false;
 
+    [SerializeField] GameObject projectilePrefab;
     [SerializeField] EnemyBase enemyBase;
-    private LineRenderer[] lineRenderer;
+
+    private LineRenderer[] lineRenderers;
+
+    private Transform playerTransform;
 
     bool AllonPanel = false;
     bool[] testbool;
@@ -33,29 +38,44 @@ public class Panel : MonoBehaviour
     private int currentOffset = 0;
 
     private CancellationToken tk1;
-    void Awake()
+    async UniTask Start()
     {
-        lineRenderer = new LineRenderer[panel.Length];
+        tk1 = this.GetCancellationTokenOnDestroy(); // 추가
+        testbool = new bool[panel.Length];
+
+        // 패널 먼저 활성화 상태로 LineRenderer 추가 후 비활성화
+        lineRenderers = new LineRenderer[panel.Length];
         for (int i = 0; i < panel.Length; i++)
         {
             if (panel[i] == null) continue;
 
-            LineRenderer lr = panel[i].GetComponent<LineRenderer>();
-            if (lr == null) lr = panel[i].AddComponent<LineRenderer>();
+            // SetActive(false) 전에 먼저 활성화해서 AddComponent 가능하게
+            panel[i].SetActive(true);
 
-            lr.positionCount = panel.Length;
-            lr.useWorldSpace = true;
-            lr.startWidth = lineWidth;
-            lr.endWidth = lineWidth;
-            lr.material = new Material(Shader.Find("Sprites/Default"));
-            lr.startColor = lineColor;
-            lr.endColor = lineColor;
+            lineRenderers[i] = panel[i].GetComponent<LineRenderer>();
+            if (lineRenderers[i] == null)
+                lineRenderers[i] = panel[i].AddComponent<LineRenderer>();
 
-            lineRenderer[i] = lr;
+            lineRenderers[i].positionCount = 2;
+            lineRenderers[i].startWidth = lineWidth;
+            lineRenderers[i].endWidth = lineWidth;
+            lineRenderers[i].material = new Material(Shader.Find("Sprites/Default"));
+            lineRenderers[i].startColor = lineColor;
+            lineRenderers[i].endColor = lineColor;
+            lineRenderers[i].enabled = false;
+
+            // LineRenderer 추가 완료 후 비활성화
+            panel[i].SetActive(false);
         }
-        tk1 = this.GetCancellationTokenOnDestroy(); // 추가
-        testbool = new bool[panel.Length];
 
+        // EnemyBase.Start()가 먼저 실행될 때까지 1프레임 대기
+        await UniTask.Yield();
+
+        // EnemyBase에서 playerTransform 참조 (1프레임 후 안전하게 접근)
+        if (enemyBase != null)
+            playerTransform = enemyBase.playerTransform;
+
+       
 
         foreach (GameObject p in panel)
             if (p != null) p.SetActive(false);
@@ -78,27 +98,30 @@ public class Panel : MonoBehaviour
     }
     async UniTask PanelSpawn()
     {
+        currentOffset = 0;
+
         for (int i = 0; i < panel.Length; i++)
         {
             if (bossTransform != null)
                 panel[i].transform.position = bossTransform.position;
 
             panel[i].SetActive(true);
-            await UniTask.Delay(TimeSpan.FromSeconds(0.2f));
+            await UniTask.Delay(TimeSpan.FromSeconds(0.2f), cancellationToken: tk1);
         }
 
+ 
         await PanelMove(currentOffset);
-        await AutoRotateLoop(tk1);
+        await AttackLoop(tk1);
     }
-    async UniTask AutoRotateLoop(CancellationToken token)
-    {
-        while (!token.IsCancellationRequested)
-        {
-            await UniTask.Delay(TimeSpan.FromSeconds(3f), cancellationToken: token);
-            currentOffset = (currentOffset + 1) % panel.Length;
-            await PanelMove(currentOffset);
-        }
-    }
+    //async UniTask AutoRotateLoop(CancellationToken token)
+    //{
+    //    while (!token.IsCancellationRequested)
+    //    {
+    //        await UniTask.Delay(TimeSpan.FromSeconds(3f), cancellationToken: token);
+    //        currentOffset = (currentOffset + 1) % panel.Length;
+    //        await PanelMove(currentOffset);
+    //    }
+    //}
 
     async UniTask PanelMove(int offset)
     {
@@ -120,7 +143,10 @@ public class Panel : MonoBehaviour
                 );
 
                 if (Vector2.Distance(current, target) < 0.01f)
+                {
+                    panel[i].transform.position = target;
                     arrived[i] = true;
+                }
             }
             await UniTask.Yield();
         }
@@ -170,39 +196,96 @@ public class Panel : MonoBehaviour
     //        Vector2 direction = (currentPos - (Vector2)transform.position);
     //    }
     //}
-    void ChangeSet()
+    async UniTask AttackLoop(CancellationToken token)
     {
-        bool[] arrived = new bool[panel.Length];
-        int offset = Random.Range(0, panel.Length);
-        while (!arrived.All(x => x))
+        while (!token.IsCancellationRequested)
         {
-            for (int i = 0; i < panel.Length; i++)
+            if (playerTransform == null && enemyBase != null)
+                playerTransform = enemyBase.playerTransform;
+
+            if (playerTransform != null)
             {
-                if (arrived[i]) continue;
-
-                Vector2 current = panel[i].transform.position;
-                Vector2 target = panelTransform[(i + offset) % panel.Length].position;
-
-                panel[i].transform.position = Vector2.MoveTowards(
-                    current,
-                    target,
-                    panelmoveSpeed * Time.deltaTime
-                );
-
-                if (Vector2.Distance(current, target) < 0.01f)
-                    arrived[i] = true;
+                for (int i = 0; i < panel.Length; i++)
+                {
+                    if (lineRenderers[i] != null)
+                        lineRenderers[i].enabled = true;
+                }
+                float aimDuration = 1.0f;
+                float elapsed = 0f;
+                while (elapsed < aimDuration)
+                {
+                    for (int i = 0; i < panel.Length; i++)
+                    {
+                        if (lineRenderers[i] != null && lineRenderers[i].enabled)
+                        {
+                            lineRenderers[i].SetPosition(0, panel[i].transform.position);
+                            lineRenderers[i].SetPosition(1, playerTransform.position);
+                        }
+                    }
+                    elapsed += Time.deltaTime;
+                    await UniTask.Yield(token);
+                }
+                for (int i = 0; i < panel.Length; i++)
+                {
+                    if (lineRenderers[i] != null)
+                        lineRenderers[i].enabled = false;
+                }
+                Vector3 targetPos = playerTransform.position;
+                for (int i = 0; i < panel.Length; i++)
+                {
+                    FireProjectile(panel[i].transform.position, targetPos);
+                }
             }
-            
+            currentOffset = (currentOffset + 1) % panel.Length;
+            await PanelMove(currentOffset);
         }
-        LazerShoot();
-        
     }
-    async UniTask LazerShoot()
+    void FireProjectile(Vector3 from, Vector3 to)
     {
-        while(NextPatten)
-        {
+        if (projectilePrefab == null) return;
 
-        }
+        GameObject proj = Instantiate(projectilePrefab, from, Quaternion.identity);
+
+        // 생성 시점의 플레이어 위치만 넘기고 이후 직진
+        PanelProjectile projectile = proj.GetComponent<PanelProjectile>();
+        if (projectile != null)
+            projectile.Init((Vector2)to, projectileSpeed);
+
+        Destroy(proj, 5f);
     }
+    //void ChangeSet()
+    //{
+    //    bool[] arrived = new bool[panel.Length];
+    //    int offset = Random.Range(0, panel.Length);
+    //    while (!arrived.All(x => x))
+    //    {
+    //        for (int i = 0; i < panel.Length; i++)
+    //        {
+    //            if (arrived[i]) continue;
+
+    //            Vector2 current = panel[i].transform.position;
+    //            Vector2 target = panelTransform[(i + offset) % panel.Length].position;
+
+    //            panel[i].transform.position = Vector2.MoveTowards(
+    //                current,
+    //                target,
+    //                panelmoveSpeed * Time.deltaTime
+    //            );
+
+    //            if (Vector2.Distance(current, target) < 0.01f)
+    //                arrived[i] = true;
+    //        }
+
+    //    }
+    //    LazerShoot();
+
+    //}
+    //async UniTask LazerShoot()
+    //{
+    //    while(NextPatten)
+    //    {
+
+    //    }
+    //}
 }
 
