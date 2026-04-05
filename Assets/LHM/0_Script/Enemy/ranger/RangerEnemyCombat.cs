@@ -17,7 +17,9 @@ public class RangerEnemyCombat : EnemyCombat
         await UniTask.WaitForSeconds(attackDelay);
 
         ExecuteAttackBox(attackPos);
-        Debug.DrawRay(attackTransform.position, attackTransform.right * distanceAfterWait, Color.magenta, 0.5f);
+        
+        //Debug.DrawRay(attackTransform.position, attackTransform.right * distanceAfterWait, Color.magenta, 0.5f);
+        Debug.DrawRay(attackTransform.position, RotateAttackPivot() * distanceAfterWait, Color.magenta, 0.5f);
     }
 
 }

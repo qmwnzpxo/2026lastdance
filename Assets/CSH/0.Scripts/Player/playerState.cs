@@ -1,27 +1,38 @@
-﻿using UnityEngine;
+﻿using Cysharp.Threading.Tasks;
+using System.Threading;
+using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 public class PlayerState : MonoBehaviour
 {
-    float currenthp=3f;
+    [RuntimeOnly, SerializeField] public float currentHp = 3f;
     //[field: SerializeField] public float HP { get { return currenthp; } private set; }
-    public float maxhp=3;
-    public float damage = 0.5f;
+    [RuntimeOnly, SerializeField] public float maxHp=3;
+    [RuntimeOnly, SerializeField] public float damage = 0.5f;
     PlayerMove playerMove;
+
+    CancellationTokenSource hitCts;
+    [EditorOnly, SerializeField] public Light2D hitlight;
 
     void Awake()
     {
         if (playerMove == null)
             playerMove = GetComponent<PlayerMove>();
 
+        currentHp = maxHp;
+        hitlight.enabled = false;
     }
 
     public void TakeDamage(float damage)
     {
-        currenthp -= damage;
-        if (currenthp <= 0)
+        currentHp -= damage;
+        hitCts?.Cancel();
+        hitCts = new CancellationTokenSource();
+        if (currentHp <= 0)
         {
             Die();
         }
+        Hitglow(hitCts.Token).Forget();
     }
 
     void Die()
@@ -29,7 +40,22 @@ public class PlayerState : MonoBehaviour
         Debug.Log("Player has died.");
         {
             //playerMove.CancelAllTask();
-
+            currentHp = maxHp;
         }
+    }
+    public async UniTaskVoid Hitglow(CancellationToken tk)
+    {
+        hitlight.enabled = true;
+        var result = await UniTask.WaitForSeconds(0.3f, cancellationToken: tk)
+            .SuppressCancellationThrow();
+        if (!result)
+        {
+            hitlight.enabled = false;
+        }
+    }
+    void OnDestroy() // 추가
+    {
+        hitCts?.Cancel();
+        hitCts?.Dispose();
     }
 }

@@ -21,20 +21,18 @@ public class PlayerMove : MonoBehaviour
 
     [Header("벽타기")]
     [SerializeField] private Transform wallCheck;
-    [SerializeField] private float wallCheckDistance = 0.3f;
-    [SerializeField] private float wallSlideSpeed = 1.5f;
-    [SerializeField] private float wallSlideSpeedUp = 0f;
-    [SerializeField] private float wallSlideSpeedDown = 5f;
-    [SerializeField] private float wallJumpForceX = 8f;
-    [SerializeField] private float wallJumpForceY = 12f; 
+    [EditorOnly, SerializeField] private float wallCheckDistance = 0.3f;
+    [EditorOnly,SerializeField] private float wallSlideSpeed = 1.5f;
+    [EditorOnly,SerializeField] private float wallSlideSpeedUp = 0f;
+    [EditorOnly,SerializeField] private float wallSlideSpeedDown = 5f;
+    [EditorOnly,SerializeField] private float wallJumpForceX = 8f;
+    [EditorOnly, SerializeField] private float wallJumpForceY = 12f; 
     
 
     [Header("천장 붙기")]
-    [SerializeField] private float defaultGravityScale = 1.2f;
-    [SerializeField] private float ceilingGravityScale = -1.2f;
-    [SerializeField] private float ceilingTimer;
-    [SerializeField] private float ceilingTimeMultiplier;
-    [SerializeField]private Transform spriteTransform;
+    [EditorOnly, SerializeField] private float defaultGravityScale = 1.2f;
+    [EditorOnly, SerializeField] private float ceilingGravityScale = -1.2f;
+    [EditorOnly, SerializeField]private Transform spriteTransform;
     private Vector3 spriteScale = new Vector3(1, 1, 1);
     private Vector3 ceilingSpriteScale = new Vector3(1, -1, 1);
 
@@ -63,11 +61,12 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private Transform attackTransform;
     [SerializeField] private Vector2 attackBoxSize = new Vector2(1f, 1f);
     [SerializeField] private float attackBoxDistance = 1f;
-    [SerializeField] private float attackSecondHitDelay = 0.15f;
-    [SerializeField] private LayerMask enemyLayer;
+    [EditorOnly, SerializeField] private float attackSecondHitDelay = 0.15f;
+    [EditorOnly, SerializeField] private LayerMask enemyLayer;
 
     private Rigidbody2D rb;
     private float moveInput;
+    private float verticalInput;
 
     [Header("불값 모음")]
     [SerializeField] private bool isGrounded;
@@ -103,6 +102,7 @@ public class PlayerMove : MonoBehaviour
     void Update()
     {
         moveInput = Input.GetAxis("Horizontal");
+        verticalInput = Input.GetAxisRaw("Vertical");
         //moveInput *= isGrounded || isOnCeiling ? 1f : 0.5f; // 공중에서 이동 속도 감소
 
         CheckGround();
@@ -123,22 +123,20 @@ public class PlayerMove : MonoBehaviour
     // 물리 연산용 fixedUpdate
     void FixedUpdate()
     {
+        if (isDashing) return;
         if (!isWallJumping)
         {
-            if (!isDashing)
-            {
-                float xMove = ((isTouchingLWall || isTouchingRWall) && !isGrounded && !isOnCeiling) ? 0f : moveInput * moveSpeed;
-                rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
-            }
+            float xMove = ((isTouchingLWall || isTouchingRWall)
+                && !isGrounded && !isOnCeiling) ? 0f : moveInput * moveSpeed;
+            rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
         }
 
-        if (isWallSliding)
+        if (isWallSliding&&!isDashing)
         {
             float wallDir = moveInput != 0 ? moveInput : transform.localScale.x;
             if (moveInput != 0 || moveInput != wallDir)
                 isWallSliding = false;
 
-            float verticalInput = Input.GetAxisRaw("Vertical");
             float targetSlideSpeed;
 
             if (verticalInput > 0)
@@ -257,14 +255,15 @@ public class PlayerMove : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(1))
         {
+            float blankdis = wallCheckDistance + 0.05f;
             if (isGrounded)
                 rb.position += new Vector2(0f, 0.05f);
             if (isOnCeiling)
-                rb.position += new Vector2(0f, -0.05f);
+                rb.position += new Vector2(0f,-0.05f);
             if (isTouchingLWall)
-                rb.position += new Vector2(-0.05f, 0f);
+                rb.position += new Vector2( blankdis, 0f);
             if (isTouchingRWall)
-                rb.position += new Vector2(0.05f, 0f);
+                rb.position += new Vector2(-blankdis, 0f);
 
             isWallJumping = false;
             isWallSliding = false;
@@ -474,6 +473,7 @@ public class PlayerMove : MonoBehaviour
         {
             Gizmos.color = Color.red;
             Gizmos.DrawRay(wallCheck.position, Vector2.right * wallCheckDistance);
+            Gizmos.color = Color.blue;
             Gizmos.DrawRay(wallCheck.position, Vector2.left * wallCheckDistance);
         }
         if(wallCheckDistance > 0) {

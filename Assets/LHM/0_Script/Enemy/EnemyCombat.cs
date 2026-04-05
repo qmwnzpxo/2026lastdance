@@ -30,7 +30,7 @@ public class EnemyCombat : MonoBehaviour
 
     public virtual void Attack()
     {
-        if(enemyBase.isAttacking)
+        if(enemyBase.isAttacking||enemyBase.isDead)
         {
             return;
         }
@@ -103,7 +103,7 @@ public class EnemyCombat : MonoBehaviour
 
     protected virtual async UniTask PerformAttack()
     {
-        RotateAttackPivot();
+
         float signedDistX = enemyBase.playerTransform.position.x - transform.position.x;
         Vector2 attackPos = (Vector2)attackTransform.position
             + (Vector2)attackTransform.right * rangeCheck(signedDistX);
@@ -113,7 +113,7 @@ public class EnemyCombat : MonoBehaviour
             cancellationToken: this.GetCancellationTokenOnDestroy());
 
         ExecuteAttackBox(attackPos);
-        Debug.DrawRay(debugStart, attackTransform.right * signedDistX, Color.magenta, 0.5f);
+        Debug.DrawRay(debugStart, RotateAttackPivot() * signedDistX, Color.magenta, 0.5f);
     }
 
     protected virtual float rangeCheck(float value)
@@ -125,7 +125,6 @@ public class EnemyCombat : MonoBehaviour
 
     protected virtual void ExecuteAttackBox(Vector2 attackPos)
     {
-
         Collider2D[] hits = Physics2D.OverlapBoxAll(
             attackPos, attackBoxSize, 0, playerLayer);
 
@@ -134,13 +133,25 @@ public class EnemyCombat : MonoBehaviour
             Debug.Log($"공격 적중: {hit.name}");
             hit.GetComponent<PlayerState>()?.TakeDamage(enemyBase.attackDamage);
         }
-
+        
     }
-    protected virtual void RotateAttackPivot()
+    protected virtual Vector3 RotateAttackPivot()
     {
-        Vector2 dir = (enemyBase.playerTransform.position-attackTransform.position).normalized;
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        attackTransform.rotation = Quaternion.Euler(0f, 0f, angle);
+
+        Vector3 direction;
+        if (attackTransform != null) {
+            Vector2 dir = (enemyBase.playerTransform.position - attackTransform.position).normalized;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            attackTransform.rotation = Quaternion.Euler(0f, 0f, angle);
+            direction = new Vector3(0, 0, angle);
+        }
+        else
+        {
+            Vector2 dir = (enemyBase.playerTransform.position - transform.position).normalized;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            direction = new Vector3(0, 0, angle);
+        }
+        return direction;
     }
 
 
@@ -170,6 +181,7 @@ public class EnemyCombat : MonoBehaviour
     public virtual void OnDestroy()
     {
         StopAllCoroutines();
-
+        attack_start_cts?.Cancel();
+        attack_start_cts?.Dispose();
     }
 }

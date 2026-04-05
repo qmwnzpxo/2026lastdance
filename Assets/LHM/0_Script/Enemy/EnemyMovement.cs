@@ -43,6 +43,7 @@ public class EnemyMovement : MonoBehaviour
         currentMove_tk?.Cancel();
         currentMove_tk?.Dispose();
         currentMove_tk = new CancellationTokenSource();
+        if(enemyBase.isDead) return;
         moveTask(currentMove_tk.Token).Forget();
     }
 

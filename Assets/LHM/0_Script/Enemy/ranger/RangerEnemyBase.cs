@@ -8,6 +8,8 @@ public class RangerEnemyBase : EnemyBase
         base.Start();
         //detectionRange = 5f;
         attackRange = 4f;
+        dashDuration = 0;
+        dashRange = 0;
     }
 
     // Update is called once per frame

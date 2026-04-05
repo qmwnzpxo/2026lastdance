@@ -1,132 +1,115 @@
 ﻿using Cysharp.Threading.Tasks;
 using System.Threading;
+using Unity.Cinemachine;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
-//using UnityEngine.U2D;
 
 public class CameraFollow : MonoBehaviour
 {
-    [SerializeField] private Transform target;
-    private PlayerMove player;
-    [SerializeField] private float smoothSpeed = 5f;
-    [SerializeField] private Vector3 offset = new Vector3(0f, 2f, -10f);
-    private CancellationTokenSource start_cts;
+    [Header("메인 카메라")]
+    [SerializeField] private Camera mainCamera;
+    private CinemachineBrain cmBrain;
+    float defaultBlendTime;
 
-    [SerializeField] private Camera camera1;
-    [SerializeField] private Camera camera2;
-    [SerializeField] PixelPerfectCamera pixelPerfectCamera1;
-    [SerializeField] PixelPerfectCamera pixelPerfectCamera2;
+    [Header("버추얼 카메라")]
+    [SerializeField] private CinemachineCamera cmZoom;
+    [SerializeField] private CinemachineCamera cmGamePlay;
 
+    [Header("줌 설정")]
+    [SerializeField] private float duration = 3f;
+    [SerializeField] private float fromOrtho = 1.5f;
+    [SerializeField] private float toOrtho = 8.4375f;
+
+    public Transform target;
+    bool isZooming = false;
+    CinemachineFollow cinemachineFollow;
+
+    private CancellationTokenSource zoom_cts;
 
     private void Awake()
     {
         if (target == null)
+            target = FindFirstObjectByType<PlayerMove>().transform;
+
+        cmZoom.Follow = target;
+        cmGamePlay.Follow = target;
+
+        cmBrain = mainCamera.GetComponent<CinemachineBrain>();
+        defaultBlendTime = cmBrain.DefaultBlend.Time;
+        try
         {
-            target = GameObject.FindGameObjectWithTag("Player").transform;
-            player = target.GetComponent<PlayerMove>();
+            cinemachineFollow = cmZoom.GetComponent<CinemachineFollow>();
         }
-        else 
-        { 
-            player = target.GetComponent<PlayerMove>();
+        catch (System.Exception e)
+        {
+            Debug.LogError("CinemachineFollow 컴포넌트를 찾을 수 없습니다: " + e.Message);
         }
 
     }
 
     private void Start()
-    {        
-        doscale();
+    {
+        cmZoom.gameObject.SetActive(true);
+        cmGamePlay.gameObject.SetActive(true);
+        ZoomCamera(fromOrtho, toOrtho, duration);
     }
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.R))
-        doscale(); 
+        if (Input.GetKeyDown(KeyCode.R)&&!isZooming)
+            ZoomCamera(fromOrtho, toOrtho, duration);
     }
 
-    public async UniTaskVoid CameraSizeRescale(CancellationToken _ct)
+    public void Zoom(float targetOrtho, float zoomDuration)
     {
-        float timer = 0;
-        float duration = 3f;
+        if(isZooming) return; // 이미 줌 중이면 무시
+        ZoomCamera(cmZoom.Lens.OrthographicSize, targetOrtho, zoomDuration);
+    }
 
-        //pixelPerfectCamera1.assetsPPU = 64;
-        //pixelPerfectCamera1.cropFrame = PixelPerfectCamera.CropFrame.Letterbox;
+    private void ZoomCamera(float from, float to, float zoomDuration)
+    {
+        // 기존 줌 취소 후 새 줌 시작 → 동시 실행 없음
+        zoom_cts?.Cancel();
+        zoom_cts?.Dispose();
+        zoom_cts = new CancellationTokenSource();
+        ZoomAsync(from, to, zoomDuration, zoom_cts.Token).Forget();
+    }
 
-        float fromOrtho = 192f / 2f / 64f;  // 1.5
-        float toOrtho = 1080f / 2f / 64f; // 8.4375
-        camera2.orthographicSize = fromOrtho;
+    private async UniTaskVoid ZoomAsync(float from, float to, float zoomDuration, CancellationToken ct)
+    {
+        isZooming = true;
+        float timer = 0f;
+        cmZoom.gameObject.SetActive(true);
 
-        #region appu 변경 방식
-        /*
-        while (!_ct.IsCancellationRequested)
+        var lens = cmZoom.Lens;
+        lens.OrthographicSize = from;
+        cmZoom.Lens = lens;
+        cmBrain.DefaultBlend.Time = 0f;
+
+        while (!ct.IsCancellationRequested)
         {
-            await UniTask.WaitForFixedUpdate(cancellationToken: _ct).SuppressCancellationThrow();
-
-            if (_ct.IsCancellationRequested) break;
+            await UniTask.WaitForFixedUpdate(cancellationToken: ct).SuppressCancellationThrow();
+            if (ct.IsCancellationRequested) break;
 
             timer += Time.fixedDeltaTime;
-            float t = Mathf.Clamp01(timer / duration);
-            float smoothT = Mathf.SmoothStep(0f, 1f, t); // ease-in-out
-
-            // refResolution: 짝수 스냅
-            pixelPerfectCamera1.refResolutionX = SnapToEven(Mathf.RoundToInt(Mathf.Lerp(1024f, 1920f, Mathf.Min(smoothT + 0.1f, 1f))));
-            pixelPerfectCamera1.refResolutionY = SnapToEven(Mathf.RoundToInt(Mathf.Lerp(192f, 1080f, smoothT)));
-            offset.y = Mathf.Min(t * 2f, 2);
-
-            // PPU: float 보간 후 마지막에만 정수 적용
-            float ppu = Mathf.Lerp(fromPPU, toPPU, smoothT);
-            pixelPerfectCamera1.assetsPPU = Mathf.RoundToInt(ppu);
-
-            if (t >= 1f) break;
-        }*/
-        #endregion
-
-        while (!_ct.IsCancellationRequested)
-        {
-            await UniTask.WaitForFixedUpdate(cancellationToken: _ct).SuppressCancellationThrow();
-            if (_ct.IsCancellationRequested) break;
-
-            timer += Time.fixedDeltaTime;
-            float t = Mathf.Clamp01(timer / duration);
+            float t = Mathf.Clamp01(timer / zoomDuration);
             float smoothT = Mathf.SmoothStep(0f, 1f, t);
 
-            // orthographicSize 보간 → 부드러운 줌아웃
-            camera2.orthographicSize = Mathf.Lerp(fromOrtho, toOrtho, smoothT);
-            offset.y = Mathf.Min(t * 2f, 2f);
+            lens = cmZoom.Lens;
+            lens.OrthographicSize = Mathf.Lerp(from, to, smoothT);
+            cmZoom.Lens = lens;
+            cinemachineFollow.FollowOffset.y = Mathf.Lerp(0f, 1f, smoothT);
 
             if (t >= 1f) break;
         }
-        camera1.enabled=(true);
-        camera2.enabled=(false);
 
-        pixelPerfectCamera1.enabled = true;
-        pixelPerfectCamera1.refResolutionX = 1920;
-        pixelPerfectCamera1.refResolutionY = 1080;
-        pixelPerfectCamera1.assetsPPU = 64;
-        pixelPerfectCamera1.cropFrame = PixelPerfectCamera.CropFrame.None;
-        offset.y = 2f;
+        cmBrain.DefaultBlend.Time = defaultBlendTime;
+        cmZoom.gameObject.SetActive(false);
+        isZooming = false;
     }
 
-    private void doscale()
-    {
-        start_cts?.Cancel();
-        start_cts?.Dispose();
-        start_cts = new CancellationTokenSource();
-
-        camera1.enabled = (false);
-        camera2.enabled = (true);
-        pixelPerfectCamera2.enabled = false;
-
-        CameraSizeRescale(start_cts.Token).Forget();
-    }
-
-    void LateUpdate()
-    {
-        Vector3 targetPos = target.position + offset;
-        transform.position = Vector3.Lerp(transform.position, targetPos, smoothSpeed * Time.deltaTime);
-    }
     private void OnDestroy()
     {
-        start_cts?.Cancel();
-        start_cts?.Dispose();
+        zoom_cts?.Cancel();
+        zoom_cts?.Dispose();
     }
 }
