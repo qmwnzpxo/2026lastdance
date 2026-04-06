@@ -52,10 +52,7 @@ public class PlayerMove : MonoBehaviour
     private float dashGaugePerAttack = 0.1f;
     private bool dashHitEnemy = false;
     private CancellationTokenSource dashCooldownCts;
-
-    Camera mainCamera;
-    Camera subCamera;
-
+    private LineRenderer line;
 
     [Header("공격")]
     [SerializeField] private Transform attackTransform;
@@ -96,6 +93,7 @@ public class PlayerMove : MonoBehaviour
         {
             enemyLayer= LayerMask.GetMask("enemy");
         }
+        line=GetComponent<LineRenderer>();
     }
 
     // 함수 연산 및 입력 처리용 update
@@ -277,6 +275,8 @@ public class PlayerMove : MonoBehaviour
             isDashing = true;
             dashCounter = dashDuration;
 
+            line.SetPosition(0,transform.position);
+            line.SetPosition(1,transform.position);
             rb.gravityScale = 0f;
             rb.linearVelocity = dashDirection * dashSpeed;
 
@@ -301,22 +301,24 @@ public class PlayerMove : MonoBehaviour
         {
             dashCounter -= Time.deltaTime;
 
-            Collider2D[] enemyHits = Physics2D.OverlapBoxAll(transform.position,
+            object[] Hits = Physics2D.OverlapBoxAll(transform.position,
                 attackBoxSize+(Vector2.one*0.1f), 0f, enemyLayer);
-            foreach (Collider2D enemy in enemyHits)
+            foreach (Collider2D hit in Hits)
             {
-                if (!hitEnemiesInDash.Contains(enemy))
+                if (!hitEnemiesInDash.Contains(hit))
                 {
-                    hitEnemiesInDash.Add(enemy);
-                    enemy.GetComponent<BossBase>()?.TakeDamage(playerState.damage * 5);
-                    enemy.GetComponent<ObjectHp>()?.OnDamage(playerState.damage*5);
-                    enemy.GetComponent<EnemyBase>()?.OnDamage(playerState.damage*5);
-                    Debug.Log($"대쉬 공격 적중: {enemy.name}");
+
+                    hitEnemiesInDash.Add(hit);
+                    hit.GetComponent<BossBase>()?.TakeDamage(playerState.damage * 5);
+                    hit.GetComponent<ObjectHp>()?.OnDamage(playerState.damage * 5);
+                    hit.GetComponent<EnemyBase>()?.OnDamage(playerState.damage * 5);
+                    Debug.Log($"대쉬 공격 적중: {hit.name}");
 
                     if (!dashHitEnemy)
                     {
                         dashHitEnemy = true;
                         dashGauge = Mathf.Min(dashGauge + 1f, maxDashGauge);
+                        HitstopManager.Instance.TriggerHitstop(duration: 0.02f);
                     }
                 }
             }
@@ -337,6 +339,7 @@ public class PlayerMove : MonoBehaviour
     {
         isDashing = false;
         rb.gravityScale = isOnCeiling ? ceilingGravityScale : defaultGravityScale;
+        line.SetPosition(1,transform.position);
 
         if (!isOnCeiling)
             rb.linearVelocity = Vector2.up * 0.05f;
@@ -351,6 +354,7 @@ public class PlayerMove : MonoBehaviour
             pendingDashes = 0;
         }
     }
+
     void TriggerDash(bool enhanced)
     {
         if (isGrounded)
@@ -452,10 +456,11 @@ public class PlayerMove : MonoBehaviour
         foreach (Collider2D hit in hits)
         {
             Debug.Log($"공격 적중: {hit.name}");
-            hit.GetComponent<BossBase>()?.TakeDamage(playerState.damage * 5);
+            hit.GetComponent<BossBase>()?.TakeDamage(playerState.damage);
             hit.GetComponent<ObjectHp>()?.OnDamage(playerState.damage);
             hit.GetComponent<EnemyBase>()?.OnDamage(playerState.damage);
             dashGauge = Mathf.Min(dashGauge + dashGaugePerAttack, maxDashGauge);
+            HitstopManager.Instance.TriggerHitstop();
         }
 
         Debug.DrawRay(attackTransform.position, attackTransform.right * attackBoxDistance, Color.magenta, 0.15f);

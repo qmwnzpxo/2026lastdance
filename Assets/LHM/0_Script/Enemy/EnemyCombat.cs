@@ -5,6 +5,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.Playables;
 
+
 public class EnemyCombat : MonoBehaviour
 {
     protected EnemyBase enemyBase;
@@ -26,6 +27,8 @@ public class EnemyCombat : MonoBehaviour
         {
             playerLayer = LayerMask.GetMask("player");
         }
+
+        attack_start_cts = new CancellationTokenSource();
     }
 
     public virtual void Attack()
@@ -36,7 +39,7 @@ public class EnemyCombat : MonoBehaviour
         }
 
         //StartCoroutine(AttackCooldown());
-        AttackCooldown().Forget();
+        AttackCooldown(attack_start_cts.Token).Forget();
 
     }
 
@@ -76,21 +79,29 @@ public class EnemyCombat : MonoBehaviour
 
     #region 유니태스크
 
-    protected virtual async UniTaskVoid AttackCooldown()
+    protected virtual async UniTaskVoid AttackCooldown(CancellationToken ct)
     {
         enemyBase.isAttacking = true;
 
-        float distance = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
-        if (distance <= Mathf.Abs(enemyBase.attackRange))
+            float distance = Vector2.Distance(transform.position, enemyBase.playerTransform.position);
+        while (enemyBase.isAttacking)
         {
-            Debug.Log(distance);
-            await PerformAttack();
+            if (distance <= Mathf.Abs(enemyBase.attackRange))
+            {
+                Debug.Log(distance);
+                await PerformAttack();
+            }
+
+            await UniTask.WaitForSeconds(enemyBase.attackCooldown,
+                cancellationToken: this.GetCancellationTokenOnDestroy());
+            if(distance > Mathf.Abs(enemyBase.attackRange))
+            {
+                enemyBase.isAttacking = false;
+                break;
+            }
+            await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken).
+                SuppressCancellationThrow();
         }
-
-        await UniTask.WaitForSeconds(enemyBase.attackCooldown,
-            cancellationToken: this.GetCancellationTokenOnDestroy());
-
-        enemyBase.isAttacking = false;
     }
 
     protected virtual async UniTaskVoid DestroyAfterDeath()
@@ -113,7 +124,7 @@ public class EnemyCombat : MonoBehaviour
             cancellationToken: this.GetCancellationTokenOnDestroy());
 
         ExecuteAttackBox(attackPos);
-        Debug.DrawRay(debugStart, RotateAttackPivot() * signedDistX, Color.magenta, 0.5f);
+        Debug.DrawRay(debugStart, attackTransform.right * signedDistX, Color.magenta, 0.5f);
     }
 
     protected virtual float rangeCheck(float value)
@@ -181,7 +192,7 @@ public class EnemyCombat : MonoBehaviour
     public virtual void OnDestroy()
     {
         StopAllCoroutines();
-        attack_start_cts?.Cancel();
-        attack_start_cts?.Dispose();
+        //attack_start_cts?.Cancel();
+        //attack_start_cts?.Dispose();
     }
 }

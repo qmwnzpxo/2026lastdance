@@ -15,6 +15,16 @@ public class RangerEnemyBase : EnemyBase
     // Update is called once per frame
     protected override void Update()
     {
-        base.Update();
+        if (isDead == true)
+        {
+            return;
+        }
+        
+        if (!isAttacking)
+        {
+            enemyMovement.DetectPlayer();
+            enemyMovement.FlipSprite();
+        }
+        
     }
 }

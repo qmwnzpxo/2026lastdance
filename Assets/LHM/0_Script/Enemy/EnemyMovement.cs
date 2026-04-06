@@ -76,6 +76,12 @@ public class EnemyMovement : MonoBehaviour
     {
         while (!ct.IsCancellationRequested)
         {
+            if (enemyBase.isDead)
+            {
+                currentMove_tk?.Cancel();
+                currentMove_tk?.Dispose();
+                break;
+            }
             if (enemyBase.isAttacking)
             {
                 enemyBase.rigid2d.linearVelocity = new Vector2(0f, enemyBase.rigid2d.linearVelocity.y);

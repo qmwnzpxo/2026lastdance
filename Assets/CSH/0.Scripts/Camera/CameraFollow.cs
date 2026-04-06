@@ -21,6 +21,7 @@ public class CameraFollow : MonoBehaviour
 
     public Transform target;
     bool isZooming = false;
+    bool isfirstZooming = false;
     CinemachineFollow cinemachineFollow;
 
     private CancellationTokenSource zoom_cts;
@@ -46,13 +47,29 @@ public class CameraFollow : MonoBehaviour
 
     }
 
-    private void Start()
+    private void LateUpdate()
     {
-        cmZoom.gameObject.SetActive(true);
-        cmGamePlay.gameObject.SetActive(true);
-        ZoomCamera(fromOrtho, toOrtho, duration);
+        if (isfirstZooming == false)
+        {isfirstZooming = true;
+            startWhenZoom().Forget();
+        }
     }
 
+    private void Start()
+    {
+        cmZoom.gameObject.SetActive(false);
+        cmGamePlay.gameObject.SetActive(true);
+
+    }
+    async UniTask startWhenZoom()
+    {
+        await UniTask.Delay(50);
+        Debug.Log("zoomStart");
+        ZoomCamera(fromOrtho, toOrtho, duration);
+        await UniTask.WaitForSeconds(2f);
+
+        return;
+    }
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.R)&&!isZooming)
@@ -67,6 +84,7 @@ public class CameraFollow : MonoBehaviour
 
     private void ZoomCamera(float from, float to, float zoomDuration)
     {
+        cmBrain.DefaultBlend.Time = 0f;
         // 기존 줌 취소 후 새 줌 시작 → 동시 실행 없음
         zoom_cts?.Cancel();
         zoom_cts?.Dispose();
