@@ -1,10 +1,15 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static UnityEngine.Rendering.DebugUI;
 
 public class LazerPatten : MonoBehaviour
 {
+    ObjectHp objectHp;
+    public static LazerPatten Instance;
+
     [Header("Lazer Node Object")]
     public GameObject[] lazerObject = new GameObject[4];
 
@@ -29,6 +34,8 @@ public class LazerPatten : MonoBehaviour
     public bool destroyTest2 = false;
     public bool destroyTest3 = false;
 
+    public bool[] destroy = new bool[4];
+
     private LineRenderer[] lineRenderers;
     private bool[] prevDestroyTest = new bool[4];
     public bool allDestory = false;
@@ -36,8 +43,13 @@ public class LazerPatten : MonoBehaviour
     
     private void Awake()
     {
-      
-       
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+
+        destroy = new bool[4] { destroyTest0,destroyTest1,destroyTest2,destroyTest3};
+
         foreach (GameObject lazer in lazerObject)
             if (lazer != null) lazer.SetActive(false);
 
@@ -63,9 +75,33 @@ public class LazerPatten : MonoBehaviour
             lineRenderers[i] = lr;
         }
 
-        StartCoroutine(ActivateLazers());
+       
     }
+    public void ResetLazers()
+    {
+        allDestory = false;
 
+        destroyTest0 = false;
+        destroyTest1 = false;
+        destroyTest2 = false;
+        destroyTest3 = false;
+
+        for (int i = 0; i < imDestory.Length; i++)
+            imDestory[i] = false;
+
+        for (int i = 0; i < prevDestroyTest.Length; i++)
+            prevDestroyTest[i] = false;
+
+        for (int i = 0; i < lazerObject.Length; i++)
+            if (lazerObject[i] != null)
+            {
+                lazerObject[i].SetActive(true);
+                lazerObject[i].transform.localScale = new Vector3(firstScle, 1f, firstScle);
+            }
+
+        foreach (GameObject l in lazers)
+            if (l != null) l.SetActive(true);
+    }
     private IEnumerator ActivateLazers()
     {
         yield return new WaitForSecondsRealtime(0.5f);
@@ -104,34 +140,46 @@ public class LazerPatten : MonoBehaviour
 
         UpdateLines();
     }
+    public void OnPanelDestroyed(GameObject destroyedPanel)
+    {
+        int index = System.Array.IndexOf(lazerObject, destroyedPanel);
 
+        if (index < 0)
+        {
+            Debug.LogWarning("lazerObject 배열에 없습니다.");
+            return;
+        }
+
+        destroy[index] = true; 
+        Debug.Log($"파괴된 레이저: {index}번");
+    }
     public void ApplyDestroyTests()
     {
-        bool[] current = { destroyTest0, destroyTest1, destroyTest2, destroyTest3 };
+       
 
         for (int i = 0; i < lazerObject.Length; i++)
         {
             if (lazerObject[i] == null) continue;
 
-            if (current[i] && !prevDestroyTest[i])
+            if (destroy[i] && !prevDestroyTest[i])
             {
                 lazerObject[i].SetActive(false);
 
             }
-            if (!current[i] && prevDestroyTest[i])
+            if (!destroy[i] && prevDestroyTest[i])
             {
                 lazerObject[i].SetActive(true);
 
             }
 
 
-            prevDestroyTest[i] = current[i];
+            prevDestroyTest[i] = destroy[i];
 
             Debug.Log(imDestory[i]);
-            for (int j = 0; j < current.Length; j++)
+            for (int j = 0; j < destroy.Length; j++)
             {
                 {
-                    imDestory[j] = current[j];
+                    imDestory[j] = destroy[j];
                     
                 }
             }
@@ -143,11 +191,7 @@ public class LazerPatten : MonoBehaviour
             }
          
         }
-            
-
-
-
-
+         
         //int lo = 0;
         //foreach(var i in lazerObject)
         //{

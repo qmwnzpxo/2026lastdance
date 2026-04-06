@@ -308,6 +308,8 @@ public class PlayerMove : MonoBehaviour
                 if (!hitEnemiesInDash.Contains(enemy))
                 {
                     hitEnemiesInDash.Add(enemy);
+                    enemy.GetComponent<BossBase>()?.TakeDamage(playerState.damage * 5);
+                    enemy.GetComponent<ObjectHp>()?.OnDamage(playerState.damage*5);
                     enemy.GetComponent<EnemyBase>()?.OnDamage(playerState.damage*5);
                     Debug.Log($"대쉬 공격 적중: {enemy.name}");
 
@@ -450,6 +452,8 @@ public class PlayerMove : MonoBehaviour
         foreach (Collider2D hit in hits)
         {
             Debug.Log($"공격 적중: {hit.name}");
+            hit.GetComponent<BossBase>()?.TakeDamage(playerState.damage * 5);
+            hit.GetComponent<ObjectHp>()?.OnDamage(playerState.damage);
             hit.GetComponent<EnemyBase>()?.OnDamage(playerState.damage);
             dashGauge = Mathf.Min(dashGauge + dashGaugePerAttack, maxDashGauge);
         }
