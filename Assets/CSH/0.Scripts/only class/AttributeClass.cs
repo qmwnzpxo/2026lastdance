@@ -1,11 +1,16 @@
-﻿using UnityEditor;
-using UnityEngine;
+﻿using UnityEngine;
+
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif 
 
 public class EditorOnlyAttribute : PropertyAttribute { }
 
 public class RuntimeOnlyAttribute : PropertyAttribute { }
 
 
+#if UNITY_EDITOR
 [CustomEditor(typeof(MonoBehaviour) ,true)]
 public class PlayerEditor : Editor
 {
@@ -45,3 +50,5 @@ public class PlayerEditor : Editor
         serializedObject.ApplyModifiedProperties();
     }
 }
+
+#endif

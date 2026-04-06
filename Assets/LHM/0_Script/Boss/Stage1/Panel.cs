@@ -1,14 +1,8 @@
 ﻿using Cysharp.Threading.Tasks;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Unity.VisualScripting;
-using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
-using static UnityEditor.Experimental.GraphView.GraphView;
-using static UnityEngine.GraphicsBuffer;
 using Random = UnityEngine.Random;
 
 public class Panel : MonoBehaviour
