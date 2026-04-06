@@ -16,6 +16,8 @@ public class BossBase : MonoBehaviour
     private CancellationTokenSource _lifeCts;
     private CancellationTokenSource _patternCts;
 
+    bool _bossSpawn = false;
+
     public bool IsShieldActive { get; private set; } = true;
     public bool IsDead { get; private set; } = false;
 
@@ -29,9 +31,24 @@ public class BossBase : MonoBehaviour
         _lifeCts = new CancellationTokenSource();
     }
 
-    private void Start()
+    //private void Start()
+    //{
+    //    BossLoop(_lifeCts.Token).Forget();
+
+    //    if(Input.GetKeyDown(KeyCode.Y))
+    //    {
+
+    //    }
+    //}
+
+    private void Update()
     {
-        BossLoop(_lifeCts.Token).Forget();
+        if (Input.GetKeyDown(KeyCode.Y)&&!_bossSpawn)
+        {
+            _bossSpawn=true;
+
+            BossLoop(_lifeCts.Token).Forget();
+        }
     }
 
     private void OnDestroy()
