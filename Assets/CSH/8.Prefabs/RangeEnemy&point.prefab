@@ -100,9 +100,9 @@ GameObject:
   - component: {fileID: 1110648991616383050}
   - component: {fileID: 7980506720332377918}
   - component: {fileID: 2316443850488801230}
-  - component: {fileID: 6884950354323618702}
-  - component: {fileID: 597620555439210986}
-  - component: {fileID: 2905420069685598823}
+  - component: {fileID: 4126257375932623139}
+  - component: {fileID: 1383491044810759787}
+  - component: {fileID: 5893438977847921965}
   m_Layer: 7
   m_Name: enemy
   m_TagString: Untagged
@@ -255,7 +255,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.0000002, y: 1.0000002}
   m_EdgeRadius: 0
---- !u!114 &6884950354323618702
+--- !u!114 &4126257375932623139
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -264,26 +264,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 1866405669274299680}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f5df3e02374c334db822eb17923dc0a, type: 3}
+  m_Script: {fileID: 11500000, guid: 8b3a1ab47e3238e4ea6e386265b3195c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   rigid2d: {fileID: 0}
+  enemyMovement: {fileID: 0}
+  enemyCombat: {fileID: 0}
   playerTransform: {fileID: 0}
-  moveSpeed: 1
-  dashSpeed: 1
-  dashDuration: 0
-  pointA: {fileID: 4222699599502041685}
-  pointB: {fileID: 5372548790575165926}
-  dashRange: 0
+  animator: {fileID: 0}
+  detectionRangeX: 10
+  detectionRangeY: 3
+  dashRange: 3
   maxHp: 10
-  currentHp: 10
-  attackDamage: 1
-  attackRange: 4
-  attackCooldown: 1
+  currentHp: 0
+  staggerDuration: 0.3
   isDead: 0
   isAttacking: 0
+  isStaggered: 0
   isPlayerDetected: 0
---- !u!114 &597620555439210986
+--- !u!114 &1383491044810759787
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -292,29 +291,35 @@ MonoBehaviour:
   m_GameObject: {fileID: 1866405669274299680}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ee6c1a909ee438d4c968e24021da5913, type: 3}
+  m_Script: {fileID: 11500000, guid: bf0ae79888edb184288787da4f8a8144, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  detectionRangeX: 5
-  detectionRangeY: 3
---- !u!114 &2905420069685598823
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1866405669274299680}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dac3d45c25ec657428e851209ad64388, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  attackTransform: {fileID: 9073709250530099717}
+  attackDamage: 1
+  attackRange: 1
+  attackCooldown: 1
+  attackTransform: {fileID: 4533291742678393853}
   attackBoxSize: {x: 0.8, y: 0.8}
   attackDelay: 0.2
   playerLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 0
+--- !u!114 &5893438977847921965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1866405669274299680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6724d1ff04c15c468cb66cb3df018f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 1
+  dashSpeed: 5
+  dashDuration: 0.5
+  pointA: {fileID: 4222699599502041685}
+  pointB: {fileID: 5372548790575165926}
 --- !u!1 &4150442253221261749
 GameObject:
   m_ObjectHideFlags: 0
@@ -659,7 +664,7 @@ Transform:
   m_GameObject: {fileID: 9078185286717551111}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.1203012, y: -2.9850125, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

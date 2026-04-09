@@ -1145,6 +1145,10 @@ PrefabInstance:
       propertyPath: wallCheckDistance
       value: 0.52
       objectReference: {fileID: 0}
+    - target: {fileID: 7345367394324714774, guid: 5822f97eade448a4991884bc1c050148, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 328bc2b91f882cc4694b3092ca62aa23, type: 2}
     - target: {fileID: 8298914050113543966, guid: 5822f97eade448a4991884bc1c050148, type: 3}
       propertyPath: m_LocalPosition.x
       value: -6.91
@@ -2872,7 +2876,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &923425088440424443
 Transform:
   m_ObjectHideFlags: 0

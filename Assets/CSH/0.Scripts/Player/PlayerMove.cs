@@ -312,6 +312,7 @@ public class PlayerMove : MonoBehaviour
                     hit.GetComponent<BossBase>()?.TakeDamage(playerState.damage * 5);
                     hit.GetComponent<ObjectHp>()?.OnDamage(playerState.damage * 5);
                     hit.GetComponent<EnemyBase>()?.OnDamage(playerState.damage * 5);
+                    hit.GetComponent<NewEnemyBase>()?.OnDamage(playerState.damage * 5);
                     Debug.Log($"대쉬 공격 적중: {hit.name}");
 
                     if (!dashHitEnemy)
