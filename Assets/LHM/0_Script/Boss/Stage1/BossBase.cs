@@ -1,4 +1,4 @@
-using UnityEngine;
+Ôªøusing UnityEngine;
 using Cysharp.Threading.Tasks;
 using System.Threading;
 
@@ -31,16 +31,7 @@ public class BossBase : MonoBehaviour
         _lifeCts = new CancellationTokenSource();
     }
 
-    //private void Start()
-    //{
-    //    BossLoop(_lifeCts.Token).Forget();
-
-    //    if(Input.GetKeyDown(KeyCode.Y))
-    //    {
-
-    //    }
-    //}
-
+ 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Y)&&!_bossSpawn)
@@ -59,27 +50,9 @@ public class BossBase : MonoBehaviour
         _patternCts?.Dispose();
     }
 
-    //private async UniTaskVoid BossLoop(CancellationToken lifeToken)
-    //{
-    //    await UniTask.Delay(1000, cancellationToken: lifeToken);
-
-    //    ActivateShield(true);
-
-    //    while (!IsDead && !lifeToken.IsCancellationRequested)
-    //    {
-    //        await RunShieldPhase(lifeToken);
-
-
-    //        if (IsDead) break;
-    //        await RunVulnerablePhase(lifeToken);
-    //    }
-
-    //    await OnDead(lifeToken);
-    //}
-
     public void StartBattle()
     {
-        if (_battleLoopStarted) return; // ¿ÃπÃ Ω√¿€µ∆¿∏∏È π´Ω√
+        if (_battleLoopStarted) return; // Ïù¥ÎØ∏ ÏãúÏûëÎêêÏúºÎ©¥ Î¨¥Ïãú
         _battleLoopStarted = true;
         BossLoopImmediate(_lifeCts.Token).Forget();
     }
@@ -89,7 +62,7 @@ public class BossBase : MonoBehaviour
     {
         await UniTask.Delay((int)(battleStartDelay * 1000), cancellationToken: lifeToken);
 
-        if (_battleLoopStarted) return; // StartBattle¿Ã ∏’¿˙ »£√‚µ∆¿∏∏È ¡ﬂ¥‹
+        if (_battleLoopStarted) return; // StartBattleÏù¥ Î®ºÏ†Ä Ìò∏Ï∂úÎêêÏúºÎ©¥ Ï§ëÎã®
         _battleLoopStarted = true;
 
         await RunBattle(lifeToken);
@@ -146,7 +119,7 @@ public class BossBase : MonoBehaviour
 
     private async UniTask RunVulnerablePhase(CancellationToken lifeToken)
     {
-        // √Îæ‡ ±∏∞£ µøæ» HP √º≈©
+        // Ï∑®ÏïΩ Íµ¨Í∞Ñ ÎèôÏïà HP Ï≤¥ÌÅ¨
         float vulnerableDuration = 8f;
         float elapsed = 0f;
 
@@ -161,7 +134,7 @@ public class BossBase : MonoBehaviour
            
             _currentPatternIndex = (_currentPatternIndex + 1) % 2;
             ActivateShield(true);
-            Debug.Log("πÊæÓ∏∑ ¿Á»∞º∫»≠");
+            Debug.Log("Î∞©Ïñ¥Îßâ Ïû¨ÌôúÏÑ±Ìôî");
         }
     }
 
@@ -170,34 +143,34 @@ public class BossBase : MonoBehaviour
     {
         if (lazerPatten == null) return;
         lazerPatten.gameObject.SetActive(true);
-        lazerPatten.ResetLazers(); // æ∆∑° »Æ¿Â ∏ﬁº≠µÂ ¬¸∞Ì
+        lazerPatten.ResetLazers(); // ÏïÑÎûò ÌôïÏû• Î©îÏÑúÎìú Ï∞∏Í≥†
 
         await UniTask.WaitUntil(
             () => lazerPatten.allDestory,
             cancellationToken: token
         );
 
-        Debug.Log("∑π¿Ã¿˙ ∆ƒ»— øœ∑·");
+        Debug.Log("Î†àÏù¥Ï†Ä ÌååÌõº ÏôÑÎ£å");
     }
 
     private async UniTask RunPanelPattern(CancellationToken token)
     {
         if (panel == null) return;
 
-        // ∆–≈œ ∑Á«¡¥¬ Forget¿∏∑Œ ∂ÁøÏ∞Ì
+        // Ìå®ÌÑ¥ Î£®ÌîÑÎäî ForgetÏúºÎ°ú ÎùÑÏö∞Í≥†
         panel.StartPatternAsync(token).Forget();
 
-        // ∆ƒ»— ¡∂∞«(∆–≥Œ ø¿∫Í¡ß∆Æ ¿¸∫Œ ∆ƒ±´)∏∏ ∫∞µµ∑Œ ¥Î±‚
+        // ÌååÌõº Ï°∞Í±¥(Ìå®ÎÑê Ïò§Î∏åÏ†ùÌä∏ Ï†ÑÎ∂Ä ÌååÍ¥¥)Îßå Î≥ÑÎèÑÎ°ú ÎåÄÍ∏∞
         await UniTask.WaitUntil(
             () => panel.IsPanelCleared,
             cancellationToken: token
         );
 
-        Debug.Log("∆–≥Œ ∆ƒ»— øœ∑·");
+        Debug.Log("Ìå®ÎÑê ÌååÌõº ÏôÑÎ£å");
     }
     public void TakeDamage(float dmg)
     {
-        if (IsShieldActive) return; // π´¿˚
+        if (IsShieldActive) return; // Î¨¥Ï†Å
         if (IsDead) return;
 
         currentHp -= dmg;
@@ -216,12 +189,12 @@ public class BossBase : MonoBehaviour
         if (bossShield != null)
             bossShield.SetShieldActive(active);
 
-        Debug.Log($"πÊæÓ∏∑ {(active ? "ON" : "OFF")}");
+        Debug.Log($"Î∞©Ïñ¥Îßâ {(active ? "ON" : "OFF")}");
     }
 
     private async UniTask OnDead(CancellationToken token)
     {
-        Debug.Log("[Boss] ªÁ∏¡");
+        Debug.Log("[Boss] ÏÇ¨Îßù");
        
         await UniTask.Delay(1000, cancellationToken: CancellationToken.None);
         gameObject.SetActive(false);
