@@ -333,7 +333,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &101601673
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2829,6 +2829,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1383491044810759787, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
+      propertyPath: attackDelay
+      value: 0.2
+      objectReference: {fileID: 0}
     - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
       propertyPath: m_LocalPosition.x
       value: 22.57
@@ -2868,6 +2872,10 @@ PrefabInstance:
     - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5893438977847921965, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
+      propertyPath: dashDuration
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 9078185286717551111, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
       propertyPath: m_Name
@@ -4305,26 +4313,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 4498812053895303306, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.37
-      objectReference: {fileID: 0}
-    - target: {fileID: 7345367394324714774, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
-    - target: {fileID: 7345367394324714774, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: m_Parameters.colorGradient.key0.a
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7345367394324714774, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: m_Parameters.colorGradient.key1.a
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7345367394324714774, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: m_Parameters.colorGradient.m_ColorSpace
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 8298914050113543966, guid: 5822f97eade448a4991884bc1c050148, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5.56
@@ -4364,10 +4352,6 @@ PrefabInstance:
     - target: {fileID: 8298914050113543966, guid: 5822f97eade448a4991884bc1c050148, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9106565716353524355, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.37
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -315,9 +315,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6724d1ff04c15c468cb66cb3df018f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 1
-  dashSpeed: 5
-  dashDuration: 0.5
+  moveSpeed: 2
+  dashSpeed: 3
+  dashDuration: 0.05
   pointA: {fileID: 4222699599502041685}
   pointB: {fileID: 5372548790575165926}
 --- !u!1 &4150442253221261749
@@ -526,7 +526,7 @@ Transform:
   m_GameObject: {fileID: 7636096957640279337}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.52, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

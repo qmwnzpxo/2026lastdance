@@ -58,7 +58,7 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private Transform attackTransform;
     [SerializeField] private Vector2 attackBoxSize = new Vector2(1f, 1f);
     [SerializeField] private float attackBoxDistance = 1f;
-    [EditorOnly, SerializeField] private float attackSecondHitDelay = 0.15f;
+    [EditorOnly, SerializeField] private float attackSecondHitDelay = 0.1f;
     [EditorOnly, SerializeField] private LayerMask enemyLayer;
 
     private Rigidbody2D rb;
@@ -177,7 +177,7 @@ public class PlayerMove : MonoBehaviour
     }
     void HandleWallSlide()
     {
-        isWallSliding = (isTouchingLWall || isTouchingRWall) && !isGrounded && !isOnCeiling && !isDashing && rb.linearVelocity.y < 0;
+        isWallSliding = (isTouchingLWall || isTouchingRWall) && !isGrounded && !isOnCeiling && !isDashing && (rb.linearVelocity.y < 0|| Mathf.Abs(verticalInput) > 0);
     }
 
     void HandleJump()
@@ -302,7 +302,7 @@ public class PlayerMove : MonoBehaviour
             dashCounter -= Time.deltaTime;
 
             object[] Hits = Physics2D.OverlapBoxAll(transform.position,
-                attackBoxSize+(Vector2.one*0.1f), 0f, enemyLayer);
+                attackBoxSize+(Vector2.one*0.1f), 0f, enemyLayer, groundLayer);
             foreach (Collider2D hit in Hits)
             {
                 if (!hitEnemiesInDash.Contains(hit))
@@ -437,6 +437,9 @@ public class PlayerMove : MonoBehaviour
 
         Vector2 attackPos = (Vector2)attackTransform.position
             + (Vector2)attackTransform.right * attackBoxDistance;
+
+        ExecuteAttackBox(attackPos);
+        await UniTask.WaitForSeconds(attackSecondHitDelay);
 
         ExecuteAttackBox(attackPos);
         await UniTask.WaitForSeconds(attackSecondHitDelay);

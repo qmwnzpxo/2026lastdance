@@ -11,10 +11,10 @@ public enum EnemyState
 public class NewEnemyBase : MonoBehaviour
 {
     [Header("컴포넌트")]
-    [ SerializeField] public Rigidbody2D rigid2d;
+    public Rigidbody2D rigid2d;
     [ SerializeField] protected NewEnemyMovement enemyMovement;
     [ SerializeField] protected NewEnemyCombat enemyCombat;
-    [ SerializeField] public Transform playerTransform;
+    public Transform playerTransform;
     [ SerializeField] protected Animator animator;
 
     [Header("탐지")]
@@ -49,7 +49,8 @@ public class NewEnemyBase : MonoBehaviour
     string ANIM_HIT;
     string ANIM_DEAD;
 
-    protected virtual void Start()
+
+    protected virtual void Awake()
     {
         rigid2d = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
@@ -58,7 +59,9 @@ public class NewEnemyBase : MonoBehaviour
         playerTransform = GameObject.FindWithTag("Player").transform;
 
         currentHp = maxHp;
-
+    }
+    protected virtual void Start()
+    {
         loopCts = new CancellationTokenSource();
         RunLoop(loopCts.Token).Forget();
     }
@@ -84,7 +87,6 @@ public class NewEnemyBase : MonoBehaviour
                     case EnemyState.Attack:
                         isAttacking = true;
                         await OnAttackState(actionToken);
-                        isAttacking = false;
                         break;
 
                     case EnemyState.Chase:
@@ -119,7 +121,8 @@ public class NewEnemyBase : MonoBehaviour
                 }*/
                 #endregion
             }
-            catch (OperationCanceledException)
+            //catch (OperationCanceledException)
+            catch(Exception)
             {
                 // 피격 or 루프 종료로 인한 취소 → 정상 흐름
                 enemyMovement.Stop();
@@ -162,6 +165,7 @@ public class NewEnemyBase : MonoBehaviour
         else
             await UniTask.WaitUntilCanceled(ct);
     }
+
     protected virtual EnemyState DecideState()
     {
         if (isPlayerInAttackRange()) return EnemyState.Attack;
@@ -245,6 +249,15 @@ public class NewEnemyBase : MonoBehaviour
         Gizmos.color = Color.blue;
         if(enemyCombat != null)
             Gizmos.DrawWireSphere(transform.position, enemyCombat.attackRange);
+    }
+
+    public void CancelAction()
+    {
+        isAttacking = false;
+        isPlayerDetected = false;
+        actionCts?.Cancel();
+        actionCts?.Dispose();
+        actionCts = new CancellationTokenSource();
     }
 
     protected virtual void OnDestroy()

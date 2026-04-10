@@ -8,7 +8,7 @@ public class PlayerState : MonoBehaviour
     [RuntimeOnly, SerializeField] public float currentHp = 3f;
     //[field: SerializeField] public float HP { get { return currenthp; } private set; }
     [RuntimeOnly, SerializeField] public float maxHp=3;
-    [RuntimeOnly, SerializeField] public float damage = 0.5f;
+    [RuntimeOnly, SerializeField] public float damage = 1f;
     PlayerMove playerMove;
 
     CancellationTokenSource hitCts;

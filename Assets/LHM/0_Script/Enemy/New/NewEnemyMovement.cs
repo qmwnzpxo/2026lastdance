@@ -6,8 +6,8 @@ using UnityEngine;
 public class NewEnemyMovement : MonoBehaviour
 {
     [Header("이동")]
-    public float moveSpeed = 1.0f;
-    public float dashSpeed = 5.0f;
+    public float moveSpeed = 2.0f;
+    public float dashSpeed = 3.0f;
     public float dashDuration = 0.5f;
     public Transform pointA;
     public Transform pointB;
@@ -20,7 +20,7 @@ public class NewEnemyMovement : MonoBehaviour
     protected NewEnemyBase enemyBase;
     protected NewEnemyCombat enemyCombat;
 
-    protected virtual void awake()
+    protected virtual void Awake()
     {
         enemyBase = GetComponent<NewEnemyBase>();
         enemyCombat = GetComponent<NewEnemyCombat>();
@@ -34,10 +34,18 @@ public class NewEnemyMovement : MonoBehaviour
             await UniTask.WaitUntilCanceled(ct); // 대기 후 종료
             return;
         }
+
         bool movingToB = false;
         while (!ct.IsCancellationRequested)
         {
-            if (ct.IsCancellationRequested) return;
+            if (ct.IsCancellationRequested)
+            {
+                return;
+            }
+            if (enemyBase.IsPlayerInRange())
+            {
+                return;
+            }
             Vector2 target= movingToB
                 ? pointB.position
                 : pointA.position;
@@ -87,6 +95,11 @@ public class NewEnemyMovement : MonoBehaviour
             }
             else
             {
+                if (!enemyBase.IsPlayerInRange())
+                {
+                    return;
+                }
+
                 // 일반 추적 이동
                 float dirX = enemyBase.playerTransform.position.x - transform.position.x;
                 enemyBase.rigid2d.linearVelocity = new Vector2(
@@ -121,6 +134,7 @@ public class NewEnemyMovement : MonoBehaviour
 
     public void Stop()
     {
+        enemyBase.CancelAction();
         if (enemyBase.rigid2d != null)
         {
             enemyBase.rigid2d.linearVelocity = new Vector2(0f,enemyBase.isDead?

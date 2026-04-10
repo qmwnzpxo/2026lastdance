@@ -42,6 +42,7 @@ public class NewEnemyCombat : MonoBehaviour
         await UniTask
             .WaitForSeconds(attackCooldown, cancellationToken: ct)
             .SuppressCancellationThrow();
+        enemyBase.isAttacking = false;
     }
 
     protected virtual void ExecuteAttackBox()
