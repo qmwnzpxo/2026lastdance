@@ -39,20 +39,40 @@ public class PlayerMove : MonoBehaviour
     [Header("대쉬")]
     [SerializeField] private float dashGauge = 0f;
     [SerializeField] private float maxDashGauge = 5f;
-    [SerializeField] private List<Collider2D> hitEnemiesInDash = new List<Collider2D>();
-    private float dashSpeed = 8f;           
+    [SerializeField] private float dashRange = 5f;
+    [SerializeField] private float dashDamage = 5f;
+    [SerializeField] private float dashSpeed = 30f;           
+    [RuntimeOnly,SerializeField] private List<Collider2D> hitEnemiesInDash = new List<Collider2D>();
     private float enhancedDashSpeed = 40f;  
     private float dashDuration = 0.1f;
     private float normalDashCooldown = 0.8f;
     private float dashCooldownCounter = 0f;
     private int pendingDashes = 0;          
     private Vector2 dashBoxSize = new Vector2(1f, 0.4f);
+    private Vector2 dashTargetPosition;
+    private float dashRemainingDistance;
+    private bool dashHasGroundTarget;
     private float dashCounter;
     private Vector2 dashDirection;
     private float dashGaugePerAttack = 0.1f;
     private bool dashHitEnemy = false;
     private CancellationTokenSource dashCooldownCts;
     private LineRenderer line;
+
+    [Header("몸통박치기")]
+    [SerializeField] private float tackleRange = 4f;
+    [SerializeField] private float tackleSpeed = 12f;
+    [SerializeField] private float tackleStopDistance = 0.5f;
+    [SerializeField] private float tackleCooldown = 1f;
+    private float tackleCooldownCounter = 0f;
+    private bool isTackling;
+    private bool isTackleGroundRush;
+    private bool hasUsedAirTackle;
+    private Vector2 tackleDirection;
+    private Vector2 tackleGroundDirection;
+    private float tackleGroundDistanceRemaining;
+    private Collider2D tackleTargetEnemy;
+    private float tackleCounter;
 
     [Header("공격")]
     [SerializeField] private Transform attackTransform;
@@ -107,11 +127,15 @@ public class PlayerMove : MonoBehaviour
         CheckCeiling();
         CheckWall();
 
+        if (isGrounded && !isTackling && !isTackleGroundRush)
+            hasUsedAirTackle = false;
+
         RotateAttackPivot();
         HandleAttack();
         HandleCeilingAttach();
         HandleWallSlide();
         HandleDash();
+        HandleTackle();
         HandleJump();
 
         callingHitstop();
@@ -121,7 +145,57 @@ public class PlayerMove : MonoBehaviour
     // 물리 연산용 fixedUpdate
     void FixedUpdate()
     {
-        if (isDashing) return;
+        if (isDashing)
+        {
+            Vector2 currentPosition = rb.position;
+            Vector2 nextPosition = Vector2.MoveTowards(currentPosition, dashTargetPosition, dashSpeed * Time.fixedDeltaTime);
+            SweepDashEnemies(currentPosition, nextPosition);
+            rb.MovePosition(nextPosition);
+            return;
+        }
+
+        if (isTackling)
+        {
+            tackleCounter -= Time.deltaTime;
+            Vector2 currentPosition = rb.position;
+            Vector2 nextPosition = currentPosition + tackleDirection * tackleSpeed * Time.fixedDeltaTime;
+            SweepTacklePath(currentPosition, nextPosition);
+            rb.MovePosition(nextPosition);
+
+            bool landed = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+            if (landed)
+            {
+                StartTackleGroundRush();
+                return;
+            }
+
+            if (tackleCounter <= 0f)
+            {
+                StopTackle();
+                return;
+            }
+
+            return;
+        }
+
+        if (isTackleGroundRush)
+        {
+            float moveDistance = tackleSpeed * Time.fixedDeltaTime;
+            Vector2 currentPosition = rb.position;
+            Vector2 nextPosition = currentPosition + tackleGroundDirection * moveDistance;
+            rb.MovePosition(nextPosition);
+            tackleGroundDistanceRemaining -= moveDistance;
+
+            bool stillGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+            if (tackleGroundDistanceRemaining <= 0f || !stillGrounded)
+            {
+                StopTackle();
+                return;
+            }
+
+            return;
+        }
+
         if (!isWallJumping)
         {
             float xMove = ((isTouchingLWall || isTouchingRWall)
@@ -259,7 +333,7 @@ public class PlayerMove : MonoBehaviour
             if (isOnCeiling)
                 rb.position += new Vector2(0f,-0.05f);
             if (isTouchingLWall)
-                rb.position += new Vector2( blankdis, 0f);
+                rb.position += new Vector2(blankdis, 0f);
             if (isTouchingRWall)
                 rb.position += new Vector2(-blankdis, 0f);
 
@@ -271,58 +345,38 @@ public class PlayerMove : MonoBehaviour
             mouseScreenPos.z = -Camera.main.transform.position.z;
             Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
             dashDirection = (mouseWorldPos - (Vector2)transform.position).normalized;
+            if (dashDirection == Vector2.zero)
+                dashDirection = Vector2.right;
 
-            isDashing = true;
-            dashCounter = dashDuration;
+            Vector2 origin = (Vector2)transform.position + dashDirection * 0.05f;
+            RaycastHit2D groundHit = Physics2D.Raycast(origin, dashDirection, dashRange, groundLayer);
+            dashHasGroundTarget = groundHit.collider != null;
+            dashTargetPosition = dashHasGroundTarget ? groundHit.point : (Vector2)transform.position + dashDirection * dashRange;
+            dashRemainingDistance = Vector2.Distance(transform.position, dashTargetPosition);
 
-            line.SetPosition(0,transform.position);
-            line.SetPosition(1,transform.position);
+            line.SetPosition(0, transform.position);
+            line.SetPosition(1, dashTargetPosition);
             rb.gravityScale = 0f;
-            rb.linearVelocity = dashDirection * dashSpeed;
+
+            if (!dashHasGroundTarget)
+                DamageEnemiesAlongDashRay(origin);
 
             if (dashGauge >= 1f)
             {
                 TriggerDash(true);
             }
-            else if (dashCooldownCounter <= 0)
-            {
-                TriggerDash(false);
-            }
             else
             {
-                if (dashGauge >= 1f + pendingDashes)
-                    pendingDashes++;
+                TriggerTackleFromDash(dashDirection);
             }
 
-            Debug.DrawRay(transform.position, dashDirection * 5f, Color.red, 1f);
+            Debug.DrawRay(transform.position, dashDirection * dashRange, Color.red, 1f);
         }
 
         if (isDashing)
         {
             dashCounter -= Time.deltaTime;
-
-            object[] Hits = Physics2D.OverlapBoxAll(transform.position,
-                attackBoxSize+(Vector2.one*0.1f), 0f, enemyLayer, groundLayer);
-            foreach (Collider2D hit in Hits)
-            {
-                if (!hitEnemiesInDash.Contains(hit))
-                {
-
-                    hitEnemiesInDash.Add(hit);
-                    hit.GetComponent<BossBase>()?.TakeDamage(playerState.damage * 5);
-                    hit.GetComponent<ObjectHp>()?.OnDamage(playerState.damage * 5);
-                    hit.GetComponent<EnemyBase>()?.OnDamage(playerState.damage * 5);
-                    hit.GetComponent<NewEnemyBase>()?.OnDamage(playerState.damage * 5);
-                    Debug.Log($"대쉬 공격 적중: {hit.name}");
-
-                    if (!dashHitEnemy)
-                    {
-                        dashHitEnemy = true;
-                        dashGauge = Mathf.Min(dashGauge + 1f, maxDashGauge);
-                        HitstopManager.Instance.TriggerHitstop(duration: 0.02f);
-                    }
-                }
-            }
+            dashRemainingDistance -= dashSpeed * Time.deltaTime;
 
             Collider2D wallHit = Physics2D.OverlapBox(transform.position, dashBoxSize, 0f, groundLayer);
             if (wallHit != null)
@@ -331,8 +385,210 @@ public class PlayerMove : MonoBehaviour
                 return;
             }
 
-            if (dashCounter <= 0)
+            if (dashRemainingDistance <= 0f || dashCounter <= 0)
+            {
                 StopDash();
+                return;
+            }
+        }
+    }
+
+    void HandleTackle()
+    {
+        tackleCooldownCounter = Mathf.Max(0f, tackleCooldownCounter - Time.deltaTime);
+
+        if (!Input.GetKeyDown(KeyCode.E) || isDashing || isTackling || isTackleGroundRush || tackleCooldownCounter > 0f)
+            return;
+
+        if (!isGrounded && hasUsedAirTackle)
+            return;
+
+        Vector3 mouseScreenPos = Input.mousePosition;
+        mouseScreenPos.z = -Camera.main.transform.position.z;
+        Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+        Vector2 aimDirection = (mouseWorldPos - (Vector2)transform.position).normalized;
+        if (aimDirection == Vector2.zero)
+            aimDirection = Vector2.right;
+
+        if (isGrounded)
+        {
+            tackleDirection = new Vector2(Mathf.Sign(aimDirection.x), 0f);
+            if (tackleDirection == Vector2.zero)
+                tackleDirection = Vector2.right;
+            isTackleGroundRush = true;
+            isTackling = false;
+        }
+        else
+        {
+            tackleDirection = new Vector2(aimDirection.x, -1f).normalized;
+            isTackling = true;
+            isTackleGroundRush = false;
+            hasUsedAirTackle = true;
+        }
+
+        tackleGroundDirection = new Vector2(tackleDirection.x, 0f).normalized;
+        if (tackleGroundDirection == Vector2.zero)
+            tackleGroundDirection = transform.right;
+
+        tackleCounter = tackleRange / tackleSpeed;
+        tackleGroundDistanceRemaining = tackleRange;
+        tackleCooldownCounter = tackleCooldown;
+        rb.gravityScale = 0f;
+
+        if (line != null)
+        {
+            line.SetPosition(0, transform.position);
+            line.SetPosition(1, transform.position + (Vector3)tackleDirection * tackleRange);
+        }
+
+        Debug.DrawRay(transform.position, tackleDirection * tackleRange, Color.yellow, 1f);
+    }
+
+    private void SweepTacklePath(Vector2 from, Vector2 to)
+    {
+        if (tackleTargetEnemy == null)
+            return;
+
+        Vector2 direction = to - from;
+        float distance = direction.magnitude;
+        if (distance <= 0f)
+            return;
+
+        direction /= distance;
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(from, attackBoxSize + (Vector2.one * 0.1f), 0f, direction, distance + tackleStopDistance, enemyLayer);
+        foreach (RaycastHit2D hit in hits)
+        {
+            if (hit.collider == tackleTargetEnemy)
+            {
+                OnTackleReachedEnemy();
+                break;
+            }
+        }
+    }
+
+    private void OnTackleReachedEnemy()
+    {
+        if (tackleTargetEnemy == null)
+            return;
+
+        Debug.Log($"몸통박치기 적 앞 도달: {tackleTargetEnemy.name}");
+        tackleTargetEnemy = null;
+        // 여기에 추가 효과를 넣으세요.
+    }
+
+    private void TriggerTackleFromDash(Vector2 aimDirection)
+    {
+        if (isDashing || isTackling || isTackleGroundRush || tackleCooldownCounter > 0f)
+            return;
+
+        if (!isGrounded && hasUsedAirTackle)
+            return;
+
+        if (aimDirection == Vector2.zero)
+            aimDirection = Vector2.right;
+
+        if (isGrounded)
+        {
+            tackleDirection = new Vector2(Mathf.Sign(aimDirection.x), 0f);
+            if (tackleDirection == Vector2.zero)
+                tackleDirection = Vector2.right;
+            isTackleGroundRush = true;
+            isTackling = false;
+        }
+        else
+        {
+            tackleDirection = new Vector2(aimDirection.x, -1f).normalized;
+            isTackling = true;
+            isTackleGroundRush = false;
+            hasUsedAirTackle = true;
+        }
+
+        tackleGroundDirection = new Vector2(tackleDirection.x, 0f).normalized;
+        if (tackleGroundDirection == Vector2.zero)
+            tackleGroundDirection = transform.right;
+
+        tackleCounter = tackleRange / tackleSpeed;
+        tackleGroundDistanceRemaining = tackleRange;
+        tackleCooldownCounter = tackleCooldown;
+        rb.gravityScale = 0f;
+
+        if (line != null)
+        {
+            line.SetPosition(0, transform.position);
+            line.SetPosition(1, transform.position + (Vector3)tackleDirection * tackleRange);
+        }
+
+        Debug.DrawRay(transform.position, tackleDirection * tackleRange, Color.yellow, 1f);
+    }
+
+    private void StartTackleGroundRush()
+    {
+        isTackling = false;
+        isTackleGroundRush = true;
+        tackleTargetEnemy = null;
+        tackleGroundDirection = new Vector2(tackleDirection.x, 0f).normalized;
+        if (tackleGroundDirection == Vector2.zero)
+            tackleGroundDirection = transform.right;
+        tackleGroundDistanceRemaining = tackleRange;
+    }
+
+    private void StopTackle()
+    {
+        isTackling = false;
+        isTackleGroundRush = false;
+        tackleTargetEnemy = null;
+        tackleGroundDistanceRemaining = 0f;
+        if (isGrounded)
+            hasUsedAirTackle = false;
+        rb.gravityScale = isOnCeiling ? ceilingGravityScale : defaultGravityScale;
+        if (line != null)
+            line.SetPosition(1, transform.position);
+    }
+
+    private void DamageEnemiesAlongDashRay(Vector2 origin)
+    {
+        RaycastHit2D[] hits = Physics2D.RaycastAll(origin, dashDirection, dashRange, enemyLayer);
+        foreach (RaycastHit2D hit in hits)
+        {
+            if (hit.collider != null && !hitEnemiesInDash.Contains(hit.collider))
+            {
+                EnemyDashHit(hit.collider);
+            }
+        }
+    }
+
+    private void SweepDashEnemies(Vector2 from, Vector2 to)
+    {
+        Vector2 direction = to - from;
+        float distance = direction.magnitude;
+        if (distance <= 0f)
+            return;
+
+        direction /= distance;
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(from, attackBoxSize + (Vector2.one * 0.1f), 0f, direction, distance, enemyLayer);
+        foreach (RaycastHit2D hit in hits)
+        {
+            if (hit.collider != null && !hitEnemiesInDash.Contains(hit.collider))
+            {
+                EnemyDashHit(hit.collider);
+            }
+        }
+    }
+
+    private void EnemyDashHit(Collider2D hit)
+    {
+        hitEnemiesInDash.Add(hit);
+        hit.GetComponent<BossBase>()?.TakeDamage(playerState.damage * dashDamage);
+        hit.GetComponent<ObjectHp>()?.OnDamage(playerState.damage * dashDamage);
+        hit.GetComponent<EnemyBase>()?.OnDamage(playerState.damage * dashDamage);
+        hit.GetComponent<NewEnemyBase>()?.OnDamage(playerState.damage * dashDamage);
+        Debug.Log($"대쉬 공격 적중: {hit.name}");
+
+        if (!dashHitEnemy)
+        {
+            dashHitEnemy = true;
+            dashGauge = Mathf.Min(dashGauge + 1f, maxDashGauge);
+            HitstopManager.Instance.TriggerHitstop(duration: 0.02f);
         }
     }
 

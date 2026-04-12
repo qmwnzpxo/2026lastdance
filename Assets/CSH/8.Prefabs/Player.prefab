@@ -126,7 +126,7 @@ MonoBehaviour:
   groundCheckRadius: 0.22
   ceilingCheckRadius: 0.22
   wallCheck: {fileID: 8298914050113543966}
-  wallCheckDistance: 0.55
+  wallCheckDistance: 0.52
   wallSlideSpeed: 2.5
   wallSlideSpeedUp: -15
   wallSlideSpeedDown: 10
@@ -135,9 +135,16 @@ MonoBehaviour:
   defaultGravityScale: 1.2
   ceilingGravityScale: -1.2
   spriteTransform: {fileID: 2957920387103072243}
-  dashGauge: 5
-  maxDashGauge: 5
+  dashGauge: 50
+  maxDashGauge: 50
+  dashRange: 8
+  dashDamage: 5
+  dashSpeed: 50
   hitEnemiesInDash: []
+  bodySlamRange: 8
+  bodySlamSpeed: 50
+  bodySlamStopDistance: 0.5
+  bodySlamCooldown: 1
   attackTransform: {fileID: 1681497214142862811}
   attackBoxSize: {x: 1, y: 1}
   attackBoxDistance: 1
@@ -383,7 +390,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bce82e13c29a1a34599359e62adad33e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -427,7 +434,7 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 1, b: 1, a: 0}
+      key0: {r: 1, g: 0, b: 0, a: 0.39215687}
       key1: {r: 1, g: 1, b: 1, a: 0}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}

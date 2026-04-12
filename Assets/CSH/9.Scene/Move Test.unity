@@ -1133,22 +1133,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 3842865518448511387, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: dashGauge
-      value: 50
-      objectReference: {fileID: 0}
-    - target: {fileID: 3842865518448511387, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: maxDashGauge
-      value: 50
-      objectReference: {fileID: 0}
-    - target: {fileID: 3842865518448511387, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: wallCheckDistance
-      value: 0.52
-      objectReference: {fileID: 0}
-    - target: {fileID: 7345367394324714774, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 328bc2b91f882cc4694b3092ca62aa23, type: 2}
     - target: {fileID: 8298914050113543966, guid: 5822f97eade448a4991884bc1c050148, type: 3}
       propertyPath: m_LocalPosition.x
       value: -6.91
