@@ -7,62 +7,50 @@ public class PlayerMove : MonoBehaviour
 {
     [Header("이동")]
     [SerializeField] private float moveSpeed = 7f;
-    //[SerializeField] private float runSpeed = 15f;
-    //[SerializeField] private bool run = false;
-    //[SerializeField] private bool notbattle = true;
 
     [Header("점프")]
     [SerializeField] private float jumpForce = 12f;
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private Transform groundCheck;
-    [SerializeField] private Transform  ceilingCheck;
+    [SerializeField] private Transform ceilingCheck;
     [SerializeField] private float groundCheckRadius = 0.2f;
     [SerializeField] private float ceilingCheckRadius = 0.2f;
 
     [Header("벽타기")]
     [SerializeField] private Transform wallCheck;
     [EditorOnly, SerializeField] private float wallCheckDistance = 0.3f;
-    [EditorOnly,SerializeField] private float wallSlideSpeed = 1.5f;
-    [EditorOnly,SerializeField] private float wallSlideSpeedUp = 0f;
-    [EditorOnly,SerializeField] private float wallSlideSpeedDown = 5f;
-    [EditorOnly,SerializeField] private float wallJumpForceX = 8f;
-    [EditorOnly, SerializeField] private float wallJumpForceY = 12f; 
-    
+    [EditorOnly, SerializeField] private float wallSlideSpeed = 1.5f;
+    [EditorOnly, SerializeField] private float wallSlideSpeedUp = 0f;
+    [EditorOnly, SerializeField] private float wallSlideSpeedDown = 5f;
+    [EditorOnly, SerializeField] private float wallJumpForceX = 8f;
+    [EditorOnly, SerializeField] private float wallJumpForceY = 12f;
 
     [Header("천장 붙기")]
     [EditorOnly, SerializeField] private float defaultGravityScale = 1.2f;
     [EditorOnly, SerializeField] private float ceilingGravityScale = -1.2f;
-    [EditorOnly, SerializeField]private Transform spriteTransform;
+    [EditorOnly, SerializeField] private Transform spriteTransform;
     private Vector3 spriteScale = new Vector3(1, 1, 1);
     private Vector3 ceilingSpriteScale = new Vector3(1, -1, 1);
 
     [Header("대쉬")]
     [SerializeField] private float dashGauge = 0f;
     [SerializeField] private float maxDashGauge = 5f;
-    [SerializeField] private float dashRange = 5f;
+    [SerializeField] private float dashRange = 8f;
     [SerializeField] private float dashDamage = 5f;
-    [SerializeField] private float dashSpeed = 30f;           
-    [RuntimeOnly,SerializeField] private List<Collider2D> hitEnemiesInDash = new List<Collider2D>();
-    private float enhancedDashSpeed = 40f;  
-    private float dashDuration = 0.1f;
-    private float normalDashCooldown = 0.8f;
-    private float dashCooldownCounter = 0f;
-    private int pendingDashes = 0;          
+    [SerializeField] private float dashSpeed = 50f;
+    [RuntimeOnly, SerializeField] private List<Collider2D> hitEnemiesInDash = new List<Collider2D>();
     private Vector2 dashBoxSize = new Vector2(1f, 0.4f);
     private Vector2 dashTargetPosition;
     private float dashRemainingDistance;
-    private bool dashHasGroundTarget;
-    private float dashCounter;
     private Vector2 dashDirection;
-    private float dashGaugePerAttack = 0.1f;
+    private float dashGaugePerAttack = 0.3f;
     private bool dashHitEnemy = false;
-    private CancellationTokenSource dashCooldownCts;
     private LineRenderer line;
 
     [Header("몸통박치기")]
-    [SerializeField] private float tackleRange = 4f;
-    [SerializeField] private float tackleSpeed = 12f;
-    [SerializeField] private float tackleStopDistance = 0.5f;
+    [SerializeField] private float tackleRange = 8f;
+    [SerializeField] private float tackleSpeed = 50f;
+    [SerializeField] private float tackleDamage = 0f;   // 0으로 두면 무데미지
     [SerializeField] private float tackleCooldown = 1f;
     private float tackleCooldownCounter = 0f;
     private bool isTackling;
@@ -71,7 +59,6 @@ public class PlayerMove : MonoBehaviour
     private Vector2 tackleDirection;
     private Vector2 tackleGroundDirection;
     private float tackleGroundDistanceRemaining;
-    private Collider2D tackleTargetEnemy;
     private float tackleCounter;
 
     [Header("공격")]
@@ -106,22 +93,17 @@ public class PlayerMove : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        if(playerState == null)
+        if (playerState == null)
             playerState = GetComponent<PlayerState>();
-
         if (enemyLayer == 0)
-        {
-            enemyLayer= LayerMask.GetMask("enemy");
-        }
-        line=GetComponent<LineRenderer>();
+            enemyLayer = LayerMask.GetMask("enemy");
+        line = GetComponent<LineRenderer>();
     }
 
-    // 함수 연산 및 입력 처리용 update
     void Update()
     {
         moveInput = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
-        //moveInput *= isGrounded || isOnCeiling ? 1f : 0.5f; // 공중에서 이동 속도 감소
 
         CheckGround();
         CheckCeiling();
@@ -139,10 +121,8 @@ public class PlayerMove : MonoBehaviour
         HandleJump();
 
         callingHitstop();
-
     }
 
-    // 물리 연산용 fixedUpdate
     void FixedUpdate()
     {
         if (isDashing)
@@ -156,10 +136,13 @@ public class PlayerMove : MonoBehaviour
 
         if (isTackling)
         {
-            tackleCounter -= Time.deltaTime;
+            tackleCounter -= Time.fixedDeltaTime;
             Vector2 currentPosition = rb.position;
             Vector2 nextPosition = currentPosition + tackleDirection * tackleSpeed * Time.fixedDeltaTime;
-            SweepTacklePath(currentPosition, nextPosition);
+
+            if (SweepTacklePath(currentPosition, nextPosition))
+                return;
+
             rb.MovePosition(nextPosition);
 
             bool landed = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
@@ -174,8 +157,6 @@ public class PlayerMove : MonoBehaviour
                 StopTackle();
                 return;
             }
-
-            return;
         }
 
         if (isTackleGroundRush)
@@ -183,6 +164,10 @@ public class PlayerMove : MonoBehaviour
             float moveDistance = tackleSpeed * Time.fixedDeltaTime;
             Vector2 currentPosition = rb.position;
             Vector2 nextPosition = currentPosition + tackleGroundDirection * moveDistance;
+
+            if (SweepTacklePath(currentPosition, nextPosition))
+                return;
+
             rb.MovePosition(nextPosition);
             tackleGroundDistanceRemaining -= moveDistance;
 
@@ -203,14 +188,13 @@ public class PlayerMove : MonoBehaviour
             rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
         }
 
-        if (isWallSliding&&!isDashing)
+        if (isWallSliding && !isDashing)
         {
             float wallDir = moveInput != 0 ? moveInput : transform.localScale.x;
             if (moveInput != 0 || moveInput != wallDir)
                 isWallSliding = false;
 
             float targetSlideSpeed;
-
             if (verticalInput > 0)
                 targetSlideSpeed = -wallSlideSpeedUp;
             else if (verticalInput < 0)
@@ -220,16 +204,13 @@ public class PlayerMove : MonoBehaviour
 
             float smoothedY = Mathf.Lerp(rb.linearVelocity.y, targetSlideSpeed, Time.fixedDeltaTime * 10f);
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, smoothedY);
-            
         }
     }
 
     void callingHitstop()
     {
         if (Input.GetKeyDown(KeyCode.H))
-        {
-            HitstopManager.Instance.TriggerHitstop(); // 기본: 0.1초 동안 0.05배속 히트스탑
-        }
+            HitstopManager.Instance.TriggerHitstop();
     }
 
     void CheckGround()
@@ -240,18 +221,17 @@ public class PlayerMove : MonoBehaviour
     {
         isTouchingCeiling = Physics2D.OverlapCircle(ceilingCheck.position, ceilingCheckRadius, groundLayer);
     }
-
     void CheckWall()
     {
-        isTouchingLWall = Physics2D.Raycast(wallCheck.position,
-            Vector2.left, wallCheckDistance, groundLayer);
-        isTouchingRWall = Physics2D.Raycast(wallCheck.position,
-            Vector2.right, wallCheckDistance, groundLayer);
-
+        isTouchingLWall = Physics2D.Raycast(wallCheck.position, Vector2.left, wallCheckDistance, groundLayer);
+        isTouchingRWall = Physics2D.Raycast(wallCheck.position, Vector2.right, wallCheckDistance, groundLayer);
     }
+
     void HandleWallSlide()
     {
-        isWallSliding = (isTouchingLWall || isTouchingRWall) && !isGrounded && !isOnCeiling && !isDashing && (rb.linearVelocity.y < 0|| Mathf.Abs(verticalInput) > 0);
+        isWallSliding = (isTouchingLWall || isTouchingRWall)
+            && !isGrounded && !isOnCeiling && !isDashing
+            && (rb.linearVelocity.y < 0 || Mathf.Abs(verticalInput) > 0);
     }
 
     void HandleJump()
@@ -263,17 +243,15 @@ public class PlayerMove : MonoBehaviour
             DetachFromCeiling();
             return;
         }
-        
-        
+
         if (isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
-        else if (isWallSliding&&wallJumpCounter<=0)
+        else if (isWallSliding && wallJumpCounter <= 0)
         {
-            wallJumpDirection = isTouchingLWall? 1 : -1;
+            wallJumpDirection = isTouchingLWall ? 1 : -1;
             rb.linearVelocity = new Vector2(wallJumpDirection * wallJumpForceX, wallJumpForceY);
-            Debug.Log("wallJump");
             isWallJumping = true;
 
             wallJumpCts?.Cancel();
@@ -281,6 +259,7 @@ public class PlayerMove : MonoBehaviour
             StartWallJumpCooldown(wallJumpCts.Token).Forget();
         }
     }
+
     private async UniTaskVoid StartWallJumpCooldown(CancellationToken ct)
     {
         wallJumpCounter = wallJumpTime;
@@ -293,7 +272,7 @@ public class PlayerMove : MonoBehaviour
     {
         isOnCeiling = false;
         rb.gravityScale = defaultGravityScale;
-        spriteTransform.localScale=spriteScale;
+        spriteTransform.localScale = spriteScale;
     }
 
     void HandleCeilingAttach()
@@ -302,8 +281,7 @@ public class PlayerMove : MonoBehaviour
 
         if (justTouchedCeiling && !isOnCeiling)
         {
-            if (isDashing
-                /* && rb.linearVelocity.magnitude >= moveSpeed*/)
+            if (isDashing)
             {
                 isOnCeiling = true;
                 rb.gravityScale = ceilingGravityScale;
@@ -328,14 +306,10 @@ public class PlayerMove : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
         {
             float blankdis = wallCheckDistance + 0.05f;
-            if (isGrounded)
-                rb.position += new Vector2(0f, 0.05f);
-            if (isOnCeiling)
-                rb.position += new Vector2(0f,-0.05f);
-            if (isTouchingLWall)
-                rb.position += new Vector2(blankdis, 0f);
-            if (isTouchingRWall)
-                rb.position += new Vector2(-blankdis, 0f);
+            if (isGrounded) rb.position += new Vector2(0f, 0.05f);
+            if (isOnCeiling) rb.position += new Vector2(0f, -0.05f);
+            if (isTouchingLWall) rb.position += new Vector2(blankdis, 0f);
+            if (isTouchingRWall) rb.position += new Vector2(-blankdis, 0f);
 
             isWallJumping = false;
             isWallSliding = false;
@@ -350,24 +324,19 @@ public class PlayerMove : MonoBehaviour
 
             Vector2 origin = (Vector2)transform.position + dashDirection * 0.05f;
             RaycastHit2D groundHit = Physics2D.Raycast(origin, dashDirection, dashRange, groundLayer);
-            dashHasGroundTarget = groundHit.collider != null;
-            dashTargetPosition = dashHasGroundTarget ? groundHit.point : (Vector2)transform.position + dashDirection * dashRange;
             dashRemainingDistance = Vector2.Distance(transform.position, dashTargetPosition);
 
             line.SetPosition(0, transform.position);
             line.SetPosition(1, dashTargetPosition);
             rb.gravityScale = 0f;
 
-            if (!dashHasGroundTarget)
-                DamageEnemiesAlongDashRay(origin);
-
             if (dashGauge >= 1f)
             {
-                TriggerDash(true);
+                TriggerDash();  // 강화 대쉬
             }
             else
             {
-                TriggerTackleFromDash(dashDirection);
+                TriggerTackleFromDash(dashDirection);   // 게이지 없으면 태클
             }
 
             Debug.DrawRay(transform.position, dashDirection * dashRange, Color.red, 1f);
@@ -375,7 +344,6 @@ public class PlayerMove : MonoBehaviour
 
         if (isDashing)
         {
-            dashCounter -= Time.deltaTime;
             dashRemainingDistance -= dashSpeed * Time.deltaTime;
 
             Collider2D wallHit = Physics2D.OverlapBox(transform.position, dashBoxSize, 0f, groundLayer);
@@ -385,7 +353,7 @@ public class PlayerMove : MonoBehaviour
                 return;
             }
 
-            if (dashRemainingDistance <= 0f || dashCounter <= 0)
+            if (dashRemainingDistance <= 0f)
             {
                 StopDash();
                 return;
@@ -410,83 +378,24 @@ public class PlayerMove : MonoBehaviour
         if (aimDirection == Vector2.zero)
             aimDirection = Vector2.right;
 
-        if (isGrounded)
-        {
-            tackleDirection = new Vector2(Mathf.Sign(aimDirection.x), 0f);
-            if (tackleDirection == Vector2.zero)
-                tackleDirection = Vector2.right;
-            isTackleGroundRush = true;
-            isTackling = false;
-        }
-        else
-        {
-            tackleDirection = new Vector2(aimDirection.x, -1f).normalized;
-            isTackling = true;
-            isTackleGroundRush = false;
-            hasUsedAirTackle = true;
-        }
-
-        tackleGroundDirection = new Vector2(tackleDirection.x, 0f).normalized;
-        if (tackleGroundDirection == Vector2.zero)
-            tackleGroundDirection = transform.right;
-
-        tackleCounter = tackleRange / tackleSpeed;
-        tackleGroundDistanceRemaining = tackleRange;
-        tackleCooldownCounter = tackleCooldown;
-        rb.gravityScale = 0f;
-
-        if (line != null)
-        {
-            line.SetPosition(0, transform.position);
-            line.SetPosition(1, transform.position + (Vector3)tackleDirection * tackleRange);
-        }
-
-        Debug.DrawRay(transform.position, tackleDirection * tackleRange, Color.yellow, 1f);
-    }
-
-    private void SweepTacklePath(Vector2 from, Vector2 to)
-    {
-        if (tackleTargetEnemy == null)
-            return;
-
-        Vector2 direction = to - from;
-        float distance = direction.magnitude;
-        if (distance <= 0f)
-            return;
-
-        direction /= distance;
-        RaycastHit2D[] hits = Physics2D.BoxCastAll(from, attackBoxSize + (Vector2.one * 0.1f), 0f, direction, distance + tackleStopDistance, enemyLayer);
-        foreach (RaycastHit2D hit in hits)
-        {
-            if (hit.collider == tackleTargetEnemy)
-            {
-                OnTackleReachedEnemy();
-                break;
-            }
-        }
-    }
-
-    private void OnTackleReachedEnemy()
-    {
-        if (tackleTargetEnemy == null)
-            return;
-
-        Debug.Log($"몸통박치기 적 앞 도달: {tackleTargetEnemy.name}");
-        tackleTargetEnemy = null;
-        // 여기에 추가 효과를 넣으세요.
+        StartTackle(aimDirection);
     }
 
     private void TriggerTackleFromDash(Vector2 aimDirection)
     {
-        if (isDashing || isTackling || isTackleGroundRush || tackleCooldownCounter > 0f)
+        if (isTackling || isTackleGroundRush || tackleCooldownCounter > 0f)
             return;
-
         if (!isGrounded && hasUsedAirTackle)
             return;
-
         if (aimDirection == Vector2.zero)
             aimDirection = Vector2.right;
 
+        StartTackle(aimDirection);
+    }
+
+    /// <summary>실제 태클을 시작하는 공통 로직</summary>
+    private void StartTackle(Vector2 aimDirection)
+    {
         if (isGrounded)
         {
             tackleDirection = new Vector2(Mathf.Sign(aimDirection.x), 0f);
@@ -497,7 +406,7 @@ public class PlayerMove : MonoBehaviour
         }
         else
         {
-            tackleDirection = new Vector2(aimDirection.x, -1f).normalized;
+            tackleDirection = aimDirection;
             isTackling = true;
             isTackleGroundRush = false;
             hasUsedAirTackle = true;
@@ -519,24 +428,56 @@ public class PlayerMove : MonoBehaviour
         }
 
         Debug.DrawRay(transform.position, tackleDirection * tackleRange, Color.yellow, 1f);
+    }
+
+    /// <summary>태클 경로에서 첫 번째 적을 감지하면 데미지 후 정지. 충돌 시 true 반환.</summary>
+    private bool SweepTacklePath(Vector2 from, Vector2 to)
+    {
+        Vector2 direction = to - from;
+        float distance = direction.magnitude;
+        if (distance <= 0f) return false;
+
+        direction /= distance;
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(
+            from, attackBoxSize + Vector2.one * 0.1f, 0f, direction, distance, enemyLayer);
+
+        foreach (RaycastHit2D hit in hits)
+        {
+            if (hit.collider == null) continue;
+
+            OnTackleHitEnemy(hit.collider);
+            StopTackle();
+            return true;
+        }
+
+        return false;
+    }
+
+    private void OnTackleHitEnemy(Collider2D enemy)
+    {
+        Debug.Log($"몸통박치기 적중: {enemy.name}");
+        float damage = playerState.damage * tackleDamage;
+        enemy.GetComponent<BossBase>()?.TakeDamage(damage);
+        enemy.GetComponent<ObjectHp>()?.OnDamage(damage);
+        enemy.GetComponent<EnemyBase>()?.OnDamage(damage);
+        enemy.GetComponent<NewEnemyBase>()?.OnDamage(damage);
     }
 
     private void StartTackleGroundRush()
     {
         isTackling = false;
         isTackleGroundRush = true;
-        tackleTargetEnemy = null;
         tackleGroundDirection = new Vector2(tackleDirection.x, 0f).normalized;
         if (tackleGroundDirection == Vector2.zero)
             tackleGroundDirection = transform.right;
-        tackleGroundDistanceRemaining = tackleRange;
+        // 남은 시간 기준으로 남은 거리 유지 (초기화 안 함)
+        tackleGroundDistanceRemaining = tackleCounter * tackleSpeed;
     }
 
     private void StopTackle()
     {
         isTackling = false;
         isTackleGroundRush = false;
-        tackleTargetEnemy = null;
         tackleGroundDistanceRemaining = 0f;
         if (isGrounded)
             hasUsedAirTackle = false;
@@ -545,43 +486,31 @@ public class PlayerMove : MonoBehaviour
             line.SetPosition(1, transform.position);
     }
 
-    private void DamageEnemiesAlongDashRay(Vector2 origin)
-    {
-        RaycastHit2D[] hits = Physics2D.RaycastAll(origin, dashDirection, dashRange, enemyLayer);
-        foreach (RaycastHit2D hit in hits)
-        {
-            if (hit.collider != null && !hitEnemiesInDash.Contains(hit.collider))
-            {
-                EnemyDashHit(hit.collider);
-            }
-        }
-    }
-
     private void SweepDashEnemies(Vector2 from, Vector2 to)
     {
         Vector2 direction = to - from;
         float distance = direction.magnitude;
-        if (distance <= 0f)
-            return;
+        if (distance <= 0f) return;
 
         direction /= distance;
-        RaycastHit2D[] hits = Physics2D.BoxCastAll(from, attackBoxSize + (Vector2.one * 0.1f), 0f, direction, distance, enemyLayer);
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(
+            from, attackBoxSize + Vector2.one * 0.1f, 0f, direction, distance, enemyLayer);
+
         foreach (RaycastHit2D hit in hits)
         {
             if (hit.collider != null && !hitEnemiesInDash.Contains(hit.collider))
-            {
                 EnemyDashHit(hit.collider);
-            }
         }
     }
 
     private void EnemyDashHit(Collider2D hit)
     {
         hitEnemiesInDash.Add(hit);
-        hit.GetComponent<BossBase>()?.TakeDamage(playerState.damage * dashDamage);
-        hit.GetComponent<ObjectHp>()?.OnDamage(playerState.damage * dashDamage);
-        hit.GetComponent<EnemyBase>()?.OnDamage(playerState.damage * dashDamage);
-        hit.GetComponent<NewEnemyBase>()?.OnDamage(playerState.damage * dashDamage);
+        float damage = playerState.damage * dashDamage;
+        hit.GetComponent<BossBase>()?.TakeDamage(damage);
+        hit.GetComponent<ObjectHp>()?.OnDamage(damage);
+        hit.GetComponent<EnemyBase>()?.OnDamage(damage);
+        hit.GetComponent<NewEnemyBase>()?.OnDamage(damage);
         Debug.Log($"대쉬 공격 적중: {hit.name}");
 
         if (!dashHitEnemy)
@@ -596,45 +525,24 @@ public class PlayerMove : MonoBehaviour
     {
         isDashing = false;
         rb.gravityScale = isOnCeiling ? ceilingGravityScale : defaultGravityScale;
-        line.SetPosition(1,transform.position);
+        line.SetPosition(1, transform.position);
 
         if (!isOnCeiling)
             rb.linearVelocity = Vector2.up * 0.05f;
-
-        if (pendingDashes > 0 && dashGauge >= 1f)
-        {
-            pendingDashes--;
-            TriggerDash(true);
-        }
-        else
-        {
-            pendingDashes = 0;
-        }
     }
 
-    void TriggerDash(bool enhanced)
+    void TriggerDash( )
     {
-        if (isGrounded)
-            rb.position += new Vector2(0f, 0.05f);
-        if (isOnCeiling)
-            rb.position += new Vector2(0f, -0.05f);
-        if (isTouchingLWall)
-            rb.position += new Vector2(-0.05f, 0f);
-        if (isTouchingRWall)
-            rb.position += new Vector2(0.05f, 0f);
+        if (isGrounded) rb.position += new Vector2(0f, 0.05f);
+        if (isOnCeiling) rb.position += new Vector2(0f, -0.05f);
+        if (isTouchingLWall) rb.position += new Vector2(-0.05f, 0f);
+        if (isTouchingRWall) rb.position += new Vector2(0.05f, 0f);
 
         isWallJumping = false;
         isWallSliding = false;
         wallJumpCounter = 0f;
-
-        if (enhanced)
-            dashGauge -= 1f;
-        else
-        {
-            dashCooldownCts?.Cancel();
-            dashCooldownCts = new CancellationTokenSource();
-            StartDashCooldown(dashCooldownCts.Token).Forget();
-        }
+        
+        dashGauge -= 1f;
 
         dashHitEnemy = false;
         hitEnemiesInDash.Clear();
@@ -645,28 +553,11 @@ public class PlayerMove : MonoBehaviour
         dashDirection = (mouseWorldPos - (Vector2)transform.position).normalized;
 
         isDashing = true;
-        dashCounter = dashDuration;
 
         rb.gravityScale = 0f;
-        rb.linearVelocity = dashDirection * (enhanced ? enhancedDashSpeed : dashSpeed);
+        rb.linearVelocity = dashDirection * dashSpeed;
 
         Debug.DrawRay(transform.position, dashDirection * 5f, Color.red, 1f);
-    }
-    protected async UniTaskVoid StartDashCooldown(CancellationToken ct)
-    {
-        dashCooldownCounter = normalDashCooldown;
-        await UniTask.WaitForSeconds(normalDashCooldown, cancellationToken: ct);
-        dashCooldownCounter = 0f;
-    }
-
-    void OnCollisionStay2D(Collision2D collision)
-    {
-        if (!isDashing) return;
-        if (((1 << collision.gameObject.layer) & groundLayer) == 0) return;
-
-        Vector2 normal = collision.contacts[0].normal;
-        Vector2 slideVelocity = dashDirection - (Vector2.Dot(dashDirection, normal) * normal);
-        rb.linearVelocity = slideVelocity * dashSpeed;
     }
 
     void RotateAttackPivot()
@@ -683,7 +574,6 @@ public class PlayerMove : MonoBehaviour
     void HandleAttack()
     {
         if (!Input.GetMouseButtonDown(0) || isAttack) return;
-
         PerformAttack().Forget();
     }
 
@@ -696,20 +586,16 @@ public class PlayerMove : MonoBehaviour
 
         ExecuteAttackBox(attackPos);
         await UniTask.WaitForSeconds(attackSecondHitDelay);
-
+        ExecuteAttackBox(attackPos);
+        await UniTask.WaitForSeconds(attackSecondHitDelay);
         ExecuteAttackBox(attackPos);
         await UniTask.WaitForSeconds(attackSecondHitDelay);
 
-        ExecuteAttackBox(attackPos);
-        await UniTask.WaitForSeconds(attackSecondHitDelay);
-
-        //ExecuteAttackBox();
         isAttack = false;
     }
 
     void ExecuteAttackBox(Vector2 attackPos)
     {
-
         Collider2D[] hits = Physics2D.OverlapBoxAll(
             attackPos, attackBoxSize, attackTransform.eulerAngles.z, enemyLayer);
 
@@ -745,7 +631,8 @@ public class PlayerMove : MonoBehaviour
             Gizmos.color = Color.blue;
             Gizmos.DrawRay(wallCheck.position, Vector2.left * wallCheckDistance);
         }
-        if(wallCheckDistance > 0) {
+        if (wallCheckDistance > 0)
+        {
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireCube(transform.position, dashBoxSize);
         }
@@ -759,16 +646,12 @@ public class PlayerMove : MonoBehaviour
 
     public void CancelAllTask()
     {
-        dashCooldownCts?.Cancel();
-        dashCooldownCts?.Dispose();
         wallJumpCts?.Cancel();
         wallJumpCts?.Dispose();
     }
 
     private void OnDestroy()
     {
-        dashCooldownCts?.Cancel();
-        dashCooldownCts?.Dispose();
         wallJumpCts?.Cancel();
         wallJumpCts?.Dispose();
     }
