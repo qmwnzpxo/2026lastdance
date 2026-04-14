@@ -17,7 +17,7 @@ public class BossBase : MonoBehaviour
     private CancellationTokenSource _patternCts;
 
     bool _bossSpawn = false;
-
+    
     public bool IsShieldActive { get; private set; } = true;
     public bool IsDead { get; private set; } = false;
 
