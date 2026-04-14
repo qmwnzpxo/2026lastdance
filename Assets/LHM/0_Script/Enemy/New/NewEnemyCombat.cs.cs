@@ -2,6 +2,10 @@
 using System.Threading;
 using UnityEngine;
 
+
+/// <summary>
+/// 기획 변경으로 인한 기본적의 형태는 지상이동형 원거리 적으로 설정함
+/// </summary>
 public class NewEnemyCombat : MonoBehaviour
 {
     protected NewEnemyBase enemyBase;

@@ -115,12 +115,14 @@ public class PlayerCombat : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        if (attackTransform == null || !state.isAttacking) return;
-
-        Gizmos.color = Color.magenta;
-        Vector2 attackPos = (Vector2)attackTransform.position
-                          + (Vector2)attackTransform.right * attackBoxDistance;
-        Gizmos.DrawWireCube(attackPos, attackBoxSize);
+        if (state == null) return;
+        if (attackTransform != null && state.isAttacking)
+        {
+            Gizmos.color = Color.magenta;
+            Vector2 attackPos = (Vector2)attackTransform.position
+                              + (Vector2)attackTransform.right * attackBoxDistance;
+            Gizmos.DrawWireCube(attackPos, attackBoxSize);
+        }
     }
 
     #endregion
