@@ -1133,14 +1133,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 3842865518448511387, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: tackleRange
-      value: 8
-      objectReference: {fileID: 0}
-    - target: {fileID: 3842865518448511387, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: tackleSpeed
-      value: 50
-      objectReference: {fileID: 0}
     - target: {fileID: 8298914050113543966, guid: 5822f97eade448a4991884bc1c050148, type: 3}
       propertyPath: m_LocalPosition.x
       value: -6.91
@@ -2084,9 +2076,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: -0.81265205
+    y: 0
     width: 1
-    height: 2.6277373
+    height: 1
   near clip plane: 0.1
   far clip plane: 5000
   field of view: 26.160202

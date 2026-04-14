@@ -15,6 +15,10 @@ public class NewEnemyCombat : MonoBehaviour
     [SerializeField] protected Vector2 attackBoxSize = new Vector2(0.8f, 0.8f);
     [SerializeField] protected float attackDelay = 0.2f;
     [SerializeField] protected LayerMask playerLayer;
+
+    [Header("발사 오브젝트")]
+    public GameObject bullet;
+    protected Transform toAttackTransform;
     
     protected virtual void Awake()
     {
@@ -49,18 +53,27 @@ public class NewEnemyCombat : MonoBehaviour
     {
         if (attackTransform == null) return;
 
-        Collider2D[] hits = Physics2D.OverlapBoxAll(
+        Collider2D hit = Physics2D.OverlapBox(
             attackTransform.position, attackBoxSize, 0f, playerLayer);
 
-        foreach (Collider2D hit in hits)
+        if(hit!=null)
         {
             Debug.Log($"[{name}] 공격 적중: {hit.name}");
-            hit.GetComponent<PlayerState>()?.TakeDamage(attackDamage);
+            //hit.GetComponent<PlayerState>()?.TakeDamage(attackDamage);
+            Shoot(hit.transform);
         }
 
         Debug.DrawRay(attackTransform.position,
             attackTransform.right * attackRange, Color.magenta, 0.5f);
     }
+
+    protected virtual void Shoot(Transform Pos)
+    {
+        if(bullet==null) return;
+
+
+    }
+
 
     public virtual void TakeDamage(float damage)
     {

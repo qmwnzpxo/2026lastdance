@@ -22,6 +22,11 @@ public class NewEnemyBase : MonoBehaviour
     public float detectionRangeY = 3f;
     public float dashRange = 3.0f;
 
+    [Header("탐지 - 부채꼴")]
+    public float detectionRange = 8f;       // 부채꼴 반지름
+    [Range(0f, 360f)]
+    public float detectionAngle = 120f;     // 시야각 (전체 각도)
+
     [Header("체력")]
     public float maxHp = 10f;
     public float currentHp;
@@ -220,9 +225,25 @@ public class NewEnemyBase : MonoBehaviour
     public bool IsPlayerInRange()
     {
         if (playerTransform == null) return false;
+        Vector2 toPlayer = playerTransform.position - transform.position;
+        // 1. 거리 체크
+        if (toPlayer.magnitude > detectionRange) return false;
+
+        // 2. 현재 바라보는 방향 (스프라이트 플립 기준)
+        float facingDir = transform.localScale.x >= 0f ? 1f : -1f;
+        Vector2 facingVec = new Vector2(facingDir, 0f);
+
+        // 3. 각도 체크
+        float angle = Vector2.Angle(facingVec, toPlayer);
+        return angle <= detectionAngle * 0.5f;
+
+        #region 일반 원 범위(04/14)
+        /*
         Vector2 diff = playerTransform.position - transform.position;
         return Mathf.Abs(diff.x) <= detectionRangeX
             && Mathf.Abs(diff.y) <= detectionRangeY;
+        */
+        #endregion
     }
 
     public bool isPlayerInAttackRange()
@@ -240,6 +261,34 @@ public class NewEnemyBase : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(transform.position,
             new Vector3(detectionRangeX * 2f, detectionRangeY * 2f, 0f));
+
+        Gizmos.color = Color.yellow;
+        float facingDir = transform.localScale.x >= 0f ? 1f : -1f;
+        float baseAngle = facingDir > 0f ? 0f : 180f;
+        float halfAngle = detectionAngle * 0.5f;
+        int segments = 20;
+
+        Vector3 prevPoint = transform.position +
+            (Vector3)(Quaternion.Euler(0, 0, baseAngle - halfAngle) * Vector2.right) * detectionRange;
+
+        // 원호
+        for (int i = 0; i <= segments; i++)
+        {
+            float t = (float)i / segments;
+            float currentAngle = (baseAngle - halfAngle) + detectionAngle * t;
+            Vector3 point = transform.position +
+                (Vector3)(Quaternion.Euler(0, 0, currentAngle) * Vector2.right) * detectionRange;
+            Gizmos.DrawLine(prevPoint, point);
+            prevPoint = point;
+        }
+
+        // 양쪽 변
+        Vector3 leftEdge = transform.position +
+            (Vector3)(Quaternion.Euler(0, 0, baseAngle - halfAngle) * Vector2.right) * detectionRange;
+        Vector3 rightEdge = transform.position +
+            (Vector3)(Quaternion.Euler(0, 0, baseAngle + halfAngle) * Vector2.right) * detectionRange;
+        Gizmos.DrawLine(transform.position, leftEdge);
+        Gizmos.DrawLine(transform.position, rightEdge);
 
         // 대시 범위
         Gizmos.color = Color.red;

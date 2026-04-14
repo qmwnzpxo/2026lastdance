@@ -73,6 +73,8 @@ GameObject:
   - component: {fileID: 8298914050113543966}
   - component: {fileID: 3842865518448511387}
   - component: {fileID: 8669132918161158436}
+  - component: {fileID: 1544563924836468369}
+  - component: {fileID: 3013312165260401661}
   - component: {fileID: 932111969322341513}
   - component: {fileID: 6292284798517903503}
   - component: {fileID: 4749152377265445124}
@@ -132,35 +134,7 @@ MonoBehaviour:
   wallSlideSpeedDown: 10
   wallJumpForceX: 6
   wallJumpForceY: 12
-  defaultGravityScale: 1.2
-  ceilingGravityScale: -1.2
   spriteTransform: {fileID: 2957920387103072243}
-  dashGauge: 50
-  maxDashGauge: 50
-  dashRange: 8
-  dashDamage: 5
-  dashSpeed: 50
-  hitEnemiesInDash: []
-  bodySlamRange: 8
-  bodySlamSpeed: 50
-  bodySlamStopDistance: 0.5
-  bodySlamCooldown: 1
-  attackTransform: {fileID: 1681497214142862811}
-  attackBoxSize: {x: 1, y: 1}
-  attackBoxDistance: 1
-  attackSecondHitDelay: 0.15
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  isGrounded: 0
-  isTouchingCeiling: 0
-  isOnCeiling: 0
-  isTouchingRWall: 0
-  isTouchingLWall: 0
-  isWallSliding: 0
-  isWallJumping: 0
-  isDashing: 0
-  isAttack: 0
 --- !u!114 &8669132918161158436
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -173,10 +147,70 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80990ed5adb3ccb4cbb1cd377a4951a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 3
-  maxHp: 3
   damage: 0.5
-  hitlight: {fileID: 5392574669556163029}
+  HP: 10
+  MaxHP: 10
+  isDie: 0
+  dashGauge: 0
+  maxDashGauge: 5
+  dashGaugePerAttack: 0.3
+  defaultGravityScale: 1.2
+  ceilingGravityScale: -1.2
+  isGrounded: 0
+  isOnCeiling: 0
+  isTouchingLWall: 0
+  isTouchingRWall: 0
+  isWallSliding: 0
+  isWallJumping: 0
+  isDashing: 0
+  isTackling: 0
+  isTackleGroundRush: 0
+  isAttacking: 0
+  isHit: 0
+  hitLight: {fileID: 5392574669556163029}
+--- !u!114 &1544563924836468369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2319323084224703752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4004e5befe93e2946a8d630990dcc770, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackTransform: {fileID: 1681497214142862811}
+  attackBoxSize: {x: 1, y: 1}
+  attackBoxDistance: 1
+  attackSecondHitDelay: 0.1
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
+--- !u!114 &3013312165260401661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2319323084224703752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11ed408bcd2d9234eae95c66c085b61c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dashRange: 8
+  dashDamage: 5
+  dashSpeed: 50
+  dashBoxSize: {x: 1, y: 0.4}
+  tackleRange: 8
+  tackleSpeed: 50
+  tackleDamage: 0
+  tackleCooldown: 1
+  attackBoxSize: {x: 1, y: 1}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!50 &932111969322341513
 Rigidbody2D:
   serializedVersion: 5
