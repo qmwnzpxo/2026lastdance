@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: Pattern_Phase1_Panel
+  m_EditorClassIdentifier: Assembly-CSharp:BossSystem.Patterns:Phase1PanelPattern
+  _patternId: 
+  _patternType: 0
+  preDelay: 0
+  _panelPrefab: {fileID: 0}
+  _waypoints: []
+  _moveSpeed: 5
+  _lockOnDuration: 1.5
+  _lockFixedDuration: 0.5
+  _fireDuration: 0.3
+  _postFireDelay: 0.7
+  _castRadius: 0.2
+  _castDistance: 30
+  _laserDamage: 25
+  _playerLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  _warningLinePrefab: {fileID: 0}
+  _warningColor: {r: 1, g: 0.3, b: 0, a: 1}
+  _fireColor: {r: 1, g: 0, b: 0, a: 1}
+  _muzzleVfxPrefab: {fileID: 0}

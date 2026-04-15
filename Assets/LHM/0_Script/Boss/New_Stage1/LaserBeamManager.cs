@@ -18,8 +18,6 @@ namespace Boss.Phase1
     /// </summary>
     public class LaserBeamManager : MonoBehaviour
     {
-        [Header("References")]
-        [SerializeField] private BossPhase1Controller _phase1Controller;
 
         [Header("Beam Visual")]
         [SerializeField] private Material _laserMaterial;

@@ -1,52 +1,66 @@
+using System;
 using System.Threading;
 using BossSystem;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using System;
 
 namespace Boss.Phase1
 {
-    /// <summary>
-    /// 저격 판넬 시스템.
-    ///
-    /// [수정 v2]
-    ///   1. RunPanelLoopAsync 전체를 try-catch(OperationCanceledException)-finally로 감쌈.
-    ///      → 페이즈 전환/CancellationToken 취소 시 경고선이 화면에 잔류하는 버그 해결.
-    ///   2. AimAtPlayer의 _bossBlackboard 오타 수정 (_blackboard로 통일).
-    ///   3. UpdateWarningLinePositions의 _blackboard null 체크 통일.
-    ///   4. 각 비동기 스텝에도 개별 try-finally로 LineRenderer 즉시 정리 보장.
-    /// </summary>
+    // ═══════════════════════════════════════════════════════════════════════
+    // SniperPanelSystem.cs  —  저격 판넬 시스템
+    //
+    // ── 위치 확정 ─────────────────────────────────────────────────────────
+    //   BossPhase1Controller.cs가 제거되면서 이 파일이 판넬 시스템의
+    //   유일한 MonoBehaviour 구현체가 된다.
+    //   BossController.cs 에서 Initialize(_blackboard) + StartLoop(ct) 호출.
+    //
+    // ── 기획 의도 ─────────────────────────────────────────────────────────
+    //   판넬 N개가 panelTransforms[] 위치를 순환.
+    //   currentOffset += 1 마다 모든 판넬이 "다음 슬롯"으로 이동.
+    //   판넬 i의 목표 = panelTransforms[(i + offset) % N]
+    //
+    // ── 실행 흐름 ─────────────────────────────────────────────────────────
+    //   StartLoop(ct)
+    //     PanelSpawnAsync   : 보스 위치에서 순차 활성화
+    //     MoveToSlotsAsync  : 초기 슬롯으로 이동
+    //     AttackLoopAsync   : (Lock-on 경고 → 발사 → offset+1 → 이동) 반복
+    // ═══════════════════════════════════════════════════════════════════════
     public class SniperPanelSystem : MonoBehaviour
     {
-        [Header("Waypoints")]
-        [SerializeField] private Transform[] _waypoints;
+        [Header("Panels")]
+        [Tooltip("판넬 오브젝트 배열.")]
+        [SerializeField] private GameObject[] _panels;
+
+        [Tooltip("판넬이 순환 이동할 슬롯 위치 배열. _panels와 길이가 같아야 함.")]
+        [SerializeField] private Transform[] _panelTransforms;
 
         [Header("Movement")]
-        [SerializeField] private float _moveSpeed = 6f;
+        [SerializeField] private float _moveSpeed     = 4f;
+        [SerializeField] private float _spawnInterval = 0.2f;
 
         [Header("Warning Line")]
-        [SerializeField] private LineRenderer _warningLine;
+        [SerializeField] private LineRenderer[] _lineRenderers;
         [SerializeField] private float _warningDuration = 2f;
-        [SerializeField] private Color _warningColorFull = new Color(1f, 0.3f, 0f, 1f);
+        [SerializeField] private Color _warningColor    = new Color(1f, 0.3f, 0f, 1f);
+        [SerializeField] private Color _fireColor       = Color.red;
+        [SerializeField] private float _lineWidth       = 0.05f;
 
-        [Header("Laser Fire")]
-        [SerializeField] private float _fireDuration    = 0.25f;
-        [SerializeField] private float _castRadius      = 0.2f;
-        [SerializeField] private float _castMaxDistance = 30f;
-        [SerializeField] private LayerMask _playerLayer;
-        [SerializeField] private float _laserDamage     = 25f;
+        [Header("Projectile")]
+        [Tooltip("발사할 투사체 프리팹 (PanelProjectile 컴포넌트 필요)")]
+        [SerializeField] private GameObject _projectilePrefab;
+        [SerializeField] private float      _projectileSpeed    = 5f;
+        [SerializeField] private float      _projectileLifetime = 5f;
 
-        [Header("Visual")]
-        [SerializeField] private Color _fireColor = Color.red;
-        [SerializeField] private ParticleSystem _muzzleVfx;
+        // ── 런타임 상태 ──────────────────────────────────────────────────
+        private BossBlackboard _blackboard;
+        private bool           _initialized;
+        private bool[]         _isDestroyed;
+        private int            _currentOffset;
 
-        private BossBlackboard _blackboard; // [수정 2] _bossBlackboard → _blackboard 통일
-        private int  _currentWaypointIndex;
-        private bool _initialized;
-        private Color _warningColorCache;
+        public bool IsPanelCleared { get; private set; }
 
         // ─────────────────────────────────────────────────────────────────
-        // 초기화
+        // 초기화 API
         // ─────────────────────────────────────────────────────────────────
 
         public void Initialize(BossBlackboard blackboard)
@@ -59,238 +73,314 @@ namespace Boss.Phase1
         {
             if (!_initialized)
             {
-                Debug.LogError("[SniperPanel] Not initialized. Call Initialize() first.");
+                Debug.LogError("[SniperPanel] Initialize() 를 먼저 호출해야 합니다.");
                 return;
             }
-
-            if (_waypoints == null || _waypoints.Length == 0)
+            if (_panels == null || _panels.Length == 0) { Debug.LogWarning("[SniperPanel] _panels 비어있음."); return; }
+            if (_panelTransforms == null || _panelTransforms.Length != _panels.Length)
             {
-                Debug.LogWarning("[SniperPanel] No waypoints assigned.");
+                Debug.LogWarning("[SniperPanel] _panelTransforms 길이가 _panels와 다릅니다.");
                 return;
             }
 
-            if (_warningLine != null)
-                _warningLine.enabled = false;
+            int n = _panels.Length;
+            _isDestroyed   = new bool[n];
+            _currentOffset = 0;
+            IsPanelCleared = false;
 
-            RunPanelLoopAsync(ct).Forget();
+            EnsureLineRenderers(n);
+            HideAllLines();
+
+            foreach (var p in _panels)
+                if (p != null) p.SetActive(false);
+
+            RunAsync(ct).Forget();
+        }
+
+        /// <summary>외부(판넬 HP 스크립트)에서 파괴 발생 시 호출.</summary>
+        public void NotifyDestroyed(int index)
+        {
+            if (index < 0 || index >= _isDestroyed.Length) return;
+            _isDestroyed[index] = true;
+            Debug.Log($"[SniperPanel] Panel {index} destroyed.");
+
+            bool allDead = true;
+            for (int i = 0; i < _isDestroyed.Length; i++)
+                if (!_isDestroyed[i]) { allDead = false; break; }
+
+            if (allDead)
+            {
+                IsPanelCleared = true;
+                Debug.Log("[SniperPanel] All panels cleared.");
+            }
         }
 
         // ─────────────────────────────────────────────────────────────────
         // 메인 비동기 루프
         // ─────────────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// [수정 2] 전체 루프를 try-catch-finally로 감싸서 취소 시 잔류 리소스 제거.
-        ///
-        /// OperationCanceledException이 발생하는 경우:
-        ///   - 페이즈 전환으로 _phase1Cts가 취소될 때
-        ///   - 보스 사망으로 _lifetimeCts가 취소될 때
-        ///   모든 경우 finally 블록에서 경고선 / VFX가 반드시 정리된다.
-        /// </summary>
-        private async UniTaskVoid RunPanelLoopAsync(CancellationToken ct)
+        private async UniTaskVoid RunAsync(CancellationToken ct)
         {
-            _currentWaypointIndex = 0;
-
             try
             {
-                while (!ct.IsCancellationRequested)
-                {
-                    var targetWaypoint = _waypoints[_currentWaypointIndex];
-                    await MoveToWaypointAsync(targetWaypoint.position, ct);
-
-                    ct.ThrowIfCancellationRequested();
-
-                    AimAtPlayer();
-
-                    await ShowWarningLineAsync(ct);
-
-                    ct.ThrowIfCancellationRequested();
-
-                    await FireLaserAsync(ct);
-
-                    HideWarningLine();
-                    AdvanceWaypoint();
-                }
+                await PanelSpawnAsync(ct);
+                await MoveToSlotsAsync(_currentOffset, ct);
+                await AttackLoopAsync(ct);
             }
             catch (OperationCanceledException)
             {
-                // 정상적인 취소 경로: 예외를 삼키고 finally에서 정리
                 Debug.Log("[SniperPanel] Loop cancelled.");
             }
             finally
             {
-                // ── [수정 2] 취소 여부와 무관하게 반드시 실행 ──────────
-                // 경고선이 화면에 남아있지 않도록 강제 비활성화
-                HideWarningLine();
-                if (_muzzleVfx != null) _muzzleVfx.Stop();
-
-                Debug.Log("[SniperPanel] Cleanup complete.");
+                Cleanup();
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // 스텝별 구현
-        // ─────────────────────────────────────────────────────────────────
-
-        private async UniTask MoveToWaypointAsync(Vector3 target, CancellationToken ct)
+        private async UniTask PanelSpawnAsync(CancellationToken ct)
         {
-            const float ArrivalThresholdSqr = 0.01f * 0.01f;
-
-            while (!ct.IsCancellationRequested)
+            Vector3 bossPos = transform.position;
+            for (int i = 0; i < _panels.Length; i++)
             {
-                transform.position = Vector3.MoveTowards(
-                    transform.position, target, _moveSpeed * Time.deltaTime);
+                if (_panels[i] == null || _isDestroyed[i]) continue;
+                _panels[i].transform.position = bossPos;
+                _panels[i].SetActive(true);
+                await UniTask.Delay(TimeSpan.FromSeconds(_spawnInterval), cancellationToken: ct);
+            }
+        }
 
-                if ((transform.position - target).sqrMagnitude <= ArrivalThresholdSqr)
+        /// <summary>
+        /// 판넬 i의 목표 = _panelTransforms[(i + offset) % N]
+        /// 살아있는 판넬이 모두 도달할 때까지 반복.
+        /// </summary>
+        private async UniTask MoveToSlotsAsync(int offset, CancellationToken ct)
+        {
+            int    n       = _panels.Length;
+            var    arrived = new bool[n];
+
+            for (int i = 0; i < n; i++)
+                if (_isDestroyed[i] || _panels[i] == null) arrived[i] = true;
+
+            while (!AllArrived(arrived) && !ct.IsCancellationRequested)
+            {
+                for (int i = 0; i < n; i++)
                 {
-                    transform.position = target;
-                    return;
-                }
+                    if (arrived[i]) continue;
+                    int     slotIndex = (i + offset) % n;
+                    Vector2 current   = _panels[i].transform.position;
+                    Vector2 target    = _panelTransforms[slotIndex].position;
 
+                    _panels[i].transform.position = Vector2.MoveTowards(
+                        current, target, _moveSpeed * Time.deltaTime);
+
+                    if (Vector2.Distance(current, target) < 0.01f)
+                    {
+                        _panels[i].transform.position = target;
+                        arrived[i] = true;
+                    }
+                }
                 await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
         }
 
-        /// <summary>[수정 2] _bossBlackboard → _blackboard 오타 수정</summary>
-        private void AimAtPlayer()
+        private async UniTask AttackLoopAsync(CancellationToken ct)
         {
-            if (_blackboard == null) return; // [수정 2] 오타 수정
+            while (!ct.IsCancellationRequested && !IsPanelCleared)
+            {
+                if (_blackboard?.PlayerTransform == null)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                    continue;
+                }
 
-            Vector3 dir = _blackboard.PlayerPosition - transform.position;
-            if (dir.sqrMagnitude < 0.001f) return;
+                await ShowWarningLinesAsync(ct);
+                ct.ThrowIfCancellationRequested();
+                if (IsPanelCleared) break;
 
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            transform.rotation = Quaternion.Euler(0f, 0f, angle);
+                FireAll(_blackboard.PlayerPosition);
+                HideAllLines();
+
+                _currentOffset = (_currentOffset + 1) % _panels.Length;
+                await MoveToSlotsAsync(_currentOffset, ct);
+            }
         }
 
-        /// <summary>
-        /// [수정 2] ShowWarningLineAsync에 개별 try-finally 추가.
-        /// 이 스텝이 중간에 취소되어도 경고선 즉시 비활성화.
-        /// </summary>
-        private async UniTask ShowWarningLineAsync(CancellationToken ct)
-        {
-            if (_warningLine == null)
-            {
-                await UniTask.Delay(
-                    System.TimeSpan.FromSeconds(_warningDuration), cancellationToken: ct);
-                return;
-            }
+        // ─────────────────────────────────────────────────────────────────
+        // 경고선 (페이드인 + 플레이어 추적)
+        // ─────────────────────────────────────────────────────────────────
 
+        private async UniTask ShowWarningLinesAsync(CancellationToken ct)
+        {
             try
             {
-                _warningLine.enabled = true;
-                UpdateWarningLinePositions();
+                for (int i = 0; i < _panels.Length; i++)
+                    if (_lineRenderers[i] != null && !_isDestroyed[i])
+                        _lineRenderers[i].enabled = true;
 
                 float elapsed = 0f;
                 while (elapsed < _warningDuration && !ct.IsCancellationRequested)
                 {
-                    float t = elapsed / _warningDuration;
+                    float alpha = Mathf.Lerp(0f, _warningColor.a, elapsed / _warningDuration);
+                    for (int i = 0; i < _panels.Length; i++)
+                    {
+                        if (_lineRenderers[i] == null || !_lineRenderers[i].enabled) continue;
+                        if (_isDestroyed[i]) { _lineRenderers[i].enabled = false; continue; }
 
-                    _warningColorCache   = _warningColorFull;
-                    _warningColorCache.a = Mathf.Lerp(0f, _warningColorFull.a, t);
-
-                    _warningLine.startColor = _warningColorCache;
-                    _warningLine.endColor   = _warningColorCache;
-
-                    UpdateWarningLinePositions();
+                        Color c = _warningColor;
+                        c.a = alpha;
+                        _lineRenderers[i].startColor = c;
+                        _lineRenderers[i].endColor   = c;
+                        _lineRenderers[i].SetPosition(0, _panels[i].transform.position);
+                        _lineRenderers[i].SetPosition(1, _blackboard.PlayerPosition);
+                    }
 
                     elapsed += Time.deltaTime;
                     await UniTask.Yield(PlayerLoopTiming.Update, ct);
                 }
 
                 // 완전 불투명 고정
-                _warningLine.startColor = _warningColorFull;
-                _warningLine.endColor   = _warningColorFull;
+                for (int i = 0; i < _panels.Length; i++)
+                {
+                    if (_lineRenderers[i] == null || !_lineRenderers[i].enabled) continue;
+                    _lineRenderers[i].startColor = _warningColor;
+                    _lineRenderers[i].endColor   = _warningColor;
+                }
             }
             catch (OperationCanceledException)
             {
-                // 취소 시 경고선 즉시 숨김 후 예외 재전파
-                HideWarningLine();
+                HideAllLines();
                 throw;
             }
         }
 
-        /// <summary>
-        /// [수정 2] FireLaserAsync에도 try-finally 적용.
-        /// VFX가 발사 도중 취소돼도 muzzleVfx.Stop() 보장.
-        /// </summary>
-        private async UniTask FireLaserAsync(CancellationToken ct)
+        // ─────────────────────────────────────────────────────────────────
+        // 발사
+        // ─────────────────────────────────────────────────────────────────
+
+        private void FireAll(Vector3 targetPos)
         {
-            try
+            for (int i = 0; i < _panels.Length; i++)
             {
-                if (_warningLine != null)
-                {
-                    _warningLine.startColor = _fireColor;
-                    _warningLine.endColor   = _fireColor;
-                    UpdateWarningLinePositions();
-                }
-
-                if (_muzzleVfx != null) _muzzleVfx.Play();
-
-                Vector2 fireDir = transform.right;
-                Vector2 origin  = transform.position;
-
-                var hit = Physics2D.CircleCast(
-                    origin:    origin,
-                    radius:    _castRadius,
-                    direction: fireDir,
-                    distance:  _castMaxDistance,
-                    layerMask: _playerLayer
-                );
-
-                if (hit.collider != null)
-                {
-                    hit.collider.GetComponent<IPlayerHealth>()?.TakeDamage(_laserDamage);
-                    Debug.Log($"[SniperPanel] Hit player. Damage={_laserDamage}");
-                }
-
-                await UniTask.Delay(
-                    System.TimeSpan.FromSeconds(_fireDuration), cancellationToken: ct);
-            }
-            finally
-            {
-                // ── [수정 2] 취소 시 VFX 반드시 정지 ──────────────────
-                if (_muzzleVfx != null) _muzzleVfx.Stop();
+                if (_panels[i] == null || _isDestroyed[i]) continue;
+                FireProjectile(_panels[i].transform.position, targetPos);
             }
         }
 
-        private void HideWarningLine()
+        private void FireProjectile(Vector3 from, Vector3 to)
         {
-            if (_warningLine != null)
-                _warningLine.enabled = false;
+            if (_projectilePrefab == null) return;
+            GameObject proj = Instantiate(_projectilePrefab, from, Quaternion.identity);
+            var projectile = proj.GetComponent<PanelProjectile>();
+            if (projectile != null)
+                projectile.Init((Vector2)to, _projectileSpeed);
+            Destroy(proj, _projectileLifetime);
         }
 
-        private void AdvanceWaypoint()
+        // ─────────────────────────────────────────────────────────────────
+        // 유틸
+        // ─────────────────────────────────────────────────────────────────
+
+        private void HideAllLines()
         {
-            _currentWaypointIndex = (_currentWaypointIndex + 1) % _waypoints.Length;
+            if (_lineRenderers == null) return;
+            foreach (var lr in _lineRenderers)
+                if (lr != null) lr.enabled = false;
         }
 
-        /// <summary>[수정 2] _blackboard 통일 (원본의 _blackboard / _bossBlackboard 혼재 수정)</summary>
-        private void UpdateWarningLinePositions()
+        private void Cleanup()
         {
-            if (_warningLine == null || _blackboard == null) return; // [수정 2]
-            _warningLine.SetPosition(0, transform.position);
-            _warningLine.SetPosition(1, _blackboard.PlayerPosition);
+            HideAllLines();
+            if (_panels != null)
+                foreach (var p in _panels)
+                    if (p != null) p.SetActive(false);
         }
 
-        private void OnDestroy()
+        private static bool AllArrived(bool[] arr)
         {
-            HideWarningLine();
+            for (int i = 0; i < arr.Length; i++)
+                if (!arr[i]) return false;
+            return true;
         }
+
+        private void EnsureLineRenderers(int n)
+        {
+            if (_lineRenderers == null || _lineRenderers.Length != n)
+                _lineRenderers = new LineRenderer[n];
+
+            for (int i = 0; i < n; i++)
+            {
+                if (_lineRenderers[i] != null) continue;
+                if (_panels[i] == null) continue;
+
+                var lr = _panels[i].GetComponent<LineRenderer>()
+                      ?? _panels[i].AddComponent<LineRenderer>();
+
+                lr.positionCount = 2;
+                lr.startWidth    = _lineWidth;
+                lr.endWidth      = _lineWidth;
+                lr.useWorldSpace = true;
+                lr.material      = new Material(Shader.Find("Sprites/Default"));
+                lr.startColor    = _warningColor;
+                lr.endColor      = _warningColor;
+                lr.enabled       = false;
+
+                _lineRenderers[i] = lr;
+            }
+        }
+
+        private void OnDestroy() => Cleanup();
 
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            if (_waypoints == null) return;
+            if (_panelTransforms == null) return;
             Gizmos.color = Color.yellow;
-            for (int i = 0; i < _waypoints.Length; i++)
+            for (int i = 0; i < _panelTransforms.Length; i++)
             {
-                if (_waypoints[i] == null) continue;
-                Gizmos.DrawWireSphere(_waypoints[i].position, 0.3f);
-                if (i + 1 < _waypoints.Length && _waypoints[i + 1] != null)
-                    Gizmos.DrawLine(_waypoints[i].position, _waypoints[i + 1].position);
+                if (_panelTransforms[i] == null) continue;
+                Gizmos.DrawWireSphere(_panelTransforms[i].position, 0.3f);
+                int next = (i + 1) % _panelTransforms.Length;
+                if (_panelTransforms[next] != null)
+                    Gizmos.DrawLine(_panelTransforms[i].position, _panelTransforms[next].position);
             }
         }
 #endif
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // PanelProjectile  —  판넬에서 발사되는 투사체 (신규 추가)
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// SniperPanelSystem에서 FireProjectile이 호출하는 투사체 컴포넌트.
+    /// 기존 코드에서 GetComponent&lt;PanelProjectile&gt;()를 호출했으나
+    /// 클래스 정의가 누락되어 컴파일 오류가 발생하던 부분을 추가.
+    /// </summary>
+    public class PanelProjectile : MonoBehaviour
+    {
+        private Vector2 _direction;
+        private float   _speed;
+        private bool    _initialized;
+
+        /// <summary>발사 시 방향과 속도를 초기화.</summary>
+        public void Init(Vector2 targetPos, float speed)
+        {
+            _direction   = (targetPos - (Vector2)transform.position).normalized;
+            _speed       = speed;
+            _initialized = true;
+        }
+
+        private void Update()
+        {
+            if (!_initialized) return;
+            transform.Translate(_direction * _speed * Time.deltaTime, Space.World);
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (!other.CompareTag("Player")) return;
+            //other.GetComponent<LaserBeamManager.IPlayerHealth>()?.TakeDamage(10f);
+            Destroy(gameObject);
+        }
     }
 }
