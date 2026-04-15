@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 // ※ Script Execution Order: PlayerDash = -1 로 설정할 것
@@ -121,6 +121,7 @@ public class PlayerDash : MonoBehaviour
 
             if (line != null)
             {
+                line.enabled = true;
                 line.SetPosition(0, transform.position);
                 line.SetPosition(1, dashTargetPosition);
             }
@@ -181,7 +182,7 @@ public class PlayerDash : MonoBehaviour
         playerMove.RestoreGravity();
 
         if (line != null)
-            line.SetPosition(1, transform.position);
+            line.enabled = false;
 
         if (!state.isOnCeiling)
             rb.linearVelocity = Vector2.up * 0.05f;
@@ -308,8 +309,7 @@ public class PlayerDash : MonoBehaviour
 
         playerMove.RestoreGravity();
 
-        if (line != null)
-            line.SetPosition(1, transform.position);
+        line.enabled = false;
     }
 
     private void StartTackleGroundRush()

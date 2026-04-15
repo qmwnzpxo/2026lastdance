@@ -275,7 +275,9 @@ MonoBehaviour:
   detectionRangeX: 10
   detectionRangeY: 3
   dashRange: 3
-  maxHp: 10
+  detectionRange: 8
+  detectionAngle: 120
+  maxHp: 50
   currentHp: 0
   staggerDuration: 0.3
   isDead: 0
@@ -303,6 +305,7 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  bullet: {fileID: 0}
 --- !u!114 &5893438977847921965
 MonoBehaviour:
   m_ObjectHideFlags: 0

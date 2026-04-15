@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using System;
 using System.Threading;
 using UnityEngine;
@@ -15,7 +15,7 @@ public class PlayerState : MonoBehaviour
 {
     // ── 스탯 ──────────────────────────────────
     [Header("스탯")]
-    public float damage = 10f;
+    public float damage = 1f;
     public float HP = 10;
     public float MaxHP = 10;
     [RuntimeOnly, SerializeField] public bool isDie = false;
@@ -53,7 +53,6 @@ public class PlayerState : MonoBehaviour
     public Light2D hitLight;
 
     CancellationTokenSource hitCts;
-    public Action Attack;
 
 
     // ── 게이지 메서드 ─────────────────────────

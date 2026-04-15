@@ -91,6 +91,7 @@ public class NewEnemyBase : MonoBehaviour
                 {
                     case EnemyState.Attack:
                         isAttacking = true;
+                        isPlayerDetected = true;
                         await OnAttackState(actionToken);
                         break;
 
@@ -266,21 +267,21 @@ public class NewEnemyBase : MonoBehaviour
         float facingDir = transform.localScale.x >= 0f ? 1f : -1f;
         float baseAngle = facingDir > 0f ? 0f : 180f;
         float halfAngle = detectionAngle * 0.5f;
-        int segments = 20;
+        //int segments = 20;
 
         Vector3 prevPoint = transform.position +
             (Vector3)(Quaternion.Euler(0, 0, baseAngle - halfAngle) * Vector2.right) * detectionRange;
 
-        // 원호
-        for (int i = 0; i <= segments; i++)
-        {
-            float t = (float)i / segments;
-            float currentAngle = (baseAngle - halfAngle) + detectionAngle * t;
-            Vector3 point = transform.position +
-                (Vector3)(Quaternion.Euler(0, 0, currentAngle) * Vector2.right) * detectionRange;
-            Gizmos.DrawLine(prevPoint, point);
-            prevPoint = point;
-        }
+        //// 원호
+        //for (int i = 0; i <= segments; i++)
+        //{
+        //    float t = (float)i / segments;
+        //    float currentAngle = (baseAngle - halfAngle) + detectionAngle * t;
+        //    Vector3 point = transform.position +
+        //        (Vector3)(Quaternion.Euler(0, 0, currentAngle) * Vector2.right) * detectionRange;
+        //    Gizmos.DrawLine(prevPoint, point);
+        //    prevPoint = point;
+        //}
 
         // 양쪽 변
         Vector3 leftEdge = transform.position +

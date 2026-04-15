@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
@@ -21,8 +22,7 @@ public class NewEnemyCombat : MonoBehaviour
     [SerializeField] protected LayerMask playerLayer;
 
     [Header("발사 오브젝트")]
-    public GameObject bullet;
-    protected Transform toAttackTransform;
+    public EnemyBullet bullet;
     
     protected virtual void Awake()
     {
@@ -43,6 +43,7 @@ public class NewEnemyCombat : MonoBehaviour
             .WaitForSeconds(attackDelay, cancellationToken: ct)
             .SuppressCancellationThrow();
 
+        RotateAttackPivot();
         if (!canceled)
             ExecuteAttackBox();
 
@@ -58,11 +59,10 @@ public class NewEnemyCombat : MonoBehaviour
         if (attackTransform == null) return;
 
         Collider2D hit = Physics2D.OverlapBox(
-            attackTransform.position, attackBoxSize, 0f, playerLayer);
+            enemyBase.playerTransform.position, attackBoxSize, 0f, playerLayer);
 
         if(hit!=null)
         {
-            Debug.Log($"[{name}] 공격 적중: {hit.name}");
             //hit.GetComponent<PlayerState>()?.TakeDamage(attackDamage);
             Shoot(hit.transform);
         }
@@ -75,9 +75,32 @@ public class NewEnemyCombat : MonoBehaviour
     {
         if(bullet==null) return;
 
+        GameObject temp = EnemyBulletPool.Instance.Get(bullet.poolKey);
+        if(temp==null)  return;
+        temp.transform.SetPositionAndRotation(transform.position, transform.rotation);
+        temp.GetComponent<EnemyBullet>().Init((Vector2)(Pos.position - transform.position).normalized, attackDamage);
 
     }
 
+    protected virtual Vector3 RotateAttackPivot()
+    {
+
+        Vector3 direction;
+        if (attackTransform != null)
+        {
+            Vector2 dir = (enemyBase.playerTransform.position - attackTransform.position).normalized;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            attackTransform.rotation = Quaternion.Euler(0f, 0f, angle);
+            direction = new Vector3(0, 0, angle);
+        }
+        else
+        {
+            Vector2 dir = (enemyBase.playerTransform.position - transform.position).normalized;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            direction = new Vector3(0, 0, angle);
+        }
+        return direction;
+    }
 
     public virtual void TakeDamage(float damage)
     {
