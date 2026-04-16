@@ -272,11 +272,8 @@ MonoBehaviour:
   enemyCombat: {fileID: 0}
   playerTransform: {fileID: 0}
   animator: {fileID: 0}
-  detectionRangeX: 10
-  detectionRangeY: 3
-  dashRange: 3
-  detectionRange: 8
-  detectionAngle: 120
+  detectionRange: 9
+  detectionAngle: 60
   maxHp: 50
   currentHp: 0
   staggerDuration: 0.3
@@ -297,15 +294,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackDamage: 1
-  attackRange: 1
+  attackRange: 4
   attackCooldown: 1
   attackTransform: {fileID: 4533291742678393853}
   attackBoxSize: {x: 0.8, y: 0.8}
   attackDelay: 0.2
   playerLayer:
     serializedVersion: 2
-    m_Bits: 0
-  bullet: {fileID: 0}
+    m_Bits: 64
+  bullet: {fileID: 7544929931349441539, guid: 70492ea0ad2893b4595fc53b2b11ed18, type: 3}
 --- !u!114 &5893438977847921965
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -528,7 +525,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7636096957640279337}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0.9999998, w: 0.000622944}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -543,7 +540,7 @@ LineRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7636096957640279337}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1

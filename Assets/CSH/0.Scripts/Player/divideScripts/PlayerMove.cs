@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 
@@ -33,27 +33,29 @@ public class PlayerMove : MonoBehaviour
     // ── 천장 붙기 ────────────────────────────
     [Header("천장 붙기")]
     [SerializeField] private Transform spriteTransform;
-    private readonly Vector3 spriteScale        = new Vector3(1,  1, 1);
+    private bool justStoppedDashing; // PlayerDash에서 StopDash 직후 세팅
+    private readonly Vector3 spriteScale = new Vector3(1, 1, 1);
     private readonly Vector3 ceilingSpriteScale = new Vector3(1, -1, 1);
 
     // ── 내부 필드 ────────────────────────────
     private Rigidbody2D rb;
     private float moveInput;
     private float verticalInput;
-    private bool  isTouchingCeiling;   // PlayerMove 전용 (외부에 불필요)
-    private bool  wasTouchingCeiling;
-    private float wallJumpTime    = 0.1f;
+    private bool isTouchingCeiling;   // PlayerMove 전용 (외부에 불필요)
+    private bool wasTouchingCeiling;
+    private float wallJumpTime = 0.1f;
     private float wallJumpCounter = 0f;
-    private int   wallJumpDirection;
+    private int wallJumpDirection;
     private CancellationTokenSource wallJumpCts;
 
     private PlayerState state;
 
     // ── PlayerDash에서 필요한 공개 접근자 ───
-    public Rigidbody2D Rb              => rb;
-    public LayerMask   GroundLayer     => groundLayer;
-    public Transform   GroundCheck     => groundCheck;
-    public float       GroundCheckRadius => groundCheckRadius;
+    public Rigidbody2D Rb => rb;
+    public LayerMask GroundLayer => groundLayer;
+    public Transform GroundCheck => groundCheck;
+    public float GroundCheckRadius => groundCheckRadius;
+    public bool JustStoppedDashing { get => justStoppedDashing; set => justStoppedDashing = value; }
 
     // ────────────────────────────────────────
     #region Unity 생명주기
@@ -148,7 +150,7 @@ public class PlayerMove : MonoBehaviour
     {
         state.isWallSliding =
             (state.isTouchingLWall || state.isTouchingRWall)
-            && !state.isGrounded
+            //&& !state.isGrounded
             && !state.isOnCeiling
             && !state.isDashing ;
     }
@@ -202,7 +204,7 @@ public class PlayerMove : MonoBehaviour
     {
         bool justTouchedCeiling = isTouchingCeiling && !wasTouchingCeiling;
 
-        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing||state.isTackling))
+        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing||state.isTackling|| justStoppedDashing))
         {
             state.isOnCeiling     = true;
             rb.gravityScale       = state.ceilingGravityScale;
@@ -213,6 +215,7 @@ public class PlayerMove : MonoBehaviour
             DetachFromCeiling();
 
         wasTouchingCeiling = isTouchingCeiling;
+        justStoppedDashing = false; // ← 매 프레임 리셋
     }
 
     void DetachFromCeiling()

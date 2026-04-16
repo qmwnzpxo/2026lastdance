@@ -179,6 +179,7 @@ public class PlayerDash : MonoBehaviour
     void StopDash()
     {
         state.isDashing = false;
+        playerMove.JustStoppedDashing = true; // ← 추가
         playerMove.RestoreGravity();
 
         if (line != null)
