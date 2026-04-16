@@ -17,15 +17,18 @@ public class NewEnemyBase : MonoBehaviour
     public Transform playerTransform;
     [ SerializeField] protected Animator animator;
 
+    #region 박스형 탐지범위
+    /*
     [Header("탐지")]
     public float detectionRangeX = 10f;
     public float detectionRangeY = 3f;
-    public float dashRange = 3.0f;
+    */
+    #endregion
 
     [Header("탐지 - 부채꼴")]
     public float detectionRange = 8f;       // 부채꼴 반지름
     [Range(0f, 360f)]
-    public float detectionAngle = 120f;     // 시야각 (전체 각도)
+    public float detectionAngle = 60f;     // 시야각 (전체 각도)
 
     [Header("체력")]
     public float maxHp = 10f;
@@ -42,9 +45,9 @@ public class NewEnemyBase : MonoBehaviour
 
     // ── CTS ─────────────────────────────────
     // 현재 행동(순찰 / 추적 / 공격)을 중단할 토큰
-    private CancellationTokenSource actionCts;
+    protected CancellationTokenSource actionCts;
     // 메인 루프 자체를 종료할 토큰
-    private CancellationTokenSource loopCts;
+    protected CancellationTokenSource loopCts;
 
     //애니메이션 파라미터
     string ANIM_WALK;
@@ -72,7 +75,7 @@ public class NewEnemyBase : MonoBehaviour
     }
 
 
-    private async UniTaskVoid RunLoop(CancellationToken loopToken)
+    protected virtual async UniTaskVoid RunLoop(CancellationToken loopToken)
     {
         while(!loopToken.IsCancellationRequested && !isDead)
         {
@@ -179,7 +182,7 @@ public class NewEnemyBase : MonoBehaviour
         return EnemyState.Patrol;
     }
 
-    public void OnDamage(float damage)
+    public virtual void OnDamage(float damage)
     {
         if (isDead) return;
 
@@ -195,7 +198,7 @@ public class NewEnemyBase : MonoBehaviour
         EnterStagger();
     }
 
-    private void EnterStagger()
+    protected virtual void EnterStagger()
     {
         isStaggered = true;
         isAttacking = false;
@@ -206,7 +209,7 @@ public class NewEnemyBase : MonoBehaviour
     }
 
     /// <summary>경직 시간 동안 대기. loopToken 으로만 외부 종료 감지.</summary>
-    private async UniTask WaitForStaggerEnd(CancellationToken loopToken)
+    protected virtual async UniTask WaitForStaggerEnd(CancellationToken loopToken)
     {
         await UniTask.WaitForSeconds(staggerDuration, cancellationToken: loopToken)
                      .SuppressCancellationThrow();
@@ -223,7 +226,7 @@ public class NewEnemyBase : MonoBehaviour
     }
 
 
-    public bool IsPlayerInRange()
+    public virtual bool IsPlayerInRange()
     {
         if (playerTransform == null) return false;
         Vector2 toPlayer = playerTransform.position - transform.position;
@@ -247,7 +250,7 @@ public class NewEnemyBase : MonoBehaviour
         #endregion
     }
 
-    public bool isPlayerInAttackRange()
+    public virtual bool isPlayerInAttackRange()
     {
         if (playerTransform == null) return false;
         float distance = Vector2.Distance(transform.position, playerTransform.position);
@@ -257,11 +260,14 @@ public class NewEnemyBase : MonoBehaviour
     protected virtual void OnDrawGizmos()
     {
         if (isDead) return;
-
+        
+        
+        /*
         // 탐지 박스
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(transform.position,
             new Vector3(detectionRangeX * 2f, detectionRangeY * 2f, 0f));
+        */
 
         Gizmos.color = Color.yellow;
         float facingDir = transform.localScale.x >= 0f ? 1f : -1f;
@@ -293,7 +299,7 @@ public class NewEnemyBase : MonoBehaviour
 
         // 대시 범위
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, dashRange);
+        Gizmos.DrawWireSphere(transform.position, detectionRange);
 
         // 공격 범위
         Gizmos.color = Color.blue;

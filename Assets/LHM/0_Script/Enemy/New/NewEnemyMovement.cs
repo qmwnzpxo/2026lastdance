@@ -12,8 +12,8 @@ public class NewEnemyMovement : MonoBehaviour
     public Transform pointB;
 
 
-    public float detectionRangeX => enemyBase != null ? enemyBase.detectionRangeX : 10f;
-    public float detectionRangeY => enemyBase != null ? enemyBase.detectionRangeY : 3f;
+    //public float detectionRangeX => enemyBase != null ? enemyBase.detectionRangeX : 10f;
+    //public float detectionRangeY => enemyBase != null ? enemyBase.detectionRangeY : 3f;
 
 
     protected NewEnemyBase enemyBase;
@@ -87,7 +87,7 @@ public class NewEnemyMovement : MonoBehaviour
                 if (!enemyBase.isAttacking && enemyCombat != null)
                     return;
             }
-            else if (dist <= enemyBase.dashRange)
+            else if (dist <= enemyBase.detectionRange)
             {
                 // 대시 범위 → 대시
                 await Dash(ct);
