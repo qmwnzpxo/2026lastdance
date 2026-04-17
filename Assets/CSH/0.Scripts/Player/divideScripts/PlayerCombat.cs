@@ -8,8 +8,10 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private Transform attackTransform;
     [SerializeField] private Vector2   attackBoxSize     = new Vector2(1f, 1f);
     [SerializeField] private float     attackBoxDistance = 1f;
-    [SerializeField] private float     attackSecondHitDelay = 0.1f;
+    [SerializeField] private float     attackSecondHitDelay = 0.3f;
     [SerializeField] private LayerMask enemyLayer;
+
+    public float attackRepeatTime = 2;
 
     private PlayerState state;
 
@@ -67,18 +69,12 @@ public class PlayerCombat : MonoBehaviour
 
         Vector2 attackPos = (Vector2)attackTransform.position
                           + (Vector2)attackTransform.right * attackBoxDistance;
-
-        ExecuteAttackBox(attackPos);
-        await UniTask.WaitForSeconds(attackSecondHitDelay,
-            cancellationToken: this.destroyCancellationToken);
-
-        ExecuteAttackBox(attackPos);
-        await UniTask.WaitForSeconds(attackSecondHitDelay,
-            cancellationToken: this.destroyCancellationToken);
-
-        ExecuteAttackBox(attackPos);
-        await UniTask.WaitForSeconds(attackSecondHitDelay,
-            cancellationToken: this.destroyCancellationToken);
+        for (int i = 0; i < attackRepeatTime; i++)
+        {
+            ExecuteAttackBox(attackPos);
+            await UniTask.WaitForSeconds(attackSecondHitDelay/attackRepeatTime,
+                cancellationToken: this.destroyCancellationToken);
+        }
 
         state.isAttacking = false;
     }

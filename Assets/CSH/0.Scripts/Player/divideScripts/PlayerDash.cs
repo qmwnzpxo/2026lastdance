@@ -106,35 +106,15 @@ public class PlayerDash : MonoBehaviour
             // 벽타기 상태 리셋
             playerMove.ResetWallState();
 
-            // 마우스 방향 계산
-            dashDirection = GetMouseDirection();
 
-            // 목표 지점 계산 (지형 충돌 고려)
-            Vector2 origin = (Vector2)transform.position + dashDirection * 0.05f;
-            RaycastHit2D groundHit = Physics2D.Raycast(
-                origin, dashDirection, dashRange, playerMove.GroundLayer);
-            dashTargetPosition = groundHit.collider != null
-                ? groundHit.point
-                : (Vector2)transform.position + dashDirection * dashRange;
-
-            dashRemainingDistance = Vector2.Distance(transform.position, dashTargetPosition);
-
-            if (line != null)
+            // 대시 중 입력 → 버퍼에 저장
+            if (state.isDashing)
             {
-                line.enabled = true;
-                line.SetPosition(0, transform.position);
-                line.SetPosition(1, dashTargetPosition);
+                state.dashBuffered = true;
+                return; // 즉시 실행하지 않음
             }
 
-            rb.gravityScale = 0f;
-
-            // 게이지 충분 → 강화 대쉬 / 부족 → 태클
-            if (state.DashGauge >= 1f)
-                TriggerDash();
-            else
-                TriggerTackleFromDash(dashDirection);
-
-            Debug.DrawRay(transform.position, dashDirection * dashRange, Color.red, 1f);
+            ExecuteDash(GetMouseDirection());
         }
 
         // 대쉬 진행 중 종료 조건 체크 (Update)
@@ -157,10 +137,14 @@ public class PlayerDash : MonoBehaviour
     void TriggerDash()
     {
         // 벽/지형에 붙어있을 때 살짝 띄워서 시작
-        if (state.isGrounded) rb.position += new Vector2(0f, 0.05f);
-        if (state.isOnCeiling) rb.position += new Vector2(0f, -0.05f);
-        if (state.isTouchingLWall) rb.position += new Vector2(-0.05f, 0f);
-        if (state.isTouchingRWall) rb.position += new Vector2(0.05f, 0f);
+        //if (state.isGrounded) rb.position += new Vector2(0f, 0.05f);
+        //if (state.isOnCeiling) rb.position += new Vector2(0f, -0.05f);
+        //if (state.isTouchingLWall) rb.position += new Vector2(-0.05f, 0f);
+        //if (state.isTouchingRWall) rb.position += new Vector2(0.05f, 0f);
+        state.isGrounded = false;
+        state.isOnCeiling = false;
+        state.isTouchingLWall = false;
+        state.isTouchingRWall = false;
 
         state.TryUseDashGauge(1f);
 
@@ -187,6 +171,45 @@ public class PlayerDash : MonoBehaviour
 
         if (!state.isOnCeiling)
             rb.linearVelocity = Vector2.up * 0.05f;
+
+        if (state.dashBuffered)
+        {
+            state.dashBuffered = false;
+            ExecuteDash(GetMouseDirection());
+        }
+    }
+
+    void ExecuteDash(Vector2 dir)
+    {
+        // 마우스 방향 계산
+        dashDirection = dir;
+
+        // 목표 지점 계산 (지형 충돌 고려)
+        Vector2 origin = (Vector2)transform.position + dashDirection * 0.05f;
+        RaycastHit2D groundHit = Physics2D.Raycast(
+            origin, dashDirection, dashRange, playerMove.GroundLayer);
+        dashTargetPosition = groundHit.collider != null
+            ? groundHit.point
+            : (Vector2)transform.position + dashDirection * dashRange;
+
+        dashRemainingDistance = Vector2.Distance(transform.position, dashTargetPosition);
+
+        if (line != null)
+        {
+            line.enabled = true;
+            line.SetPosition(0, transform.position);
+            line.SetPosition(1, dashTargetPosition);
+        }
+
+        rb.gravityScale = 0f;
+
+        // 게이지 충분 → 강화 대쉬 / 부족 → 태클
+        if (state.DashGauge >= 1f)
+            TriggerDash();
+        else
+            TriggerTackleFromDash(dashDirection);
+
+        Debug.DrawRay(transform.position, dashDirection * dashRange, Color.red, 1f);
     }
 
     #endregion

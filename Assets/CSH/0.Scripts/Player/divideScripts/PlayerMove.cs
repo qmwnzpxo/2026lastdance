@@ -1,6 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.U2D;
 
 // ※ Script Execution Order 설정 필요
 //   PlayerDash: -1  /  PlayerMove: 0
@@ -32,7 +33,7 @@ public class PlayerMove : MonoBehaviour
 
     // ── 천장 붙기 ────────────────────────────
     [Header("천장 붙기")]
-    [SerializeField] private Transform spriteTransform;
+    [SerializeField]private SpriteRenderer spriteRenderer;
     private bool justStoppedDashing; // PlayerDash에서 StopDash 직후 세팅
     private readonly Vector3 spriteScale = new Vector3(1, 1, 1);
     private readonly Vector3 ceilingSpriteScale = new Vector3(1, -1, 1);
@@ -64,6 +65,9 @@ public class PlayerMove : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         state = GetComponent<PlayerState>();
         rb.gravityScale = state.defaultGravityScale;
+
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     void Update()
@@ -82,11 +86,14 @@ public class PlayerMove : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (Mathf.Abs(rb.linearVelocityX) >= 0.01)
+        {
+            FlipXSprite(rb.linearVelocityX >= 0.01 ? true : false);
+        }
         // Dash / Tackle 중에는 PlayerDash가 물리를 전담
         if (state.isDashing || state.isTackling || state.isTackleGroundRush)
             return;
         
-
         ApplyMovement();
         ApplyWallSlide();
     }
@@ -121,9 +128,14 @@ public class PlayerMove : MonoBehaviour
     void ApplyMovement()
     {
         if (state.isWallJumping) return;
+        if ((state.isWallSliding && !state.isGrounded) ||
+            state.isOnCeiling)
+            state.ModifyGauge(-Time.fixedDeltaTime);
+        else
+            state.ModifyGauge(Time.fixedDeltaTime * 5);
 
-        bool blockedByWall = (state.isTouchingLWall || state.isTouchingRWall)
-                             && !state.isGrounded && !state.isOnCeiling;
+            bool blockedByWall = (state.isTouchingLWall || state.isTouchingRWall)
+                                 && !state.isGrounded && !state.isOnCeiling;
         float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
         rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
     }
@@ -131,6 +143,7 @@ public class PlayerMove : MonoBehaviour
     void ApplyWallSlide()
     {
         if (!state.isWallSliding) return;
+
 
         float targetSlideSpeed;
         if      (verticalInput > 0) targetSlideSpeed = -wallSlideSpeedUp;
@@ -140,6 +153,19 @@ public class PlayerMove : MonoBehaviour
         float smoothedY = Mathf.Lerp(
             rb.linearVelocity.y, targetSlideSpeed, Time.fixedDeltaTime * 10f);
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, smoothedY);
+    }
+
+    void FlipXSprite(bool flipX)
+    {
+        if (spriteRenderer == null) return;
+
+        spriteRenderer.flipX = flipX;
+    }
+    void FlipYSprite(bool flipY)
+    {
+        if (spriteRenderer == null) return;
+
+        spriteRenderer.transform.localScale = flipY ? ceilingSpriteScale : spriteScale;
     }
 
     #endregion
@@ -152,7 +178,8 @@ public class PlayerMove : MonoBehaviour
             (state.isTouchingLWall || state.isTouchingRWall)
             //&& !state.isGrounded
             && !state.isOnCeiling
-            && !state.isDashing ;
+            && !state.isDashing
+            && state.stamina > 0;
     }
 
     #endregion
@@ -208,10 +235,10 @@ public class PlayerMove : MonoBehaviour
         {
             state.isOnCeiling     = true;
             rb.gravityScale       = state.ceilingGravityScale;
-            spriteTransform.localScale = ceilingSpriteScale;
+            FlipYSprite(state.isOnCeiling);
         }
 
-        if (state.isOnCeiling && !isTouchingCeiling)
+        if (state.isOnCeiling && !isTouchingCeiling||state.stamina<=0)
             DetachFromCeiling();
 
         wasTouchingCeiling = isTouchingCeiling;
@@ -222,7 +249,8 @@ public class PlayerMove : MonoBehaviour
     {
         state.isOnCeiling      = false;
         rb.gravityScale        = state.defaultGravityScale;
-        spriteTransform.localScale = spriteScale;
+        //spriteTransform.localScale = spriteScale;
+        FlipYSprite(state.isOnCeiling);
     }
 
     #endregion

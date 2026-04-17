@@ -19,6 +19,7 @@ public class PlayerState : MonoBehaviour
     public float HP = 10;
     public float MaxHP = 10;
     [RuntimeOnly, SerializeField] public bool isDie = false;
+    public float stamina = 100f;
 
     // ── 대쉬 게이지 ───────────────────────────
     [Header("대쉬 게이지")]
@@ -42,6 +43,7 @@ public class PlayerState : MonoBehaviour
     [RuntimeOnly, SerializeField] public bool isTouchingRWall;
     [RuntimeOnly, SerializeField] public bool isWallSliding;
     [RuntimeOnly, SerializeField] public bool isWallJumping;
+    [RuntimeOnly, SerializeField] public bool dashBuffered;
 
     // ── 액션 상태 (컴포넌트 간 상호 참조용) ──
     [Header("액션 상태")]
@@ -51,6 +53,7 @@ public class PlayerState : MonoBehaviour
     [RuntimeOnly, SerializeField] public bool isAttacking;
     [RuntimeOnly, SerializeField] public bool isHit;
     public Light2D hitLight;
+    public Light2D hitWorldLight;
 
     CancellationTokenSource hitCts;
 
@@ -59,6 +62,12 @@ public class PlayerState : MonoBehaviour
     public void AddDashGauge(float amount)
     {
         dashGauge = Mathf.Min(dashGauge + amount, maxDashGauge);
+    }
+
+    public void ModifyGauge(float value)
+    {
+        stamina += value;
+        stamina = Mathf.Clamp(stamina, 0, 100);
     }
 
     /// <summary>게이지 소비. 잔량 부족 시 false 반환.</summary>
@@ -73,6 +82,8 @@ public class PlayerState : MonoBehaviour
     // TODO: 기존 PlayerState의 HP, TakeDamage 등 구현을 여기에 병합
     public void TakeDamage(float dmg)
     {
+        if (isDashing)
+            return;
         // 기존 구현 병합 위치
         HP -= damage;
         if (HP <= 0)
@@ -95,11 +106,13 @@ public class PlayerState : MonoBehaviour
     public async UniTaskVoid Hitglow(CancellationToken tk)
     {
         hitLight.enabled = true;
+        hitWorldLight.enabled = true;
         var result = await UniTask.WaitForSeconds(0.3f, cancellationToken: tk)
             .SuppressCancellationThrow();
         if (!result)
         {
             hitLight.enabled = false;
+            hitWorldLight.enabled = false;
         }
     }
     void Die()
