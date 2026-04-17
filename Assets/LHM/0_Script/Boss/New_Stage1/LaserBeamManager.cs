@@ -4,18 +4,7 @@ using UnityEngine;
 
 namespace Boss.Phase1
 {
-    /// <summary>
-    /// 레이저 코어 간 빔 연결을 관리하는 컴포넌트.
-    ///
-    /// [수정 v2]
-    ///   1. LateUpdate 코어 순회 시 null / _isDead 이중 검사
-    ///   2. RebuildBeams도 유효 코어만 카운트
-    ///   3. BossBlackboard의 FlushPendingRemovals 이후에 LateUpdate가
-    ///      호출되므로 _aliveCores는 항상 최신 상태
-    ///   ※ LateUpdate 실행 순서:
-    ///      BossBlackboard.LateUpdate (Remove 처리) → LaserBeamManager.LateUpdate
-    ///      (Script Execution Order로 BossBlackboard를 더 낮은 값으로 설정 권장)
-    /// </summary>
+    
     public class LaserBeamManager : MonoBehaviour
     {
 
@@ -85,10 +74,6 @@ namespace Boss.Phase1
             var cores = _blackboard.AliveCores;
             int count = cores.Count;
 
-            // ── [수정 1] 유효 코어만 카운트 ──────────────────────────────
-            // BossBlackboard.LateUpdate가 먼저 실행되어 _pendingRemove를
-            // 이미 플러시했더라도, Destroy()는 아직 프레임 말에 처리 중일 수 있다.
-            // null 체크로 파괴 직후 코어를 방어한다.
             int validCount = 0;
             for (int i = 0; i < count; i++)
                 if (cores[i] != null) validCount++;
@@ -102,7 +87,7 @@ namespace Boss.Phase1
             // ── 빔 위치 갱신 ─────────────────────────────────────────────
             for (int i = 0; i < count; i++)
             {
-                // ── [수정 1] null 방어 ─────────────────────────────────
+
                 if (cores[i] == null) continue;
 
                 var lr = _beamRenderers[i];
@@ -124,10 +109,7 @@ namespace Boss.Phase1
             ApplyLaserDamage(cores);
         }
 
-        /// <summary>
-        /// i 이후 첫 번째 null이 아닌 코어 인덱스를 순환 탐색.
-        /// 모두 null이면 -1 반환.
-        /// </summary>
+
         private static int GetNextValidIndex(IReadOnlyList<LaserCore> cores, int from, int count)
         {
             for (int offset = 1; offset < count; offset++)
@@ -146,7 +128,6 @@ namespace Boss.Phase1
         {
             var cores = _blackboard.AliveCores;
 
-            // ── [수정 1] null 코어를 제외한 실제 유효 수로 빔 활성화 결정
             int validCount = 0;
             foreach (var c in cores)
                 if (c != null) validCount++;
@@ -186,7 +167,7 @@ namespace Boss.Phase1
 
             for (int i = 0; i < count; i++)
             {
-                // ── [수정 1] null 방어 ─────────────────────────────────
+                
                 if (cores[i] == null) continue;
                 if (_beamRenderers[i] == null || !_beamRenderers[i].enabled) continue;
 

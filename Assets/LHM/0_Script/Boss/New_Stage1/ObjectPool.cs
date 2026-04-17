@@ -4,26 +4,8 @@ using UnityEngine;
 namespace BossSystem
 {
     // ═══════════════════════════════════════════════════════════════════════
-    // ObjectPool.cs  [신규 - 수정 4: GC 스파이크 방지]
-    //
-    // ── 설계 원칙 ─────────────────────────────────────────────────────────
-    //   - 단일 static 레지스트리(Dictionary)로 프리팹별 풀을 관리.
-    //   - Get/Return 인터페이스를 최소화하여 기존 Instantiate/Destroy 코드를
-    //     최소한의 변경으로 교체 가능하도록 설계.
-    //   - IPoolable 구현 오브젝트는 Return 시 Reset() 자동 호출.
-    //   - 풀 미등록 프리팹은 일반 Instantiate/Destroy로 폴백(하위 호환).
-    //
-    // ── 사용 예시 ─────────────────────────────────────────────────────────
-    //   // 초기화 (씬 로드 시 1회)
-    //   ObjectPool.Preload(warningLinePrefab, parent: poolRoot, count: 4);
-    //   ObjectPool.Preload(laserVfxPrefab,   parent: poolRoot, count: 8);
-    //
-    //   // 기존: var go = Instantiate(prefab, pos, rot);
-    //   var go = ObjectPool.Get(prefab, pos, rot);
-    //
-    //   // 기존: Destroy(go);
-    //   ObjectPool.Return(go);
-    // ═══════════════════════════════════════════════════════════════════════
+    // ObjectPool.cs 
+    //═══════════════════════════════════════════════════════════════════════
     public class ObjectPool 
     {
         // 프리팹 InstanceID → 풀 스택
@@ -31,14 +13,7 @@ namespace BossSystem
         // 인스턴스 InstanceID → 원본 프리팹 InstanceID (Return 시 풀 역조회)
         private static readonly Dictionary<int, int>               _origins = new(64);
 
-        // ─────────────────────────────────────────────────────────────────
-        // Public API
-        // ─────────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// 씬 로드 시 미리 count 개를 생성해 풀에 적재.
-        /// 런타임 첫 Get의 GC 스파이크 완전 제거.
-        /// </summary>
+       
         public static void Preload(GameObject prefab, Transform parent, int count)
         {
             if (prefab == null) return;

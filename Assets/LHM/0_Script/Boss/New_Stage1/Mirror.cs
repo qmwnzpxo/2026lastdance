@@ -3,25 +3,6 @@ using UnityEngine;
 
 namespace BossSystem
 {
-    /// <summary>
-    /// 2페이즈 반사 레이저 기믹의 거울 컴포넌트.
-    ///
-    /// ── 45° 스냅 회전 알고리즘 ──────────────────────────────────────────
-    ///   공격 방향(로컬 X 부호)으로 회전 방향 결정.
-    ///   스냅 수식: snapped = Round(current / 45) × 45 ± 45
-    ///   정수 연산으로 float 누적 오차 완전 제거.
-    ///
-    /// ── 반사 판정 수학 ───────────────────────────────────────────────────
-    ///   입사: incidentDir = (mirrorPos - bossPos).normalized
-    ///   법선: normal = transform.up  (거울의 월드 up 벡터)
-    ///   반사: r = Vector2.Reflect(incidentDir, normal)
-    ///           = incidentDir - 2(incidentDir·normal) × normal
-    ///   판정: Vector2.Angle(r, dirToBoss) ≤ _angleTolerance
-    ///
-    /// ── Dirty Flag ──────────────────────────────────────────────────────
-    ///   CurrentAngle 프로퍼티 → 상위 패턴이 이전 각도와 비교해 변화 시에만
-    ///   레이캐스트 재계산. 매 프레임 Physics2D 호출을 줄임.
-    /// </summary>
     [RequireComponent(typeof(Collider2D))]
     public class Mirror : MonoBehaviour
     {
@@ -37,7 +18,6 @@ namespace BossSystem
         [SerializeField] private ParticleSystem _hitVfx;
 
         // ── 이벤트 ────────────────────────────────────────────────────────
-        /// <summary>반사 레이저가 보스에게 도달하면 발생. Phase2MirrorLaserPattern 구독.</summary>
         public event Action OnReflectedToBoss;
 
         // ── 내부 상태 ─────────────────────────────────────────────────────

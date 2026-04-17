@@ -3,25 +3,6 @@ using UnityEngine;
 
 namespace BossSystem
 {
-    /// <summary>
-    /// 보스의 데미지 수신 및 무적 상태를 관리하는 컴포넌트.
-    ///
-    /// ── Reference Counter 방식의 무적 시스템 ──────────────────────────────
-    /// 단순 bool 방식의 문제점:
-    ///   패턴 A가 SetInvincible(true) → 패턴 B가 SetInvincible(true)
-    ///   → 패턴 A가 먼저 SetInvincible(false) → 의도치 않게 무적 해제!
-    ///
-    /// Reference Counter 방식:
-    ///   AcquireInvincibility() 호출마다 카운터 +1
-    ///   ReleaseInvincibility() 호출마다 카운터 -1
-    ///   카운터 > 0 이면 무적. 0이 되어야 비로소 무적 해제.
-    ///
-    /// ── BreakBarrier (공통 딜타임 로직) ───────────────────────────────────
-    ///   기획: 각 패턴 파훼 시 방어막 5초 해제 → 딜 타임 발생.
-    ///   BreakBarrier()는 _invincibilityCount를 0으로 강제 리셋하고
-    ///   _dealTimeDuration 초 후 다시 무적을 재획득한다.
-    ///   중복 BreakBarrier 호출은 기존 코루틴을 취소하고 타이머를 재시작.
-    /// </summary>
     public class DamageHandler : MonoBehaviour
     {
         [Header("Stats")]

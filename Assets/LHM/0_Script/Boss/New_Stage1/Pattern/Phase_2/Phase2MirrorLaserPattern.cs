@@ -4,24 +4,17 @@ using System.Threading;
 using UnityEngine;
 
 namespace BossSystem.Patterns
-{
-
-
+{ // ───────────────────────────────────────────────────────────────────────
+    // Phase 2-2 — 거울 반사 레이저 (Sequential)
     // ───────────────────────────────────────────────────────────────────────
-    // Phase 2 — 거울 반사 레이저 기믹 (Sequential)
-    // ───────────────────────────────────────────────────────────────────────
+
     [CreateAssetMenu(fileName = "Pattern_Phase2_MirrorLaser",
                      menuName = "BossSystem/Patterns/Phase2_MirrorLaser")]
     public class Phase2MirrorLaserPattern : BossPatternBase
     {
         [Header("Mirror")]
         [SerializeField] private GameObject _mirrorPrefab;
-
-        // ── [수정] _mirrorSpawnPoint: 씬 오브젝트 참조 불가 ───────────────
-        // Transform을 SO에 직렬화하면 씬 오브젝트 참조 시 타입 미스.
-        // 씬 기준 오프셋 Vector3로 대체하여 SO에서 안전하게 직렬화.
-        [Tooltip("보스 위치 기준 거울 스폰 오프셋. (0,-6,0) = 보스 아래 6유닛")]
-        [SerializeField] private Vector3 _mirrorSpawnOffset = new Vector3(0f, -6f, 0f);
+        [SerializeField] private Transform _mirrorSpawnPoint;
         [SerializeField] private float _chargeTime = 2f;
         [SerializeField] private float _maxLaserDuration = 12f;
 
@@ -38,15 +31,16 @@ namespace BossSystem.Patterns
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
-            // 보스 위치 + 오프셋으로 스폰 위치 계산
-            Vector3 spawnPos = ctx.BossTransform.position + _mirrorSpawnOffset;
+            Vector3 spawnPos = _mirrorSpawnPoint != null
+                ? _mirrorSpawnPoint.position
+                : ctx.BossTransform.position + Vector3.down * 6f;
 
             var mirrorGo = Object.Instantiate(_mirrorPrefab, spawnPos, Quaternion.identity);
             var mirror = mirrorGo.GetComponent<Mirror>();
 
             if (mirror == null)
             {
-                Debug.LogError("[MirrorLaser] Mirror component missing!");
+                Debug.LogError("[MirrorLaser] Mirror component missing on prefab!");
                 Object.Destroy(mirrorGo);
                 return;
             }
@@ -61,6 +55,7 @@ namespace BossSystem.Patterns
 
             try
             {
+                // 충전 대기 (전조 연출)
                 Log($"Charging laser... ({_chargeTime}s)");
                 await UniTask.Delay(System.TimeSpan.FromSeconds(_chargeTime), cancellationToken: ct);
                 ct.ThrowIfCancellationRequested();
@@ -90,8 +85,8 @@ namespace BossSystem.Patterns
         {
             while (!ct.IsCancellationRequested)
             {
-                UnityEngine.Vector2 origin = ctx.BossTransform.position;
-                UnityEngine.Vector2 dir = ((UnityEngine.Vector2)ctx.PlayerTransform.position - origin).normalized;
+                Vector2 origin = ctx.BossTransform.position;
+                Vector2 dir = ((Vector2)ctx.PlayerTransform.position - origin).normalized;
 
                 if (line != null)
                     LaserUtility.SetLineImmediate(

@@ -8,23 +8,7 @@ namespace Boss.Phase1
 {
     // ═══════════════════════════════════════════════════════════════════════
     // SniperPanelSystem.cs  —  저격 판넬 시스템
-    //
-    // ── 위치 확정 ─────────────────────────────────────────────────────────
-    //   BossPhase1Controller.cs가 제거되면서 이 파일이 판넬 시스템의
-    //   유일한 MonoBehaviour 구현체가 된다.
-    //   BossController.cs 에서 Initialize(_blackboard) + StartLoop(ct) 호출.
-    //
-    // ── 기획 의도 ─────────────────────────────────────────────────────────
-    //   판넬 N개가 panelTransforms[] 위치를 순환.
-    //   currentOffset += 1 마다 모든 판넬이 "다음 슬롯"으로 이동.
-    //   판넬 i의 목표 = panelTransforms[(i + offset) % N]
-    //
-    // ── 실행 흐름 ─────────────────────────────────────────────────────────
-    //   StartLoop(ct)
-    //     PanelSpawnAsync   : 보스 위치에서 순차 활성화
-    //     MoveToSlotsAsync  : 초기 슬롯으로 이동
-    //     AttackLoopAsync   : (Lock-on 경고 → 발사 → offset+1 → 이동) 반복
-    // ═══════════════════════════════════════════════════════════════════════
+    //═══════════════════════════════════════════════════════════════════════
     public class SniperPanelSystem : MonoBehaviour
     {
         [Header("Panels")]
@@ -149,10 +133,6 @@ namespace Boss.Phase1
             }
         }
 
-        /// <summary>
-        /// 판넬 i의 목표 = _panelTransforms[(i + offset) % N]
-        /// 살아있는 판넬이 모두 도달할 때까지 반복.
-        /// </summary>
         private async UniTask MoveToSlotsAsync(int offset, CancellationToken ct)
         {
             int    n       = _panels.Length;
@@ -351,11 +331,6 @@ namespace Boss.Phase1
     // PanelProjectile  —  판넬에서 발사되는 투사체 (신규 추가)
     // ─────────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// SniperPanelSystem에서 FireProjectile이 호출하는 투사체 컴포넌트.
-    /// 기존 코드에서 GetComponent&lt;PanelProjectile&gt;()를 호출했으나
-    /// 클래스 정의가 누락되어 컴파일 오류가 발생하던 부분을 추가.
-    /// </summary>
     public class PanelProjectile : MonoBehaviour
     {
         private Vector2 _direction;

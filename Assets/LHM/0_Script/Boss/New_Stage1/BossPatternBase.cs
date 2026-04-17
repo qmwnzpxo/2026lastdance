@@ -28,14 +28,7 @@ public abstract class BossPatternBase : ScriptableObject, IBossPattern
     public string PatternId => _patternId;
     public PatternType Type => _patternType;
 
-    /// <summary>
-    /// 외부 진입점. preDelay 처리 후 OnExecuteAsync로 위임.
-    ///
-    /// [버그 수정] 기존 코드에서 switch(Random.Range(1,2))를 사용해
-    /// OnExecuteAsync가 절대 호출되지 않는 치명적 버그가 있었다.
-    /// Random.Range(int, int)는 max 미포함이므로 항상 1만 반환,
-    /// case 0 진입 불가. switch 전체 제거 후 직접 await으로 수정.
-    /// </summary>
+    
     public async UniTask ExecuteAsync(BossContext context, CancellationToken ct)
     {
         if (preDelay > 0f)

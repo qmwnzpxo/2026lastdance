@@ -7,15 +7,16 @@ namespace BossSystem.Patterns
 {
 
     // ───────────────────────────────────────────────────────────────────────
-    // Phase 1 — 360도 레이저 (Persistent)
+    // Phase 1-2 — 360도 레이저 (Persistent)
     // ───────────────────────────────────────────────────────────────────────
+
     [CreateAssetMenu(fileName = "Pattern_Phase1_360Laser",
                      menuName = "BossSystem/Patterns/Phase1_360Laser")]
     public class Phase1LaserPattern : BossPatternBase
     {
         [Header("Laser Cores")]
         [SerializeField] private GameObject _laserCorePrefab;
-        [SerializeField] private GameObject _laserBeamPrefab;
+        [SerializeField] private LineRenderer _laserBeamPrefab;
         [SerializeField] private float _radius = 5f;
         [SerializeField] private float _rotationSpeed = 30f;
 
@@ -30,46 +31,80 @@ namespace BossSystem.Patterns
         [Header("Last Core Behavior")]
         [SerializeField, Range(0f, 10f)] private float _soloCoreSelfDestructDelay = 3f;
 
-        [Header("Shield")]
-        [SerializeField] private GameObject _shieldVfxPrefab;
-        [SerializeField, Range(0.05f, 0.5f)] private float _pollInterval = 0.1f;
-
-        [Header("Recovery")]
-        [Tooltip("방어막 파괴 후 재생성까지의 딜 타임 (초)")]
-        [SerializeField] private float _recoveryTime = 5f;
+        // GC-safe 정적 버퍼
         private static readonly int[] _aliveBuffer = new int[4];
-
         private static readonly Vector3[] _spawnDirs =
         {
             Vector3.up, Vector3.right, Vector3.down, Vector3.left
         };
+        private BossBlackboard _blackboard_ref;
+        public void SetBlackboard(BossBlackboard bb) => _blackboard_ref = bb;
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
-            for (int i = 0; i < 4; i++)
+            var bb = _blackboard_ref ?? ctx.Blackboard;
+            if (bb == null)
             {
-                // 1. 꺼내고 위치 잡기
-                var coreGo = ObjectPool.Get(_laserCorePrefab, ctx.BossTransform.position, Quaternion.identity);
-                var core = coreGo.GetComponent<LaserCore>();
-
-                // 2. 초기화 (HP 등)
-                core.Reset();
-
-                // 3. 블랙보드에 등록 (이게 있어야 쉴드 패턴이 잠에서 깨어납니다!)
-                ctx.Blackboard.RegisterCore(core);
+                Debug.LogError("[Phase1LaserPattern] Blackboard is null! SetBlackboard() 또는 ctx.Blackboard를 확인하세요.");
+                return;
             }
 
-            // 2. 패턴 유지 루프
+            var bossPos = ctx.BossTransform.position;
+            var cores = new LaserCore[4];
+            var beams = new LineRenderer[4];
+
+            // ── 코어 스폰 ─────────────────────────────────────────────────
+            for (int i = 0; i < 4; i++)
+            {
+                var spawnPos = bossPos + _spawnDirs[i] * _radius;
+                var go = ObjectPool.HasPool(_laserCorePrefab)
+                    ? ObjectPool.Get(_laserCorePrefab, spawnPos, Quaternion.identity)
+                    : Object.Instantiate(_laserCorePrefab, spawnPos, Quaternion.identity);
+
+                cores[i] = go.GetComponent<LaserCore>();
+                cores[i].Reset();
+
+                int capturedIdx = i;
+                cores[capturedIdx].OnCoreDestroyed += (destroyedCore) =>
+                {
+                    ctx.DestroyedCoreCount++;
+                    Log($"Core {capturedIdx} destroyed. Total destroyed={ctx.DestroyedCoreCount}");
+                    FadeReconnectAsync(beams, capturedIdx, ct).Forget();
+                };
+
+                bb.RegisterCore(cores[i]);
+                Debug.Log($"[Phase1LaserPattern] Core {i} registered to Blackboard.");
+            }
+
+            // ── 빔 스폰 ───────────────────────────────────────────────────
+            for (int i = 0; i < 4; i++)
+            {
+                beams[i] = (_laserBeamPrefab != null && ObjectPool.HasPool(_laserBeamPrefab.gameObject))
+                    ? ObjectPool.GetLineRenderer(_laserBeamPrefab.gameObject, Vector3.zero, Quaternion.identity)
+                    : (_laserBeamPrefab != null ? Object.Instantiate(_laserBeamPrefab) : null);
+
+                if (beams[i] != null) beams[i].enabled = false;
+            }
+
+            // ── 메인 루프 ─────────────────────────────────────────────────
+            float angle = 0f;
+            float soloDestructDelay = _soloCoreSelfDestructDelay; 
+            bool soloTriggered = false;
+
             while (!ct.IsCancellationRequested)
             {
-                // 여기서 코어 회전이나 레이저 발사 로직을 구현하세요.
-                // 모든 코어가 파괴되면 루프 탈출
-                if (ctx.DestroyedCoreCount >= 4) break;
+                angle += _rotationSpeed * Time.deltaTime;
+                UpdateCorePositions(ctx.BossTransform.position, cores, angle);
+                UpdateBeamsAndDamage(cores, beams, _laserThickness, _playerLayer, _damagePerSecond);
+
+                if (soloDestructDelay > 0f && !soloTriggered)
+                    soloTriggered = CheckSoloCoreDestruct(cores, soloDestructDelay, ct);
 
                 await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
-        }
 
+            Cleanup(cores, beams);
+        }
 
         private void UpdateCorePositions(Vector3 center, LaserCore[] cores, float angle)
         {
@@ -98,7 +133,7 @@ namespace BossSystem.Patterns
 
             if (aliveCount < 2) return;
 
-            var castSize = new UnityEngine.Vector2(0.1f, thickness);
+            var castSize = new Vector2(0.1f, thickness);
             float damage = dps * Time.deltaTime;
 
             for (int i = 0; i < aliveCount; i++)
@@ -116,11 +151,21 @@ namespace BossSystem.Patterns
                     beams[i].SetPosition(0, from);
                     beams[i].SetPosition(1, to);
                 }
+
+                var hit = Physics2D.BoxCast(
+                    from, castSize,
+                    Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg,
+                    dir.normalized, dist, playerLayer);
+
+                //데미지 타격은 잠시 비활성화
+                //if (hit.collider != null)
+                 //   hit.collider.GetComponent<Boss.Phase1.LaserBeamManager.IPlayerHealth>()
+                   //    ?.TakeDamage(damage);
             }
         }
 
-        // 반환값: 트리거 발생 여부 (한 번만 실행하기 위해)
-        private static bool CheckSoloCoreDestruct(LaserCore[] cores, float delay, CancellationToken ct)
+        private static bool CheckSoloCoreDestruct(
+            LaserCore[] cores, float delay, CancellationToken ct)
         {
             int aliveCount = 0;
             LaserCore lastCore = null;
