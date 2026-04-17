@@ -46,6 +46,7 @@ public class PlayerDash : MonoBehaviour
     private PlayerMove playerMove;
     private Rigidbody2D rb;
     private LineRenderer line;
+    private PlayerAnimation ani;
 
     // ────────────────────────────────────────
     #region Unity 생명주기
@@ -55,6 +56,7 @@ public class PlayerDash : MonoBehaviour
         state = GetComponent<PlayerState>();
         playerMove = GetComponent<PlayerMove>();
         line = GetComponent<LineRenderer>();
+        ani = GetComponent<PlayerAnimation>();
 
         if (enemyLayer == 0)
             enemyLayer = LayerMask.GetMask("enemy");
@@ -113,7 +115,7 @@ public class PlayerDash : MonoBehaviour
                 state.dashBuffered = true;
                 return; // 즉시 실행하지 않음
             }
-
+            ani.Attack_flash();
             ExecuteDash(GetMouseDirection());
         }
 

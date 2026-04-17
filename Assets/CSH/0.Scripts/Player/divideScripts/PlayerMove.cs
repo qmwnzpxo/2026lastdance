@@ -50,6 +50,7 @@ public class PlayerMove : MonoBehaviour
     private CancellationTokenSource wallJumpCts;
 
     private PlayerState state;
+    private PlayerAnimation ani;
 
     // ── PlayerDash에서 필요한 공개 접근자 ───
     public Rigidbody2D Rb => rb;
@@ -64,6 +65,7 @@ public class PlayerMove : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         state = GetComponent<PlayerState>();
+        ani = GetComponent<PlayerAnimation>();
         rb.gravityScale = state.defaultGravityScale;
 
         if (spriteRenderer == null)
@@ -105,12 +107,14 @@ public class PlayerMove : MonoBehaviour
     {
         state.isGrounded = Physics2D.OverlapCircle(
             groundCheck.position, groundCheckRadius, groundLayer);
+        ani.IsGrounded();
     }
 
     void CheckCeiling()
     {
         isTouchingCeiling = Physics2D.OverlapCircle(
             ceilingCheck.position, ceilingCheckRadius, groundLayer);
+        ani.IsGrounded();
     }
 
     void CheckWall()
@@ -138,6 +142,14 @@ public class PlayerMove : MonoBehaviour
                                  && !state.isGrounded && !state.isOnCeiling;
         float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
         rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
+        if (moveInput > 0f)
+        {
+            ani.Run_on();
+            if (Input.GetKey(KeyCode.LeftShift))
+                ani.Power_Run_on();
+            else ani.Power_Run_off();
+        }
+        else ani.Run_off();
     }
 
     void ApplyWallSlide()
@@ -201,6 +213,7 @@ public class PlayerMove : MonoBehaviour
         if (state.isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            ani.Jump();
         }
         else if (state.isWallSliding && wallJumpCounter <= 0f)
         {
@@ -212,6 +225,7 @@ public class PlayerMove : MonoBehaviour
             wallJumpCts?.Cancel();
             wallJumpCts = new CancellationTokenSource();
             StartWallJumpCooldown(wallJumpCts.Token).Forget();
+            ani.Jump();
         }
     }
 

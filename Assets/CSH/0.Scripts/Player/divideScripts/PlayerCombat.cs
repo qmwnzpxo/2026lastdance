@@ -14,6 +14,7 @@ public class PlayerCombat : MonoBehaviour
     public float attackRepeatTime = 2;
 
     private PlayerState state;
+    private PlayerAnimation ani;
 
     // ────────────────────────────────────────
     #region Unity 생명주기
@@ -21,6 +22,7 @@ public class PlayerCombat : MonoBehaviour
     void Awake()
     {
         state = GetComponent<PlayerState>();
+        ani = GetComponent<PlayerAnimation>();
         if (enemyLayer == 0)
             enemyLayer = LayerMask.GetMask("enemy");
     }
@@ -60,6 +62,7 @@ public class PlayerCombat : MonoBehaviour
     void HandleAttack()
     {
         if (!Input.GetMouseButtonDown(0) || state.isAttacking) return;
+        ani.Attack();
         PerformAttack().Forget();
     }
 
