@@ -5,15 +5,16 @@ using UnityEngine;
 namespace BossSystem
 {
     // ═══════════════════════════════════════════════════════════════════════
-    // BossBlackboard  (수정 v2)
+    // BossBlackboard  (수정 v3)
     // ── 변경 내역 ─────────────────────────────────────────────────────────
-    //   [수정 3] _aliveCores 리스트 순회 중 Remove 충돌 방지
-    //     - _pendingRemove 큐 도입: HandleCoreDestroyed는 즉시 Remove 대신
-    //       큐에 적재하고, FlushPendingRemovals()에서 일괄 처리.
-    //     - FlushPendingRemovals는 LateUpdate 또는 명시적 호출로 실행.
-    //     - IReadOnlyList 노출은 유지 (외부 순회는 읽기 전용으로 안전).
+    //   [버그 수정] MonoBehaviour → 일반 class 로 변경
+    //     - BossController에서 new BossBlackboard(...) 로 생성하고 있었는데
+    //       MonoBehaviour를 new로 생성하면 Unity가 즉시 크래시.
+    //     - MonoBehaviour는 AddComponent로만 생성 가능.
+    //     - LateUpdate(FlushPendingRemovals)는 BossController.LateUpdate에서
+    //       직접 호출하도록 변경.
     // ═══════════════════════════════════════════════════════════════════════
-    public class BossBlackboard : MonoBehaviour
+    public class BossBlackboard  // MonoBehaviour 제거!
     {
         // ── HP ────────────────────────────────────────────────────────────
         public float MaxHP     { get; private set; }
@@ -29,10 +30,7 @@ namespace BossSystem
         public IReadOnlyList<LaserCore> AliveCores => _aliveCores;
         private readonly List<LaserCore> _aliveCores = new(4);
 
-        // ── [수정 3] 파괴 예약 큐 ─────────────────────────────────────────
-        // HandleCoreDestroyed가 LaserBeamManager.LateUpdate 순회 도중
-        // 호출될 경우 _aliveCores 수정 → InvalidOperationException 발생.
-        // 해결: 파괴된 코어를 큐에 쌓고, 순회가 끝난 뒤 일괄 제거.
+        // ── 파괴 예약 큐 ───────────────────────────────────────────────────
         private readonly Queue<LaserCore> _pendingRemove = new(4);
 
         // ── 플레이어 정보 ──────────────────────────────────────────────────
@@ -59,18 +57,14 @@ namespace BossSystem
             PlayerTransform = playerTransform;
         }
 
-        // ── [수정 3] LateUpdate에서 예약된 제거 일괄 처리 ─────────────────
-        // LaserBeamManager.LateUpdate가 _aliveCores를 순회한 뒤이므로
-        // 이 시점에 Remove를 수행해도 ConcurrentModification 없음.
-        private void LateUpdate()
+        // ── [수정] BossController.LateUpdate()에서 호출 ───────────────────
+        // MonoBehaviour가 아니므로 Unity 라이프사이클 메서드 없음.
+        // BossController가 자신의 LateUpdate에서 이 메서드를 직접 호출한다.
+        public void Tick()
         {
             FlushPendingRemovals();
         }
 
-        /// <summary>
-        /// 파괴 예약 큐를 비워 _aliveCores에서 안전하게 제거.
-        /// LaserBeamManager.LateUpdate 이후 호출 보장.
-        /// </summary>
         private void FlushPendingRemovals()
         {
             if (_pendingRemove.Count == 0) return;
@@ -82,7 +76,6 @@ namespace BossSystem
                 Debug.Log($"[Blackboard] Core flushed. Alive={_aliveCores.Count}");
             }
 
-            // 제거 후 이벤트 일괄 발행 (순회 완전 종료 후)
             OnCoreListChanged?.Invoke();
 
             if (_aliveCores.Count == 0)
@@ -143,17 +136,10 @@ namespace BossSystem
             OnCoreListChanged?.Invoke();
         }
 
-        /// <summary>
-        /// [수정 3] 즉시 Remove 대신 큐에 적재.
-        /// LaserBeamManager.LateUpdate가 _aliveCores를 for 루프로 순회하는
-        /// 동일 프레임에 Remove하면 인덱스 오류 또는 스킵이 발생한다.
-        /// 큐 방식은 현재 순회가 끝난 뒤 LateUpdate 말미에 일괄 처리된다.
-        /// </summary>
         private void HandleCoreDestroyed(LaserCore core)
         {
             _pendingRemove.Enqueue(core);
             Debug.Log($"[Blackboard] Core queued for removal. Queue={_pendingRemove.Count}");
-            // 실제 Remove + 이벤트는 FlushPendingRemovals()에서 처리
         }
 
         // ── 데미지 / 회복 API ─────────────────────────────────────────────

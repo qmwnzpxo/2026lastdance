@@ -9,11 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b272809795a5fa34f82b67db940c757f, type: 3}
+  m_Script: {fileID: 11500000, guid: c6e2c807a6d56d54b9366c581d793e21, type: 3}
   m_Name: Pattern_Phase1_Shield
   m_EditorClassIdentifier: 
-  _patternId: 
+  _patternId: 3
   _patternType: 0
   preDelay: 0
-  _shieldVfxPrefab: {fileID: 0}
+  _shieldVfxPrefab: {fileID: 369848673549158141, guid: 90a825150be83224c892b9058b97c664, type: 3}
   _pollInterval: 0.1

@@ -9,14 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: c3f275cda23826a4ea7470e1b8bd5882, type: 3}
   m_Name: Pattern_Phase1_Panel
-  m_EditorClassIdentifier: Assembly-CSharp:BossSystem.Patterns:Phase1PanelPattern
-  _patternId: 
-  _patternType: 0
+  m_EditorClassIdentifier: 
+  _patternId: 2
+  _patternType: 1
   preDelay: 0
-  _panelPrefab: {fileID: 0}
-  _waypoints: []
+  _panelPrefab: {fileID: 6973240244723263613, guid: f5db1755915fa8e4bb868b34ae0d6ad4, type: 3}
   _moveSpeed: 5
   _lockOnDuration: 1.5
   _lockFixedDuration: 0.5
@@ -27,7 +26,7 @@ MonoBehaviour:
   _laserDamage: 25
   _playerLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   _warningLinePrefab: {fileID: 0}
   _warningColor: {r: 1, g: 0.3, b: 0, a: 1}
   _fireColor: {r: 1, g: 0, b: 0, a: 1}

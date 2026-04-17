@@ -9,20 +9,10 @@ namespace BossSystem
     // ═══════════════════════════════════════════════════════════════════════
     // BossController.cs  —  최상위 오케스트레이터
     //
-    // ── 중복 제거 내역 ─────────────────────────────────────────────────────
-    //   Before: BossPhase1Controller.cs 가 별도 오케스트레이터로 존재.
-    //           페이즈 시작/전환/CTS 관리 로직이 두 곳에 분산되어 있었음.
-    //   After:  BossController 단일 오케스트레이터.
-    //           BossPhase1Controller 삭제 (Pool 프리로드는 이 파일로 흡수).
-    //
-    // ── CancellationToken 계층 ────────────────────────────────────────────
-    //   _lifetimeCts  : 보스 오브젝트 수명 (OnDestroy에서 Cancel)
-    //   _phaseCts     : 현재 페이즈 전용 (_lifetimeCts와 Linked)
-    //   페이즈 전환 시: _phaseCts.Cancel → Dispose → 새 CTS 생성 (Linked)
-    //
-    // ── ObjectPool 프리로드 ────────────────────────────────────────────────
-    //   기존 BossPhase1Controller에서 담당하던 Pool.Preload 로직을 흡수.
-    //   _poolPreloadEntries를 Inspector에 등록하면 Awake에서 일괄 프리로드.
+    // ── 수정 내역 ─────────────────────────────────────────────────────────
+    //   [버그 수정] LateUpdate 추가 → _blackboard.Tick() 호출
+    //     BossBlackboard가 MonoBehaviour에서 일반 class로 변경되었으므로
+    //     Unity 라이프사이클을 BossController가 대신 구동해야 한다.
     // ═══════════════════════════════════════════════════════════════════════
 
     [RequireComponent(typeof(DamageHandler))]
@@ -36,23 +26,15 @@ namespace BossSystem
         [Tooltip("Index 0 = 1페이즈. hpThreshold 내림차순 정렬.")]
         [SerializeField] private List<BossPhase> _phases;
 
-        
-
-        // ── Pool 프리로드 (BossPhase1Controller에서 흡수) ──────────────────
+        // ── Pool 프리로드 ─────────────────────────────────────────────────
         [Header("Pool Preload")]
-        [Tooltip("경고선, 레이저 VFX 등 풀링할 프리팹 목록")]
         [SerializeField] private PoolPreloadEntry[] _poolPreloadEntries;
-
-        [Tooltip("풀 오브젝트들의 부모 Transform (씬 정리용)")]
         [SerializeField] private Transform _poolRoot;
 
         // ── 내부 컴포넌트 ─────────────────────────────────────────────────
         private DamageHandler  _damageHandler;
         private BossBlackboard _blackboard;
         private BossContext    _context;
-
-        private BossPatternBase _pattern;
-        Phase1PanelPattern _phase1PanelPattern;
 
         private int _currentPhaseIndex = -1;
 
@@ -62,6 +44,7 @@ namespace BossSystem
 
         public event System.Action<int> OnPhaseChanged;
         public event System.Action      OnBossDead;
+
 
         // ─────────────────────────────────────────────────────────────────
         // Unity Lifecycle
@@ -74,24 +57,33 @@ namespace BossSystem
 
             _lifetimeCts = new CancellationTokenSource();
 
+            // BossBlackboard는 일반 class → new 로 생성 (MonoBehaviour 아님)
             _blackboard = new BossBlackboard(_damageHandler.MaxHP, _playerTransform);
             _context    = new BossContext(transform, _playerTransform, _damageHandler, _blackboard);
 
-            Debug.Log("try setpo");
-
-            // Pool 프리로드 (런타임 첫 Get의 GC 스파이크 제거)
             PreloadPools();
         }
 
         private void Start()
         {
-            StartBossAsync(_lifetimeCts.Token).Forget();
+            StartBossEncounter();
         }
 
         private void Update()
         {
-            // Lead Targeting을 위한 플레이어 속도 매 프레임 갱신
             _blackboard.UpdatePlayerVelocity();
+        }
+
+        // ── [수정] BossBlackboard.Tick() 구동 ────────────────────────────
+        // BossBlackboard가 MonoBehaviour가 아니므로 여기서 직접 호출.
+        // LaserBeamManager.LateUpdate 이후에 실행되도록
+        // Script Execution Order에서 BossController를 LaserBeamManager보다
+        // 높은 값(나중 실행)으로 설정 권장.
+        private void LateUpdate()
+        {
+            _blackboard.Tick();
+            // 매 프레임 혹은 HP 변경 시점에 페이즈 전환 체크
+            CheckPhaseTransition();
         }
 
         private void OnDestroy()
@@ -115,63 +107,99 @@ namespace BossSystem
                 ObjectPool.Preload(entry.Prefab, _poolRoot, entry.Count);
             }
         }
+        private void CheckPhaseTransition()
+        {
+            float hpRatio = _damageHandler.CurrentHP / _damageHandler.MaxHP; // (프로퍼티 이름에 맞게 수정해주세요)
 
+            int targetIndex = -1;
+
+            // HP 임계값에 맞는 페이즈 찾기 (내림차순 정렬 가정)
+            for (int i = 0; i < _phases.Count; i++)
+            {
+                if (hpRatio <= _phases[i].hpThreshold)
+                    targetIndex = i;
+            }
+
+            // 페이즈가 바뀌어야 한다면 실행
+            if (targetIndex != -1 && targetIndex != _currentPhaseIndex)
+            {
+                _currentPhaseIndex = targetIndex;
+                EnterPhaseAsync(_currentPhaseIndex).Forget();
+            }
+        }
         // ─────────────────────────────────────────────────────────────────
         // 보스 메인 루프
         // ─────────────────────────────────────────────────────────────────
 
-        private async UniTaskVoid StartBossAsync(CancellationToken lifetimeCt)
+        // 보스 전투 시작 시 최초 1회 호출
+        public void StartBossEncounter()
         {
-            for (int i = 0; i < _phases.Count; i++)
-            {
-                if (lifetimeCt.IsCancellationRequested) return;
-                await EnterPhaseAsync(i, lifetimeCt);
-            }
-            Debug.Log("[BossController] All phases completed.");
+            // 시작할 때 HP 비율 검사를 통해 자동으로 페이즈를 시작하게 하거나
+            CheckPhaseTransition();
+
+            // 또는 강제로 0번(1페이즈)을 시작하게 함
+            // _currentPhaseIndex = 0;
+            // EnterPhaseAsync(0).Forget(); 
         }
 
-        private async UniTask EnterPhaseAsync(int phaseIndex, CancellationToken lifetimeCt)
+        private async UniTaskVoid EnterPhaseAsync(int phaseIndex)
         {
-            _currentPhaseIndex = phaseIndex;
+            // 1. 기존 페이즈 패턴들 즉시 중단
+            _phaseCts?.Cancel();
+            _phaseCts?.Dispose();
+            _phaseCts = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+
+            var ct = _phaseCts.Token;
             var phase = _phases[phaseIndex];
 
-            Debug.Log($"[BossController] Entering Phase {phaseIndex + 1}");
+            Debug.Log($"[Phase {phaseIndex}] 진입");
 
-            CancelAndRecreatePhaseCts(lifetimeCt);
-
-            _damageHandler.ForceResetInvincibility();
-            if (phase.hpRecoverRatio > 0f)
-                _damageHandler.RecoverHP(phase.hpRecoverRatio);
-
-            if (phase.spawnPointIndex >= 0 && phase.spawnPointIndex < _spawnPoints.Length)
+            // 초기화: 스폰 위치 이동 및 HP 회복 등 (필요 시)
+            if (phase.spawnPointIndex >= 0 && _spawnPoints != null && phase.spawnPointIndex < _spawnPoints.Length)
+            {
                 transform.position = _spawnPoints[phase.spawnPointIndex].position;
-
-            _context.DestroyedCoreCount = 0;
-            OnPhaseChanged?.Invoke(phaseIndex);
-
-            var phaseCt = _phaseCts.Token;
-
-            var patternTask = RunPhasePatternsAsync(phase, phaseCt);
-
-            // 마지막 페이즈가 아니면 HP 임계값 감시
-            if (phaseIndex < _phases.Count - 1)
-            {
-                var nextPhase = _phases[phaseIndex + 1];
-                await WatchPhaseTransitionAsync(nextPhase.hpThreshold, phaseCt, lifetimeCt);
-            }
-            else
-            {
-                await UniTask.WaitUntilCanceled(phaseCt);
             }
 
-            _phaseCts?.Cancel();
-            await patternTask.SuppressCancellationThrow();
+            // ==========================================================
+            // 2. Persistent 패턴 (병렬 실행)
+            // ==========================================================
+            // 페이즈가 끝날 때까지 백그라운드에서 계속 돌아야 함
+            foreach (var pattern in phase.persistentPatterns)
+            {
+                if (pattern != null)
+                    pattern.ExecuteAsync(_context, ct).Forget(); // await 하지 않음
+            }
 
-            Debug.Log($"[BossController] Phase {phaseIndex + 1} ended.");
+            // ==========================================================
+            // 3. Sequential 패턴 (순차 루프 실행)
+            // ==========================================================
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    foreach (var pattern in phase.sequentialPatterns)
+                    {
+                        if (pattern == null) continue;
+
+                        // 하나의 패턴이 완전히 끝날 때까지 대기
+                        await pattern.ExecuteAsync(_context, ct);
+                    }
+                    // 모든 패턴 한 바퀴 돌고 잠시 대기 (무한 루프 방지)
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                }
+            }
+            catch (System.OperationCanceledException)
+            {
+                // 페이즈 전환으로 인한 취소는 정상적인 흐름
+            }
         }
 
         private async UniTask RunPhasePatternsAsync(BossPhase phase, CancellationToken phaseCt)
         {
+            _phaseCts?.Cancel();
+            _phaseCts?.Dispose();
+
+            _phaseCts = new CancellationTokenSource();
             var tasks = new List<UniTask>(phase.persistentPatterns.Count + 1);
 
             foreach (var p in phase.persistentPatterns)
@@ -239,6 +267,13 @@ namespace BossSystem
 
         public void TakeDamage(float damage) => _damageHandler.TakeDamage(damage);
 
+        /// <summary>
+        /// BossPatternInjector가 씬 참조를 SO 패턴에 주입할 때 사용.
+        /// phases 리스트를 읽기 전용으로 노출.
+        /// </summary>
+        public System.Collections.Generic.IReadOnlyList<BossPhase> GetPhasesForInjection()
+            => _phases;
+
 #if UNITY_EDITOR
         [ContextMenu("Debug: Break Barrier")]
         private void Debug_BreakBarrier()
@@ -257,7 +292,6 @@ namespace BossSystem
 #endif
     }
 
-    // ── Pool 프리로드 설정 구조체 (BossPhase1Controller에서 이동) ──────────
     [System.Serializable]
     public struct PoolPreloadEntry
     {

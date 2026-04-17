@@ -14,7 +14,7 @@ namespace Boss.Phase1
     public class LaserCore : MonoBehaviour, IPoolable
     {
         [Header("Stats")]
-        [SerializeField] private float _maxHP = 30f;
+        [SerializeField] private float _maxHP = 1f;
 
         [Header("Visual")]
         [SerializeField] private SpriteRenderer _spriteRenderer;
@@ -53,9 +53,6 @@ namespace Boss.Phase1
 
         public void TakeDamage(float damage)
         {
-            // ── [수정 1] _isDead 이중 체크 ───────────────────────────────
-            if (_isDead || damage <= 0f) return;
-
             _currentHP -= damage;
             UpdateVisualHP();
 
