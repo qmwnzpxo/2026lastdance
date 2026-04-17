@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 71e693b6ef535794ea6f482d358c27ac, type: 3}
-  m_Name: BossPhase
+  m_Name: Phase 1_Boss Phase
   m_EditorClassIdentifier: 
   hpThreshold: 1
   hpRecoverRatio: 0

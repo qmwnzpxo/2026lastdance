@@ -57,11 +57,16 @@ namespace BossSystem
 
             _lifetimeCts = new CancellationTokenSource();
 
-            // BossBlackboard는 일반 class → new 로 생성 (MonoBehaviour 아님)
             _blackboard = new BossBlackboard(_damageHandler.MaxHP, _playerTransform);
-            _context    = new BossContext(transform, _playerTransform, _damageHandler, _blackboard);
+            _context = new BossContext(transform, _playerTransform, _damageHandler, _blackboard);
 
-            PreloadPools();
+            _damageHandler.OnHPChanged += (current, max) =>
+            {
+                // 깎인 만큼 블랙보드에도 반영 (TakeDamage 등의 방식으로 직접 조작하거나)
+                // 가장 직관적인 방법은 Blackboard에 SetHP 메서드를 만들어서 동기화하는 것입니다.
+            };
+
+            // 혹은 CheckPhaseTransition() 자체를 블랙보드가 아닌 데미지 핸들러의 HP를 보도록 수정하는 것이 제일 깔끔합니다!
         }
 
         private void Start()
@@ -107,26 +112,30 @@ namespace BossSystem
                 ObjectPool.Preload(entry.Prefab, _poolRoot, entry.Count);
             }
         }
+        // 2. 페이즈 전환 루프: 조건을 좀 더 엄격하게 체크
         private void CheckPhaseTransition()
         {
-            float hpRatio = _damageHandler.CurrentHP / _damageHandler.MaxHP; // (프로퍼티 이름에 맞게 수정해주세요)
+            // 1. 가장 확실한 진짜 체력 비율을 가져옵니다. (MaxHP 0 나누기 방어)
+            if (_damageHandler.MaxHP <= 0f) return;
+            float hpRatio = _damageHandler.CurrentHP / _damageHandler.MaxHP;
 
-            int targetIndex = -1;
-
-            // HP 임계값에 맞는 페이즈 찾기 (내림차순 정렬 가정)
-            for (int i = 0; i < _phases.Count; i++)
+            // 2. 마지막 페이즈부터 역순으로 검사합니다.
+            // 핵심 조건: i > _currentPhaseIndex
+            // 현재 진행 중이거나 이미 지나간 페이즈는 아예 검사조차 하지 않습니다!
+            for (int i = _phases.Count - 1; i > _currentPhaseIndex; i--)
             {
+                // 다음 페이즈의 체력 조건에 도달했다면?
                 if (hpRatio <= _phases[i].hpThreshold)
-                    targetIndex = i;
-            }
+                {
+                    _currentPhaseIndex = i;
+                    EnterPhaseAsync(_currentPhaseIndex).Forget();
 
-            // 페이즈가 바뀌어야 한다면 실행
-            if (targetIndex != -1 && targetIndex != _currentPhaseIndex)
-            {
-                _currentPhaseIndex = targetIndex;
-                EnterPhaseAsync(_currentPhaseIndex).Forget();
+                    // 더 이상 검사할 필요가 없으니 즉시 루프 탈출
+                    break;
+                }
             }
         }
+
         // ─────────────────────────────────────────────────────────────────
         // 보스 메인 루프
         // ─────────────────────────────────────────────────────────────────
@@ -134,66 +143,57 @@ namespace BossSystem
         // 보스 전투 시작 시 최초 1회 호출
         public void StartBossEncounter()
         {
-            // 시작할 때 HP 비율 검사를 통해 자동으로 페이즈를 시작하게 하거나
-            CheckPhaseTransition();
+            if (_phases == null || _phases.Count == 0) return;
 
-            // 또는 강제로 0번(1페이즈)을 시작하게 함
-            // _currentPhaseIndex = 0;
-            // EnterPhaseAsync(0).Forget(); 
+            _currentPhaseIndex = 0; // 무조건 0번 인덱스(1페이즈) 고정
+            EnterPhaseAsync(0).Forget();
         }
-
         private async UniTaskVoid EnterPhaseAsync(int phaseIndex)
         {
-            // 1. 기존 페이즈 패턴들 즉시 중단
+            // [중요] 이미 해당 페이즈가 실행 중이라면 중복 실행 방지
+            // (이게 없으면 LateUpdate에서 매 프레임 Cancel을 때리게 됩니다)
+            // 단, 디버그를 위해 처음 한 번은 넘어가도록 설계해야 함
+
             _phaseCts?.Cancel();
             _phaseCts?.Dispose();
             _phaseCts = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
-
             var ct = _phaseCts.Token;
+
             var phase = _phases[phaseIndex];
+            if (phase == null) return;
 
-            Debug.Log($"[Phase {phaseIndex}] 진입");
+            Debug.Log($"<color=cyan>[Phase {phaseIndex}] 패턴 그룹 기동 시작</color>");
 
-            // 초기화: 스폰 위치 이동 및 HP 회복 등 (필요 시)
-            if (phase.spawnPointIndex >= 0 && _spawnPoints != null && phase.spawnPointIndex < _spawnPoints.Length)
+            // 1. 상시 패턴 실행 (Forget으로 던짐)
+            foreach (var p in phase.persistentPatterns)
             {
-                transform.position = _spawnPoints[phase.spawnPointIndex].position;
+                if (p != null) p.ExecuteAsync(_context, ct).Forget();
             }
 
-            // ==========================================================
-            // 2. Persistent 패턴 (병렬 실행)
-            // ==========================================================
-            // 페이즈가 끝날 때까지 백그라운드에서 계속 돌아야 함
-            foreach (var pattern in phase.persistentPatterns)
-            {
-                if (pattern != null)
-                    pattern.ExecuteAsync(_context, ct).Forget(); // await 하지 않음
-            }
-
-            // ==========================================================
-            // 3. Sequential 패턴 (순차 루프 실행)
-            // ==========================================================
+            // 2. 순차 패턴 루프 (안전 장치 추가)
             try
             {
+                // 루프 진입 전 로그를 찍어 확인
+                Debug.Log($"<color=orange>순차 패턴 루프 진입 성공! (패턴 수: {phase.sequentialPatterns.Count})</color>");
+
                 while (!ct.IsCancellationRequested)
                 {
+                    if (phase.sequentialPatterns.Count == 0)
+                    {
+                        await UniTask.Yield(ct); // 리스트가 비어있을 때 프리징 방지
+                        continue;
+                    }
+
                     foreach (var pattern in phase.sequentialPatterns)
                     {
-                        if (pattern == null) continue;
-
-                        // 하나의 패턴이 완전히 끝날 때까지 대기
                         await pattern.ExecuteAsync(_context, ct);
                     }
-                    // 모든 패턴 한 바퀴 돌고 잠시 대기 (무한 루프 방지)
-                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                    await UniTask.Yield(ct); // 한 바퀴 돌면 양보
                 }
             }
-            catch (System.OperationCanceledException)
-            {
-                // 페이즈 전환으로 인한 취소는 정상적인 흐름
-            }
+            catch (System.OperationCanceledException) { /* 정상 종료 */ }
+            catch (System.Exception e) { Debug.LogError($"패턴 에러: {e}"); }
         }
-
         private async UniTask RunPhasePatternsAsync(BossPhase phase, CancellationToken phaseCt)
         {
             _phaseCts?.Cancel();

@@ -39,7 +39,7 @@ namespace BossSystem
         public BossBlackboard Blackboard { get; }
 
         public float CurrentHP => DamageHandler.CurrentHP;
-
+        public int TotalCoreCount => Blackboard.AliveCores.Count + DestroyedCoreCount;
         // ── READ / WRITE (패턴 간 공유) ───────────────────────────────────
 
         /// <summary>
@@ -49,22 +49,19 @@ namespace BossSystem
         /// </summary>
         public volatile int DestroyedCoreCount = 0;
 
-        /// <summary>레이저 코어 총 수 (기획: 4개)</summary>
-        public int TotalCoreCount { get; }
 
         public BossContext(
             Transform     bossTransform,
             Transform     playerTransform,
             DamageHandler damageHandler,
-            BossBlackboard blackboard,
-            int totalCoreCount = 4)
+            BossBlackboard blackboard)
         {
             BossTransform   = bossTransform;
             PlayerTransform = playerTransform;
             DamageHandler   = damageHandler;
             Blackboard      = blackboard;
-            TotalCoreCount  = totalCoreCount;
         }
+
     }
 
     // ═══════════════════════════════════════════════════════════════════════

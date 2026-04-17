@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e82863a90b6a5b74a92548d6fec87377, type: 3}
+  m_Name: Pattern_Phase2_MirrorLaser
+  m_EditorClassIdentifier: 
+  _patternId: 4
+  _patternType: 0
+  preDelay: 0
+  _mirrorPrefab: {fileID: 369848673549158141, guid: 90a825150be83224c892b9058b97c664, type: 3}
+  _mirrorSpawnOffset: {x: 0, y: -6, z: 0}
+  _chargeTime: 2
+  _maxLaserDuration: 12
+  _playerDPS: 25
+  _reflectDamage: 50
+  _castRadius: 0.15
+  _castDistance: 30
+  _playerLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  _laserLinePrefab: {fileID: 0}
+  _laserColor: {r: 1, g: 0, b: 0, a: 1}

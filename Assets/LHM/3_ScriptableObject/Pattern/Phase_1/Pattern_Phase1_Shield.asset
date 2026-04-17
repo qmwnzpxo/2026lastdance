@@ -17,3 +17,4 @@ MonoBehaviour:
   preDelay: 0
   _shieldVfxPrefab: {fileID: 369848673549158141, guid: 90a825150be83224c892b9058b97c664, type: 3}
   _pollInterval: 0.1
+  _recoveryTime: 5

@@ -17,35 +17,30 @@ namespace BossSystem.Patterns
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
-            // Phase1ShieldPattern.cs 의 OnExecuteAsync 내부 루프
-            while (!ct.IsCancellationRequested)
+            // [변경] 대기 루프 삭제! 일단 실행되면 바로 방어막부터 켭니다.
+            using (var invHandle = ctx.DamageHandler.CreateInvincibilityHandle())
             {
-                // [수정된 부분] 레이저 패턴이 코어를 리스폰해서 1개 이상이 될 때까지 대기
-                while (ctx.TotalCoreCount == 0 && !ct.IsCancellationRequested)
+                // 방어막 VFX 생성
+                GameObject vfx = null;
+                if (_shieldVfxPrefab != null)
+                    vfx = Object.Instantiate(_shieldVfxPrefab, ctx.BossTransform);
+
+                // 코어가 다 부서질 때까지 대기
+                while (!ct.IsCancellationRequested)
                 {
-                    // 가능하면 UniTask를 사용하여 대기
+                    // 코어가 생성되었고(Total > 0), 그 코어들이 다 파괴되었다면(Destroyed >= Total)
+                    if (ctx.TotalCoreCount > 0 && ctx.DestroyedCoreCount >= ctx.TotalCoreCount)
+                    {
+                        break; // 루프 탈출 -> using 종료 -> 무적 해제
+                    }
                     await UniTask.Yield(PlayerLoopTiming.Update, ct);
                 }
 
-                using (var invHandle = ctx.DamageHandler.CreateInvincibilityHandle())
-                {
-                    // 방어막 VFX 생성 등...
-
-                    while (!ct.IsCancellationRequested)
-                    {
-                        if (ctx.TotalCoreCount > 0 && ctx.DestroyedCoreCount >= ctx.TotalCoreCount)
-                        {
-                            break; // 코어가 다 부서지면 방어막 해제
-                        }
-
-                        // 가능하면 UniTask.Delay를 사용하여 대기
-                        await UniTask.Delay(System.TimeSpan.FromSeconds(_pollInterval), cancellationToken: ct);
-                    }
-                }
-
-                // 딜 타임 (보스가 데미지를 입는 시간)
-                await UniTask.Delay(System.TimeSpan.FromSeconds(_recoveryTime), cancellationToken: ct);
+                if (vfx != null) Object.Destroy(vfx);
             }
+
+            // 딜 타임 후 패턴 종료 (컨트롤러가 다시 이 패턴을 실행할 것입니다)
+            await UniTask.Delay(System.TimeSpan.FromSeconds(_recoveryTime), cancellationToken: ct);
         }
     }
 }

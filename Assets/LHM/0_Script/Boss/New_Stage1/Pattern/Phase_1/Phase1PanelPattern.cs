@@ -74,6 +74,7 @@ namespace BossSystem.Patterns
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
+            Debug.Log(_waypoints == null ? "null" : _waypoints.Length.ToString());
             if (_waypoints == null || _waypoints.Length == 0 || _waypoints[0] == null)
             {
                 Debug.LogWarning("[PanelPattern] Waypoints가 설정되지 않았습니다. " +

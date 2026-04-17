@@ -72,6 +72,13 @@ namespace BossSystem
             while (_pendingRemove.Count > 0)
             {
                 var core = _pendingRemove.Dequeue();
+
+                // 👈 [추가] 리스트에서 제거하기 전에 반드시 이벤트를 구독 해제해야 합니다!
+                if (core != null)
+                {
+                    core.OnCoreDestroyed -= HandleCoreDestroyed;
+                }
+
                 _aliveCores.Remove(core);
                 Debug.Log($"[Blackboard] Core flushed. Alive={_aliveCores.Count}");
             }

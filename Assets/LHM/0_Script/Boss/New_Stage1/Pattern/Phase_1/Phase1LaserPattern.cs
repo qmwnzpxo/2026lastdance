@@ -46,44 +46,32 @@ namespace BossSystem.Patterns
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
-            // [수정] 페이즈가 유지되는 동안 '방어막 생성 -> 파괴 -> 딜 타임 -> 복구'를 무한 반복
+            for (int i = 0; i < 4; i++)
+            {
+                // 1. 꺼내고 위치 잡기
+                var coreGo = ObjectPool.Get(_laserCorePrefab, ctx.BossTransform.position, Quaternion.identity);
+                var core = coreGo.GetComponent<LaserCore>();
+
+                // 2. 초기화 (HP 등)
+                core.Reset();
+
+                // 3. 블랙보드에 등록 (이게 있어야 쉴드 패턴이 잠에서 깨어납니다!)
+                ctx.Blackboard.RegisterCore(core);
+            }
+
+            // 2. 패턴 유지 루프
             while (!ct.IsCancellationRequested)
             {
-                // 1. 방어막 생성 및 무적 획득 (using 블록 활용)
-                using (var invHandle = ctx.DamageHandler.CreateInvincibilityHandle())
-                {
-                    GameObject vfx = null;
-                    if (_shieldVfxPrefab != null)
-                        vfx = Object.Instantiate(_shieldVfxPrefab,
-                                  ctx.BossTransform.position, Quaternion.identity,
-                                  ctx.BossTransform);
+                // 여기서 코어 회전이나 레이저 발사 로직을 구현하세요.
+                // 모든 코어가 파괴되면 루프 탈출
+                if (ctx.DestroyedCoreCount >= 4) break;
 
-                    // 2. 코어 파괴 감시 루프
-                    while (!ct.IsCancellationRequested)
-                    {
-                        // [오류 재검토 방어코드] 코어가 최소 1개 이상 존재할 때만 파괴 판정
-                        if (ctx.TotalCoreCount > 0 && ctx.DestroyedCoreCount >= ctx.TotalCoreCount)
-                        {
-                            Log("All cores destroyed. Shield deactivated.");
-                            break; // 내부 루프만 탈출 -> using 블록이 끝나며 무적 해제
-                        }
-                        // 가능하면 UniTask.Delay를 사용하여 프레임 부하를 줄이며 대기
-                        await UniTask.Delay(System.TimeSpan.FromSeconds(_pollInterval), cancellationToken: ct);
-                    }
-
-                    // 방어막 파괴 연출 또는 제거
-                    if (vfx != null) Object.Destroy(vfx);
-                } // <--- 여기서 invHandle.Dispose()가 호출되며 딜 타임 시작!
-
-                // 3. 딜 타임 대기 (보스가 데미지를 입을 수 있는 시간)
-                await UniTask.Delay(System.TimeSpan.FromSeconds(_recoveryTime), cancellationToken: ct);
-
-                // 루프가 다시 돌면서 1번으로 이동 -> 방어막 VFX와 무적 상태 재생성
+                await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
         }
-    
 
-    private void UpdateCorePositions(Vector3 center, LaserCore[] cores, float angle)
+
+        private void UpdateCorePositions(Vector3 center, LaserCore[] cores, float angle)
         {
             for (int i = 0; i < cores.Length; i++)
             {

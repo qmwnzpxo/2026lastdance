@@ -16,7 +16,7 @@ MonoBehaviour:
   _patternType: 1
   preDelay: 0
   _laserCorePrefab: {fileID: 6973240244723263613, guid: a50233bd65b3dfb4fa007ef9b3fb164a, type: 3}
-  _laserBeamPrefab: {fileID: 8685900043758800063, guid: 7b8a3f4e9d8a3aa4bab3bd43f5ab33a6, type: 3}
+  _laserBeamPrefab: {fileID: 2493367948800474963, guid: 237257170139a964bb279e96d06eb431, type: 3}
   _radius: 5
   _rotationSpeed: 30
   _damagePerSecond: 20
@@ -26,3 +26,6 @@ MonoBehaviour:
     m_Bits: 64
   _fadeReconnectDuration: 0.2
   _soloCoreSelfDestructDelay: 3
+  _shieldVfxPrefab: {fileID: 0}
+  _pollInterval: 0.1
+  _recoveryTime: 5

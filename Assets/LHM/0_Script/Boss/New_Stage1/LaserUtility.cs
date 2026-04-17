@@ -23,15 +23,6 @@ namespace BossSystem
     {
         // ── 1. LineRenderer 경고선 페이드인 ──────────────────────────────
 
-        /// <summary>
-        /// LineRenderer의 알파값을 0 → targetAlpha 로 duration 동안 보간.
-        ///
-        /// 수식: alpha(t) = Lerp(0, targetAlpha, elapsed / duration)
-        ///
-        /// GC 방지 포인트:
-        ///   - colorBuffer를 ref로 받아 호출자 측 필드를 재사용 (new Color 없음).
-        ///   - SetPosition은 내부 NativeArray 업데이트이므로 힙 할당 없음.
-        /// </summary>
         /// <param name="lr">대상 LineRenderer</param>
         /// <param name="from">시작 위치</param>
         /// <param name="to">끝 위치 (매 프레임 갱신됨)</param>
