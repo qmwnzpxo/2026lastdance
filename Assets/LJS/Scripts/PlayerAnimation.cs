@@ -2,11 +2,11 @@ using UnityEngine;
 
 public class PlayerAnimation : MonoBehaviour
 {
-    PlayerState ps;
+    PlayerState state;
     Animator ani;
     void Start()
     {
-        ps = GetComponent<PlayerState>();
+        state = GetComponent<PlayerState>();
         ani = GetComponent<Animator>();
     }
     /*isGrounded
@@ -16,7 +16,7 @@ public class PlayerAnimation : MonoBehaviour
      * isJump
      * isAttackFlash*/
     public void IsGrounded() {
-        if (ps.isGrounded || ps.isOnCeiling) ani.SetBool("isGrounded", true);
+        if (state.isGrounded || state.isOnCeiling) ani.SetBool("isGrounded", true);
         else ani.SetBool("isGrounded", true);
     }
     public void Run_on() { ani.SetBool("isRun", true); }
