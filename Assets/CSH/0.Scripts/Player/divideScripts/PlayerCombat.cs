@@ -1,4 +1,3 @@
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class PlayerCombat : MonoBehaviour
@@ -21,8 +20,12 @@ public class PlayerCombat : MonoBehaviour
 
     void Awake()
     {
-        state = GetComponent<PlayerState>();
-        ani = GetComponent<PlayerAnimation>();
+        if(state == null)
+            state = GetComponent<PlayerState>();
+        if(ani == null)
+            ani = GetComponent<PlayerAnimation>();
+        if(attackTransform == null)
+            attackTransform = transform.Find("attack check");
         if (enemyLayer == 0)
             enemyLayer = LayerMask.GetMask("enemy");
     }
@@ -62,13 +65,14 @@ public class PlayerCombat : MonoBehaviour
     void HandleAttack()
     {
         if (!Input.GetMouseButtonDown(0) || state.isAttacking) return;
-        ani.Attack();
         PerformAttack().Forget();
     }
 
     private async UniTaskVoid PerformAttack()
     {
         state.isAttacking = true;
+        
+        ani.Attack();
 
         Vector2 attackPos = (Vector2)attackTransform.position
                           + (Vector2)attackTransform.right * attackBoxDistance;

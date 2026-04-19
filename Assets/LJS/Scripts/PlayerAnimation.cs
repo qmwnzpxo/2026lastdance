@@ -1,13 +1,14 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerAnimation : MonoBehaviour
 {
     PlayerState state;
-    Animator ani;
+    [SerializeField]Animator ani;
     void Start()
     {
         state = GetComponent<PlayerState>();
-        ani = GetComponent<Animator>();
+        if(ani == null)
+            ani = GetComponent<Animator>();
     }
     /*isGrounded
      * isRun

@@ -132,17 +132,19 @@ public class PlayerMove : MonoBehaviour
     void ApplyMovement()
     {
         if (state.isWallJumping) return;
-        if ((state.isWallSliding && !state.isGrounded) ||
-            state.isOnCeiling)
+        if ((state.isWallSliding && !state.isGrounded) || state.isOnCeiling) {
             state.ModifyGauge(-Time.fixedDeltaTime);
-        else
+            FlipYSprite(state.isOnCeiling);
+        }
+        else {
             state.ModifyGauge(Time.fixedDeltaTime * 5);
+        }
 
-            bool blockedByWall = (state.isTouchingLWall || state.isTouchingRWall)
-                                 && !state.isGrounded && !state.isOnCeiling;
+        bool blockedByWall = (state.isTouchingLWall || state.isTouchingRWall)
+                             && !state.isGrounded && !state.isOnCeiling;
         float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
         rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
-        if (moveInput > 0f)
+        if (Mathf.Abs(moveInput) > 0f)
         {
             ani.Run_on();
             if (Input.GetKey(KeyCode.LeftShift))
@@ -156,29 +158,24 @@ public class PlayerMove : MonoBehaviour
     {
         if (!state.isWallSliding) return;
 
+        RotateSprite();
 
         float targetSlideSpeed;
-        if      (verticalInput > 0) targetSlideSpeed = -wallSlideSpeedUp;
-        else if (verticalInput < 0) targetSlideSpeed = -wallSlideSpeedDown;
-        else                        targetSlideSpeed = -wallSlideSpeed;
+        if (verticalInput > 0) {
+            ani.Run_on();
+            targetSlideSpeed = -wallSlideSpeedUp;
+        }
+        else if  (verticalInput < 0) {
+            ani.Run_on();
+            targetSlideSpeed = -wallSlideSpeedDown;
+        }
+        else targetSlideSpeed = -wallSlideSpeed;
 
         float smoothedY = Mathf.Lerp(
             rb.linearVelocity.y, targetSlideSpeed, Time.fixedDeltaTime * 10f);
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, smoothedY);
     }
 
-    void FlipXSprite(bool flipX)
-    {
-        if (spriteRenderer == null) return;
-
-        spriteRenderer.flipX = flipX;
-    }
-    void FlipYSprite(bool flipY)
-    {
-        if (spriteRenderer == null) return;
-
-        spriteRenderer.transform.localScale = flipY ? ceilingSpriteScale : spriteScale;
-    }
 
     #endregion
     // ────────────────────────────────────────
@@ -248,7 +245,7 @@ public class PlayerMove : MonoBehaviour
         if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing||state.isTackling|| justStoppedDashing))
         {
             state.isOnCeiling     = true;
-            rb.gravityScale       = state.ceilingGravityScale;
+            RestoreGravity();
             FlipYSprite(state.isOnCeiling);
         }
 
@@ -262,9 +259,42 @@ public class PlayerMove : MonoBehaviour
     void DetachFromCeiling()
     {
         state.isOnCeiling      = false;
-        rb.gravityScale        = state.defaultGravityScale;
+        RestoreGravity();
         //spriteTransform.localScale = spriteScale;
         FlipYSprite(state.isOnCeiling);
+    }
+
+    #endregion
+    // ────────────────────────────────────────
+    #region 스프라이트 플립 및 회전
+
+    /// <summary>스프라이트 플립</summary>
+    void FlipXSprite(bool flipX)
+    {
+        if (spriteRenderer == null) return;
+
+        spriteRenderer.flipX = flipX;
+    }
+
+    void FlipYSprite(bool flipY)
+    {
+        if (spriteRenderer == null) return;
+
+        //spriteRenderer.transform.localScale = flipY ? ceilingSpriteScale : spriteScale;
+        spriteRenderer.flipY = flipY;
+    }
+
+    /// <summary>스프라이트 벽 방향에 따른 회전</summary>
+    void RotateSprite()
+    {
+        if (spriteRenderer == null) return;
+
+        if (state.isTouchingLWall && !state.isGrounded)
+            spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, -90);
+        else if (state.isTouchingRWall && !state.isGrounded)
+            spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 90);
+        else
+            spriteRenderer.transform.rotation = Quaternion.Euler(0,0,0);
     }
 
     #endregion
