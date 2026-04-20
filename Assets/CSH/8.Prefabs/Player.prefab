@@ -151,7 +151,6 @@ MonoBehaviour:
   stamina: 100
   dashGauge: 50
   maxDashGauge: 100
-  dashCost: 20
   dashGaugePerAttack: 0.3
   defaultGravityScale: 1.2
   ceilingGravityScale: -1.2
@@ -214,7 +213,7 @@ MonoBehaviour:
   attackTransform: {fileID: 2558350253558050970}
   attackBoxSize: {x: 1, y: 1}
   attackBoxDistance: 1
-  attackSecondHitDelay: 0.1
+  attackSecondHitDelay: 0.3
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
