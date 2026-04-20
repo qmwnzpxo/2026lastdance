@@ -25,7 +25,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     [Header("대쉬 게이지")]
     [RuntimeOnly, SerializeField] private float dashGauge = 50f;
     [RuntimeOnly, SerializeField] private float maxDashGauge = 100f;
-    [RuntimeOnly, SerializeField] private float dashCost = 20f;
+    private float dashCost = 1f;
     public float dashGaugePerAttack = 10f;
 
     public float DashGauge => dashGauge;
