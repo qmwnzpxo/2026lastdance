@@ -110,6 +110,7 @@ public class PlayerDash : MonoBehaviour
             // 벽타기 상태 리셋
             playerMove.ResetWallState();
 
+            ani.Attack_flash_on();
 
             // 대시 중 입력 → 버퍼에 저장
             if (state.isDashing)
@@ -117,7 +118,6 @@ public class PlayerDash : MonoBehaviour
                 state.dashBuffered = true;
                 return; // 즉시 실행하지 않음
             }
-            ani.Attack_flash();
             ExecuteDash(GetMouseDirection());
         }
 
@@ -167,6 +167,7 @@ public class PlayerDash : MonoBehaviour
     void StopDash()
     {
         state.isDashing = false;
+        ani.Attack_flash_off();
         playerMove.JustStoppedDashing = true; // ← 추가
         playerMove.RestoreGravity();
 

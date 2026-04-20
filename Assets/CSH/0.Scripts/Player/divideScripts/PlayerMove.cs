@@ -35,8 +35,8 @@ public class PlayerMove : MonoBehaviour
     [Header("천장 붙기")]
     [SerializeField]private SpriteRenderer spriteRenderer;
     private bool justStoppedDashing; // PlayerDash에서 StopDash 직후 세팅
-    //private readonly Vector3 spriteScale = new Vector3(1, 1, 1);
-    //private readonly Vector3 ceilingSpriteScale = new Vector3(1, -1, 1);
+    private readonly Vector3 spriteScale = new Vector3(1, 1, 1);
+    private readonly Vector3 ceilingSpriteScale = new Vector3(1, -1, 1);
 
     // ── 내부 필드 ────────────────────────────
     private Rigidbody2D rb;
@@ -195,6 +195,7 @@ public class PlayerMove : MonoBehaviour
     {
         if (!Input.GetKeyDown(KeyCode.Space) || state.isDashing) return;
 
+        ani.Jump_on();
         // 천장 붙기 상태에서 Space → 분리 후 아래로
         if (state.isOnCeiling)
         {
@@ -206,7 +207,6 @@ public class PlayerMove : MonoBehaviour
         if (state.isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            ani.Jump();
         }
         else if (state.isWallSliding && wallJumpCounter <= 0f)
         {
@@ -216,11 +216,10 @@ public class PlayerMove : MonoBehaviour
             state.isWallJumping = true;
 
             wallJumpCts?.Cancel();
-            wallJumpCts?.Dispose();
             wallJumpCts = new CancellationTokenSource();
             StartWallJumpCooldown(wallJumpCts.Token).Forget();
-            ani.Jump();
         }
+        ani.Jump_off();
     }
 
     private async UniTaskVoid StartWallJumpCooldown(CancellationToken ct)
@@ -301,6 +300,7 @@ public class PlayerMove : MonoBehaviour
     void ApplyAnimation()
     {
         Ani_Run();
+        IsAttack();
         // 일섬 애니메이션은 PlayerCombat에서 트리거하므로 여기서는 처리하지 않음
     }
 
@@ -317,19 +317,26 @@ public class PlayerMove : MonoBehaviour
             }
             if (Mathf.Abs(rb.linearVelocityX) <= 0.01) ani.Run_off();
         }
-        else if (verticalInput != 0f)
+        else
         {
-            ani.Run_on();
+            if (verticalInput != 0f)
+            {
+                ani.Run_on();
+            }
+
         }
-        
+    }
+
+    void IsAttack()
+    {
         if (state.isAttacking)
-        {
+        { 
             ani.Run_off();
             ani.Power_Run_off();
         }
-
-
     }
+
+
 
     #endregion
     // ────────────────────────────────────────

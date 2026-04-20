@@ -24,7 +24,10 @@ public class PlayerAnimation : MonoBehaviour
     public void Run_off() { ani.SetBool("isRun", false); }
     public void Power_Run_on() { ani.SetBool("isPowerfulRun", true); }
     public void Power_Run_off() { ani.SetBool("isPowerfulRun", false); }
-    public void Jump() { ani.SetBool("isGrounded", false); ani.SetTrigger("isJump"); }
-    public void Attack() { ani.SetTrigger("isAttack"); }
-    public void Attack_flash() { ani.SetTrigger("isAttackFlash"); }
+    public void Jump_on() { ani.SetBool("isJump", true); }
+    public void Jump_off() { ani.SetBool("isJump", false); }
+    public void Attack_on() { ani.SetBool("isAttack", true); }
+    public void Attack_off() { ani.SetBool("isAttack", false); }
+    public void Attack_flash_on() { ani.SetBool("isAttackFlash", true); }
+    public void Attack_flash_off() { ani.SetBool("isAttackFlash", false); }
 }
