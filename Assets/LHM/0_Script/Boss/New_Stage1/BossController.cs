@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using BossSystem.Patterns;
@@ -111,6 +112,47 @@ namespace BossSystem
             Debug.Log("[BossController] All phases completed.");
         }
 
+        //private async UniTask EnterPhaseAsync(int phaseIndex, CancellationToken lifetimeCt)
+        //{
+        //    _currentPhaseIndex = phaseIndex;
+        //    var phase = _phases[phaseIndex];
+
+        //    Debug.Log($"[BossController] Entering Phase {phaseIndex + 1}");
+
+        //    CancelAndRecreatePhaseCts(lifetimeCt);
+
+        //    _damageHandler.ForceResetInvincibility();
+        //    if (phase.hpRecoverRatio > 0f)
+        //        _damageHandler.RecoverHP(phase.hpRecoverRatio);
+
+        //    if (phase.spawnPointIndex >= 0 && phase.spawnPointIndex < _spawnPoints.Length)
+        //        transform.position = _spawnPoints[phase.spawnPointIndex].position;
+
+        //    _context.DestroyedCoreCount = 0;
+        //    OnPhaseChanged?.Invoke(phaseIndex);
+
+
+        //    InjectSceneDependencies(phase);
+
+        //    var phaseCt = _phaseCts.Token;
+        //    var patternTask = RunPhasePatternsAsync(phase, phaseCt);
+
+        //    if (phaseIndex < _phases.Count - 1)
+        //    {
+        //        var nextPhase = _phases[phaseIndex + 1];
+        //        await WatchPhaseTransitionAsync(nextPhase.hpThreshold, phaseCt, lifetimeCt);
+        //    }
+        //    else
+        //    {
+        //        await UniTask.WaitUntilCanceled(phaseCt);
+        //    }
+
+        //    _phaseCts?.Cancel();
+        //    await patternTask.SuppressCancellationThrow();
+
+        //    Debug.Log($"[BossController] Phase {phaseIndex + 1} ended.");
+        //}
+
         private async UniTask EnterPhaseAsync(int phaseIndex, CancellationToken lifetimeCt)
         {
             _currentPhaseIndex = phaseIndex;
@@ -119,7 +161,6 @@ namespace BossSystem
             Debug.Log($"[BossController] Entering Phase {phaseIndex + 1}");
 
             CancelAndRecreatePhaseCts(lifetimeCt);
-
             _damageHandler.ForceResetInvincibility();
             if (phase.hpRecoverRatio > 0f)
                 _damageHandler.RecoverHP(phase.hpRecoverRatio);
@@ -128,10 +169,13 @@ namespace BossSystem
                 transform.position = _spawnPoints[phase.spawnPointIndex].position;
 
             _context.DestroyedCoreCount = 0;
+            _phaseCleared = false;          // ★ 추가
             OnPhaseChanged?.Invoke(phaseIndex);
 
-
             InjectSceneDependencies(phase);
+
+            // ★ 배리어 파훼 이벤트 구독
+            _blackboard.OnBarrierBroken += HandleBarrierBroken;
 
             var phaseCt = _phaseCts.Token;
             var patternTask = RunPhasePatternsAsync(phase, phaseCt);
@@ -139,20 +183,36 @@ namespace BossSystem
             if (phaseIndex < _phases.Count - 1)
             {
                 var nextPhase = _phases[phaseIndex + 1];
-                await WatchPhaseTransitionAsync(nextPhase.hpThreshold, phaseCt, lifetimeCt);
+
+#if UNITY_EDITOR
+                if (_debugAutoSkipSeconds > 0f)
+                {
+                    await UniTask.WhenAny(
+                        WatchPhaseTransitionAsync(nextPhase.hpThreshold, phaseCt, lifetimeCt),
+                        UniTask.Delay(System.TimeSpan.FromSeconds(_debugAutoSkipSeconds),
+                                      cancellationToken: lifetimeCt)
+                    );
+                    Debug.Log($"[Debug] Auto-skip triggered after {_debugAutoSkipSeconds}s");
+                }
+                else
+#endif
+                {
+                    await WatchPhaseTransitionAsync(nextPhase.hpThreshold, phaseCt, lifetimeCt);
+                }
             }
             else
             {
                 await UniTask.WaitUntilCanceled(phaseCt);
             }
 
+            // ★ 구독 해제
+            _blackboard.OnBarrierBroken -= HandleBarrierBroken;
+
             _phaseCts?.Cancel();
             await patternTask.SuppressCancellationThrow();
 
             Debug.Log($"[BossController] Phase {phaseIndex + 1} ended.");
         }
-
-
         private void InjectSceneDependencies(BossPhase phase)
         {
             var allPatterns = new List<BossPatternBase>();
@@ -212,22 +272,7 @@ namespace BossSystem
             }
         }
 
-        private async UniTask WatchPhaseTransitionAsync(
-            float hpThreshold, CancellationToken phaseCt, CancellationToken lifetimeCt)
-        {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(phaseCt, lifetimeCt);
-            var ct = linked.Token;
-
-            while (!ct.IsCancellationRequested)
-            {
-                if (_damageHandler.HPRatio <= hpThreshold)
-                {
-                    Debug.Log($"[BossController] Phase transition at HP={_damageHandler.HPRatio:P0}");
-                    return;
-                }
-                await UniTask.Yield(PlayerLoopTiming.Update, ct);
-            }
-        }
+ 
 
         // ─────────────────────────────────────────────────────────────────
         // CTS 관리
@@ -254,12 +299,19 @@ namespace BossSystem
         public void TakeDamage(float damage) => _damageHandler.TakeDamage(damage);
 
 #if UNITY_EDITOR
-        [ContextMenu("Debug: Break Barrier")]
+        [Header("Debug (Editor Only)")]
+        [Tooltip("이 시간(초)이 지나면 강제로 다음 패턴으로 넘어갑니다. 0 = 비활성")]
+        [SerializeField] private float _debugAutoSkipSeconds = 0f;
+
+        [ContextMenu("Debug: Break Barrier / Skip Pattern")]
         private void Debug_BreakBarrier()
         {
             _damageHandler.ForceResetInvincibility();
+            _blackboard.Debug_ForceBarrierBroken();   // ← Blackboard에 추가
             Debug.Log("[Debug] Barrier force-broken.");
         }
+
+
 
         private void OnDrawGizmosSelected()
         {
@@ -278,8 +330,32 @@ namespace BossSystem
                     Gizmos.DrawLine(_panelWaypoints[i].position, _panelWaypoints[i + 1].position);
             }
         }
+
+        // ★ 필드 추가
+        private bool _phaseCleared = false;
+        private void HandleBarrierBroken() => _phaseCleared = true;
+
+        // ★ WatchPhaseTransitionAsync 수정 — HP AND 파훼 조건 둘 다 체크
+        private async UniTask WatchPhaseTransitionAsync(
+            float hpThreshold, CancellationToken phaseCt, CancellationToken lifetimeCt)
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(phaseCt, lifetimeCt);
+            var ct = linked.Token;
+
+            while (!ct.IsCancellationRequested)
+            {
+                // HP 조건 AND 패턴 파훼 조건 둘 다 충족해야 전환
+                if (_damageHandler.HPRatio <= hpThreshold && _phaseCleared)
+                {
+                    Debug.Log($"[BossController] Phase transition: HP={_damageHandler.HPRatio:P0}, Cleared={_phaseCleared}");
+                    return;
+                }
+                await UniTask.Yield(PlayerLoopTiming.Update, ct);
+            }
+        }
 #endif
     }
+
 
     [System.Serializable]
     public struct PoolPreloadEntry
@@ -289,4 +365,5 @@ namespace BossSystem
         [Tooltip("미리 생성할 수량")]
         public int Count;
     }
+
 }

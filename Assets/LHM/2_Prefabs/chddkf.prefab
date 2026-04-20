@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 4628125530390314518}
   - component: {fileID: 7604388749033121536}
   - component: {fileID: 1949204260548501387}
+  - component: {fileID: 2964396323681571090}
   - component: {fileID: 3472822693363740791}
-  - component: {fileID: 5034223595049472108}
   m_Layer: 0
   m_Name: chddkf
   m_TagString: Untagged
@@ -88,6 +88,18 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2964396323681571090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8225743996758371466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 314ca245fafce424a9ea68a4886c4940, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!65 &3472822693363740791
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -109,15 +121,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5034223595049472108
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8225743996758371466}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 314ca245fafce424a9ea68a4886c4940, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

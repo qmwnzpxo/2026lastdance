@@ -67,7 +67,7 @@ namespace BossSystem
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (!other.CompareTag("PlayerProjectile")) return;
+            if (!other.CompareTag("Player")) return;
 
             // 공격 방향을 로컬 공간으로 변환 → x 부호로 회전 방향 결정
             Vector3 worldHitDir  = (transform.position - other.transform.position).normalized;

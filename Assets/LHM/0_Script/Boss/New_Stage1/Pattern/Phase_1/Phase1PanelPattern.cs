@@ -4,12 +4,6 @@ using UnityEngine;
 
 namespace BossSystem.Patterns
 {
-
-
-    // ───────────────────────────────────────────────────────────────────────
-    // Phase 1-3 — 판넬 조준 사격 (Sequential)
-    // ───────────────────────────────────────────────────────────────────────
-
     [CreateAssetMenu(fileName = "Pattern_Phase1_Panel",
                      menuName = "BossSystem/Patterns/Phase1_Panel")]
     public class Phase1PanelPattern : BossPatternBase
@@ -17,8 +11,8 @@ namespace BossSystem.Patterns
         [Header("Panel")]
         [SerializeField] private GameObject _panelPrefab;
         [SerializeField] private float _moveSpeed = 5f;
+        [SerializeField] private int _panelCount = 3;
 
-      
         [HideInInspector] public Transform[] _waypoints;
 
         [Header("Telegraphing")]
@@ -34,7 +28,6 @@ namespace BossSystem.Patterns
         [SerializeField] private LayerMask _playerLayer;
 
         [Header("VFX")]
-        [SerializeField] private LineRenderer _warningLinePrefab;
         [SerializeField] private Color _warningColor = new Color(1f, 0.3f, 0f, 1f);
         [SerializeField] private Color _fireColor = Color.red;
         [SerializeField] private GameObject _muzzleVfxPrefab;
@@ -49,23 +42,57 @@ namespace BossSystem.Patterns
         {
             if (_waypoints == null || _waypoints.Length == 0 || _waypoints[0] == null)
             {
-                Debug.LogWarning("[PanelPattern] Waypoints가 없습니다. BossController._panelWaypoints를 Inspector에서 할당해주세요.");
+                Debug.LogWarning("[PanelPattern] Waypoints가 없습니다.");
                 return;
             }
 
-            var panelGo = Object.Instantiate(_panelPrefab,
-                              ctx.BossTransform.position, Quaternion.identity);
-            var panelTf = panelGo.transform;
+            var panels = new GameObject[_panelCount];
+            var tasks = new UniTask[_panelCount];
 
-            LineRenderer warnLine = _warningLinePrefab != null
-                ? Object.Instantiate(_warningLinePrefab) : null;
+            for (int p = 0; p < _panelCount; p++)
+            {
+                // ★ 여기서만 Instantiate, RunSinglePanelAsync에서는 안 함
+                var panelGo = Object.Instantiate(_panelPrefab,
+                                  ctx.BossTransform.position, Quaternion.identity);
+                panels[p] = panelGo;
+
+                int startIndex = p * (_waypoints.Length / _panelCount);
+
+                // ★ panelGo를 넘겨줌
+                tasks[p] = RunSinglePanelAsync(panelGo, startIndex, ctx, ct);
+            }
 
             try
             {
-                for (int i = 0; i < _waypoints.Length; i++)
+                await UniTask.WhenAll(tasks);
+            }
+            finally
+            {
+                foreach (var panel in panels)
+                    if (panel != null) Object.Destroy(panel);
+            }
+        }
+
+        private async UniTask RunSinglePanelAsync(
+            GameObject panelGo, int startIndex, BossContext ctx, CancellationToken ct)
+        {
+            var panelTf = panelGo.transform;
+            // ★ 판넬 프리팹에 내장된 LineRenderer 가져옴
+            var warnLine = panelGo.GetComponent<LineRenderer>();
+
+            if (warnLine == null)
+                Debug.LogWarning("[PanelPattern] LineRenderer가 패널 프리팹에 없습니다.");
+
+            try
+            {
+                int i = startIndex;
+                while (!ct.IsCancellationRequested)
                 {
-                    ct.ThrowIfCancellationRequested();
-                    if (_waypoints[i] == null) continue;
+                    if (_waypoints[i] == null)
+                    {
+                        i = (i + 1) % _waypoints.Length;
+                        continue;
+                    }
 
                     // 1. 웨이포인트로 이동
                     await LaserUtility.MoveTowardsAsync(
@@ -80,7 +107,7 @@ namespace BossSystem.Patterns
 
                     ct.ThrowIfCancellationRequested();
 
-                    // 3. 위치 고정 (발사 전 힌트)
+                    // 3. 위치 고정
                     Vector3 lockedTarget = ctx.PlayerTransform.position;
                     if (warnLine != null)
                         LaserUtility.SetLineImmediate(warnLine, panelTf.position,
@@ -92,6 +119,8 @@ namespace BossSystem.Patterns
                     ct.ThrowIfCancellationRequested();
 
                     // 4. 발사
+                    LaserUtility.AimAt2D(panelTf, lockedTarget);
+
                     if (warnLine != null)
                         LaserUtility.SetLineImmediate(warnLine, panelTf.position,
                             lockedTarget, _fireColor);
@@ -112,12 +141,15 @@ namespace BossSystem.Patterns
                     // 5. 딜 타임
                     await UniTask.Delay(
                         System.TimeSpan.FromSeconds(_postFireDelay), cancellationToken: ct);
+
+                    // 다음 웨이포인트 순환
+                    i = (i + 1) % _waypoints.Length;
                 }
             }
             finally
             {
-                if (warnLine != null) Object.Destroy(warnLine.gameObject);
-                if (panelGo != null) Object.Destroy(panelGo);
+                // ★ panelGo는 OnExecuteAsync finally에서 Destroy하므로 여기선 Line만 숨김
+                LaserUtility.HideLine(warnLine);
             }
         }
     }

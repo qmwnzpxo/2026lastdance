@@ -88,5 +88,27 @@ namespace BossSystem
             _pendingRemove.Enqueue(core);
             Debug.Log($"[Blackboard] Core queued for removal. Queue={_pendingRemove.Count}");
         }
+        // BossBlackboard.cs 의 코어 관리 API 섹션 하단에 추가
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// 에디터 전용. 코어 목록을 강제 비우고 OnBarrierBroken 이벤트를 즉시 발생시킵니다.
+        /// BossController의 ContextMenu 버튼에서 호출.
+        /// </summary>
+        public void Debug_ForceBarrierBroken()
+        {
+            foreach (var core in _aliveCores)
+                if (core != null)
+                    core.OnCoreDestroyed -= HandleCoreDestroyed;
+
+            _aliveCores.Clear();
+            _pendingRemove.Clear();
+
+            OnCoreListChanged?.Invoke();
+            OnBarrierBroken?.Invoke();
+            Debug.Log("[Blackboard] Debug_ForceBarrierBroken: OnBarrierBroken invoked.");
+        }
+#endif
     }
+
 }

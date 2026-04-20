@@ -10,6 +10,8 @@ namespace BossSystem
         public DamageHandler DamageHandler { get; }
         public BossBlackboard Blackboard { get; }
 
+        public LineRenderer lineRenderer { get; }
+
         public float CurrentHP => DamageHandler.CurrentHP;
 
         public volatile int DestroyedCoreCount = 0;
