@@ -144,7 +144,8 @@ public class PlayerMove : MonoBehaviour
         bool blockedByWall = (state.isTouchingLWall || state.isTouchingRWall)
                              && !state.isGrounded && !state.isOnCeiling;
         float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
-        rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? 1.5f : 1f), rb.linearVelocity.y);
+        float yMove = rb.linearVelocity.y<0? rb.linearVelocity.y-Time.fixedDeltaTime*10 : rb.linearVelocity.y;
+        rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? 1.5f : 1f), yMove);
     }
 
     void HandlePowerRun()
