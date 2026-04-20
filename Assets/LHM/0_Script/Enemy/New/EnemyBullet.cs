@@ -69,7 +69,7 @@ public class EnemyBullet : MonoBehaviour
     /// <summary>플레이어 적중 시 처리. 서브클래스에서 override 가능.</summary>
     protected virtual void OnHitPlayer(Collider2D other)
     {
-        other.GetComponent<PlayerState>()?.TakeDamage(damage);
+        other.GetComponent<IDamageable>()?.TakeDamage(damage);
     }
 
     /// <summary>지형 적중 시 처리. 서브클래스에서 override 가능.</summary>

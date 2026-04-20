@@ -11,7 +11,7 @@ using UnityEngine.Rendering.Universal;
 /// ※ 기존 PlayerState의 HP / TakeDamage 구현은 이 파일에 병합할 것.
 /// </summary>
 [DefaultExecutionOrder(-2)]
-public class PlayerState : MonoBehaviour
+public class PlayerState : MonoBehaviour, IDamageable
 {
     // ── 스탯 ──────────────────────────────────
     [Header("스탯")]

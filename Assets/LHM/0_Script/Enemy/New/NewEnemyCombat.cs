@@ -102,14 +102,10 @@ public class NewEnemyCombat : MonoBehaviour
         return direction;
     }
 
-    public virtual void TakeDamage(float damage)
-    {
-        enemyBase?.OnDamage(damage);
-    }
 
     public virtual void OnDestroy()
     {
-        StopAllCoroutines();
+        enemyBase.CancelAction();
     }
 
 }

@@ -8,7 +8,7 @@ public enum EnemyState
     Chase,
     Attack
 }
-public class NewEnemyBase : MonoBehaviour
+public class NewEnemyBase : MonoBehaviour, IDamageable
 {
     [Header("컴포넌트")]
     public Rigidbody2D rigid2d;
@@ -182,7 +182,7 @@ public class NewEnemyBase : MonoBehaviour
         return EnemyState.Patrol;
     }
 
-    public virtual void OnDamage(float damage)
+    public virtual void TakeDamage(float damage)
     {
         if (isDead) return;
 

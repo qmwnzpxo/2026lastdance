@@ -150,7 +150,7 @@ public class PlayerDash : MonoBehaviour
         state.isTouchingLWall = false;
         state.isTouchingRWall = false;
 
-        state.TryUseDashGauge(state.DashCost);
+        
 
         dashHitEnemy = false;
         hitEnemiesInDash.Clear();
@@ -209,7 +209,7 @@ public class PlayerDash : MonoBehaviour
         rb.gravityScale = 0f;
 
         // 게이지 충분 → 강화 대쉬 / 부족 → 태클
-        if (state.DashGauge >= 1f)
+        if (state.TryUseDashGauge(state.DashCost))
             TriggerDash();
         else
             TriggerTackleFromDash(dashDirection);
@@ -441,10 +441,7 @@ public class PlayerDash : MonoBehaviour
     /// <summary>대상 컴포넌트에 맞게 데미지를 전달한다.</summary>
     private void ApplyDamage(Collider2D target, float damage)
     {
-        target.GetComponent<BossBase>()?.TakeDamage(damage);
-        target.GetComponent<ObjectHp>()?.OnDamage(damage);
-        target.GetComponent<EnemyBase>()?.OnDamage(damage);
-        target.GetComponent<NewEnemyBase>()?.OnDamage(damage);
+        target.GetComponent<IDamageable>()?.TakeDamage(damage);
     }
 
     #endregion

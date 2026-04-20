@@ -1,9 +1,9 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 namespace BossSystem
 {
-    public class DamageHandler : MonoBehaviour
+    public class DamageHandler : MonoBehaviour, IDamageable
     {
         [Header("Stats")]
         [SerializeField] private float _maxHP = 150f;
