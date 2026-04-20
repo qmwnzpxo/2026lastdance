@@ -86,8 +86,8 @@ public class PlayerCombat : MonoBehaviour
                 cancellationToken: this.destroyCancellationToken);
         }
 
-        state.isAttacking = false;
         ani.Attack_off();
+        state.isAttacking = false;
     }
 
     void ExecuteAttackBox(Vector2 attackPos)

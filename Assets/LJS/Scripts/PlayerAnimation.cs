@@ -37,6 +37,6 @@ public class PlayerAnimation : MonoBehaviour
     public void Jump_off() { ani.SetBool("isJump", false); }
     public void Attack_on() { ani.SetBool("isAttack", true); }
     public void Attack_off() { ani.SetBool("isAttack", false); }
-    public void Attack_flash_on() { ani.SetBool("isAttackFlash", true); }
+    public void Attack_flash_on() { ani.SetBool("isAttackFlash", true); Jump_off(); }
     public void Attack_flash_off() { ani.SetBool("isAttackFlash", false); }
 }
