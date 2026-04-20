@@ -74,13 +74,14 @@ public class PlayerMove : MonoBehaviour
 
     void Update()
     {
-        moveInput    = Input.GetAxis("Horizontal");
+        moveInput     = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
         CheckGround();
         CheckCeiling();
         CheckWall();
 
+        HandlePowerRun();
         HandleCeilingAttach();
         HandleWallSlide();
         HandleJump();
@@ -108,7 +109,6 @@ public class PlayerMove : MonoBehaviour
     {
         state.isGrounded = Physics2D.OverlapCircle(
             groundCheck.position, groundCheckRadius, groundLayer);
-        ani.IsGrounded();
     }
 
     void CheckCeiling()
@@ -133,18 +133,25 @@ public class PlayerMove : MonoBehaviour
     void ApplyMovement()
     {
         if (state.isWallJumping) return;
-        if ((state.isWallSliding && !state.isGrounded) || state.isOnCeiling) {
+        if ((state.isWallSliding && !state.isGrounded) || state.isOnCeiling || state.isPowerRun)
+        {
             state.ModifyGauge(-Time.fixedDeltaTime);
-            FlipYSprite(state.isOnCeiling);
         }
-        else {
+        else
+        {
             state.ModifyGauge(Time.fixedDeltaTime * 5);
         }
+        FlipYSprite(state.isOnCeiling);
 
         bool blockedByWall = (state.isTouchingLWall || state.isTouchingRWall)
                              && !state.isGrounded && !state.isOnCeiling;
         float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
-        rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? 1.5f : 1f), rb.linearVelocity.y);
+    }
+
+    void HandlePowerRun()
+    {
+        state.isPowerRun = Input.GetKey(KeyCode.LeftShift);
     }
 
     void ApplyWallSlide()
@@ -238,7 +245,7 @@ public class PlayerMove : MonoBehaviour
             FlipYSprite(state.isOnCeiling);
         }
 
-        if (state.isOnCeiling && !isTouchingCeiling||state.stamina<=0)
+        if (state.isOnCeiling && (!isTouchingCeiling || state.stamina <= 0))
             DetachFromCeiling();
 
         wasTouchingCeiling = isTouchingCeiling;
@@ -316,7 +323,6 @@ public class PlayerMove : MonoBehaviour
         { 
             ani.Run_off();
             ani.Power_Run_off();
-            ani.Attack();
         }
     }
 

@@ -47,12 +47,14 @@ public class PlayerDash : MonoBehaviour
     private Rigidbody2D rb;
     private LineRenderer line;
     private PlayerAnimation ani;
+    private Camera mainCamera;
 
     // ────────────────────────────────────────
     #region Unity 생명주기
 
     void Awake()
     {
+        mainCamera = Camera.main;
         state = GetComponent<PlayerState>();
         playerMove = GetComponent<PlayerMove>();
         line = GetComponent<LineRenderer>();
@@ -429,8 +431,8 @@ public class PlayerDash : MonoBehaviour
     private Vector2 GetMouseDirection()
     {
         Vector3 mouseScreenPos = Input.mousePosition;
-        mouseScreenPos.z = -Camera.main.transform.position.z;
-        Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+        mouseScreenPos.z = -mainCamera.transform.position.z;
+        Vector2 mouseWorldPos = mainCamera.ScreenToWorldPoint(mouseScreenPos);
         Vector2 dir = (mouseWorldPos - (Vector2)transform.position).normalized;
         return dir == Vector2.zero ? Vector2.right : dir;
     }

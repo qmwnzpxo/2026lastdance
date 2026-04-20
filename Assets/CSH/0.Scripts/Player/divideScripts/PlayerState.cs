@@ -43,6 +43,7 @@ public class PlayerState : MonoBehaviour
     [RuntimeOnly, SerializeField] public bool isTouchingRWall;
     [RuntimeOnly, SerializeField] public bool isWallSliding;
     [RuntimeOnly, SerializeField] public bool isWallJumping;
+    [RuntimeOnly, SerializeField] public bool isPowerRun;
     [RuntimeOnly, SerializeField] public bool dashBuffered;
 
     // ── 액션 상태 (컴포넌트 간 상호 참조용) ──
@@ -85,7 +86,7 @@ public class PlayerState : MonoBehaviour
         if (isDashing)
             return;
         // 기존 구현 병합 위치
-        HP -= damage;
+        HP -= dmg;
         if (HP <= 0)
             Die();
         else
@@ -96,6 +97,7 @@ public class PlayerState : MonoBehaviour
     {
         if (isHit) return;
 
+        isHit = true;
         hitCts?.Cancel();
         hitCts?.Dispose();
         hitCts=new CancellationTokenSource();
@@ -107,14 +109,13 @@ public class PlayerState : MonoBehaviour
     {
         hitLight.enabled = true;
         hitWorldLight.enabled = true;
-        var result = await UniTask.WaitForSeconds(0.3f, cancellationToken: tk)
+        await UniTask.WaitForSeconds(0.3f, cancellationToken: tk)
             .SuppressCancellationThrow();
-        if (!result)
-        {
-            hitLight.enabled = false;
-            hitWorldLight.enabled = false;
-        }
+        isHit = false;
+        hitLight.enabled = false;
+        hitWorldLight.enabled = false;
     }
+
     void Die()
     {
         Debug.Log("Player has died.");

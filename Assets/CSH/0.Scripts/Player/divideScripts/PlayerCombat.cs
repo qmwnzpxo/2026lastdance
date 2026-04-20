@@ -15,6 +15,7 @@ public class PlayerCombat : MonoBehaviour
 
     private PlayerState state;
     private PlayerAnimation ani;
+    private Camera mainCamera;
 
     // ────────────────────────────────────────
     #region Unity 생명주기
@@ -29,6 +30,7 @@ public class PlayerCombat : MonoBehaviour
             attackTransform = transform.Find("attack check");
         if (enemyLayer == 0)
             enemyLayer = LayerMask.GetMask("enemy");
+        mainCamera = Camera.main;
     }
 
     void Update()
@@ -51,8 +53,8 @@ public class PlayerCombat : MonoBehaviour
     void RotateAttackPivot()
     {
         Vector3 mouseScreenPos = Input.mousePosition;
-        mouseScreenPos.z = -Camera.main.transform.position.z;
-        Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+        mouseScreenPos.z = -mainCamera.transform.position.z;
+        Vector2 mouseWorldPos = mainCamera.ScreenToWorldPoint(mouseScreenPos);
 
         Vector2 dir   = (mouseWorldPos - (Vector2)transform.position).normalized;
         float   angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
