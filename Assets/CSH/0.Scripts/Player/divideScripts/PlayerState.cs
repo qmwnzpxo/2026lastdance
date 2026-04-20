@@ -47,6 +47,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     [RuntimeOnly, SerializeField] public bool isWallJumping;
     [RuntimeOnly, SerializeField] public bool isPowerRun;
     [RuntimeOnly, SerializeField] public bool dashBuffered;
+    [RuntimeOnly, SerializeField] public bool attackBuffered;
 
     // ── 액션 상태 (컴포넌트 간 상호 참조용) ──
     [Header("액션 상태")]
@@ -103,10 +104,13 @@ public class PlayerState : MonoBehaviour, IDamageable
             return;
         // 기존 구현 병합 위치
         HP -= dmg;
-        if (HP <= 0)
-            Die();
-        else
-            Hited();
+    if (HP <= 0)
+      Die();
+    else
+    {
+      HitstopManager.Instance.TriggerHitstop(duration: 0.2f);
+      Hited();
+    }
     }
 
     public void Hited()

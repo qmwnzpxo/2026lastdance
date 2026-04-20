@@ -262,7 +262,7 @@ public class PlayerDash : MonoBehaviour
         {
             dashHitEnemy = true;
             state.AddDashGauge(1f);
-            HitstopManager.Instance.TriggerHitstop(duration: 0.02f);
+            HitstopManager.Instance.TriggerHitstop(duration: 0.28f);
         }
     }
 

@@ -26,7 +26,7 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
     /// </summary>
     /// <param name="duration">히트스탑 지속 시간 (실제 시간 기준, 초). 기본값 0.08초.</param>
     /// <param name="timeScale">히트스탑 중 게임 속도 배율. 0에 가까울수록 강한 정지감. 기본값 0.05.</param>
-    public void TriggerHitstop(float duration = 0.08f, float timeScale = 0.05f)
+    public void TriggerHitstop(float duration = 0.08f, float timeScale = 0.2f)
     {
         // 이미 히트스탑이 진행 중이라면 → 이전 작업을 취소하고 새 히트스탑으로 덮어쓴다.
         // Cancel() : 현재 실행 중인 HitstopRoutine에 "취소 신호"를 보낸다.

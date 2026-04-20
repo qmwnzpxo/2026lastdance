@@ -43,7 +43,7 @@ public class PlayerCombat : MonoBehaviour
 
         // 디버그 히트스톱 (필요 없으면 제거)
         if (Input.GetKeyDown(KeyCode.H))
-            HitstopManager.Instance.TriggerHitstop(duration:0.2f);
+            HitstopManager.Instance.TriggerHitstop(duration:0.28f);
     }
 
     #endregion
@@ -100,7 +100,7 @@ public class PlayerCombat : MonoBehaviour
             Debug.Log($"공격 적중: {hit.name}");
             ApplyDamage(hit, state.damage);
             state.AddDashGauge(state.dashGaugePerAttack);
-            HitstopManager.Instance.TriggerHitstop();
+            HitstopManager.Instance.TriggerHitstop(duration: 0.28f);
         }
 
         Debug.DrawRay(attackTransform.position,

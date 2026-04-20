@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Boss.Phase1; // IProjectileDamage
 
 namespace BossSystem
@@ -19,7 +19,7 @@ namespace BossSystem
     //       → 패턴이 카운트 감소 → 전부 0 → 파훼 판정
     // ═══════════════════════════════════════════════════════════════════════
     [RequireComponent(typeof(Collider2D))]
-    public class PanelHealth : MonoBehaviour
+    public class PanelHealth : MonoBehaviour, IDamageable
     {
         [Header("Stats")]
         [SerializeField] private float _maxHP = 30f;

@@ -83,6 +83,7 @@ public class PlayerMove : MonoBehaviour
         HandleCeilingAttach();
         HandleWallSlide();
         HandleJump();
+    HandleGetDamage();
     }
 
     void FixedUpdate()
@@ -349,11 +350,16 @@ public class PlayerMove : MonoBehaviour
             : state.defaultGravityScale;
     }
 
-    #endregion
-    // ────────────────────────────────────────
-    #region Gizmos
+  public void HandleGetDamage()
+  {
+    if(Input.GetKeyDown(KeyCode.P))
+    state.TakeDamage(0f);
+  }
+  #endregion
+  // ────────────────────────────────────────
+  #region Gizmos
 
-    void OnDrawGizmosSelected()
+  void OnDrawGizmosSelected()
     {
         if (groundCheck != null)
         {

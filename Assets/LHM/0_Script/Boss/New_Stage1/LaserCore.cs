@@ -1,10 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 using BossSystem;
 
 namespace Boss.Phase1
 {
    
-    public class LaserCore : MonoBehaviour, IPoolable
+    public class LaserCore : MonoBehaviour, IPoolable, IDamageable
     {
         [Header("Stats")]
         [SerializeField] private float _maxHP = 1f;
