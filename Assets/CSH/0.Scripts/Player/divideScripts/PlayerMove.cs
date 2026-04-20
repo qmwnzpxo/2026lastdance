@@ -95,9 +95,10 @@ public class PlayerMove : MonoBehaviour
         // Dash / Tackle 중에는 PlayerDash가 물리를 전담
         if (state.isDashing || state.isTackling || state.isTackleGroundRush)
             return;
-        
+        RotateSprite();
         ApplyMovement();
         ApplyWallSlide();
+        ApplyAnimation();
     }
 
     #endregion
@@ -144,29 +145,17 @@ public class PlayerMove : MonoBehaviour
                              && !state.isGrounded && !state.isOnCeiling;
         float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
         rb.linearVelocity = new Vector2(xMove, rb.linearVelocity.y);
-        if (Mathf.Abs(moveInput) > 0f)
-        {
-            ani.Run_on();
-            if (Input.GetKey(KeyCode.LeftShift))
-                ani.Power_Run_on();
-            else ani.Power_Run_off();
-        }
-        else ani.Run_off();
     }
 
     void ApplyWallSlide()
     {
         if (!state.isWallSliding) return;
 
-        RotateSprite();
-
         float targetSlideSpeed;
         if (verticalInput > 0) {
-            ani.Run_on();
             targetSlideSpeed = -wallSlideSpeedUp;
         }
         else if  (verticalInput < 0) {
-            ani.Run_on();
             targetSlideSpeed = -wallSlideSpeedDown;
         }
         else targetSlideSpeed = -wallSlideSpeed;
@@ -296,6 +285,42 @@ public class PlayerMove : MonoBehaviour
         else
             spriteRenderer.transform.rotation = Quaternion.Euler(0,0,0);
     }
+
+    #endregion
+    // ────────────────────────────────────────
+    #region 애니메이션 이벤트
+
+    void ApplyAnimation()
+    {
+        Ani_Run();
+        isAttack();
+        // 일섬 애니메이션은 PlayerCombat에서 트리거하므로 여기서는 처리하지 않음
+    }
+
+    void Ani_Run()
+    {
+        if(!state.isWallSliding)
+        if (Mathf.Abs(moveInput) > 0f)
+        {
+            ani.Run_on();
+            if (Input.GetKey(KeyCode.LeftShift))
+                ani.Power_Run_on();
+            else ani.Power_Run_off();
+        }
+        if (Mathf.Abs(rb.linearVelocityX) <= 0.01) ani.Run_off();
+    }
+
+    void isAttack()
+    {
+        if (state.isAttacking)
+        { 
+            ani.Run_off();
+            ani.Power_Run_off();
+            ani.Attack();
+        }
+    }
+
+
 
     #endregion
     // ────────────────────────────────────────
