@@ -75,7 +75,7 @@ public class PlayerCombat : MonoBehaviour
     {
         state.isAttacking = true;
         
-        ani.Attack_on();
+        ani.Attack();
 
         Vector2 attackPos = (Vector2)attackTransform.position
                           + (Vector2)attackTransform.right * attackBoxDistance;
@@ -86,7 +86,7 @@ public class PlayerCombat : MonoBehaviour
                 cancellationToken: this.destroyCancellationToken);
         }
 
-        ani.Attack_off();
+        //ani.Attack_off();
         state.isAttacking = false;
     }
 
