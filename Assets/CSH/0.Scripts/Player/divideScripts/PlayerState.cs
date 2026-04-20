@@ -61,6 +61,15 @@ public class PlayerState : MonoBehaviour, IDamageable
     CancellationTokenSource hitCts;
 
 
+    public void Awake()
+    {
+        if (hitLight == null)
+            hitLight = transform.Find("Hit Light").GetComponent<Light2D>();
+        if (hitWorldLight == null)
+            hitWorldLight = transform.Find("Hit World Light").GetComponent<Light2D>();
+        DashInit();
+    }
+
     // ── 게이지 메서드 ─────────────────────────
     public void AddDashGauge(float amount)
     {
@@ -79,6 +88,11 @@ public class PlayerState : MonoBehaviour, IDamageable
         if (dashGauge < amount) return false;
         dashGauge -= amount;
         return true;
+    }
+
+    public void DashInit()
+    {
+        dashGauge=maxDashGauge;
     }
 
     // ── HP / 피격 ─────────────────────────────

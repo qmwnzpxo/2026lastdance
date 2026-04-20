@@ -150,7 +150,7 @@ MonoBehaviour:
   isDie: 0
   stamina: 100
   dashGauge: 50
-  maxDashGauge: 50
+  maxDashGauge: 100
   dashCost: 20
   dashGaugePerAttack: 0.3
   defaultGravityScale: 1.2

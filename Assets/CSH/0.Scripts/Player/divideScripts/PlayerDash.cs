@@ -167,7 +167,6 @@ public class PlayerDash : MonoBehaviour
     void StopDash()
     {
         state.isDashing = false;
-        ani.Attack_flash_off();
         playerMove.JustStoppedDashing = true; // ← 추가
         playerMove.RestoreGravity();
 
@@ -181,6 +180,10 @@ public class PlayerDash : MonoBehaviour
         {
             state.dashBuffered = false;
             ExecuteDash(GetMouseDirection());
+        }
+        else
+        {
+            ani.Attack_flash_off();
         }
     }
 
