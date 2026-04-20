@@ -31,7 +31,7 @@ public class PlayerDash : MonoBehaviour
     private Vector2 dashTargetPosition;
     private float dashRemainingDistance;
     private bool dashHitEnemy;
-    private readonly List<Collider2D> hitEnemiesInDash = new List<Collider2D>();
+    private readonly HashSet<Collider2D> hitEnemiesInDash = new HashSet<Collider2D>();
 
     // ── 태클 내부 상태 ───────────────────────
     private Vector2 tackleDirection;
