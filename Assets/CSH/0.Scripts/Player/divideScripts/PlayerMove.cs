@@ -18,8 +18,8 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private Transform ceilingCheck;
-    [SerializeField] private float groundCheckRadius = 0.22f;
-    [SerializeField] private float ceilingCheckRadius = 0.22f;
+    [SerializeField] private Vector2 groundCheckSize = new Vector2(0.44f, 0.1f);
+    [SerializeField] private Vector2 ceilingCheckSize = new Vector2(0.44f, 0.1f);
 
     // ── 벽타기 ───────────────────────────────
     [Header("벽타기")]
@@ -56,7 +56,7 @@ public class PlayerMove : MonoBehaviour
     public Rigidbody2D Rb => rb;
     public LayerMask GroundLayer => groundLayer;
     public Transform GroundCheck => groundCheck;
-    public float GroundCheckRadius => groundCheckRadius;
+    public Vector2 GroundCheckSize => groundCheckSize;
     public bool JustStoppedDashing { get => justStoppedDashing; set => justStoppedDashing = value; }
 
     // ────────────────────────────────────────
@@ -107,14 +107,14 @@ public class PlayerMove : MonoBehaviour
     #region 물리 체크
     void CheckGround()
     {
-        state.isGrounded = Physics2D.OverlapCircle(
-            groundCheck.position, groundCheckRadius, groundLayer);
+        state.isGrounded = Physics2D.OverlapBox(
+            groundCheck.position, groundCheckSize, 0f, groundLayer);
     }
 
     void CheckCeiling()
     {
-        isTouchingCeiling = Physics2D.OverlapCircle(
-            ceilingCheck.position, ceilingCheckRadius, groundLayer);
+        isTouchingCeiling = Physics2D.OverlapBox(
+            ceilingCheck.position, ceilingCheckSize, 0f, groundLayer);
         ani.IsGrounded();
     }
 
@@ -300,24 +300,34 @@ public class PlayerMove : MonoBehaviour
     void ApplyAnimation()
     {
         Ani_Run();
-        isAttack();
+        IsAttack();
         // 일섬 애니메이션은 PlayerCombat에서 트리거하므로 여기서는 처리하지 않음
     }
 
     void Ani_Run()
     {
-        if(!state.isWallSliding)
-        if (Mathf.Abs(moveInput) > 0f)
+        if (!state.isWallSliding)
         {
-            ani.Run_on();
-            if (Input.GetKey(KeyCode.LeftShift))
-                ani.Power_Run_on();
-            else ani.Power_Run_off();
+            if (Mathf.Abs(moveInput) > 0f)
+            {
+                ani.Run_on();
+                if (Input.GetKey(KeyCode.LeftShift))
+                    ani.Power_Run_on();
+                else ani.Power_Run_off();
+            }
+            if (Mathf.Abs(rb.linearVelocityX) <= 0.01) ani.Run_off();
         }
-        if (Mathf.Abs(rb.linearVelocityX) <= 0.01) ani.Run_off();
+        else
+        {
+            if (verticalInput != 0f)
+            {
+                ani.Run_on();
+            }
+
+        }
     }
 
-    void isAttack()
+    void IsAttack()
     {
         if (state.isAttacking)
         { 
@@ -358,12 +368,12 @@ public class PlayerMove : MonoBehaviour
         if (groundCheck != null)
         {
             Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+            Gizmos.DrawWireCube(groundCheck.position, groundCheckSize);
         }
         if (ceilingCheck != null)
         {
             Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(ceilingCheck.position, ceilingCheckRadius);
+            Gizmos.DrawWireCube(ceilingCheck.position, ceilingCheckSize);
         }
         if (wallCheck != null)
         {

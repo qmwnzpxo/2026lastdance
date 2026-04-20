@@ -162,6 +162,7 @@ MonoBehaviour:
   isTouchingRWall: 0
   isWallSliding: 0
   isWallJumping: 0
+  isPowerRun: 0
   dashBuffered: 0
   isDashing: 0
   isTackling: 0
@@ -189,8 +190,8 @@ MonoBehaviour:
     m_Bits: 1024
   groundCheck: {fileID: 5376528988638930902}
   ceilingCheck: {fileID: 2595735820758545400}
-  groundCheckRadius: 0.22
-  ceilingCheckRadius: 0.22
+  groundCheckSize: {x: 0.44, y: 0.1}
+  ceilingCheckSize: {x: 0.44, y: 0.1}
   wallCheck: {fileID: 6688604917998028013}
   wallCheckDistance: 0.52
   wallSlideSpeed: 2.5
@@ -373,7 +374,7 @@ TrailRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -2
   m_Time: 0.5
   m_PreviewTimeScale: 1
   m_Parameters:
@@ -489,7 +490,7 @@ LineRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -1
   m_Positions:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 1}
@@ -795,7 +796,7 @@ Transform:
   m_GameObject: {fileID: 6508001967832896477}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.87, z: 0}
+  m_LocalPosition: {x: 0, y: -0.8, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -826,7 +827,7 @@ Transform:
   m_GameObject: {fileID: 6800528333246108567}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.97, z: 0}
+  m_LocalPosition: {x: 0, y: 0.9, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

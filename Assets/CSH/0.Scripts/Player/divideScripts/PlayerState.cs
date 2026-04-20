@@ -23,12 +23,14 @@ public class PlayerState : MonoBehaviour
 
     // ── 대쉬 게이지 ───────────────────────────
     [Header("대쉬 게이지")]
-    [SerializeField] private float dashGauge = 50f;
-    [SerializeField] private float maxDashGauge = 50f;
-    public float dashGaugePerAttack = 0.3f;
+    [RuntimeOnly, SerializeField] private float dashGauge = 50f;
+    [RuntimeOnly, SerializeField] private float maxDashGauge = 100f;
+    [RuntimeOnly, SerializeField] private float dashCost = 20f;
+    public float dashGaugePerAttack = 10f;
 
     public float DashGauge => dashGauge;
     public float MaxDashGauge => maxDashGauge;
+    public float DashCost => dashCost;
 
     // ── 중력 설정 ─────────────────────────────
     [Header("중력 설정")]

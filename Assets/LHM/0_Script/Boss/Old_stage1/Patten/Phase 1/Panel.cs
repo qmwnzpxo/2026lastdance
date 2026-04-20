@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 
 public class Panel : MonoBehaviour
 {
-    ObjectHp objectHp;
+    //ObjectHp objectHp;
     public static Panel Instance;
 
     public GameObject[] panel = new GameObject[7];
@@ -22,7 +22,7 @@ public class Panel : MonoBehaviour
     [SerializeField] Color lineColor = Color.red;
     [SerializeField] float lineWidth = 0.05f;
 
-    bool NextPatten = false;
+    //bool NextPatten = false;
 
     [SerializeField] GameObject projectilePrefab;
     [SerializeField] EnemyBase enemyBase;

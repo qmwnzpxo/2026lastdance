@@ -150,7 +150,7 @@ public class PlayerDash : MonoBehaviour
         state.isTouchingLWall = false;
         state.isTouchingRWall = false;
 
-        state.TryUseDashGauge(1f);
+        state.TryUseDashGauge(state.DashCost);
 
         dashHitEnemy = false;
         hitEnemiesInDash.Clear();
@@ -367,8 +367,8 @@ public class PlayerDash : MonoBehaviour
 
         rb.MovePosition(nextPos);
 
-        bool landed = Physics2D.OverlapCircle(
-            playerMove.GroundCheck.position, playerMove.GroundCheckRadius, playerMove.GroundLayer);
+        bool landed = Physics2D.OverlapBox(
+            playerMove.GroundCheck.position, playerMove.GroundCheckSize, 0f, playerMove.GroundLayer);
         if (landed)
         {
             StartTackleGroundRush();
@@ -390,8 +390,8 @@ public class PlayerDash : MonoBehaviour
         rb.MovePosition(nextPos);
         tackleGroundDistanceRemaining -= moveDistance;
 
-        bool stillGrounded = Physics2D.OverlapCircle(
-            playerMove.GroundCheck.position, playerMove.GroundCheckRadius, playerMove.GroundLayer);
+        bool stillGrounded = Physics2D.OverlapBox(
+            playerMove.GroundCheck.position, playerMove.GroundCheckSize, 0f, playerMove.GroundLayer);
         if (tackleGroundDistanceRemaining <= 0f || !stillGrounded)
             StopTackle();
     }

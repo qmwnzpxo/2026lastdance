@@ -21,7 +21,7 @@ public class BossBase : MonoBehaviour
     public bool IsShieldActive { get; private set; } = true;
     public bool IsDead { get; private set; } = false;
 
-    int number = 0;
+    //int number = 0;
     private bool _battleLoopStarted = false;
     private int _currentPatternIndex = 0;
     private float battleStartDelay = 3f;
