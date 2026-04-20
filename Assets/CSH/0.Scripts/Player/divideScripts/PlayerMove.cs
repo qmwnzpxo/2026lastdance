@@ -1,7 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.U2D;
 
 // ※ Script Execution Order 설정 필요
 //   PlayerDash: -1  /  PlayerMove: 0

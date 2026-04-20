@@ -11,7 +11,6 @@
 
 using Cysharp.Threading.Tasks;
 using System.Threading;
-using BossSystem;
 using UnityEngine;
 
 namespace BossSystem.Patterns
