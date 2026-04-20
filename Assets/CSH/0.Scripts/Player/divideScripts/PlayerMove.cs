@@ -195,7 +195,6 @@ public class PlayerMove : MonoBehaviour
     {
         if (!Input.GetKeyDown(KeyCode.Space) || state.isDashing) return;
 
-        ani.Jump_on();
         // 천장 붙기 상태에서 Space → 분리 후 아래로
         if (state.isOnCeiling)
         {
@@ -219,7 +218,6 @@ public class PlayerMove : MonoBehaviour
             wallJumpCts = new CancellationTokenSource();
             StartWallJumpCooldown(wallJumpCts.Token).Forget();
         }
-        ani.Jump_off();
     }
 
     private async UniTaskVoid StartWallJumpCooldown(CancellationToken ct)

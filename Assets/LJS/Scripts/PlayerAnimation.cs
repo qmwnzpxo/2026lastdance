@@ -17,8 +17,17 @@ public class PlayerAnimation : MonoBehaviour
      * isJump
      * isAttackFlash*/
     public void IsGrounded() {
-        if (state.isGrounded || state.isOnCeiling || state.isWallSliding) ani.SetBool("isGrounded", true);
-        else ani.SetBool("isGrounded", false);
+        if (state.isGrounded || state.isOnCeiling || state.isWallSliding)
+        {
+            ani.SetBool("isGrounded", true);
+            Jump_off();
+        }
+        else
+        {
+            ani.SetBool("isGrounded", false);
+            Jump_on();
+        }
+
     }
     public void Run_on() { ani.SetBool("isRun", true); }
     public void Run_off() { ani.SetBool("isRun", false); }
