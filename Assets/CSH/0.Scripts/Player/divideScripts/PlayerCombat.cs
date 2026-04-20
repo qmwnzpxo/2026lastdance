@@ -71,24 +71,33 @@ public class PlayerCombat : MonoBehaviour
         PerformAttack().Forget();
     }
 
-    private async UniTaskVoid PerformAttack()
+  private async UniTaskVoid PerformAttack()
+  {
+    state.isAttacking = true;
+
+    ani.Attack();
+
+    Vector2 attackPos = (Vector2)attackTransform.position
+                      + (Vector2)attackTransform.right * attackBoxDistance;
+    if (state.isGrounded)
     {
-        state.isAttacking = true;
-        
-        ani.Attack();
-
-        Vector2 attackPos = (Vector2)attackTransform.position
-                          + (Vector2)attackTransform.right * attackBoxDistance;
-        for (int i = 0; i < attackRepeatTime; i++)
-        {
-            ExecuteAttackBox(attackPos);
-            await UniTask.WaitForSeconds(attackSecondHitDelay/attackRepeatTime,
-                cancellationToken: this.destroyCancellationToken);
-        }
-
-        //ani.Attack_off();
-        state.isAttacking = false;
+      for (int i = 0; i < attackRepeatTime; i++)
+      {
+        ExecuteAttackBox(attackPos);
+        await UniTask.WaitForSeconds(attackSecondHitDelay / attackRepeatTime,
+            cancellationToken: this.destroyCancellationToken);
+      }
     }
+    else if(!state.isGrounded)
+    {
+      ExecuteAttackBox(attackPos); 
+      await UniTask.WaitForSeconds(attackSecondHitDelay,
+            cancellationToken: this.destroyCancellationToken);
+    }
+
+      //ani.Attack_off();
+      state.isAttacking = false;
+  }
 
     void ExecuteAttackBox(Vector2 attackPos)
     {
