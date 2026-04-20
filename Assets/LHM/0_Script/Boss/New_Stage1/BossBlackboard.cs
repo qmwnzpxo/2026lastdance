@@ -108,6 +108,10 @@ namespace BossSystem
             OnBarrierBroken?.Invoke();
             Debug.Log("[Blackboard] Debug_ForceBarrierBroken: OnBarrierBroken invoked.");
         }
+        public void OnBarrierBroken_Invoke()
+        {
+            OnBarrierBroken?.Invoke();
+        }
 #endif
     }
 

@@ -1,40 +1,31 @@
-﻿using Cysharp.Threading.Tasks;
+﻿// ──────────────────────────────────────────────────────────────────────────
+// Phase2RapidLaserPattern.cs — PanelHealth 파훼 판정 연동 패치
+//
+// 변경 요약:
+//   · RunDroneAsync: 드론 생성 직후 PanelHealth 컴포넌트를 가져와
+//     OnPanelDestroyed 이벤트에 onDestroyed 콜백 연결
+//   · 플레이어가 드론을 직접 파괴하면 → PanelHealth.Die()
+//     → OnPanelDestroyed → onDestroyed() → destroyedCount++
+//   · 자연 소멸(경고→발사→finally Destroy)도 onDestroyed 호출 유지
+// ──────────────────────────────────────────────────────────────────────────
+
+using Cysharp.Threading.Tasks;
 using System.Threading;
+using BossSystem;
 using UnityEngine;
 
 namespace BossSystem.Patterns
 {
-
-    // ───────────────────────────────────────────────────────────────────────
-    // Phase 2-3 — 순차적 레이저 난사 (Sequential)
-    // ───────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// 기획:
-    ///   3-1. 보스 좌표에서 레이저 오브젝트를 0.2초 간격으로 15개 생성
-    ///   3-2. 플레이어 좌표 근처에 레이저 오브젝트가 이동
-    ///   3-3. 각 오브젝트가 플레이어 방향으로 경고(1.5초) 후 레이저 발사
-    ///   3-4. 발사 후 오브젝트 파괴됨
-    ///   3-5. 플레이어 공격으로 오브젝트 선파괴 가능
-    ///   3-6. 모든 오브젝트 파괴 시 파훼 판정
-    ///
-    /// <summary>
     [CreateAssetMenu(fileName = "Pattern_Phase2_RapidLaser",
                      menuName = "BossSystem/Patterns/Phase2_RapidLaser")]
     public class Phase2RapidLaserPattern : BossPatternBase
     {
         [Header("Rapid Laser")]
-        [Tooltip("생성할 레이저 드론 수. 기획: 15개")]
         [SerializeField] private int _droneCount = 15;
-        [Tooltip("드론 생성 간격 (초). 기획: 0.2초")]
         [SerializeField] private float _spawnInterval = 0.2f;
-        [Tooltip("드론 이동 속도")]
         [SerializeField] private float _droneMoveSpeed = 8f;
-        [Tooltip("드론이 플레이어 주변에 퍼지는 반경")]
         [SerializeField] private float _droneSpreadRadius = 3f;
-        [Tooltip("드론이 목표 위치 도착 후 경고 시간 (초). 기획: 1.5초")]
         [SerializeField] private float _warningDuration = 1.5f;
-        [Tooltip("경고 후 발사 지속 시간")]
         [SerializeField] private float _fireDuration = 0.2f;
 
         [Header("Lead Targeting")]
@@ -65,15 +56,12 @@ namespace BossSystem.Patterns
             var droneDestroyed = new bool[_droneCount];
             int destroyedCount = 0;
 
-            // ── 드론 순차 생성 ────────────────────────────────────────────
             for (int i = 0; i < _droneCount; i++)
             {
                 ct.ThrowIfCancellationRequested();
 
-                // 플레이어 주변 랜덤 위치 계산 (원형 분산)
                 float angle = i * (360f / _droneCount) * Mathf.Deg2Rad;
-                Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f)
-                                   * _droneSpreadRadius;
+                Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * _droneSpreadRadius;
                 Vector3 targetPos = ctx.PlayerTransform.position + offset;
 
                 var drone = Object.Instantiate(_dronePrefab,
@@ -82,10 +70,26 @@ namespace BossSystem.Patterns
 
                 int capturedIdx = i;
 
-                // 드론 개별 생명주기 (이동 → 경고 → 발사)를 독립 Task로 실행
-                RunDroneAsync(drone, targetPos, ctx, ct,
+                // ★ PanelHealth 연동: 플레이어가 선파괴 시에도 카운트 반영
+                var health = drone.GetComponent<PanelHealth>();
+                if (health != null)
+                {
+                    health.ResetHP();
+                    health.OnPanelDestroyed += _ =>
+                    {
+                        if (!droneDestroyed[capturedIdx])
+                        {
+                            droneDestroyed[capturedIdx] = true;
+                            destroyedCount++;
+                            Log($"Drone {capturedIdx} destroyed by player. Count={destroyedCount}/{_droneCount}");
+                        }
+                    };
+                }
+
+                RunDroneAsync(drone, health, targetPos, ctx, ct,
                     onDestroyed: () =>
                     {
+                        // 자연 소멸(발사 후) 카운트
                         if (!droneDestroyed[capturedIdx])
                         {
                             droneDestroyed[capturedIdx] = true;
@@ -97,7 +101,7 @@ namespace BossSystem.Patterns
                     System.TimeSpan.FromSeconds(_spawnInterval), cancellationToken: ct);
             }
 
-            // ── 모든 드론 파괴 대기 ───────────────────────────────────────
+            // 전부 파괴 대기 → 파훼 판정
             while (!ct.IsCancellationRequested)
             {
                 if (destroyedCount >= _droneCount)
@@ -108,16 +112,14 @@ namespace BossSystem.Patterns
                 await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
 
-            // 남은 드론 정리
             foreach (var d in drones)
                 if (d != null) Object.Destroy(d);
         }
 
-        /// <summary>
-        /// 드론 1개의 생명주기: 이동 → 경고 → 발사 → 파괴
-        /// </summary>
+        /// <summary>드론 1개 생명주기: 이동 → 경고 → 발사 → 파괴</summary>
         private async UniTaskVoid RunDroneAsync(
             GameObject drone,
+            PanelHealth health,
             Vector3 targetPos,
             BossContext ctx,
             CancellationToken ct,
@@ -130,20 +132,23 @@ namespace BossSystem.Patterns
 
             try
             {
-                // 1. 목표 위치로 이동
+                // 1. 이동
                 await LaserUtility.MoveTowardsAsync(
                     drone.transform, targetPos, _droneMoveSpeed, ct);
 
-                if (drone == null || ct.IsCancellationRequested) return;
+                // 플레이어에게 이미 파괴되었으면 조기 종료
+                if (drone == null || !drone.activeInHierarchy || ct.IsCancellationRequested)
+                    return;
 
-                // 2. 경고 페이드인 (플레이어 추적)
+                // 2. 경고 페이드인
                 await LaserUtility.FadeInWarningLineAsync(
                     warnLine,
                     () => drone != null ? drone.transform.position : Vector3.zero,
                     () => GetLeadTarget(ctx),
                     _warningColor, _warningDuration, ct);
 
-                if (drone == null || ct.IsCancellationRequested) return;
+                if (drone == null || !drone.activeInHierarchy || ct.IsCancellationRequested)
+                    return;
 
                 // 3. 발사
                 Vector3 predicted = GetLeadTarget(ctx);
@@ -153,7 +158,6 @@ namespace BossSystem.Patterns
 
                 Vector2 origin = drone.transform.position;
                 Vector2 dir = ((Vector2)predicted - origin).normalized;
-
                 LaserUtility.CircleCastAndDamage(
                     origin, dir, _castRadius, _castDistance, _playerLayer, _laserDamage);
 
@@ -164,7 +168,7 @@ namespace BossSystem.Patterns
             {
                 if (warnLine != null) Object.Destroy(warnLine.gameObject);
                 if (drone != null) Object.Destroy(drone);
-                onDestroyed?.Invoke();
+                onDestroyed?.Invoke(); // 자연 소멸 카운트
             }
         }
 

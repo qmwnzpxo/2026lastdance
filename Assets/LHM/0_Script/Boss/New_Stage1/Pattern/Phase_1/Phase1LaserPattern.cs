@@ -5,9 +5,15 @@ using UnityEngine;
 
 namespace BossSystem.Patterns
 {
-
     // ───────────────────────────────────────────────────────────────────────
-    // Phase 1-2 — 360도 레이저 (Persistent)
+    // Phase 1-2 — 360도 레이저 (Sequential)
+    //
+    // 종료 조건
+    //   A) 파훼: 타임아웃 전에 코어 4개 전부 파괴 → 파훼 이벤트 발생
+    //   B) 타임아웃: _patternDuration 초 경과 → 남은 코어 강제 파괴 (파훼 판정 없음)
+    //
+    // 종료 연출
+    //   빔 페이드아웃(_beamFadeDuration) 후 모든 오브젝트 정리 → 다음 패턴 진행
     // ───────────────────────────────────────────────────────────────────────
 
     [CreateAssetMenu(fileName = "Pattern_Phase1_360Laser",
@@ -25,8 +31,11 @@ namespace BossSystem.Patterns
         [SerializeField] private float _laserThickness = 0.5f;
         [SerializeField] private LayerMask _playerLayer;
 
-        [Header("Reconnect Fade")]
-        [SerializeField, Range(0.05f, 0.5f)] private float _fadeReconnectDuration = 0.2f;
+        [Header("Sequential Settings")]
+        [Tooltip("패턴 지속 시간 (초). 이 시간 안에 코어를 전부 파괴하면 파훼 판정.")]
+        [SerializeField] private float _patternDuration = 15f;
+        [Tooltip("종료 시 빔 페이드아웃 시간 (초).")]
+        [SerializeField, Range(0.05f, 1f)] private float _beamFadeDuration = 0.3f;
 
         [Header("Last Core Behavior")]
         [SerializeField, Range(0f, 10f)] private float _soloCoreSelfDestructDelay = 3f;
@@ -37,6 +46,7 @@ namespace BossSystem.Patterns
         {
             Vector3.up, Vector3.right, Vector3.down, Vector3.left
         };
+
         private BossBlackboard _blackboard_ref;
         public void SetBlackboard(BossBlackboard bb) => _blackboard_ref = bb;
 
@@ -45,13 +55,16 @@ namespace BossSystem.Patterns
             var bb = _blackboard_ref ?? ctx.Blackboard;
             if (bb == null)
             {
-                Debug.LogError("[Phase1LaserPattern] Blackboard is null! SetBlackboard() 또는 ctx.Blackboard를 확인하세요.");
+                Debug.LogError("[Phase1LaserPattern] Blackboard is null!");
                 return;
             }
 
             var bossPos = ctx.BossTransform.position;
             var cores = new LaserCore[4];
             var beams = new LineRenderer[4];
+
+            // 이번 패턴 실행에서 파괴된 코어 수 (ctx.DestroyedCoreCount 와 별도 추적)
+            int destroyedThisPattern = 0;
 
             // ── 코어 스폰 ─────────────────────────────────────────────────
             for (int i = 0; i < 4; i++)
@@ -67,13 +80,13 @@ namespace BossSystem.Patterns
                 int capturedIdx = i;
                 cores[capturedIdx].OnCoreDestroyed += (destroyedCore) =>
                 {
+                    destroyedThisPattern++;
                     ctx.DestroyedCoreCount++;
-                    Log($"Core {capturedIdx} destroyed. Total destroyed={ctx.DestroyedCoreCount}");
-                    FadeReconnectAsync(beams, capturedIdx, ct).Forget();
+                    Log($"Core {capturedIdx} destroyed. ThisPattern={destroyedThisPattern}");
+                    FadeBeamAsync(beams, capturedIdx, _beamFadeDuration, ct).Forget();
                 };
 
                 bb.RegisterCore(cores[i]);
-                Debug.Log($"[Phase1LaserPattern] Core {i} registered to Blackboard.");
             }
 
             // ── 빔 스폰 ───────────────────────────────────────────────────
@@ -86,25 +99,59 @@ namespace BossSystem.Patterns
                 if (beams[i] != null) beams[i].enabled = false;
             }
 
-            // ── 메인 루프 ─────────────────────────────────────────────────
-            float angle = 0f;
-            float soloDestructDelay = _soloCoreSelfDestructDelay; 
+            // ── 메인 루프 (타임아웃 or 전체 파괴까지) ────────────────────
+            bool broke = false;   // 파훼 판정 여부
             bool soloTriggered = false;
+            float elapsed = 0f;
 
             while (!ct.IsCancellationRequested)
             {
-                angle += _rotationSpeed * Time.deltaTime;
-                UpdateCorePositions(ctx.BossTransform.position, cores, angle);
+                elapsed += Time.deltaTime;
+
+                // 코어 위치·빔 갱신
+                UpdateCorePositions(ctx.BossTransform.position, cores, elapsed * _rotationSpeed);
                 UpdateBeamsAndDamage(cores, beams, _laserThickness, _playerLayer, _damagePerSecond);
 
-                if (soloDestructDelay > 0f && !soloTriggered)
-                    soloTriggered = CheckSoloCoreDestruct(cores, soloDestructDelay, ct);
+                // 마지막 코어 자동 파괴 체크
+                if (_soloCoreSelfDestructDelay > 0f && !soloTriggered)
+                    soloTriggered = CheckSoloCoreDestruct(cores, _soloCoreSelfDestructDelay, ct);
+
+                // ── 파훼 판정: 전부 파괴 ──────────────────────────────────
+                if (destroyedThisPattern >= 4)
+                {
+                    broke = true;
+                    Log("All cores destroyed — BREAK!");
+                    break;
+                }
+
+                // ── 타임아웃 ─────────────────────────────────────────────
+                if (elapsed >= _patternDuration)
+                {
+                    Log($"Timeout ({_patternDuration}s). Forcing remaining cores to die (no break).");
+                    await ForceDestroyRemainingAsync(cores, beams, ct);
+                    break;
+                }
 
                 await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
 
+            // ── 종료 연출: 빔 전체 페이드아웃 ───────────────────────────
+            await FadeAllBeamsAsync(beams, _beamFadeDuration, ct);
+
+            // ── 파훼 이벤트 ──────────────────────────────────────────────
+            if (broke)
+            {
+                ctx.Blackboard?.OnBarrierBroken_Invoke(); // 아래 확장 메서드 참조
+                Log("Break event fired.");
+            }
+
             Cleanup(cores, beams);
+            Log($"Pattern ended. Broke={broke}");
         }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 코어 위치 갱신
+        // ─────────────────────────────────────────────────────────────────
 
         private void UpdateCorePositions(Vector3 center, LaserCore[] cores, float angle)
         {
@@ -118,6 +165,10 @@ namespace BossSystem.Patterns
                     center.z);
             }
         }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 빔 + 데미지 갱신
+        // ─────────────────────────────────────────────────────────────────
 
         private static void UpdateBeamsAndDamage(
             LaserCore[] cores, LineRenderer[] beams,
@@ -152,35 +203,36 @@ namespace BossSystem.Patterns
                     beams[i].SetPosition(1, to);
                 }
 
-                var hit = Physics2D.BoxCast(
-                    from, castSize,
-                    Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg,
-                    dir.normalized, dist, playerLayer);
-
-                //데미지 타격은 잠시 비활성화
-                //if (hit.collider != null)
-                 //   hit.collider.GetComponent<Boss.Phase1.LaserBeamManager.IPlayerHealth>()
-                   //    ?.TakeDamage(damage);
+                // 데미지 판정 (필요 시 주석 해제)
+                // var hit = Physics2D.BoxCast(from, castSize,
+                //     Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg,
+                //     dir.normalized, dist, playerLayer);
+                // if (hit.collider != null)
+                //     hit.collider.GetComponent<IPlayerHealth>()?.TakeDamage(damage);
             }
         }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 마지막 코어 자동 파괴
+        // ─────────────────────────────────────────────────────────────────
 
         private static bool CheckSoloCoreDestruct(
             LaserCore[] cores, float delay, CancellationToken ct)
         {
             int aliveCount = 0;
-            LaserCore lastCore = null;
+            LaserCore last = null;
             foreach (var c in cores)
             {
                 if (c != null && c.gameObject.activeInHierarchy)
                 {
                     aliveCount++;
-                    lastCore = c;
+                    last = c;
                 }
             }
 
-            if (aliveCount == 1 && lastCore != null)
+            if (aliveCount == 1 && last != null)
             {
-                SoloCoreSelfDestructAsync(lastCore, delay, ct).Forget();
+                SoloCoreSelfDestructAsync(last, delay, ct).Forget();
                 return true;
             }
             return false;
@@ -195,19 +247,44 @@ namespace BossSystem.Patterns
                 core.TakeDamage(float.MaxValue);
         }
 
-        private async UniTaskVoid FadeReconnectAsync(
-            LineRenderer[] beams, int destroyedIdx, CancellationToken ct)
+        // ─────────────────────────────────────────────────────────────────
+        // 타임아웃 시 남은 코어 강제 파괴 (파훼 판정 없음)
+        // ─────────────────────────────────────────────────────────────────
+
+        private static async UniTask ForceDestroyRemainingAsync(
+            LaserCore[] cores, LineRenderer[] beams, CancellationToken ct)
         {
-            if (destroyedIdx < 0 || destroyedIdx >= beams.Length || beams[destroyedIdx] == null)
-                return;
+            // 빔 먼저 끔
+            foreach (var b in beams)
+                if (b != null) b.enabled = false;
 
-            var lr = beams[destroyedIdx];
-            float elapsed = 0f;
+            // 살아있는 코어 즉시 강제 파괴 (OnCoreDestroyed 이벤트는 발생하지만
+            // destroyedThisPattern 카운트가 이미 4 미만이므로 파훼 판정에 영향 없음)
+            foreach (var c in cores)
+                if (c != null && c.gameObject.activeInHierarchy)
+                    c.TakeDamage(float.MaxValue);
+
+            // 파괴 VFX 재생 시간을 한 프레임 대기
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 빔 페이드아웃
+        // ─────────────────────────────────────────────────────────────────
+
+        /// <summary>특정 인덱스 빔 하나만 페이드아웃 (코어 파괴 콜백용).</summary>
+        private static async UniTaskVoid FadeBeamAsync(
+            LineRenderer[] beams, int idx, float duration, CancellationToken ct)
+        {
+            if (idx < 0 || idx >= beams.Length || beams[idx] == null) return;
+
+            var lr = beams[idx];
             var startColor = lr.startColor;
+            float elapsed = 0f;
 
-            while (elapsed < _fadeReconnectDuration && !ct.IsCancellationRequested)
+            while (elapsed < duration && !ct.IsCancellationRequested)
             {
-                float t = elapsed / _fadeReconnectDuration;
+                float t = elapsed / duration;
                 Color c = startColor;
                 c.a = Mathf.Lerp(startColor.a, 0f, t);
                 lr.startColor = lr.endColor = c;
@@ -217,6 +294,38 @@ namespace BossSystem.Patterns
 
             if (lr != null) lr.enabled = false;
         }
+
+        /// <summary>패턴 종료 시 살아있는 빔 전체 페이드아웃.</summary>
+        private static async UniTask FadeAllBeamsAsync(
+            LineRenderer[] beams, float duration, CancellationToken ct)
+        {
+            // 각 빔의 시작 알파를 캡처
+            var startColors = new Color[beams.Length];
+            for (int i = 0; i < beams.Length; i++)
+                startColors[i] = beams[i] != null ? beams[i].startColor : Color.clear;
+
+            float elapsed = 0f;
+            while (elapsed < duration && !ct.IsCancellationRequested)
+            {
+                float t = elapsed / duration;
+                for (int i = 0; i < beams.Length; i++)
+                {
+                    if (beams[i] == null || !beams[i].enabled) continue;
+                    Color c = startColors[i];
+                    c.a = Mathf.Lerp(startColors[i].a, 0f, t);
+                    beams[i].startColor = beams[i].endColor = c;
+                }
+                elapsed += Time.deltaTime;
+                await UniTask.Yield(PlayerLoopTiming.Update, ct);
+            }
+
+            foreach (var b in beams)
+                if (b != null) b.enabled = false;
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 정리
+        // ─────────────────────────────────────────────────────────────────
 
         private static void Cleanup(LaserCore[] cores, LineRenderer[] beams)
         {

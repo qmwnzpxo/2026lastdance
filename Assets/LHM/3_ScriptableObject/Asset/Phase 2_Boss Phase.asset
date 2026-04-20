@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71e693b6ef535794ea6f482d358c27ac, type: 3}
   m_Name: Phase 2_Boss Phase
   m_EditorClassIdentifier: 
-  hpThreshold: 1
+  hpThreshold: 0.5
   hpRecoverRatio: 0
   spawnPointIndex: -1
   persistentPatterns: []
