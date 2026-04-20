@@ -6,14 +6,7 @@ using UnityEngine;
 namespace BossSystem.Patterns
 {
     // ───────────────────────────────────────────────────────────────────────
-    // Phase 1-2 — 360도 레이저 (Sequential)
-    //
-    // 종료 조건
-    //   A) 파훼: 타임아웃 전에 코어 4개 전부 파괴 → 파훼 이벤트 발생
-    //   B) 타임아웃: _patternDuration 초 경과 → 남은 코어 강제 파괴 (파훼 판정 없음)
-    //
-    // 종료 연출
-    //   빔 페이드아웃(_beamFadeDuration) 후 모든 오브젝트 정리 → 다음 패턴 진행
+    // Phase 1-2 — 360도 레이저 (Persistent)
     // ───────────────────────────────────────────────────────────────────────
 
     [CreateAssetMenu(fileName = "Pattern_Phase1_360Laser",
@@ -31,17 +24,17 @@ namespace BossSystem.Patterns
         [SerializeField] private float _laserThickness = 0.5f;
         [SerializeField] private LayerMask _playerLayer;
 
-        [Header("Sequential Settings")]
-        [Tooltip("패턴 지속 시간 (초). 이 시간 안에 코어를 전부 파괴하면 파훼 판정.")]
-        [SerializeField] private float _patternDuration = 15f;
-        [Tooltip("종료 시 빔 페이드아웃 시간 (초).")]
-        [SerializeField, Range(0.05f, 1f)] private float _beamFadeDuration = 0.3f;
+        [Header("Reconnect Fade")]
+        [SerializeField, Range(0.05f, 0.5f)] private float _fadeReconnectDuration = 0.2f;
 
         [Header("Last Core Behavior")]
         [SerializeField, Range(0f, 10f)] private float _soloCoreSelfDestructDelay = 3f;
 
-        // GC-safe 정적 버퍼
+        // ── GC-safe 정적 버퍼 ────────────────────────────────────────────
+        // _aliveBuffer: 살아있는 코어의 원본 인덱스를 담는 버퍼
+        // 최대 4개 코어이므로 고정 크기 배열로 GC 없이 재사용
         private static readonly int[] _aliveBuffer = new int[4];
+
         private static readonly Vector3[] _spawnDirs =
         {
             Vector3.up, Vector3.right, Vector3.down, Vector3.left
@@ -62,9 +55,9 @@ namespace BossSystem.Patterns
             var bossPos = ctx.BossTransform.position;
             var cores = new LaserCore[4];
             var beams = new LineRenderer[4];
-
-            // 이번 패턴 실행에서 파괴된 코어 수 (ctx.DestroyedCoreCount 와 별도 추적)
-            int destroyedThisPattern = 0;
+            // 빔별 색상 페이드 진행률 (0 = 완전 투명, 1 = 완전 불투명)
+            // UpdateBeamsAndDamage 안에서만 읽고 씀 → FadeReconnectAsync 불필요
+            var beamAlpha = new float[4];
 
             // ── 코어 스폰 ─────────────────────────────────────────────────
             for (int i = 0; i < 4; i++)
@@ -80,16 +73,17 @@ namespace BossSystem.Patterns
                 int capturedIdx = i;
                 cores[capturedIdx].OnCoreDestroyed += (destroyedCore) =>
                 {
-                    destroyedThisPattern++;
                     ctx.DestroyedCoreCount++;
-                    Log($"Core {capturedIdx} destroyed. ThisPattern={destroyedThisPattern}");
-                    FadeBeamAsync(beams, capturedIdx, _beamFadeDuration, ct).Forget();
+                    Log($"Core {capturedIdx} destroyed. Total={ctx.DestroyedCoreCount}");
+                    // null 표시만 — 빔 제어는 UpdateBeamsAndDamage 한 곳에서만 함
+                    cores[capturedIdx] = null;
                 };
 
                 bb.RegisterCore(cores[i]);
+                Debug.Log($"[Phase1LaserPattern] Core {i} registered.");
             }
 
-            // ── 빔 스폰 ───────────────────────────────────────────────────
+            // ── 빔 스폰 (4개 고정) ────────────────────────────────────────
             for (int i = 0; i < 4; i++)
             {
                 beams[i] = (_laserBeamPrefab != null && ObjectPool.HasPool(_laserBeamPrefab.gameObject))
@@ -97,56 +91,29 @@ namespace BossSystem.Patterns
                     : (_laserBeamPrefab != null ? Object.Instantiate(_laserBeamPrefab) : null);
 
                 if (beams[i] != null) beams[i].enabled = false;
+                beamAlpha[i] = 1f;
             }
 
-            // ── 메인 루프 (타임아웃 or 전체 파괴까지) ────────────────────
-            bool broke = false;   // 파훼 판정 여부
+            // ── 메인 루프 ─────────────────────────────────────────────────
+            float angle = 0f;
+            float soloDestructDelay = _soloCoreSelfDestructDelay;
             bool soloTriggered = false;
-            float elapsed = 0f;
 
             while (!ct.IsCancellationRequested)
             {
-                elapsed += Time.deltaTime;
+                angle += _rotationSpeed * Time.deltaTime;
+                UpdateCorePositions(ctx.BossTransform.position, cores, angle);
+                UpdateBeamsAndDamage(cores, beams, beamAlpha,
+                                     _laserThickness, _playerLayer, _damagePerSecond,
+                                     _fadeReconnectDuration);
 
-                // 코어 위치·빔 갱신
-                UpdateCorePositions(ctx.BossTransform.position, cores, elapsed * _rotationSpeed);
-                UpdateBeamsAndDamage(cores, beams, _laserThickness, _playerLayer, _damagePerSecond);
-
-                // 마지막 코어 자동 파괴 체크
-                if (_soloCoreSelfDestructDelay > 0f && !soloTriggered)
-                    soloTriggered = CheckSoloCoreDestruct(cores, _soloCoreSelfDestructDelay, ct);
-
-                // ── 파훼 판정: 전부 파괴 ──────────────────────────────────
-                if (destroyedThisPattern >= 4)
-                {
-                    broke = true;
-                    Log("All cores destroyed — BREAK!");
-                    break;
-                }
-
-                // ── 타임아웃 ─────────────────────────────────────────────
-                if (elapsed >= _patternDuration)
-                {
-                    Log($"Timeout ({_patternDuration}s). Forcing remaining cores to die (no break).");
-                    await ForceDestroyRemainingAsync(cores, beams, ct);
-                    break;
-                }
+                if (soloDestructDelay > 0f && !soloTriggered)
+                    soloTriggered = CheckSoloCoreDestruct(cores, soloDestructDelay, ct);
 
                 await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
 
-            // ── 종료 연출: 빔 전체 페이드아웃 ───────────────────────────
-            await FadeAllBeamsAsync(beams, _beamFadeDuration, ct);
-
-            // ── 파훼 이벤트 ──────────────────────────────────────────────
-            if (broke)
-            {
-                ctx.Blackboard?.OnBarrierBroken_Invoke(); // 아래 확장 메서드 참조
-                Log("Break event fired.");
-            }
-
             Cleanup(cores, beams);
-            Log($"Pattern ended. Broke={broke}");
         }
 
         // ─────────────────────────────────────────────────────────────────
@@ -157,7 +124,9 @@ namespace BossSystem.Patterns
         {
             for (int i = 0; i < cores.Length; i++)
             {
+                // null이면 이미 파괴된 코어 → 건너뜀
                 if (cores[i] == null || !cores[i].gameObject.activeInHierarchy) continue;
+
                 float rad = (angle + i * 90f) * Mathf.Deg2Rad;
                 cores[i].transform.position = new Vector3(
                     center.x + Mathf.Cos(rad) * _radius,
@@ -167,72 +136,144 @@ namespace BossSystem.Patterns
         }
 
         // ─────────────────────────────────────────────────────────────────
-        // 빔 + 데미지 갱신
+        // 빔 업데이트 & 데미지
+        //
+        // beamAlpha[i] : 빔 슬롯 i의 현재 투명도 (0~1).
+        //   - 해당 슬롯이 활성 연결선으로 사용 중 → 매 프레임 1로 스냅
+        //   - 더 이상 연결에 필요 없는 슬롯     → fadeDuration 동안 0으로 감소
+        //   - 0에 도달하면 enabled = false
+        //
+        // 이렇게 하면 FadeReconnectAsync 같은 별도 Task 없이 단일 함수에서
+        // 빔의 활성/비활성/페이드를 모두 처리할 수 있어 경쟁 조건이 사라짐.
         // ─────────────────────────────────────────────────────────────────
-
         private static void UpdateBeamsAndDamage(
-            LaserCore[] cores, LineRenderer[] beams,
-            float thickness, LayerMask playerLayer, float dps)
+            LaserCore[] cores,
+            LineRenderer[] beams,
+            float[] beamAlpha,
+            float thickness,
+            LayerMask playerLayer,
+            float dps,
+            float fadeDuration)
         {
+            // ── 살아있는 코어 인덱스 수집 ────────────────────────────────
             int aliveCount = 0;
             for (int i = 0; i < cores.Length; i++)
+            {
                 if (cores[i] != null && cores[i].gameObject.activeInHierarchy)
                     _aliveBuffer[aliveCount++] = i;
-
-            for (int i = 0; i < beams.Length; i++)
-                if (beams[i] != null) beams[i].enabled = false;
-
-            if (aliveCount < 2) return;
-
-            var castSize = new Vector2(0.1f, thickness);
-            float damage = dps * Time.deltaTime;
-
-            for (int i = 0; i < aliveCount; i++)
-            {
-                int next = (i + 1) % aliveCount;
-                Vector3 from = cores[_aliveBuffer[i]].transform.position;
-                Vector3 to = cores[_aliveBuffer[next]].transform.position;
-                Vector3 dir = to - from;
-                float dist = dir.magnitude;
-                if (dist < 0.01f) continue;
-
-                if (beams[i] != null)
-                {
-                    beams[i].enabled = true;
-                    beams[i].SetPosition(0, from);
-                    beams[i].SetPosition(1, to);
-                }
-
-                // 데미지 판정 (필요 시 주석 해제)
-                // var hit = Physics2D.BoxCast(from, castSize,
-                //     Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg,
-                //     dir.normalized, dist, playerLayer);
-                // if (hit.collider != null)
-                //     hit.collider.GetComponent<IPlayerHealth>()?.TakeDamage(damage);
             }
+
+            // ── 어떤 빔 슬롯이 이번 프레임에 '활성 연결선'으로 쓰이는지 표시
+            // stackalloc 대신 고정 배열 재사용 (GC 없음)
+            // activeSlot[i] = true  → beams[i]가 이번 프레임 연결선으로 사용됨
+            // activeSlot[i] = false → 페이드아웃 대상
+            bool slot0 = false, slot1 = false, slot2 = false, slot3 = false;
+
+            float damage = dps * Time.deltaTime;
+            float fadeStep = fadeDuration > 0f ? Time.deltaTime / fadeDuration : 1f;
+            var castSize = new Vector2(0.1f, thickness);
+
+            // ── 살아있는 코어끼리 순환 연결 ──────────────────────────────
+            if (aliveCount >= 2)
+            {
+                for (int i = 0; i < aliveCount; i++)
+                {
+                    int nextI = (i + 1) % aliveCount;
+                    int coreIdxA = _aliveBuffer[i];
+                    int coreIdxB = _aliveBuffer[nextI];
+
+                    // 빔 슬롯은 alive 순서 i번을 사용
+                    // (슬롯 번호가 코어 원본 인덱스와 달라도 무관)
+                    switch (i)
+                    {
+                        case 0: slot0 = true; break;
+                        case 1: slot1 = true; break;
+                        case 2: slot2 = true; break;
+                        case 3: slot3 = true; break;
+                    }
+
+                    Vector3 from = cores[coreIdxA].transform.position;
+                    Vector3 to = cores[coreIdxB].transform.position;
+                    Vector3 dir = to - from;
+                    float dist = dir.magnitude;
+                    if (dist < 0.01f) continue;
+
+                    if (beams[i] != null)
+                    {
+                        // 활성 슬롯: alpha를 즉시 1로 복원
+                        beamAlpha[i] = 1f;
+                        beams[i].enabled = true;
+
+                        Color col = beams[i].startColor;
+                        col.a = 1f;
+                        beams[i].startColor = beams[i].endColor = col;
+
+                        beams[i].SetPosition(0, from);
+                        beams[i].SetPosition(1, to);
+                    }
+
+                    // 데미지
+                    var hit = Physics2D.BoxCast(
+                        from, castSize,
+                        Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg,
+                        dir.normalized, dist, playerLayer);
+                    // if (hit.collider != null)
+                    //     hit.collider.GetComponent<IPlayerHealth>()?.TakeDamage(damage);
+                }
+            }
+
+            // ── 비활성 슬롯: 페이드아웃 처리 ────────────────────────────
+            // 4개 슬롯을 명시적으로 처리 (루프 + switch보다 브랜치 예측 친화적)
+            FadeSlot(beams, beamAlpha, 0, slot0, fadeStep);
+            FadeSlot(beams, beamAlpha, 1, slot1, fadeStep);
+            FadeSlot(beams, beamAlpha, 2, slot2, fadeStep);
+            FadeSlot(beams, beamAlpha, 3, slot3, fadeStep);
+        }
+
+        /// <summary>
+        /// 빔 슬롯 하나의 페이드아웃 처리.
+        /// isActive = true 이면 아무것도 안 함 (UpdateBeamsAndDamage에서 이미 처리).
+        /// isActive = false이면 alpha를 줄이고, 0이 되면 비활성화.
+        /// </summary>
+        private static void FadeSlot(
+            LineRenderer[] beams, float[] beamAlpha, int idx, bool isActive, float fadeStep)
+        {
+            if (isActive) return;                              // 활성 슬롯은 건드리지 않음
+            if (beams[idx] == null) return;
+            if (!beams[idx].enabled) return;                  // 이미 꺼진 슬롯은 스킵
+
+            beamAlpha[idx] = Mathf.Max(0f, beamAlpha[idx] - fadeStep);
+
+            Color c = beams[idx].startColor;
+            c.a = beamAlpha[idx];
+            beams[idx].startColor = beams[idx].endColor = c;
+
+            if (beamAlpha[idx] <= 0f)
+                beams[idx].enabled = false;
         }
 
         // ─────────────────────────────────────────────────────────────────
-        // 마지막 코어 자동 파괴
+        // 마지막 남은 코어 자폭
         // ─────────────────────────────────────────────────────────────────
 
         private static bool CheckSoloCoreDestruct(
             LaserCore[] cores, float delay, CancellationToken ct)
         {
             int aliveCount = 0;
-            LaserCore last = null;
+            LaserCore lastCore = null;
+
             foreach (var c in cores)
             {
                 if (c != null && c.gameObject.activeInHierarchy)
                 {
                     aliveCount++;
-                    last = c;
+                    lastCore = c;
                 }
             }
 
-            if (aliveCount == 1 && last != null)
+            if (aliveCount == 1 && lastCore != null)
             {
-                SoloCoreSelfDestructAsync(last, delay, ct).Forget();
+                SoloCoreSelfDestructAsync(lastCore, delay, ct).Forget();
                 return true;
             }
             return false;
@@ -248,100 +289,24 @@ namespace BossSystem.Patterns
         }
 
         // ─────────────────────────────────────────────────────────────────
-        // 타임아웃 시 남은 코어 강제 파괴 (파훼 판정 없음)
-        // ─────────────────────────────────────────────────────────────────
-
-        private static async UniTask ForceDestroyRemainingAsync(
-            LaserCore[] cores, LineRenderer[] beams, CancellationToken ct)
-        {
-            // 빔 먼저 끔
-            foreach (var b in beams)
-                if (b != null) b.enabled = false;
-
-            // 살아있는 코어 즉시 강제 파괴 (OnCoreDestroyed 이벤트는 발생하지만
-            // destroyedThisPattern 카운트가 이미 4 미만이므로 파훼 판정에 영향 없음)
-            foreach (var c in cores)
-                if (c != null && c.gameObject.activeInHierarchy)
-                    c.TakeDamage(float.MaxValue);
-
-            // 파괴 VFX 재생 시간을 한 프레임 대기
-            await UniTask.Yield(PlayerLoopTiming.Update, ct);
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // 빔 페이드아웃
-        // ─────────────────────────────────────────────────────────────────
-
-        /// <summary>특정 인덱스 빔 하나만 페이드아웃 (코어 파괴 콜백용).</summary>
-        private static async UniTaskVoid FadeBeamAsync(
-            LineRenderer[] beams, int idx, float duration, CancellationToken ct)
-        {
-            if (idx < 0 || idx >= beams.Length || beams[idx] == null) return;
-
-            var lr = beams[idx];
-            var startColor = lr.startColor;
-            float elapsed = 0f;
-
-            while (elapsed < duration && !ct.IsCancellationRequested)
-            {
-                float t = elapsed / duration;
-                Color c = startColor;
-                c.a = Mathf.Lerp(startColor.a, 0f, t);
-                lr.startColor = lr.endColor = c;
-                elapsed += Time.deltaTime;
-                await UniTask.Yield(PlayerLoopTiming.Update, ct);
-            }
-
-            if (lr != null) lr.enabled = false;
-        }
-
-        /// <summary>패턴 종료 시 살아있는 빔 전체 페이드아웃.</summary>
-        private static async UniTask FadeAllBeamsAsync(
-            LineRenderer[] beams, float duration, CancellationToken ct)
-        {
-            // 각 빔의 시작 알파를 캡처
-            var startColors = new Color[beams.Length];
-            for (int i = 0; i < beams.Length; i++)
-                startColors[i] = beams[i] != null ? beams[i].startColor : Color.clear;
-
-            float elapsed = 0f;
-            while (elapsed < duration && !ct.IsCancellationRequested)
-            {
-                float t = elapsed / duration;
-                for (int i = 0; i < beams.Length; i++)
-                {
-                    if (beams[i] == null || !beams[i].enabled) continue;
-                    Color c = startColors[i];
-                    c.a = Mathf.Lerp(startColors[i].a, 0f, t);
-                    beams[i].startColor = beams[i].endColor = c;
-                }
-                elapsed += Time.deltaTime;
-                await UniTask.Yield(PlayerLoopTiming.Update, ct);
-            }
-
-            foreach (var b in beams)
-                if (b != null) b.enabled = false;
-        }
-
-        // ─────────────────────────────────────────────────────────────────
         // 정리
         // ─────────────────────────────────────────────────────────────────
 
         private static void Cleanup(LaserCore[] cores, LineRenderer[] beams)
         {
             foreach (var c in cores)
-                if (c != null)
-                {
-                    if (ObjectPool.HasPool(c.gameObject)) ObjectPool.Return(c.gameObject);
-                    else Object.Destroy(c.gameObject);
-                }
+            {
+                if (c == null) continue;
+                if (ObjectPool.HasPool(c.gameObject)) ObjectPool.Return(c.gameObject);
+                else Object.Destroy(c.gameObject);
+            }
 
             foreach (var b in beams)
-                if (b != null)
-                {
-                    if (ObjectPool.HasPool(b.gameObject)) ObjectPool.Return(b.gameObject);
-                    else Object.Destroy(b.gameObject);
-                }
+            {
+                if (b == null) continue;
+                if (ObjectPool.HasPool(b.gameObject)) ObjectPool.Return(b.gameObject);
+                else Object.Destroy(b.gameObject);
+            }
         }
     }
 }
