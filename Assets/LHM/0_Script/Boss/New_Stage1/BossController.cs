@@ -30,7 +30,6 @@ namespace BossSystem
         private BossContext _context;
         private int _currentPhaseIndex = -1;
 
-        //                   EnterPhaseAsync 진입 시 자동 false 리셋.
         private CancellationTokenSource _lifetimeCts;
         private CancellationTokenSource _phaseCts;
 

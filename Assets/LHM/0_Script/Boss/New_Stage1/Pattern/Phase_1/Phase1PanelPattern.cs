@@ -1,13 +1,4 @@
-﻿// ──────────────────────────────────────────────────────────────────────────
-// Phase1PanelPattern.cs — PanelHealth 파훼 판정 연동 패치
-//
-// 변경 요약:
-//   · OnExecuteAsync: 각 판넬 Instantiate 후 PanelHealth 등록
-//     → 파괴 시 panelAliveCount-- → 0이면 CTS 취소 → 패턴 종료(파훼)
-//   · RunSinglePanelAsync: 판넬이 비활성화(HP=0)되면 루프 자동 탈출
-// ──────────────────────────────────────────────────────────────────────────
-
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 
@@ -41,6 +32,11 @@ namespace BossSystem.Patterns
         [SerializeField] private Color _fireColor = Color.red;
         [SerializeField] private GameObject _muzzleVfxPrefab;
 
+        [Header("Panel Clear")]
+        [Tooltip("판넬당 최대 발사 횟수. 이 횟수를 소진하면 판넬 클리어 판정.\n" +
+                 "0 = 무한(플레이어가 CT로만 종료 가능)")]
+        [SerializeField] private int _maxFireCountPerPanel = 5;
+
         public void SetPoints(Transform[] transforms)
         {
             _waypoints = transforms;
@@ -57,42 +53,19 @@ namespace BossSystem.Patterns
 
             var panels = new GameObject[_panelCount];
             var tasks = new UniTask[_panelCount];
-
-            // ★ 파훼 판정용 카운터
-            int panelAliveCount = _panelCount;
-            // ★ 전부 파괴 시 패턴 루프를 종료할 CTS (패턴 외부 ct와 링크)
-            using var clearCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            // 각 판넬의 클리어 여부 (발사 횟수 소진)
+            var cleared = new bool[_panelCount];
 
             for (int p = 0; p < _panelCount; p++)
             {
                 var panelGo = Object.Instantiate(_panelPrefab,
-                                  ctx.BossTransform.position, Quaternion.identity);
+                                     ctx.BossTransform.position, Quaternion.identity);
                 panels[p] = panelGo;
-
-                // ★ PanelHealth 연동
-                var health = panelGo.GetComponent<PanelHealth>();
-                if (health != null)
-                {
-                    health.ResetHP();
-                    health.OnPanelDestroyed += _ =>
-                    {
-                        panelAliveCount--;
-                        Log($"Panel destroyed by player. Alive={panelAliveCount}/{_panelCount}");
-
-                        if (panelAliveCount <= 0)
-                        {
-                            Log("All panels cleared! Pattern defeated.");
-                            clearCts.Cancel(); // 루프 종료 → 파훼 판정
-                        }
-                    };
-                }
-                else
-                {
-                    Debug.LogWarning("[PanelPattern] PanelHealth 컴포넌트가 없습니다. 프리팹을 확인하세요.");
-                }
-
                 int startIndex = p * (_waypoints.Length / _panelCount);
-                tasks[p] = RunSinglePanelAsync(panelGo, startIndex, ctx, clearCts.Token);
+                int captured = p;
+
+                tasks[p] = RunSinglePanelAsync(panelGo, startIndex, ctx, ct,
+                    onCleared: () => cleared[captured] = true);
             }
 
             try
@@ -104,10 +77,27 @@ namespace BossSystem.Patterns
                 foreach (var panel in panels)
                     if (panel != null) Object.Destroy(panel);
             }
+
+            // ── 모든 판넬이 클리어됐으면 BossContext에 통보 ──────────────
+            // BossController의 WatchPhaseTransitionAsync가
+            // ctx.PanelPatternCleared 를 페이즈 전환 조건 중 하나로 사용
+            bool allCleared = true;
+            foreach (var c in cleared)
+                if (!c) { allCleared = false; break; }
+
+            if (allCleared)
+            {
+                ctx.SetPanelPatternCleared();
+                Log("All panels cleared. PanelPatternCleared notified.");
+            }
         }
 
         private async UniTask RunSinglePanelAsync(
-            GameObject panelGo, int startIndex, BossContext ctx, CancellationToken ct)
+            GameObject panelGo,
+            int startIndex,
+            BossContext ctx,
+            CancellationToken ct,
+            System.Action onCleared)
         {
             var panelTf = panelGo.transform;
             var warnLine = panelGo.GetComponent<LineRenderer>();
@@ -115,13 +105,20 @@ namespace BossSystem.Patterns
             if (warnLine == null)
                 Debug.LogWarning("[PanelPattern] LineRenderer가 패널 프리팹에 없습니다.");
 
+            int fireCount = 0;
+
             try
             {
                 int i = startIndex;
                 while (!ct.IsCancellationRequested)
                 {
-                    // ★ 플레이어가 이 판넬을 파괴했으면 루프 탈출
-                    if (!panelGo.activeInHierarchy) return;
+                    // 발사 횟수 한도 체크
+                    if (_maxFireCountPerPanel > 0 && fireCount >= _maxFireCountPerPanel)
+                    {
+                        Log($"Panel fire count reached {_maxFireCountPerPanel}. Clearing.");
+                        onCleared?.Invoke();
+                        return; // 이 판넬은 클리어
+                    }
 
                     if (_waypoints[i] == null)
                     {
@@ -133,9 +130,7 @@ namespace BossSystem.Patterns
                     await LaserUtility.MoveTowardsAsync(
                         panelTf, _waypoints[i].position, _moveSpeed, ct);
 
-                    if (!panelGo.activeInHierarchy) return;
-
-                    // 2. Lock-on 경고
+                    // 2. Lock-on 경고 (플레이어 추적)
                     await LaserUtility.FadeInWarningLineAsync(
                         warnLine,
                         () => panelTf.position,
@@ -143,7 +138,6 @@ namespace BossSystem.Patterns
                         _warningColor, _lockOnDuration, ct);
 
                     ct.ThrowIfCancellationRequested();
-                    if (!panelGo.activeInHierarchy) return;
 
                     // 3. 위치 고정
                     Vector3 lockedTarget = ctx.PlayerTransform.position;
@@ -155,10 +149,10 @@ namespace BossSystem.Patterns
                         System.TimeSpan.FromSeconds(_lockFixedDuration), cancellationToken: ct);
 
                     ct.ThrowIfCancellationRequested();
-                    if (!panelGo.activeInHierarchy) return;
 
                     // 4. 발사
                     LaserUtility.AimAt2D(panelTf, lockedTarget);
+
                     if (warnLine != null)
                         LaserUtility.SetLineImmediate(warnLine, panelTf.position,
                             lockedTarget, _fireColor);
@@ -171,6 +165,8 @@ namespace BossSystem.Patterns
                     LaserUtility.CircleCastAndDamage(
                         panelTf.position, panelTf.right,
                         _castRadius, _castDistance, _playerLayer, _laserDamage);
+
+                    fireCount++;
 
                     await UniTask.Delay(
                         System.TimeSpan.FromSeconds(_fireDuration), cancellationToken: ct);
