@@ -18,5 +18,5 @@ MonoBehaviour:
   persistentPatterns:
   - {fileID: 11400000, guid: 5c75c3913221ea549884268d697bf063, type: 2}
   sequentialPatterns:
-  - {fileID: 11400000, guid: a32ee7871ed14354399a0b15fb98512d, type: 2}
   - {fileID: 11400000, guid: 1061ccb883e30be48bf57ce051cb6714, type: 2}
+  - {fileID: 11400000, guid: a32ee7871ed14354399a0b15fb98512d, type: 2}

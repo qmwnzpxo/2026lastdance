@@ -1,21 +1,31 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace BossSystem
 {
+    // ─────────────────────────────────────────────────────────────────────
+    // BossContext
+    // ─────────────────────────────────────────────────────────────────────
     public class BossContext
     {
         public Transform BossTransform { get; }
         public Transform PlayerTransform { get; }
         public DamageHandler DamageHandler { get; }
         public BossBlackboard Blackboard { get; }
-
         public LineRenderer lineRenderer { get; }
 
         public float CurrentHP => DamageHandler.CurrentHP;
 
         public volatile int DestroyedCoreCount = 0;
         public int TotalCoreCount { get; }
+
+        // ── 판넬 패턴 클리어 플래그 ──────────────────────────────────────
+        // Phase1PanelPattern이 발사 횟수를 모두 소진하면 SetPanelPatternCleared() 호출.
+        // BossController.WatchPhaseTransitionAsync가 페이즈 전환 조건으로 사용.
+        // EnterPhaseAsync 진입 시 ResetPanelPatternCleared()로 초기화.
+        public bool IsPanelPatternCleared { get; private set; } = false;
+        public void SetPanelPatternCleared() => IsPanelPatternCleared = true;
+        public void ResetPanelPatternCleared() => IsPanelPatternCleared = false;
 
         public BossContext(
             Transform bossTransform,
@@ -32,6 +42,9 @@ namespace BossSystem
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // BossPhase
+    // ─────────────────────────────────────────────────────────────────────
     [CreateAssetMenu(fileName = "BossPhase", menuName = "BossSystem/BossPhase")]
     public class BossPhase : ScriptableObject
     {
