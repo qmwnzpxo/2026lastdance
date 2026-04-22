@@ -32,9 +32,9 @@ public class PlayerMove : MonoBehaviour
 
     // ── 천장 붙기 ────────────────────────────
     [Header("천장 붙기")]
-    [SerializeField]private SpriteRenderer spriteRenderer;
+    [SerializeField] private SpriteRenderer spriteRenderer;
     private bool justStoppedDashing; // PlayerDash에서 StopDash 직후 세팅
-    
+
     // ── 내부 필드 ────────────────────────────
     private Rigidbody2D rb;
     private float moveInput;
@@ -71,7 +71,7 @@ public class PlayerMove : MonoBehaviour
 
     void Update()
     {
-        moveInput     = Input.GetAxis("Horizontal");
+        moveInput = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
         CheckGround();
@@ -82,7 +82,7 @@ public class PlayerMove : MonoBehaviour
         HandleCeilingAttach();
         HandleWallSlide();
         HandleJump();
-    HandleGetDamage();
+        HandleGetDamage();
     }
 
     void FixedUpdate()
@@ -119,7 +119,7 @@ public class PlayerMove : MonoBehaviour
     void CheckWall()
     {
         state.isTouchingLWall = Physics2D.Raycast(
-            wallCheck.position, Vector2.left,  wallCheckDistance, groundLayer);
+            wallCheck.position, Vector2.left, wallCheckDistance, groundLayer);
         state.isTouchingRWall = Physics2D.Raycast(
             wallCheck.position, Vector2.right, wallCheckDistance, groundLayer);
     }
@@ -144,7 +144,7 @@ public class PlayerMove : MonoBehaviour
         bool blockedByWall = (state.isTouchingLWall || state.isTouchingRWall)
                              && !state.isGrounded && !state.isOnCeiling;
         float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
-        float yMove = rb.linearVelocity.y<0? rb.linearVelocity.y-Time.fixedDeltaTime*10 : rb.linearVelocity.y;
+        float yMove = rb.linearVelocity.y < 0 ? rb.linearVelocity.y - Time.fixedDeltaTime * 10 : rb.linearVelocity.y;
         rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? 1.5f : 1f), yMove);
     }
 
@@ -158,10 +158,12 @@ public class PlayerMove : MonoBehaviour
         if (!state.isWallSliding) return;
 
         float targetSlideSpeed;
-        if (verticalInput > 0) {
+        if (verticalInput > 0)
+        {
             targetSlideSpeed = -wallSlideSpeedUp;
         }
-        else if  (verticalInput < 0) {
+        else if (verticalInput < 0)
+        {
             targetSlideSpeed = -wallSlideSpeedDown;
         }
         else targetSlideSpeed = -wallSlideSpeed;
@@ -223,7 +225,7 @@ public class PlayerMove : MonoBehaviour
     {
         wallJumpCounter = wallJumpTime;
         await UniTask.WaitForSeconds(wallJumpTime, cancellationToken: ct);
-        wallJumpCounter    = 0f;
+        wallJumpCounter = 0f;
         state.isWallJumping = false;
     }
 
@@ -235,9 +237,9 @@ public class PlayerMove : MonoBehaviour
     {
         bool justTouchedCeiling = isTouchingCeiling && !wasTouchingCeiling;
 
-        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing||state.isTackling|| justStoppedDashing))
+        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing || state.isTackling || justStoppedDashing))
         {
-            state.isOnCeiling     = true;
+            state.isOnCeiling = true;
             RestoreGravity();
             FlipYSprite(state.isOnCeiling);
         }
@@ -251,7 +253,7 @@ public class PlayerMove : MonoBehaviour
 
     void DetachFromCeiling()
     {
-        state.isOnCeiling      = false;
+        state.isOnCeiling = false;
         RestoreGravity();
         //spriteTransform.localScale = spriteScale;
         FlipYSprite(state.isOnCeiling);
@@ -287,7 +289,7 @@ public class PlayerMove : MonoBehaviour
         else if (state.isTouchingRWall && !state.isGrounded)
             spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 90);
         else
-            spriteRenderer.transform.rotation = Quaternion.Euler(0,0,0);
+            spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 0);
     }
 
     #endregion
@@ -314,13 +316,13 @@ public class PlayerMove : MonoBehaviour
             if (Mathf.Abs(rb.linearVelocityX) <= 0.01) ani.Run_off();
         }
         else if (verticalInput != 0f)
-            {
-                ani.Run_on();
-            }
+        {
+            ani.Run_on();
+        }
 
-        
+
         if (state.isAttacking)
-        { 
+        {
             ani.Run_off();
             ani.Power_Run_off();
         }
@@ -349,16 +351,16 @@ public class PlayerMove : MonoBehaviour
             : state.defaultGravityScale;
     }
 
-  public void HandleGetDamage()
-  {
-    if(Input.GetKeyDown(KeyCode.P))
-    state.TakeDamage(0f);
-  }
-  #endregion
-  // ────────────────────────────────────────
-  #region Gizmos
+    public void HandleGetDamage()
+    {
+        if (Input.GetKeyDown(KeyCode.P))
+            state.TakeDamage(0f);
+    }
+    #endregion
+    // ────────────────────────────────────────
+    #region Gizmos
 
-  void OnDrawGizmosSelected()
+    void OnDrawGizmosSelected()
     {
         if (groundCheck != null)
         {
@@ -375,7 +377,7 @@ public class PlayerMove : MonoBehaviour
             Gizmos.color = Color.red;
             Gizmos.DrawRay(wallCheck.position, Vector2.right * wallCheckDistance);
             Gizmos.color = Color.blue;
-            Gizmos.DrawRay(wallCheck.position, Vector2.left  * wallCheckDistance);
+            Gizmos.DrawRay(wallCheck.position, Vector2.left * wallCheckDistance);
         }
     }
 

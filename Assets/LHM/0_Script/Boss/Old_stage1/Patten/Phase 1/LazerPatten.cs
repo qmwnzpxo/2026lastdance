@@ -1,294 +1,294 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using static UnityEngine.Rendering.DebugUI;
+Ôªø//using System;
+//using System.Collections;
+//using System.Collections.Generic;
+//using System.Linq;
+//using UnityEngine;
+//using static UnityEngine.Rendering.DebugUI;
 
-public class LazerPatten : MonoBehaviour
-{
-    ObjectHp objectHp;
-    public static LazerPatten Instance;
+//public class LazerPatten : MonoBehaviour
+//{
+//    ObjectHp objectHp;
+//    public static LazerPatten Instance;
 
-    [Header("Lazer Node Object")]
-    public GameObject[] lazerObject = new GameObject[4];
+//    [Header("Lazer Node Object")]
+//    public GameObject[] lazerObject = new GameObject[4];
 
-    [Header("Line Objects")]
-    public GameObject[] lazers = new GameObject[4];
+//    [Header("Line Objects")]
+//    public GameObject[] lazers = new GameObject[4];
 
-    [Header("Lazer Setting")]
-    public float firstScle = 0.1f;
-    public float lastScale = 1f;
-    public float RotateSpeed = 300f;
+//    [Header("Lazer Setting")]
+//    public float firstScle = 0.1f;
+//    public float lastScale = 1f;
+//    public float RotateSpeed = 300f;
 
-    [Header("Line Renderer Setting")]
-    public float lineWidth = 0.05f;
-    public Color lineColor = Color.red;
+//    [Header("Line Renderer Setting")]
+//    public float lineWidth = 0.05f;
+//    public Color lineColor = Color.red;
 
-    [Header("∆«¡§ ø¿∫Í¡ß∆Æ µŒ≤≤")]
-    public float lazerThickness = 0.1f;
+//    [Header("ÌåêÏ†ï Ïò§Î∏åÏ†ùÌä∏ ÎëêÍªò")]
+//    public float lazerThickness = 0.1f;
 
-    [Header("≈◊Ω∫∆Æ")]
-    public bool destroyTest0 = false;
-    public bool destroyTest1 = false;
-    public bool destroyTest2 = false;
-    public bool destroyTest3 = false;
+//    [Header("ÌÖåÏä§Ìä∏")]
+//    public bool destroyTest0 = false;
+//    public bool destroyTest1 = false;
+//    public bool destroyTest2 = false;
+//    public bool destroyTest3 = false;
 
-    public bool[] destroy = new bool[4];
+//    public bool[] destroy = new bool[4];
 
-    private LineRenderer[] lineRenderers;
-    private bool[] prevDestroyTest = new bool[4];
-    public bool allDestory = false;
-    public bool[] imDestory = new bool[4];
+//    private LineRenderer[] lineRenderers;
+//    private bool[] prevDestroyTest = new bool[4];
+//    public bool allDestory = false;
+//    public bool[] imDestory = new bool[4];
     
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
+//    private void Awake()
+//    {
+//        if (Instance == null)
+//        {
+//            Instance = this;
+//        }
 
-        destroy = new bool[4] { destroyTest0,destroyTest1,destroyTest2,destroyTest3};
+//        destroy = new bool[4] { destroyTest0,destroyTest1,destroyTest2,destroyTest3};
 
-        foreach (GameObject lazer in lazerObject)
-            if (lazer != null) lazer.SetActive(false);
+//        foreach (GameObject lazer in lazerObject)
+//            if (lazer != null) lazer.SetActive(false);
 
-        foreach (GameObject l in lazers)
-            if (l != null) l.SetActive(false);
+//        foreach (GameObject l in lazers)
+//            if (l != null) l.SetActive(false);
 
-        lineRenderers = new LineRenderer[lazers.Length];
-        for (int i = 0; i < lazers.Length; i++)
-        {
-            if (lazers[i] == null) continue;
+//        lineRenderers = new LineRenderer[lazers.Length];
+//        for (int i = 0; i < lazers.Length; i++)
+//        {
+//            if (lazers[i] == null) continue;
 
-            LineRenderer lr = lazers[i].GetComponent<LineRenderer>();
-            if (lr == null) lr = lazers[i].AddComponent<LineRenderer>();
+//            LineRenderer lr = lazers[i].GetComponent<LineRenderer>();
+//            if (lr == null) lr = lazers[i].AddComponent<LineRenderer>();
 
-            lr.positionCount = 2;
-            lr.useWorldSpace = true;
-            lr.startWidth = lineWidth;
-            lr.endWidth = lineWidth;
-            lr.material = new Material(Shader.Find("Sprites/Default"));
-            lr.startColor = lineColor;
-            lr.endColor = lineColor;
+//            lr.positionCount = 2;
+//            lr.useWorldSpace = true;
+//            lr.startWidth = lineWidth;
+//            lr.endWidth = lineWidth;
+//            lr.material = new Material(Shader.Find("Sprites/Default"));
+//            lr.startColor = lineColor;
+//            lr.endColor = lineColor;
 
-            lineRenderers[i] = lr;
-        }
+//            lineRenderers[i] = lr;
+//        }
 
        
-    }
-    public void ResetLazers()
-    {
-        allDestory = false;
+//    }
+//    public void ResetLazers()
+//    {
+//        allDestory = false;
 
-        destroyTest0 = false;
-        destroyTest1 = false;
-        destroyTest2 = false;
-        destroyTest3 = false;
+//        destroyTest0 = false;
+//        destroyTest1 = false;
+//        destroyTest2 = false;
+//        destroyTest3 = false;
 
-        for (int i = 0; i < imDestory.Length; i++)
-            imDestory[i] = false;
+//        for (int i = 0; i < imDestory.Length; i++)
+//            imDestory[i] = false;
 
-        for (int i = 0; i < prevDestroyTest.Length; i++)
-            prevDestroyTest[i] = false;
+//        for (int i = 0; i < prevDestroyTest.Length; i++)
+//            prevDestroyTest[i] = false;
 
-        for (int i = 0; i < lazerObject.Length; i++)
-            if (lazerObject[i] != null)
-            {
-                lazerObject[i].SetActive(true);
-                lazerObject[i].transform.localScale = new Vector3(firstScle, 1f, firstScle);
-            }
+//        for (int i = 0; i < lazerObject.Length; i++)
+//            if (lazerObject[i] != null)
+//            {
+//                lazerObject[i].SetActive(true);
+//                lazerObject[i].transform.localScale = new Vector3(firstScle, 1f, firstScle);
+//            }
 
-        foreach (GameObject l in lazers)
-            if (l != null) l.SetActive(true);
-    }
-    private IEnumerator ActivateLazers()
-    {
-        yield return new WaitForSecondsRealtime(0.5f);
+//        foreach (GameObject l in lazers)
+//            if (l != null) l.SetActive(true);
+//    }
+//    private IEnumerator ActivateLazers()
+//    {
+//        yield return new WaitForSecondsRealtime(0.5f);
 
-        for (int i = 0; i < lazerObject.Length; i++)
-        {
-            yield return new WaitForSecondsRealtime(0.5f);
-            if (lazerObject[i] != null && !lazerObject[i].activeSelf)
-                lazerObject[i].SetActive(true);
-        }
+//        for (int i = 0; i < lazerObject.Length; i++)
+//        {
+//            yield return new WaitForSecondsRealtime(0.5f);
+//            if (lazerObject[i] != null && !lazerObject[i].activeSelf)
+//                lazerObject[i].SetActive(true);
+//        }
 
-        for (int i = 0; i < lazers.Length; i++)
-        {
-            yield return new WaitForSecondsRealtime(0.5f);
-            if (lazers[i] != null && !lazers[i].activeSelf)
-                lazers[i].SetActive(true);
-        }
-    }
+//        for (int i = 0; i < lazers.Length; i++)
+//        {
+//            yield return new WaitForSecondsRealtime(0.5f);
+//            if (lazers[i] != null && !lazers[i].activeSelf)
+//                lazers[i].SetActive(true);
+//        }
+//    }
 
-    private void FixedUpdate()
-    {
-        ApplyDestroyTests();
+//    private void FixedUpdate()
+//    {
+//        ApplyDestroyTests();
 
-        foreach (GameObject lazer in lazerObject)
-        {
-            if (lazer == null || !lazer.activeSelf) continue;
+//        foreach (GameObject lazer in lazerObject)
+//        {
+//            if (lazer == null || !lazer.activeSelf) continue;
 
-            lazer.transform.Rotate(Vector3.up * RotateSpeed * Time.fixedDeltaTime, Space.World);
+//            lazer.transform.Rotate(Vector3.up * RotateSpeed * Time.fixedDeltaTime, Space.World);
 
-            if (lazer.transform.localScale.x < lastScale)
-            {
-                float newScale = Mathf.Min(lazer.transform.localScale.x + firstScle, lastScale);
-                lazer.transform.localScale = new Vector3(newScale, 1f, newScale);
-            }
-        }
+//            if (lazer.transform.localScale.x < lastScale)
+//            {
+//                float newScale = Mathf.Min(lazer.transform.localScale.x + firstScle, lastScale);
+//                lazer.transform.localScale = new Vector3(newScale, 1f, newScale);
+//            }
+//        }
 
-        UpdateLines();
-    }
-    public void OnPanelDestroyed(GameObject destroyedPanel)
-    {
-        int index = System.Array.IndexOf(lazerObject, destroyedPanel);
+//        UpdateLines();
+//    }
+//    public void OnPanelDestroyed(GameObject destroyedPanel)
+//    {
+//        int index = System.Array.IndexOf(lazerObject, destroyedPanel);
 
-        if (index < 0)
-        {
-            Debug.LogWarning("lazerObject πËø≠ø° æ¯Ω¿¥œ¥Ÿ.");
-            return;
-        }
+//        if (index < 0)
+//        {
+//            Debug.LogWarning("lazerObject Î∞∞Ïó¥Ïóê ÏóÜÏäµÎãàÎã§.");
+//            return;
+//        }
 
-        destroy[index] = true; 
-        Debug.Log($"∆ƒ±´µ» ∑π¿Ã¿˙: {index}π¯");
-    }
-    public void ApplyDestroyTests()
-    {
+//        destroy[index] = true; 
+//        Debug.Log($"ÌååÍ¥¥Îêú Î†àÏù¥Ï†Ä: {index}Î≤à");
+//    }
+//    public void ApplyDestroyTests()
+//    {
        
 
-        for (int i = 0; i < lazerObject.Length; i++)
-        {
-            if (lazerObject[i] == null) continue;
+//        for (int i = 0; i < lazerObject.Length; i++)
+//        {
+//            if (lazerObject[i] == null) continue;
 
-            if (destroy[i] && !prevDestroyTest[i])
-            {
-                lazerObject[i].SetActive(false);
+//            if (destroy[i] && !prevDestroyTest[i])
+//            {
+//                lazerObject[i].SetActive(false);
 
-            }
-            if (!destroy[i] && prevDestroyTest[i])
-            {
-                lazerObject[i].SetActive(true);
+//            }
+//            if (!destroy[i] && prevDestroyTest[i])
+//            {
+//                lazerObject[i].SetActive(true);
 
-            }
+//            }
 
 
-            prevDestroyTest[i] = destroy[i];
+//            prevDestroyTest[i] = destroy[i];
 
-            Debug.Log(imDestory[i]);
-            for (int j = 0; j < destroy.Length; j++)
-            {
-                {
-                    imDestory[j] = destroy[j];
+//            Debug.Log(imDestory[i]);
+//            for (int j = 0; j < destroy.Length; j++)
+//            {
+//                {
+//                    imDestory[j] = destroy[j];
                     
-                }
-            }
+//                }
+//            }
 
-            bool allTrue = imDestory.All(x => x);
-            if(allTrue)
-            {
-                allDestory = true;
-            }
+//            bool allTrue = imDestory.All(x => x);
+//            if(allTrue)
+//            {
+//                allDestory = true;
+//            }
          
-        }
+//        }
          
-        //int lo = 0;
-        //foreach(var i in lazerObject)
-        //{
-        //    if (i.activeInHierarchy)
-        //    {
-        //        lo++;
-        //        continue;
-        //    }
+//        //int lo = 0;
+//        //foreach(var i in lazerObject)
+//        //{
+//        //    if (i.activeInHierarchy)
+//        //    {
+//        //        lo++;
+//        //        continue;
+//        //    }
 
-        //    if (lo>=4)
-        //    allDestory = true;
-        //    Debug.Log("  ∑π¿Ã¿˙ ¥Ÿ ¡÷±›");
+//        //    if (lo>=4)
+//        //    allDestory = true;
+//        //    Debug.Log("  Î†àÏù¥Ï†Ä Îã§ Ï£ºÍ∏à");
 
 
-        //}
+//        //}
         
-    }
+//    }
 
     
 
-    private void UpdateLines()
-    {
+//    private void UpdateLines()
+//    {
 
-        List<GameObject> alive = new List<GameObject>();
-        foreach (GameObject lazer in lazerObject)
-            if (lazer != null && lazer.activeSelf)
-                alive.Add(lazer);
+//        List<GameObject> alive = new List<GameObject>();
+//        foreach (GameObject lazer in lazerObject)
+//            if (lazer != null && lazer.activeSelf)
+//                alive.Add(lazer);
 
-        int aliveCount = alive.Count;
+//        int aliveCount = alive.Count;
 
-        if (aliveCount < 2)
-        {
-            foreach (GameObject l in lazers)
-                if (l != null) l.SetActive(false);
-            return;
-        }
+//        if (aliveCount < 2)
+//        {
+//            foreach (GameObject l in lazers)
+//                if (l != null) l.SetActive(false);
+//            return;
+//        }
 
-        Vector3 worldCenter = Vector3.zero;
-        foreach (GameObject node in alive)
-            worldCenter += node.transform.position;
-        worldCenter /= aliveCount;
+//        Vector3 worldCenter = Vector3.zero;
+//        foreach (GameObject node in alive)
+//            worldCenter += node.transform.position;
+//        worldCenter /= aliveCount;
 
-        Camera cam = Camera.main;
+//        Camera cam = Camera.main;
 
-        alive.Sort((a, b) =>
-        {
-            float angleA, angleB;
-            if (cam != null)
-            {
-                Vector2 sc = cam.WorldToScreenPoint(worldCenter);
-                Vector2 sA = cam.WorldToScreenPoint(a.transform.position);
-                Vector2 sB = cam.WorldToScreenPoint(b.transform.position);
-                angleA = Mathf.Atan2((sA - sc).y, (sA - sc).x);
-                angleB = Mathf.Atan2((sB - sc).y, (sB - sc).x);
-            }
-            else
-            {
-                Vector3 dA = a.transform.position - worldCenter;
-                Vector3 dB = b.transform.position - worldCenter;
-                angleA = Mathf.Atan2(dA.z, dA.x);
-                angleB = Mathf.Atan2(dB.z, dB.x);
-            }
-            return angleA.CompareTo(angleB);
-        });
+//        alive.Sort((a, b) =>
+//        {
+//            float angleA, angleB;
+//            if (cam != null)
+//            {
+//                Vector2 sc = cam.WorldToScreenPoint(worldCenter);
+//                Vector2 sA = cam.WorldToScreenPoint(a.transform.position);
+//                Vector2 sB = cam.WorldToScreenPoint(b.transform.position);
+//                angleA = Mathf.Atan2((sA - sc).y, (sA - sc).x);
+//                angleB = Mathf.Atan2((sB - sc).y, (sB - sc).x);
+//            }
+//            else
+//            {
+//                Vector3 dA = a.transform.position - worldCenter;
+//                Vector3 dB = b.transform.position - worldCenter;
+//                angleA = Mathf.Atan2(dA.z, dA.x);
+//                angleB = Mathf.Atan2(dB.z, dB.x);
+//            }
+//            return angleA.CompareTo(angleB);
+//        });
 
   
-        for (int i = 0; i < lazers.Length; i++)
-        {
-            if (lazers[i] == null) continue;
+//        for (int i = 0; i < lazers.Length; i++)
+//        {
+//            if (lazers[i] == null) continue;
 
-            if (i < aliveCount)
-            {
-                Vector3 posA = alive[i].transform.position;
-                Vector3 posB = alive[(i + 1) % aliveCount].transform.position;
+//            if (i < aliveCount)
+//            {
+//                Vector3 posA = alive[i].transform.position;
+//                Vector3 posB = alive[(i + 1) % aliveCount].transform.position;
 
-                float dist = Vector3.Distance(posA, posB);
-                Vector3 midPos = (posA + posB) / 2f;
-                Vector3 dir = (posB - posA).normalized;
+//                float dist = Vector3.Distance(posA, posB);
+//                Vector3 midPos = (posA + posB) / 2f;
+//                Vector3 dir = (posB - posA).normalized;
 
      
-                lazers[i].transform.position = midPos;
+//                lazers[i].transform.position = midPos;
 
-                if (dir != Vector3.zero)
-                    lazers[i].transform.rotation = Quaternion.LookRotation(dir) * Quaternion.Euler(0f, 90f, 0f);
+//                if (dir != Vector3.zero)
+//                    lazers[i].transform.rotation = Quaternion.LookRotation(dir) * Quaternion.Euler(0f, 90f, 0f);
 
-                lazers[i].transform.localScale = new Vector3(dist, lazerThickness, lazerThickness);
+//                lazers[i].transform.localScale = new Vector3(dist, lazerThickness, lazerThickness);
 
-                lazers[i].SetActive(true);
+//                lazers[i].SetActive(true);
 
-                lineRenderers[i].SetPosition(0, posA);
-                lineRenderers[i].SetPosition(1, posB);
-            }
-            else
-            {
-                lazers[i].SetActive(false);
-            }
-        }
+//                lineRenderers[i].SetPosition(0, posA);
+//                lineRenderers[i].SetPosition(1, posB);
+//            }
+//            else
+//            {
+//                lazers[i].SetActive(false);
+//            }
+//        }
        
-    }
-}
+//    }
+//}

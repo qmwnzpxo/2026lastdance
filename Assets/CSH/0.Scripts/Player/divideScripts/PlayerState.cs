@@ -10,6 +10,7 @@ using UnityEngine.Rendering.Universal;
 /// ※ 기존 PlayerState의 HP / TakeDamage 구현은 이 파일에 병합할 것.
 /// </summary>
 [DefaultExecutionOrder(-2)]
+[RequireComponent(typeof(PlayerMove), typeof(PlayerCombat), typeof(PlayerDash))]
 public class PlayerState : MonoBehaviour, IDamageable
 {
     // ── 스탯 ──────────────────────────────────
@@ -19,6 +20,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     public float MaxHP = 10;
     [RuntimeOnly, SerializeField] public bool isDie = false;
     public float stamina = 100f;
+    public float maxStamina = 100f;
 
     // ── 대쉬 게이지 ───────────────────────────
     [Header("대쉬 게이지")]
@@ -60,6 +62,7 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     CancellationTokenSource hitCts;
 
+    TrailRenderer moveTrail;
 
     public void Awake()
     {
@@ -67,7 +70,7 @@ public class PlayerState : MonoBehaviour, IDamageable
             hitLight = transform.Find("Hit Light").GetComponent<Light2D>();
         if (hitWorldLight == null)
             hitWorldLight = transform.Find("Hit World Light").GetComponent<Light2D>();
-        DashInit();
+        GaugeInit();
     }
 
     // ── 게이지 메서드 ─────────────────────────
@@ -90,26 +93,24 @@ public class PlayerState : MonoBehaviour, IDamageable
         return true;
     }
 
-    public void DashInit()
+    public void GaugeInit()
     {
         dashGauge=maxDashGauge;
+        stamina = maxStamina;
     }
 
-    // ── HP / 피격 ─────────────────────────────
-    // TODO: 기존 PlayerState의 HP, TakeDamage 등 구현을 여기에 병합
     public void TakeDamage(float dmg)
     {
         if (isDashing)
             return;
-        // 기존 구현 병합 위치
         HP -= dmg;
-    if (HP <= 0)
-      Die();
-    else
-    {
-      HitstopManager.Instance.TriggerHitstop(duration: 0.2f);
-      Hited();
-    }
+        if (HP <= 0)
+            Die();
+        else
+        {
+            HitstopManager.Instance.TriggerHitstop(duration: 0.2f);
+            Hited();
+        }
     }
 
     public void Hited()

@@ -1,4 +1,4 @@
-using BossSystem;
+﻿using BossSystem;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -191,7 +191,7 @@ namespace Boss.Phase1
                 );
 
                 if (hit.collider != null)
-                    hit.collider.GetComponent<IPlayerHealth>()?.TakeDamage(damage);
+                    hit.collider.GetComponent<IDamageable>()?.TakeDamage(damage);
             }
         }
 
@@ -215,5 +215,5 @@ namespace Boss.Phase1
 #endif
     }
 
-    public interface IPlayerHealth { void TakeDamage(float damage); }
+    public interface IDamageable { void TakeDamage(float damage); }
 }
