@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4feb242c0e53a64ea9d993d578a3194, type: 3}
+  m_Name: Pattern_Phase1_MultiPanel
+  m_EditorClassIdentifier: 
+  _patternId: 10
+  _patternType: 1
+  preDelay: 0
+  _panelPrefabA: {fileID: 2572910350527434799, guid: e2ac60d57e9b43e4b88a10fec1c29f30, type: 3}
+  _panelPrefabB: {fileID: 4891889990374861660, guid: 813669e55a580894f8edc985b08651db, type: 3}
+  _panelPrefabC: {fileID: 3954088109232403542, guid: d5fa07a0c364ca949a2c16742f089c2f, type: 3}
+  _spawnRiseHeight: 4
+  _riseSpeed: 8
+  _moveToSlotSpeed: 5
+  _spawnInterval: 0.3
+  _slotPositions:
+  - {x: -4, y: 3}
+  - {x: 0, y: 3}
+  - {x: 4, y: 3}
+  _beamLinePrefab: {fileID: 0}
+  _beamColorA: {r: 1, g: 0, b: 0, a: 1}
+  _aimDurationA: 1
+  _fireDurationA: 0.3
+  _beamDamageA: 15
+  _randomMoveRangeA: 10
+  _randomMoveSpeedA: 4
+  _chargeAimDurationB: 0.5
+  _chargeMoveSpeedB: 12
+  _chargeDamageB: 20
+  _chargeDistanceB: 20
+  _splitBeamLinePrefab: {fileID: 0}
+  _beamColorC: {r: 0, g: 1, b: 0, a: 1}
+  _aimDurationC: 1
+  _fireDurationC: 0.3
+  _splitAngle: 20
+  _beamDamageC: 12
+  _randomMoveRangeC: 10
+  _randomMoveSpeedC: 4
+  _castRadius: 0.15
+  _castDistance: 30
+  _playerLayer:
+    serializedVersion: 2
+    m_Bits: 64
