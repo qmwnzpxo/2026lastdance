@@ -18,10 +18,8 @@ public class EnemyBTController : MonoBehaviour
     [Header("공격")]
     [SerializeField] protected float _attackRange;
     [SerializeField] protected float _attackCooldown;
-
-    [Header("후퇴")]
-    [SerializeField] protected float _retreatTriggerRange;
-    [SerializeField] protected float _retreatDistance;
+    [SerializeField] protected float _attackWindupTime;   // 공격 선 딜레이
+    [SerializeField] protected float _attackRecoveryTime; // 공격 후 딜레이
 
     protected BTNode _root;
     protected EnemyBlackboard _bb;
@@ -37,8 +35,11 @@ public class EnemyBTController : MonoBehaviour
 
     protected virtual void FixedUpdate()
     {
-        UpdateBlackboard();
-        _root.Tick(_bb);
+        if (_bb != null&&_bb.enemyState.enabled)
+        {
+            UpdateBlackboard();
+            _root.Tick(_bb);
+        }
     }
 
     protected virtual void OnDestroy()
@@ -47,6 +48,7 @@ public class EnemyBTController : MonoBehaviour
     }
 
     #endregion
+
     // ────────────────────────────────────────────
     #region 트리 구성
 
@@ -88,6 +90,7 @@ public class EnemyBTController : MonoBehaviour
             selfTransform = transform,
             rigid2D = GetComponent<Rigidbody2D>(),
             playerTransform = GameObject.FindWithTag("Player")?.transform,
+            enemyState = GetComponent<EnemyState>(),
             detectionRange = _detectionRange,
             chaseMaintenanceRange = _chaseMaintenanceRange,
             gaugeIncreaseRate = _gaugeIncreaseRate,
@@ -95,8 +98,12 @@ public class EnemyBTController : MonoBehaviour
             chaseEndDuration = _chaseEndDuration,
             attackRange = _attackRange,
             attackCooldown = _attackCooldown,
+            attackWindupTime =_attackWindupTime,
+            attackRecoveryTime = _attackRecoveryTime,
             moveable = GetComponent<IMoveable>(),
+            enemyCombat = GetComponent<EnemyCombat>(),
         };
+
     }
     #endregion
 
@@ -148,8 +155,8 @@ public class EnemyBTController : MonoBehaviour
 
     // ────────────────────────────────────────
     #region Gizmos
-    Color retreatdisColor = new Color(0f, 1f, 0.7f, 1f);
-    private void OnDrawGizmosSelected()
+
+    protected virtual void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, _detectionRange);
@@ -160,12 +167,8 @@ public class EnemyBTController : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, _attackRange);
 
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, _retreatTriggerRange);
-
-        Gizmos.color = retreatdisColor;
-        Gizmos.DrawWireSphere(transform.position, _retreatDistance);
     }
+
     #endregion
 
 }

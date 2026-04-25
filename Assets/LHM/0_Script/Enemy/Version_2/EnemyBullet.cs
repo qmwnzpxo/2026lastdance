@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class EnemyBullet : MonoBehaviour
+public class EnemyBullet : MonoBehaviour, IDamageable
 {
     // ── 설정 ────────────────────────────────────
     [Header("투사체 기본")]
@@ -31,6 +31,7 @@ public class EnemyBullet : MonoBehaviour
     /// </summary>
     public virtual void Init(Vector2 fireDirection, float dmg)
     {
+        Debug.Log($"x{fireDirection.x}  y.{fireDirection.y}");
         direction = fireDirection.normalized;
         damage = dmg;
         traveledDistance = 0f;
@@ -84,5 +85,9 @@ public class EnemyBullet : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         traveledDistance = 0f;
         EnemyBulletPool.Instance.Return(poolKey, gameObject);
+    }
+    public virtual void TakeDamage(float damage)
+    {
+        ReturnToPool();
     }
 }

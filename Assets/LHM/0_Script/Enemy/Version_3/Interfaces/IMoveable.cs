@@ -11,5 +11,10 @@ namespace EnemyVersion3.Interfaces
         public Transform[] patrolPoints { get; }
 
         public int currentPatrolIndex { get; set; }
+        
+        public float retreatTriggerRange { get; set; }
+        public float retreatDistance { get; set; }
+
+        public bool needsRetreat { get; set; }
     }
 }

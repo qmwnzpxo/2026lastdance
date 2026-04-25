@@ -215,5 +215,4 @@ namespace Boss.Phase1
 #endif
     }
 
-    public interface IDamageable { void TakeDamage(float damage); }
 }

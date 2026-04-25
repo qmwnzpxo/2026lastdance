@@ -8,6 +8,8 @@ public class EnemyBlackboard
     public Transform selfTransform;
     public Rigidbody2D rigid2D;
     public Transform playerTransform;
+    public EnemyState enemyState;
+    public EnemyCombat enemyCombat;
 
     // ── 탐지 ────────────────────────────────────
     public float detectionRange = 8f;
@@ -27,12 +29,9 @@ public class EnemyBlackboard
     // ── 공격 ────────────────────────────────────
     public float attackRange = 5f;
     public float attackCooldown = 2f;
+    public float attackWindupTime = 0.1f;   // 공격 시작 전
+    public float attackRecoveryTime = 0.08f;// 후딜
     public float lastAttackTime = float.MinValue;
-
-    // ── 후퇴 ────────────────────────────────────
-    public float retreatTriggerRange = 2f;
-    public float retreatDistance = 3f;
-    public bool needsRetreat = false;
 
     // ── 비동기 액션 관리 ────────────────────────
     public string runningActionId = null;
@@ -51,7 +50,6 @@ public class EnemyBlackboard
 
     // ── 인터페이스 ───────────────────────────────
     public IMoveable moveable;
-
 
     // ── 유틸 ────────────────────────────────────
     public virtual void CancelAction()

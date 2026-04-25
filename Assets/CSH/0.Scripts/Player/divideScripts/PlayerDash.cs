@@ -253,6 +253,7 @@ public class PlayerDash : MonoBehaviour
 
     void OnDashHitEnemy(Collider2D hit)
     {
+        if(hit==null) return;
         hitEnemiesInDash.Add(hit);
         float damage = state.damage * dashDamage;
         ApplyDamage(hit, damage);
@@ -262,7 +263,7 @@ public class PlayerDash : MonoBehaviour
         {
             dashHitEnemy = true;
             state.AddDashGauge(1f);
-            HitstopManager.Instance.TriggerHitstop(duration: 0.28f);
+            HitstopManager.Instance.TriggerHitstop();
         }
     }
 

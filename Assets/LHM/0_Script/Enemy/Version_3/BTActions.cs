@@ -21,7 +21,7 @@ namespace BTActions
                 Vector2 retreatDir = ((Vector2)bb.selfTransform.position
                                    - (Vector2)bb.playerTransform.position).normalized;
                 Vector2 targetPos = (Vector2)bb.selfTransform.position
-                                   + retreatDir * bb.retreatDistance;
+                                   + retreatDir * (float)bb.moveable?.retreatDistance;
 
                 while (!ct.IsCancellationRequested)
                 {
@@ -36,7 +36,8 @@ namespace BTActions
                 }
 
                 bb.rigid2D.linearVelocity = new Vector2(0f, bb.rigid2D.linearVelocity.y);
-                bb.needsRetreat = false;
+                if(bb.moveable != null)
+                    bb.moveable.needsRetreat = false;
                 bb.actionCompleted = true;
                 bb.lastActionResult = NodeState.Success;
             }
@@ -50,16 +51,23 @@ namespace BTActions
         protected override async UniTaskVoid ExecuteAsync(
             EnemyBlackboard bb, CancellationToken ct)
         {
+            if (bb.enemyCombat == null)
+            {
+                bb.lastActionResult = NodeState.Failure;
+                bb.actionCompleted = true;
+                return;
+            }
+
             try
             {
+
+                Debug.Log($"[BT Action attack] executeattack called");
+                await bb.enemyCombat.ExecuteAttack(ct);
+
                 bb.lastAttackTime = Time.time;
-
-                // TODO: 실제 발사 로직 구현
-                await UniTask.WaitForSeconds(0.5f, cancellationToken: ct);
-
                 // 공격 직후 거리 확인 → 후퇴 필요 여부 설정
-                if (bb.DistanceToPlayer <= bb.retreatTriggerRange)
-                    bb.needsRetreat = true;
+                if (bb.DistanceToPlayer <= (float)bb.moveable?.retreatTriggerRange)
+                    bb.moveable.needsRetreat = true;
 
                 bb.actionCompleted = true;
                 bb.lastActionResult = NodeState.Success;
@@ -136,12 +144,13 @@ namespace BTActions
                     Vector2 current = bb.selfTransform.position;
                     Vector2 targetPos = target.position;
 
-                    if (Vector2.Distance(current, targetPos) < 0.1f)
+                    if (Vector2.Distance(current, targetPos) < 0.1f|| Mathf.Abs(targetPos.x - current.x)<0.1f)
                     {
                         // 포인트 도달 → 인덱스 증가 후 이번 액션 종료
                         // 다음 틱에서 새 ActionPatrol이 다음 포인트로 이동
                         bb.moveable.currentPatrolIndex =
                             (bb.moveable.currentPatrolIndex + 1) % bb.moveable.patrolPoints.Length;
+Debug.Log($"[BTActions] Actionpatrol {bb.moveable.currentPatrolIndex} / {bb.moveable.patrolPoints.Length}");
                         break;
                     }
 

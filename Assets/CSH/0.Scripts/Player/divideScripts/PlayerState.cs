@@ -108,8 +108,8 @@ public class PlayerState : MonoBehaviour, IDamageable
             Die();
         else
         {
-            HitstopManager.Instance.TriggerHitstop(duration: 0.2f);
-            Hited();
+            //HitstopManager.Instance.TriggerHitstop();
+            //Hited();
         }
     }
 

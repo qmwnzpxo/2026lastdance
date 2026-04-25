@@ -7,7 +7,8 @@ namespace BTConditions
     public class ConditionNeedsRetreat : BTCondition
     {
         public override NodeState Tick(EnemyBlackboard bb)
-            => bb.needsRetreat ? NodeState.Success : NodeState.Failure;
+            => bb.moveable != null && bb.moveable.needsRetreat 
+            ? NodeState.Success : NodeState.Failure;
     }
 
     public class ConditionIsChasing : BTCondition
