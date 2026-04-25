@@ -1,0 +1,104 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Sword Gauge
+  m_Shader: {fileID: 4800000, guid: c481b348f233d3d48b907bae4a1464ba, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _PARTIAL_FILL_ON
+  - _TRANSPARENT_GAP_ON
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MaskTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BorderPixels: 0
+    - _BorderWidth: 0.0672
+    - _ColorMask: 15
+    - _DangerPulseSpeed: 1
+    - _DangerThreshold: 0
+    - _DividerPixels: 32.76
+    - _EnableExternalAlpha: 0
+    - _FillAmount: 1
+    - _GapPixels: 5
+    - _GapWidth: 0.038
+    - _GhostDelay: 0.5
+    - _GhostDuration: 0.8
+    - _GhostFill: 1
+    - _GhostStartTime: -9999
+    - _GlowIntensity: 1
+    - _GlowOuterPixels: 5.8
+    - _GlowWidthPixels: 0
+    - _HighlightOpacity: 0.28
+    - _InnerGlowIntensity: 1
+    - _InnerGlowWidth: 4
+    - _SegBorderPixels: 0
+    - _SegmentCount: 5.79
+    - _ShakeAmount: 0
+    - _ShakeSpeed: 0
+    - _ShimmerIntensity: 0
+    - _ShimmerSpeed: 0
+    - _ShimmerWidth: 0
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _UseGhostFill: 0
+    - _UseGlow: 0
+    - _UseInnerGlow: 0
+    - _UsePartialFill: 1
+    - _UseShimmer: 0
+    - _UseSliderMode: 0
+    - _UseTransparentGap: 1
+    - _ZWrite: 0
+    m_Colors:
+    - _BarPixelSize: {r: 1000, g: 20, b: 0, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBorder: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorDanger: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorDivider: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorEmpty: {r: 1, g: 1, b: 1, a: 0}
+    - _ColorEmptyBorder: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorFill: {r: 1, g: 0, b: 0.04313755, a: 1}
+    - _ColorFillBorder: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorFillDim: {r: 0.5, g: 0.39999998, b: 0.079999976, a: 0.55}
+    - _ColorFull: {r: 0.17999998, g: 0.88, b: 0.37999994, a: 1}
+    - _ColorGap: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorGhost: {r: 1, g: 0.85, b: 0.14999998, a: 1}
+    - _ColorGlow: {r: 0.9528302, g: 0, b: 0, a: 1}
+    - _ColorOutline: {r: 0, g: 0, b: 0, a: 0}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

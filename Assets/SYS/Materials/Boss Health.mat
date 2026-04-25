@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Boss Health
+  m_Shader: {fileID: 4800000, guid: c481b348f233d3d48b907bae4a1464ba, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _GHOST_FILL_ON
+  - _SHIMMER_ON
+  - _SLIDER_MODE_ON
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MaskTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BorderPixels: 0
+    - _BorderWidth: 0.0672
+    - _ColorMask: 15
+    - _DangerPulseSpeed: 8
+    - _DangerThreshold: 0
+    - _DividerPixels: 3
+    - _EnableExternalAlpha: 0
+    - _FillAmount: 1
+    - _GapPixels: 7.7777777
+    - _GapWidth: 0.038
+    - _GhostDelay: 0.5
+    - _GhostDuration: 0.8
+    - _GhostFill: 1
+    - _GhostStartTime: 1
+    - _Glossiness: 0.5
+    - _GlowIntensity: 0.46
+    - _GlowOuterPixels: 0
+    - _GlowWidthPixels: 0
+    - _HighlightOpacity: 0.28
+    - _InnerGlowIntensity: 0
+    - _InnerGlowWidth: 0.06
+    - _Metallic: 0
+    - _SegBorderPixels: 0
+    - _SegmentCount: 10
+    - _ShakeAmount: 0
+    - _ShakeSpeed: 0
+    - _ShimmerIntensity: 1
+    - _ShimmerSpeed: 0.2
+    - _ShimmerWidth: 15
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _UseGhostFill: 1
+    - _UseGlow: 0
+    - _UseInnerGlow: 0
+    - _UsePartialFill: 0
+    - _UseShimmer: 1
+    - _UseSliderMode: 1
+    - _UseTransparentGap: 0
+    - _ZWrite: 0
+    m_Colors:
+    - _BarPixelSize: {r: 1000, g: 20, b: 0, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBorder: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorDanger: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorDivider: {r: 0, g: 0, b: 0, a: 0.65}
+    - _ColorEmpty: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorEmptyBorder: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorFill: {r: 1, g: 0, b: 0.04313755, a: 1}
+    - _ColorFillBorder: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorFillDim: {r: 0.079999976, g: 0.45, b: 0.17999998, a: 0.6}
+    - _ColorFull: {r: 0.17999998, g: 0.88, b: 0.37999994, a: 1}
+    - _ColorGap: {r: 0, g: 0, b: 0, a: 1}
+    - _ColorGhost: {r: 1, g: 0.85, b: 0.14999998, a: 1}
+    - _ColorGlow: {r: 1, g: 0, b: 0, a: 1}
+    - _ColorOutline: {r: 0, g: 0, b: 0, a: 1}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
