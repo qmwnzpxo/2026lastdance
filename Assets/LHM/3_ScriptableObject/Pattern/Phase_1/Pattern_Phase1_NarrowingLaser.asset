@@ -17,12 +17,12 @@ MonoBehaviour:
   preDelay: 0
   _chargeVfxPrefab: {fileID: 0}
   _chargeDuration: 2
-  _laserWallPrefab: {fileID: 0}
+  _laserWallPrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
   _laserWallColor: {r: 1, g: 0, b: 0, a: 1}
   _wallStartX: 18
   _wallHalfHeight: 15
   _wallTargetX: 0
-  _wallMoveSpeed: 1.5
+  _wallMoveSpeed: 4
   _crushDistance: 0.5
   _wallDPS: 40
   _wallThickness: 0.5
@@ -35,5 +35,4 @@ MonoBehaviour:
   _qteTimeLimit: 8
   _successVfxPrefab: {fileID: 0}
   _failVfxPrefab: {fileID: 0}
-  _failGlobalDamage: 40
-  _successHoldTime: 1
+  _dealTimeDuration: 5

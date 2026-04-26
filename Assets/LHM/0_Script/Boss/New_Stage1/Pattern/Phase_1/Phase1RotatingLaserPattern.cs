@@ -39,7 +39,6 @@ namespace BossSystem.Patterns
         [SerializeField] private ParticleSystem _chargeVfxPrefab;
         [SerializeField] private float _chargeWaitTime = 1.5f;
 
-        // ★ 추가: 파훼 후 딜타임. DamageHandler._dealTimeDuration과 맞춰야 한다.
         [Tooltip("파훼 후 딜타임 지속 시간(초). DamageHandler의 Deal Time Duration과 동일하게 설정.")]
         [SerializeField] private float _dealTimeDuration = 5f;
 
@@ -121,10 +120,11 @@ namespace BossSystem.Patterns
                 lasers[i] = lr;
             }
 
-            // ── 5. 회전 루프 ──────────────────────────────────────────────
+            // ── 5. 회전 루프 — 터렛 전부 파괴될 때까지 ───────────────────
             Log("Rotating laser active. Destroy both joints to break pattern.");
-            float currentAngle = 0f;
-            float elapsed      = 0f;
+            float currentAngle   = 0f;
+            float elapsed        = 0f;
+            bool  jointsDestroyed = false;
 
             try
             {
@@ -132,6 +132,7 @@ namespace BossSystem.Patterns
                 {
                     if (jointCount > 0 && destroyedCount >= jointCount)
                     {
+                        jointsDestroyed = true;
                         Log("All joints destroyed — pattern broken!");
                         break;
                     }
@@ -172,15 +173,14 @@ namespace BossSystem.Patterns
                     if (j != null) Object.Destroy(j);
             }
 
-            ct.ThrowIfCancellationRequested();
+            // ── 6. 터렛 파괴로 루프 종료된 경우에만 파훼 처리 ───────────
+            // ct 취소(페이즈 전환 등)로 루프가 끊긴 경우는 파훼 처리하지 않음.
+            if (!jointsDestroyed) return;
 
-            // ── 6. 파훼 → 방어막 해제 ─────────────────────────────────────
+            // ── 7. 방어막 해제 → 5초 딜타임 ─────────────────────────────
             ctx.DamageHandler.BreakBarrier();
-            Log($"Barrier broken! Deal time {_dealTimeDuration}s — holding pattern slot.");
+            Log($"Barrier broken! Deal time {_dealTimeDuration}s.");
 
-            // ★ 핵심 변경: 딜타임만큼 이 패턴이 슬롯을 점유하고 대기.
-            //   → Sequential 루프는 이 await이 끝날 때까지 다음 패턴으로 넘어가지 않는다.
-            //   → 5초 후 return → BossController가 다음 패턴을 ExecuteAsync.
             await UniTask.Delay(
                 System.TimeSpan.FromSeconds(_dealTimeDuration), cancellationToken: ct);
 

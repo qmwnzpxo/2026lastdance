@@ -27,7 +27,10 @@ MonoBehaviour:
   - {x: 0, y: 3}
   - {x: 4, y: 3}
   _beamLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
+  _fireBeamLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
   _beamColorA: {r: 1, g: 0, b: 0, a: 1}
+  _fireBeamColorA: {r: 0.227451, g: 0.47450984, b: 0.73333335, a: 1}
+  _fireBeamWidth: 0.4
   _aimDurationA: 1
   _fireDurationA: 0.3
   _beamDamageA: 15
@@ -38,7 +41,10 @@ MonoBehaviour:
   _chargeDamageB: 20
   _chargeDistanceB: 20
   _splitBeamLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
+  _splitFireBeamLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
   _beamColorC: {r: 0, g: 1, b: 0, a: 1}
+  _fireBeamColorC: {r: 1, g: 0.6180462, b: 0.042452812, a: 1}
+  _splitFireBeamWidth: 0.4
   _aimDurationC: 1
   _fireDurationC: 0.3
   _splitAngle: 20
@@ -50,3 +56,4 @@ MonoBehaviour:
   _playerLayer:
     serializedVersion: 2
     m_Bits: 64
+  _dealTimeDuration: 5
