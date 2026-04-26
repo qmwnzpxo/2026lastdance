@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerCombat : MonoBehaviour
@@ -9,9 +10,12 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private Vector2   attackBoxSize     = new Vector2(1f, 1f);
     [SerializeField] private float     attackBoxDistance = 1f;
     [SerializeField] private float     attackSecondHitDelay = 0.3f;
+    [SerializeField] private float     attackActiveDuration = 0.12f;
     [SerializeField] private LayerMask enemyLayer;
 
     public float attackRepeatTime = 2;
+
+    private HashSet<Collider2D> _hitEnemiesInAttack = new HashSet<Collider2D>();
 
     private PlayerState state;
     private PlayerAnimation ani;
@@ -101,11 +105,16 @@ public class PlayerCombat : MonoBehaviour
 
     void ExecuteAttackBox(Vector2 attackPos)
     {
+        _hitEnemiesInAttack.Clear();
         Collider2D[] hits = Physics2D.OverlapBoxAll(
             attackPos, attackBoxSize, attackTransform.eulerAngles.z, enemyLayer);
 
         foreach (Collider2D hit in hits)
         {
+            if (hit == null || _hitEnemiesInAttack.Contains(hit)) continue;
+
+            _hitEnemiesInAttack.Add(hit);
+
             Debug.Log($"공격 적중: {hit.name}");
             ApplyDamage(hit, state.damage);
             state.AddDashGauge(state.dashGaugePerAttack);
@@ -113,7 +122,7 @@ public class PlayerCombat : MonoBehaviour
         }
 
         Debug.DrawRay(attackTransform.position,
-            attackTransform.right * attackBoxDistance, Color.magenta, 0.15f);
+            attackTransform.right * attackBoxDistance, Color.magenta, attackSecondHitDelay/attackRepeatTime);
     }
 
     /// <summary>대상 컴포넌트에 맞게 데미지를 전달한다.</summary>

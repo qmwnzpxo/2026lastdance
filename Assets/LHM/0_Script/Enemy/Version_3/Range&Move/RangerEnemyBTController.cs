@@ -35,6 +35,9 @@ public class RangerEnemyBTController : EnemyBTController, IMoveable
 
     protected override void Awake()
     {
+        if (_groundLayer == 0)
+            _groundLayer = LayerMask.GetMask("ground");
+        Debug.Log(_groundLayer.value);
         InitBlackboad();
 
         _bb.moveable.retreatTriggerRange = _retreatTriggerRange;

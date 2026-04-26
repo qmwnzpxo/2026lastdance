@@ -14,6 +14,8 @@ public class EnemyBlackboard
     // ── 탐지 ────────────────────────────────────
     public float detectionRange = 8f;
     public float chaseMaintenanceRange = 10f;
+    public LayerMask groundLayer;
+    public bool hasLOS = false; // Line of Sight (시야 확보 여부)
 
     // ── 탐지 게이지 ─────────────────────────────
     public float detectGauge = 0f;

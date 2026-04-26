@@ -26,7 +26,8 @@ namespace BTActions
                 while (!ct.IsCancellationRequested)
                 {
                     Vector2 current = bb.selfTransform.position;
-                    if (Vector2.Distance(current, targetPos) < 0.1f) break;
+                    if (Vector2.Distance(current, targetPos) < 0.1f 
+                        || Mathf.Abs(targetPos.x - current.x) < 0.1f) break;
 
                     bb.rigid2D.linearVelocity = new Vector2(
                         (targetPos - current).normalized.x * (float)bb.moveable?.moveSpeed,
@@ -144,7 +145,8 @@ namespace BTActions
                     Vector2 current = bb.selfTransform.position;
                     Vector2 targetPos = target.position;
 
-                    if (Vector2.Distance(current, targetPos) < 0.1f|| Mathf.Abs(targetPos.x - current.x)<0.1f)
+                    if (Vector2.Distance(current, targetPos) < 0.1f
+                        || Mathf.Abs(targetPos.x - current.x) < 0.1f)
                     {
                         // 포인트 도달 → 인덱스 증가 후 이번 액션 종료
                         // 다음 틱에서 새 ActionPatrol이 다음 포인트로 이동

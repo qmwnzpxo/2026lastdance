@@ -23,6 +23,11 @@ namespace BTConditions
             => bb.DistanceToPlayer <= bb.attackRange
                 ? NodeState.Success : NodeState.Failure;
     }
+    public class ConditionHasLOS : BTCondition
+    {
+        public override NodeState Tick(EnemyBlackboard bb)
+            => bb.hasLOS ? NodeState.Success : NodeState.Failure;
+    }
 
     public class ConditionAttackCooldownReady : BTCondition
     {

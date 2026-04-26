@@ -9,6 +9,7 @@ public class EnemyBTController : MonoBehaviour
     [Header("탐지")]
     [SerializeField] protected float _detectionRange;
     [SerializeField] protected float _chaseMaintenanceRange;
+    [SerializeField] protected LayerMask _groundLayer; 
 
     [Header("추격 게이지")]
     [SerializeField] protected float _gaugeIncreaseRate;
@@ -29,6 +30,9 @@ public class EnemyBTController : MonoBehaviour
 
     protected virtual void Awake()
     {
+        if (_groundLayer == 0)
+            _groundLayer = LayerMask.GetMask("ground");
+        Debug.Log(_groundLayer.value);
         InitBlackboad();
         _root = BuildTree();
     }
@@ -65,6 +69,7 @@ public class EnemyBTController : MonoBehaviour
             new BTSequence(
                 new ConditionIsChasing(),
                 new ConditionInAttackRange(),
+                new ConditionHasLOS(),
                 new ConditionAttackCooldownReady(),
                 new ActionAttack()
             ),
@@ -92,6 +97,7 @@ public class EnemyBTController : MonoBehaviour
             playerTransform = GameObject.FindWithTag("Player")?.transform,
             enemyState = GetComponent<EnemyState>(),
             detectionRange = _detectionRange,
+            groundLayer = _groundLayer,
             chaseMaintenanceRange = _chaseMaintenanceRange,
             gaugeIncreaseRate = _gaugeIncreaseRate,
             gaugeDecreaseRate = _gaugeDecreaseRate,
@@ -116,8 +122,10 @@ public class EnemyBTController : MonoBehaviour
         bool playerInDetection = dist <= _bb.detectionRange;
         bool playerInMaintenance = dist <= _bb.chaseMaintenanceRange;
 
+        _bb.hasLOS = CheckLOS();
+
         // 추격 게이지 증감
-        if (playerInDetection)
+        if (playerInDetection && _bb.hasLOS)
         {
             _bb.detectGauge = Mathf.Min(
                 _bb.detectGauge + _bb.gaugeIncreaseRate * Time.fixedDeltaTime,
@@ -149,6 +157,23 @@ public class EnemyBTController : MonoBehaviour
         {
             _bb.chaseEndTimer = 0f;
         }
+    }
+
+    private bool CheckLOS()
+    {
+        if (_bb.playerTransform == null) return false;
+
+        Vector2 origin = _bb.selfTransform.position;
+        Vector2 target = _bb.playerTransform.position;
+        Vector2 dir = target - origin;
+        float dist = dir.magnitude;
+
+        if (dist < 0.01f) return true;
+
+        RaycastHit2D hit = Physics2D.Raycast(
+            origin, dir.normalized, dist, _bb.groundLayer);
+
+        return hit.collider == null;
     }
 
     #endregion
