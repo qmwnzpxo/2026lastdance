@@ -4,78 +4,48 @@ using UnityEngine;
 
 namespace BossSystem.Patterns
 {
-    // ───────────────────────────────────────────────────────────────────────
-    // Phase 1 — 패턴 3. 아재 패턴 + 좁아지는 레이저 (Focus & QTE) [Sequential]
-    //
-    // 파훼 조건: QTE 성공 or 벽 겹침(시간 초과 포함)
-    //
-    // [성공] QTE 성공
-    //   → ctx.DamageHandler.BreakBarrier()
-    //   → DamageHandler.OnBarrierBroken 이벤트 발생
-    //   → Phase1ShieldPattern.onBarrierBroken 콜백
-    //   → 방어막 5초 해제
-    //
-    // [실패] 벽 겹침 or QTE 실패
-    //   → 광역 데미지만 적용
-    //   → 방어막은 유지 (BreakBarrier 호출 없음)
-    //   → 다음 패턴으로 진행 (방어막 유지 상태)
-    // ───────────────────────────────────────────────────────────────────────
     [CreateAssetMenu(fileName = "Pattern_Phase1_NarrowingLaser",
                      menuName = "BossSystem/Patterns/Phase1_NarrowingLaser")]
     public class Phase1NarrowingLaserPattern : BossPatternBase
     {
-        // ── Inspector ─────────────────────────────────────────────────────
-
         [Header("Charge")]
         [SerializeField] private ParticleSystem _chargeVfxPrefab;
         [SerializeField] private float _chargeDuration = 2f;
 
         [Header("Laser Walls")]
-        [Tooltip("레이저 벽 프리팹 (LineRenderer 컴포넌트가 붙어있어야 함)")]
         [SerializeField] private GameObject _laserWallPrefab;
         [SerializeField] private Color _laserWallColor = Color.red;
-        [Tooltip("양 끝 시작 X 좌표 (절댓값). 왼쪽은 -값, 오른쪽은 +값으로 자동 처리")]
         [SerializeField] private float _wallStartX = 18f;
-        [Tooltip("레이저 벽의 Y 반폭 (위아래로 이 값의 2배 크기)")]
         [SerializeField] private float _wallHalfHeight = 15f;
-        [Tooltip("벽이 이동할 중앙 X 수렴 좌표")]
         [SerializeField] private float _wallTargetX = 0f;
-        [Tooltip("초당 이동 속도")]
         [SerializeField] private float _wallMoveSpeed = 1.5f;
-        [Tooltip("이 거리 이하로 좁혀지면 '겹침' 판정 → 광역 피해")]
         [SerializeField] private float _crushDistance = 0.5f;
 
-        [Header("Wall Damage (지속 판정)")]
+        [Header("Wall Damage")]
         [SerializeField] private float _wallDPS = 40f;
         [SerializeField] private float _wallThickness = 0.5f;
         [SerializeField] private float _wallCastLen = 30f;
         [SerializeField] private LayerMask _playerLayer;
 
         [Header("Interact Object")]
-        [Tooltip("G키 트리거 오브젝트 프리팹 (NarrowingQTETrigger 컴포넌트 필요)")]
         [SerializeField] private GameObject _interactObjPrefab;
-        [Tooltip("보스 기준 오프셋 (아래쪽 배치)")]
         [SerializeField] private Vector2 _interactOffset = new Vector2(0f, -3f);
 
         [Header("QTE")]
-        [Tooltip("커맨드 입력 제한 시간 (초)")]
         [SerializeField] private float _qteTimeLimit = 8f;
 
         [Header("Result VFX")]
         [SerializeField] private ParticleSystem _successVfxPrefab;
         [SerializeField] private ParticleSystem _failVfxPrefab;
-        [Tooltip("실패 시 광역 데미지")]
         [SerializeField] private float _failGlobalDamage = 40f;
-        [SerializeField] private float _successHoldTime = 1f;
 
-        // ─────────────────────────────────────────────────────────────────
-        // OnExecuteAsync
-        // ─────────────────────────────────────────────────────────────────
+        // ★ 추가: 파훼 후 딜타임. 실패 시에는 방어막이 유지되므로 무의미.
+        [Tooltip("QTE 성공(파훼) 후 딜타임 지속 시간(초). DamageHandler의 Deal Time Duration과 동일하게 설정.")]
+        [SerializeField] private float _dealTimeDuration = 5f;
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
             // ── 1. 차지 연출 ──────────────────────────────────────────────
-            Log("Charging energy...");
             ParticleSystem chargeVfx = null;
             if (_chargeVfxPrefab != null)
             {
@@ -101,14 +71,11 @@ namespace BossSystem.Patterns
 
             if (_interactObjPrefab != null)
             {
-                Vector3 interactPos = ctx.BossTransform.position
-                                      + (Vector3)_interactOffset;
-                interactObj = Object.Instantiate(_interactObjPrefab, interactPos,
-                                                  Quaternion.identity);
+                Vector3 interactPos = ctx.BossTransform.position + (Vector3)_interactOffset;
+                interactObj = Object.Instantiate(_interactObjPrefab, interactPos, Quaternion.identity);
                 qteTrigger  = interactObj.GetComponent<NarrowingQTETrigger>();
             }
 
-            // ── 4. QTE 완료 소스 ─────────────────────────────────────────
             var successTcs = new UniTaskCompletionSource<bool>();
 
             if (qteTrigger != null)
@@ -119,11 +86,10 @@ namespace BossSystem.Patterns
             }
             else
             {
-                // 트리거 없으면 시간 초과로 처리
                 FailAfterCrush(successTcs, ct).Forget();
             }
 
-            // ── 5. 벽 이동 루프 + QTE 대기 병렬 실행 ────────────────────
+            // ── 4. 벽 이동 + QTE 병렬 ────────────────────────────────────
             bool qteSuccess = false;
 
             try
@@ -132,9 +98,6 @@ namespace BossSystem.Patterns
                 var qteTask  = successTcs.Task.AttachExternalCancellation(ct);
 
                 int winner = await UniTask.WhenAny(wallTask, qteTask);
-
-                // winner == 0: 벽 이동 루프가 먼저 끝남 (겹침 or ct)
-                // winner == 1: QTE 결과가 먼저 나옴
                 if (winner == 1)
                     qteSuccess = await qteTask;
             }
@@ -143,48 +106,40 @@ namespace BossSystem.Patterns
                 if (interactObj != null) Object.Destroy(interactObj);
             }
 
-            // ── 6. 벽 정리 ───────────────────────────────────────────────
             if (wallLeftGo  != null) Object.Destroy(wallLeftGo);
             if (wallRightGo != null) Object.Destroy(wallRightGo);
 
             ct.ThrowIfCancellationRequested();
 
-            // ── 7. 결과 처리 ─────────────────────────────────────────────
+            // ── 5. 결과 처리 ─────────────────────────────────────────────
             if (qteSuccess)
             {
-                // ★ QTE 성공 → 방어막 파훼
-                // BreakBarrier()
-                //   → DamageHandler.OnBarrierBroken 이벤트 발생
-                //   → Phase1ShieldPattern.onBarrierBroken 콜백
-                //   → 방어막 5초 해제
                 Log("QTE Success! Boss barrier broken.");
 
                 if (_successVfxPrefab != null)
                 {
                     var vfx = Object.Instantiate(
-                        _successVfxPrefab,
-                        ctx.BossTransform.position, Quaternion.identity);
+                        _successVfxPrefab, ctx.BossTransform.position, Quaternion.identity);
                     vfx.Play();
                     Object.Destroy(vfx.gameObject, vfx.main.duration);
                 }
 
                 ctx.DamageHandler.BreakBarrier();
+                Log($"Deal time {_dealTimeDuration}s — holding pattern slot.");
 
+                // ★ 핵심 변경: QTE 성공 시 딜타임만큼 이 패턴이 슬롯을 점유.
                 await UniTask.Delay(
-                    System.TimeSpan.FromSeconds(_successHoldTime), cancellationToken: ct);
+                    System.TimeSpan.FromSeconds(_dealTimeDuration), cancellationToken: ct);
             }
             else
             {
-                // ★ QTE 실패 → 광역 데미지만 적용, 방어막은 유지
-                // BreakBarrier()를 호출하지 않으므로 방어막이 계속 활성화된 상태로
-                // 다음 Sequential 패턴으로 넘어감
+                // 실패: 방어막 유지, 광역 데미지만 적용.
                 Log("QTE Failed — global damage applied! Barrier remains active.");
 
                 if (_failVfxPrefab != null)
                 {
                     var vfx = Object.Instantiate(
-                        _failVfxPrefab,
-                        ctx.BossTransform.position, Quaternion.identity);
+                        _failVfxPrefab, ctx.BossTransform.position, Quaternion.identity);
                     vfx.Play();
                     Object.Destroy(vfx.gameObject, vfx.main.duration);
                 }
@@ -192,14 +147,13 @@ namespace BossSystem.Patterns
                 ApplyGlobalDamage(ctx, _failGlobalDamage);
 
                 await UniTask.Delay(System.TimeSpan.FromSeconds(0.5f), cancellationToken: ct);
+                // ★ 실패는 딜타임 없이 바로 다음 패턴으로 진행.
             }
 
-            Log("NarrowingLaser pattern complete.");
+            Log("NarrowingLaser pattern complete. Handing off to next pattern.");
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // 벽 생성
-        // ─────────────────────────────────────────────────────────────────
+        // ── 이하 헬퍼는 원본과 동일 ───────────────────────────────────────
 
         private (GameObject leftGo, LineRenderer left,
                  GameObject rightGo, LineRenderer right) CreateWalls()
@@ -209,18 +163,17 @@ namespace BossSystem.Patterns
 
             var leftGo  = Object.Instantiate(_laserWallPrefab);
             var left    = leftGo.GetComponent<LineRenderer>();
-
             var rightGo = Object.Instantiate(_laserWallPrefab);
             var right   = rightGo.GetComponent<LineRenderer>();
 
             if (left != null)
             {
-                left.startColor     = _laserWallColor;
-                left.endColor       = _laserWallColor;
-                left.positionCount  = 2;
+                left.startColor    = _laserWallColor;
+                left.endColor      = _laserWallColor;
+                left.positionCount = 2;
                 left.SetPosition(0, new Vector3(-_wallStartX, -_wallHalfHeight, 0f));
                 left.SetPosition(1, new Vector3(-_wallStartX,  _wallHalfHeight, 0f));
-                left.enabled        = true;
+                left.enabled       = true;
             }
 
             if (right != null)
@@ -236,10 +189,6 @@ namespace BossSystem.Patterns
             return (leftGo, left, rightGo, right);
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // 벽 이동 루프
-        // ─────────────────────────────────────────────────────────────────
-
         private async UniTask RunWallsAsync(
             LineRenderer wallLeft,
             LineRenderer wallRight,
@@ -252,7 +201,6 @@ namespace BossSystem.Patterns
 
             while (!ct.IsCancellationRequested)
             {
-                // QTE 이미 완료 → 루프 종료
                 if (successTcs.Task.Status != UniTaskStatus.Pending) return;
 
                 leftX  = Mathf.MoveTowards(leftX,  _wallTargetX, _wallMoveSpeed * Time.deltaTime);
@@ -261,20 +209,16 @@ namespace BossSystem.Patterns
                 SetWallX(wallLeft,  leftX);
                 SetWallX(wallRight, rightX);
 
-                // 벽 접촉 데미지 (매 프레임 판정)
                 if (wallLeft != null)
                     LaserUtility.BoxCastAndDamage(
                         new Vector2(leftX, 0f), Vector2.right,
-                        _wallThickness, _wallCastLen, _playerLayer,
-                        _wallDPS * Time.deltaTime);
+                        _wallThickness, _wallCastLen, _playerLayer, _wallDPS * Time.deltaTime);
 
                 if (wallRight != null)
                     LaserUtility.BoxCastAndDamage(
                         new Vector2(rightX, 0f), Vector2.left,
-                        _wallThickness, _wallCastLen, _playerLayer,
-                        _wallDPS * Time.deltaTime);
+                        _wallThickness, _wallCastLen, _playerLayer, _wallDPS * Time.deltaTime);
 
-                // 겹침 판정 → QTE 자동 실패
                 if (rightX - leftX <= _crushDistance)
                 {
                     Log("Walls crushed! QTE auto-fail.");
@@ -293,10 +237,6 @@ namespace BossSystem.Patterns
             var p1 = lr.GetPosition(1); p1.x = x; lr.SetPosition(1, p1);
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // 트리거 없을 때 폴백: 일정 시간 후 강제 실패
-        // ─────────────────────────────────────────────────────────────────
-
         private async UniTaskVoid FailAfterCrush(
             UniTaskCompletionSource<bool> tcs, CancellationToken ct)
         {
@@ -305,10 +245,6 @@ namespace BossSystem.Patterns
                 cancellationToken: ct).SuppressCancellationThrow();
             tcs.TrySetResult(false);
         }
-
-        // ─────────────────────────────────────────────────────────────────
-        // 광역 데미지
-        // ─────────────────────────────────────────────────────────────────
 
         private static void ApplyGlobalDamage(BossContext ctx, float damage)
         {
@@ -321,24 +257,19 @@ namespace BossSystem.Patterns
         }
     }
 
-    // =========================================================================
-    // NarrowingQTETrigger
-    // =========================================================================
+    // NarrowingQTETrigger는 원본 그대로 유지
     [RequireComponent(typeof(Collider2D))]
     public class NarrowingQTETrigger : MonoBehaviour
     {
         [Header("Interact")]
-        [Tooltip("G키 반응 거리")]
         [SerializeField] private float _interactRadius = 1.5f;
 
         [Header("QTE Commands")]
-        [Tooltip("순서대로 입력해야 할 키 코드 목록")]
         [SerializeField]
         private KeyCode[] _commandSequence = {
             KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.LeftArrow,
             KeyCode.RightArrow, KeyCode.Space
         };
-        [Tooltip("QTE 전체 제한 시간 (초). 패턴에서도 동일값 사용 권장")]
         [SerializeField] private float _timeLimit = 8f;
 
         public event System.Action OnQTESuccess;
@@ -359,8 +290,7 @@ namespace BossSystem.Patterns
             if (_playerTransform == null) return;
             if (!Input.GetKeyDown(KeyCode.G)) return;
 
-            float dist = Vector2.Distance(
-                transform.position, _playerTransform.position);
+            float dist = Vector2.Distance(transform.position, _playerTransform.position);
             if (dist > _interactRadius) return;
 
             _qteTriggered = true;
@@ -369,8 +299,7 @@ namespace BossSystem.Patterns
 
         private async UniTaskVoid RunQTEAsync(CancellationToken ct)
         {
-            Debug.Log("[NarrowingQTE] QTE Started! Input sequence: "
-                      + string.Join(", ", _commandSequence));
+            Debug.Log("[NarrowingQTE] QTE Started!");
 
             float elapsed = 0f;
             int   step    = 0;
@@ -380,32 +309,17 @@ namespace BossSystem.Patterns
             {
                 elapsed += Time.deltaTime;
 
-                if (step < _commandSequence.Length
-                    && Input.GetKeyDown(_commandSequence[step]))
+                if (step < _commandSequence.Length && Input.GetKeyDown(_commandSequence[step]))
                 {
                     step++;
-                    Debug.Log($"[NarrowingQTE] Step {step}/{_commandSequence.Length}");
-
-                    if (step >= _commandSequence.Length)
-                    {
-                        success = true;
-                        break;
-                    }
+                    if (step >= _commandSequence.Length) { success = true; break; }
                 }
 
                 await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
 
-            if (success)
-            {
-                Debug.Log("[NarrowingQTE] QTE SUCCESS.");
-                OnQTESuccess?.Invoke();
-            }
-            else
-            {
-                Debug.Log("[NarrowingQTE] QTE FAILED.");
-                OnQTEFail?.Invoke();
-            }
+            if (success) OnQTESuccess?.Invoke();
+            else         OnQTEFail?.Invoke();
         }
 
 #if UNITY_EDITOR

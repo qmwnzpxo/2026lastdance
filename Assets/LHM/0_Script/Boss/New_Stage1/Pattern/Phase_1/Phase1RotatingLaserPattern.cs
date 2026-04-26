@@ -4,37 +4,22 @@ using UnityEngine;
 
 namespace BossSystem.Patterns
 {
-    // ───────────────────────────────────────────────────────────────────────
-    // Phase 1 — 패턴 1. 중앙 회전 레이저 (Swoo Style) [Sequential]
-    //
-    // 파훼 조건: 터렛 연결부(TurretJoint) 전부 파괴
-    // 파훼 흐름: destroyedCount >= jointCount
-    //            → 회전 루프 break
-    //            → ctx.DamageHandler.BreakBarrier()
-    //            → DamageHandler.OnBarrierBroken 이벤트 발생
-    //            → Phase1ShieldPattern.onBarrierBroken 콜백 호출
-    //            → breakTcs.TrySetResult() → 방어막 5초 해제
-    // ───────────────────────────────────────────────────────────────────────
     [CreateAssetMenu(fileName = "Pattern_Phase1_RotatingLaser",
                      menuName = "BossSystem/Patterns/Phase1_RotatingLaser")]
     public class Phase1RotatingLaserPattern : BossPatternBase
     {
         [Header("Movement")]
-        [Tooltip("보스가 이동할 중앙 월드 좌표")]
         [SerializeField] private Vector2 _centerPosition = Vector2.zero;
         [SerializeField] private float   _moveToCenterSpeed = 5f;
 
         [Header("Laser")]
-        [Tooltip("레이저 LineRenderer 프리팹")]
         [SerializeField] private GameObject _laserLinePrefab;
         [SerializeField] private Color      _laserColor  = Color.cyan;
         [SerializeField] private float      _laserLength = 25f;
         [SerializeField] private float      _laserWidth  = 0.4f;
 
         [Header("Rotation")]
-        [Tooltip("초당 회전 각도. 양수 = 반시계, 음수 = 시계")]
         [SerializeField] private float _rotationSpeed  = 45f;
-        [Tooltip("처음 몇 초간 가속할지 (스핀업)")]
         [SerializeField] private float _spinUpDuration = 1.5f;
 
         [Header("Damage")]
@@ -44,9 +29,7 @@ namespace BossSystem.Patterns
         [SerializeField] private LayerMask _playerLayer;
 
         [Header("Turret Joints")]
-        [Tooltip("파괴 대상 터렛 연결부 프리팹 (PanelHealth 필요)")]
         [SerializeField] private GameObject _turretJointPrefab;
-        [Tooltip("보스 기준 Joint 생성 오프셋 (2개 권장)")]
         [SerializeField] private Vector2[]  _jointOffsets = {
             new Vector2(-1.2f, 0.5f),
             new Vector2( 1.2f, 0.5f)
@@ -54,10 +37,11 @@ namespace BossSystem.Patterns
 
         [Header("VFX / Timing")]
         [SerializeField] private ParticleSystem _chargeVfxPrefab;
-        [Tooltip("차지 연출 대기 시간 (초)")]
-        [SerializeField] private float _chargeWaitTime       = 1.5f;
-        [Tooltip("파훼 완료 후 다음 패턴으로 넘어가기 전 대기 (초)")]
-        [SerializeField] private float _breakCelebrationTime = 1f;
+        [SerializeField] private float _chargeWaitTime = 1.5f;
+
+        // ★ 추가: 파훼 후 딜타임. DamageHandler._dealTimeDuration과 맞춰야 한다.
+        [Tooltip("파훼 후 딜타임 지속 시간(초). DamageHandler의 Deal Time Duration과 동일하게 설정.")]
+        [SerializeField] private float _dealTimeDuration = 5f;
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
@@ -122,9 +106,9 @@ namespace BossSystem.Patterns
             {
                 if (_laserLinePrefab == null) break;
 
-                var go         = Object.Instantiate(_laserLinePrefab);
-                var lr         = go.GetComponent<LineRenderer>();
-                laserGos[i]    = go;
+                var go      = Object.Instantiate(_laserLinePrefab);
+                var lr      = go.GetComponent<LineRenderer>();
+                laserGos[i] = go;
 
                 if (lr != null)
                 {
@@ -138,7 +122,6 @@ namespace BossSystem.Patterns
             }
 
             // ── 5. 회전 루프 ──────────────────────────────────────────────
-            // 파훼 조건: destroyedCount >= jointCount (터렛 전부 파괴)
             Log("Rotating laser active. Destroy both joints to break pattern.");
             float currentAngle = 0f;
             float elapsed      = 0f;
@@ -147,7 +130,6 @@ namespace BossSystem.Patterns
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    // ★ 파훼 판정: 터렛이 모두 파괴되면 루프 탈출
                     if (jointCount > 0 && destroyedCount >= jointCount)
                     {
                         Log("All joints destroyed — pattern broken!");
@@ -190,17 +172,19 @@ namespace BossSystem.Patterns
                     if (j != null) Object.Destroy(j);
             }
 
-            // ── 6. 파훼 판정 → Phase1ShieldPattern 방어막 OFF ────────────
-            // BreakBarrier()
-            //   → DamageHandler.OnBarrierBroken 이벤트 발생
-            //   → Phase1ShieldPattern.onBarrierBroken 콜백 호출
-            //   → 방어막 VFX 제거 + 무적 해제 + 5초 딜타임 시작
+            ct.ThrowIfCancellationRequested();
+
+            // ── 6. 파훼 → 방어막 해제 ─────────────────────────────────────
             ctx.DamageHandler.BreakBarrier();
+            Log($"Barrier broken! Deal time {_dealTimeDuration}s — holding pattern slot.");
 
+            // ★ 핵심 변경: 딜타임만큼 이 패턴이 슬롯을 점유하고 대기.
+            //   → Sequential 루프는 이 await이 끝날 때까지 다음 패턴으로 넘어가지 않는다.
+            //   → 5초 후 return → BossController가 다음 패턴을 ExecuteAsync.
             await UniTask.Delay(
-                System.TimeSpan.FromSeconds(_breakCelebrationTime), cancellationToken: ct);
+                System.TimeSpan.FromSeconds(_dealTimeDuration), cancellationToken: ct);
 
-            Log("RotatingLaser pattern complete.");
+            Log("RotatingLaser pattern complete. Handing off to next pattern.");
         }
     }
 }

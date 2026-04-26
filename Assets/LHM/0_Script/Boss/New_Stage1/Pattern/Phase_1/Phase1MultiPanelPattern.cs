@@ -5,26 +5,13 @@ using UnityEngine;
 
 namespace BossSystem.Patterns
 {
-    // ───────────────────────────────────────────────────────────────────────
-    // Phase 1 — 패턴 2. 멀티 타입 판넬 소환 (Strategic Destruction) [Sequential]
-    //
-    // 파훼 조건: 판넬 A/B/C 전부 파괴
-    // 파훼 흐름: destroyedCount >= totalPanels
-    //            → ctx.DamageHandler.BreakBarrier()
-    //            → DamageHandler.OnBarrierBroken 이벤트 발생
-    //            → Phase1ShieldPattern.onBarrierBroken 콜백 호출
-    //            → 방어막 5초 해제
-    // ───────────────────────────────────────────────────────────────────────
     [CreateAssetMenu(fileName = "Pattern_Phase1_MultiPanel",
                      menuName = "BossSystem/Patterns/Phase1_MultiPanel")]
     public class Phase1MultiPanelPattern : BossPatternBase
     {
         [Header("Panel Prefabs")]
-        [Tooltip("Type A: 공격형 (빨강) — PanelHealth 필요")]
         [SerializeField] private GameObject _panelPrefabA;
-        [Tooltip("Type B: 돌진형 (파랑) — PanelHealth 필요")]
         [SerializeField] private GameObject _panelPrefabB;
-        [Tooltip("Type C: 2갈래빔형 (초록) — PanelHealth 필요")]
         [SerializeField] private GameObject _panelPrefabC;
 
         [Header("Spawn & Move")]
@@ -42,9 +29,7 @@ namespace BossSystem.Patterns
         };
 
         [Header("Type A — Beam")]
-        [Tooltip("조준선 프리팹 (얇은 LineRenderer)")]
         [SerializeField] private GameObject _beamLinePrefab;
-        [Tooltip("발사 빔 프리팹 (두꺼운 LineRenderer). 비워두면 조준선 프리팹을 재사용합니다.")]
         [SerializeField] private GameObject _fireBeamLinePrefab;
         [SerializeField] private Color _beamColorA = Color.red;
         [SerializeField] private Color _fireBeamColorA = new Color(1f, 0.3f, 0.3f, 1f);
@@ -62,9 +47,7 @@ namespace BossSystem.Patterns
         [SerializeField] private float _chargeDistanceB = 20f;
 
         [Header("Type C — Split Beam")]
-        [Tooltip("조준선 프리팹 (얇은 LineRenderer)")]
         [SerializeField] private GameObject _splitBeamLinePrefab;
-        [Tooltip("발사 빔 프리팹 (두꺼운 LineRenderer). 비워두면 조준선 프리팹을 재사용합니다.")]
         [SerializeField] private GameObject _splitFireBeamLinePrefab;
         [SerializeField] private Color _beamColorC = Color.green;
         [SerializeField] private Color _fireBeamColorC = new Color(0.3f, 1f, 0.3f, 1f);
@@ -81,9 +64,9 @@ namespace BossSystem.Patterns
         [SerializeField] private float _castDistance = 30f;
         [SerializeField] private LayerMask _playerLayer;
 
-        // ─────────────────────────────────────────────────────────────────
-        // OnExecuteAsync
-        // ─────────────────────────────────────────────────────────────────
+        // ★ 추가
+        [Tooltip("파훼 후 딜타임 지속 시간(초). DamageHandler의 Deal Time Duration과 동일하게 설정.")]
+        [SerializeField] private float _dealTimeDuration = 5f;
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
@@ -94,11 +77,10 @@ namespace BossSystem.Patterns
                 (_panelPrefabC, 2),
             };
 
-            int totalPanels   = configs.Length;
+            int totalPanels    = configs.Length;
             int destroyedCount = 0;
             var panels         = new GameObject[totalPanels];
 
-            // ── 1. 소환 → 위로 치솟음 → 슬롯 이동 ───────────────────────
             for (int i = 0; i < totalPanels; i++)
             {
                 ct.ThrowIfCancellationRequested();
@@ -134,37 +116,34 @@ namespace BossSystem.Patterns
             await UniTask.Delay(
                 System.TimeSpan.FromSeconds(estimatedMoveTime), cancellationToken: ct);
 
-            // ── 2. 각 타입 공격 루프 (병렬) ──────────────────────────────
             var attackTasks = new List<UniTask>();
-
             if (panels[0] != null) attackTasks.Add(RunTypeALoopAsync(panels[0], ctx, ct));
             if (panels[1] != null) attackTasks.Add(RunTypeBLoopAsync(panels[1], ctx, ct));
             if (panels[2] != null) attackTasks.Add(RunTypeCLoopAsync(panels[2], ctx, ct));
 
-            // 공격 루프 실행 중 모든 판넬이 파괴되면 즉시 탈출
             await UniTask.WhenAny(
                 UniTask.WhenAll(attackTasks).SuppressCancellationThrow(),
                 WaitAllDestroyedAsync(() => destroyedCount >= totalPanels, ct)
             );
 
-            // ── 3. 정리 ───────────────────────────────────────────────────
             foreach (var p in panels)
                 if (p != null) Object.Destroy(p);
 
-            // ── 4. 파훼 판정 → Phase1ShieldPattern 방어막 OFF ────────────
-            // BreakBarrier()
-            //   → DamageHandler.OnBarrierBroken 이벤트 발생
-            //   → Phase1ShieldPattern.onBarrierBroken 콜백 호출
-            //   → 방어막 VFX 제거 + 무적 해제 + 5초 딜타임 시작
-            ctx.DamageHandler.BreakBarrier();
+            ct.ThrowIfCancellationRequested();
 
+            // ── 파훼 → 딜타임 대기 ────────────────────────────────────────
+            ctx.DamageHandler.BreakBarrier();
             ctx.SetPanelPatternCleared();
-            Log("MultiPanel pattern complete — all panels destroyed. Barrier broken!");
+            Log($"MultiPanel broken! Deal time {_dealTimeDuration}s.");
+
+            // ★ 핵심 변경
+            await UniTask.Delay(
+                System.TimeSpan.FromSeconds(_dealTimeDuration), cancellationToken: ct);
+
+            Log("MultiPanel pattern complete. Handing off to next pattern.");
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // 소환 이동 헬퍼
-        // ─────────────────────────────────────────────────────────────────
+        // ── 이하 헬퍼 메서드는 원본과 동일 ─────────────────────────────────
 
         private async UniTaskVoid SpawnAndMoveAsync(
             GameObject panel, Vector3 bossPos, int slotIdx, CancellationToken ct)
@@ -172,8 +151,7 @@ namespace BossSystem.Patterns
             if (panel == null) return;
 
             Vector3 riseTarget = bossPos + Vector3.up * _spawnRiseHeight;
-            await LaserUtility.MoveTowardsAsync(
-                panel.transform, riseTarget, _riseSpeed, ct);
+            await LaserUtility.MoveTowardsAsync(panel.transform, riseTarget, _riseSpeed, ct);
 
             if (panel == null || ct.IsCancellationRequested) return;
 
@@ -181,13 +159,8 @@ namespace BossSystem.Patterns
                 ? (Vector3)_slotPositions[slotIdx]
                 : riseTarget;
 
-            await LaserUtility.MoveTowardsAsync(
-                panel.transform, slotPos, _moveToSlotSpeed, ct);
+            await LaserUtility.MoveTowardsAsync(panel.transform, slotPos, _moveToSlotSpeed, ct);
         }
-
-        // ─────────────────────────────────────────────────────────────────
-        // Type A: 조준 → 발사 빔(두꺼운) → 랜덤 X이동 반복
-        // ─────────────────────────────────────────────────────────────────
 
         private async UniTask RunTypeALoopAsync(
             GameObject panel, BossContext ctx, CancellationToken ct)
@@ -200,16 +173,13 @@ namespace BossSystem.Patterns
                 warnLine   = warnLineGo.GetComponent<LineRenderer>();
             }
 
-            GameObject fireBeamPrefab = _fireBeamLinePrefab != null
-                ? _fireBeamLinePrefab : _beamLinePrefab;
-
+            GameObject fireBeamPrefab = _fireBeamLinePrefab != null ? _fireBeamLinePrefab : _beamLinePrefab;
             GameObject fireBeamGo = null;
             LineRenderer fireBeam = null;
             if (fireBeamPrefab != null)
             {
                 fireBeamGo = Object.Instantiate(fireBeamPrefab);
                 fireBeam   = fireBeamGo.GetComponent<LineRenderer>();
-
                 if (fireBeam != null)
                 {
                     fireBeam.startWidth = _fireBeamWidth;
@@ -222,10 +192,8 @@ namespace BossSystem.Patterns
 
             try
             {
-                while (!ct.IsCancellationRequested && panel != null
-                       && panel.activeInHierarchy)
+                while (!ct.IsCancellationRequested && panel != null && panel.activeInHierarchy)
                 {
-                    // [조준] 얇은 경고선 FadeIn + 플레이어 추적
                     await LaserUtility.FadeInWarningLineAsync(
                         warnLine,
                         () => panel != null ? panel.transform.position : Vector3.zero,
@@ -235,7 +203,6 @@ namespace BossSystem.Patterns
                     if (panel == null || !panel.activeInHierarchy) break;
                     ct.ThrowIfCancellationRequested();
 
-                    // [발사 시작] 조준선 끄고 굵은 빔 켜기
                     LaserUtility.HideLine(warnLine);
 
                     Vector3 fireFrom = panel.transform.position;
@@ -249,53 +216,40 @@ namespace BossSystem.Patterns
                         fireBeam.enabled = true;
                     }
 
-                    // [발사 지속] 매 프레임 CircleCast DPS 데미지
                     float dps     = _beamDamageA / Mathf.Max(_fireDurationA, 0.01f);
                     float elapsed = 0f;
 
-                    while (elapsed < _fireDurationA
-                           && !ct.IsCancellationRequested
+                    while (elapsed < _fireDurationA && !ct.IsCancellationRequested
                            && panel != null && panel.activeInHierarchy)
                     {
                         LaserUtility.CircleCastAndDamage(
-                            fireFrom, fireDir,
-                            _castRadius, _castDistance,
+                            fireFrom, fireDir, _castRadius, _castDistance,
                             _playerLayer, dps * Time.deltaTime);
-
                         elapsed += Time.deltaTime;
                         await UniTask.Yield(PlayerLoopTiming.Update, ct);
                     }
 
                     if (fireBeam != null) fireBeam.enabled = false;
-
                     if (panel == null || !panel.activeInHierarchy) break;
 
-                    // [이동] 랜덤 X 이동
                     float   targetX = Random.Range(-_randomMoveRangeA, _randomMoveRangeA);
-                    Vector3 dest    = new Vector3(targetX, panel.transform.position.y,
-                                                  panel.transform.position.z);
-                    await LaserUtility.MoveTowardsAsync(
-                        panel.transform, dest, _randomMoveSpeedA, ct);
+                    Vector3 dest    = new Vector3(targetX, panel.transform.position.y, panel.transform.position.z);
+                    await LaserUtility.MoveTowardsAsync(panel.transform, dest, _randomMoveSpeedA, ct);
                 }
             }
             finally
             {
-                if (warnLineGo  != null) Object.Destroy(warnLineGo);
-                if (fireBeamGo  != null) Object.Destroy(fireBeamGo);
+                if (warnLineGo != null) Object.Destroy(warnLineGo);
+                if (fireBeamGo != null) Object.Destroy(fireBeamGo);
             }
         }
-
-        // ─────────────────────────────────────────────────────────────────
-        // Type B: 정지 조준 → 돌진
-        // ─────────────────────────────────────────────────────────────────
 
         private async UniTask RunTypeBLoopAsync(
             GameObject panel, BossContext ctx, CancellationToken ct)
         {
             try
             {
-                while (!ct.IsCancellationRequested && panel != null
-                       && panel.activeInHierarchy)
+                while (!ct.IsCancellationRequested && panel != null && panel.activeInHierarchy)
                 {
                     await UniTask.Delay(
                         System.TimeSpan.FromSeconds(_chargeAimDurationB), cancellationToken: ct);
@@ -323,8 +277,7 @@ namespace BossSystem.Patterns
                     prev, dest, _chargeMoveSpeedB * Time.deltaTime);
 
                 LaserUtility.BoxCastAndDamage(
-                    panel.transform.position, dir, 0.5f, 0.1f,
-                    _playerLayer, _chargeDamageB);
+                    panel.transform.position, dir, 0.5f, 0.1f, _playerLayer, _chargeDamageB);
 
                 if (Vector3.Distance(panel.transform.position, dest) < 0.05f)
                     hit = true;
@@ -333,14 +286,9 @@ namespace BossSystem.Patterns
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // Type C: 조준 → 2갈래 발사 빔(두꺼운) → 랜덤 X이동 반복
-        // ─────────────────────────────────────────────────────────────────
-
         private async UniTask RunTypeCLoopAsync(
             GameObject panel, BossContext ctx, CancellationToken ct)
         {
-            // 조준선 (얇음)
             GameObject warnLineGoL = null, warnLineGoR = null;
             LineRenderer warnLineL = null, warnLineR   = null;
 
@@ -348,12 +296,10 @@ namespace BossSystem.Patterns
             {
                 warnLineGoL = Object.Instantiate(_splitBeamLinePrefab);
                 warnLineL   = warnLineGoL.GetComponent<LineRenderer>();
-
                 warnLineGoR = Object.Instantiate(_splitBeamLinePrefab);
                 warnLineR   = warnLineGoR.GetComponent<LineRenderer>();
             }
 
-            // 발사 빔 (두꺼움)
             GameObject splitFirePrefab = _splitFireBeamLinePrefab != null
                 ? _splitFireBeamLinePrefab : _splitBeamLinePrefab;
 
@@ -364,7 +310,6 @@ namespace BossSystem.Patterns
             {
                 fireBeamGoL = Object.Instantiate(splitFirePrefab);
                 fireBeamL   = fireBeamGoL.GetComponent<LineRenderer>();
-
                 fireBeamGoR = Object.Instantiate(splitFirePrefab);
                 fireBeamR   = fireBeamGoR.GetComponent<LineRenderer>();
 
@@ -381,12 +326,10 @@ namespace BossSystem.Patterns
 
             try
             {
-                while (!ct.IsCancellationRequested && panel != null
-                       && panel.activeInHierarchy)
+                while (!ct.IsCancellationRequested && panel != null && panel.activeInHierarchy)
                 {
                     float half = _splitAngle * 0.5f;
 
-                    // [조준] 얇은 경고선 2갈래 FadeIn + 플레이어 추적
                     await UniTask.WhenAll(
                         LaserUtility.FadeInWarningLineAsync(
                             warnLineL,
@@ -403,15 +346,14 @@ namespace BossSystem.Patterns
                     if (panel == null || !panel.activeInHierarchy) break;
                     ct.ThrowIfCancellationRequested();
 
-                    // [발사 시작] 조준선 끄고 굵은 빔 2갈래 켜기
                     LaserUtility.HideLine(warnLineL);
                     LaserUtility.HideLine(warnLineR);
 
-                    Vector3 fireFrom   = panel.transform.position;
-                    Vector3 snapDestL  = GetSplitTarget(panel, ctx, -half);
-                    Vector3 snapDestR  = GetSplitTarget(panel, ctx, +half);
-                    Vector2 fireDirL   = ((Vector2)snapDestL - (Vector2)fireFrom).normalized;
-                    Vector2 fireDirR   = ((Vector2)snapDestR - (Vector2)fireFrom).normalized;
+                    Vector3 fireFrom  = panel.transform.position;
+                    Vector3 snapDestL = GetSplitTarget(panel, ctx, -half);
+                    Vector3 snapDestR = GetSplitTarget(panel, ctx, +half);
+                    Vector2 fireDirL  = ((Vector2)snapDestL - (Vector2)fireFrom).normalized;
+                    Vector2 fireDirR  = ((Vector2)snapDestR - (Vector2)fireFrom).normalized;
 
                     if (fireBeamL != null)
                     {
@@ -426,38 +368,28 @@ namespace BossSystem.Patterns
                         fireBeamR.enabled = true;
                     }
 
-                    // [발사 지속] 매 프레임 CircleCast DPS × 2갈래
                     float dps     = _beamDamageC / Mathf.Max(_fireDurationC, 0.01f);
                     float elapsed = 0f;
 
-                    while (elapsed < _fireDurationC
-                           && !ct.IsCancellationRequested
+                    while (elapsed < _fireDurationC && !ct.IsCancellationRequested
                            && panel != null && panel.activeInHierarchy)
                     {
                         float frameDmg = dps * Time.deltaTime;
-
                         LaserUtility.CircleCastAndDamage(
-                            fireFrom, fireDirL,
-                            _castRadius, _castDistance, _playerLayer, frameDmg);
+                            fireFrom, fireDirL, _castRadius, _castDistance, _playerLayer, frameDmg);
                         LaserUtility.CircleCastAndDamage(
-                            fireFrom, fireDirR,
-                            _castRadius, _castDistance, _playerLayer, frameDmg);
-
+                            fireFrom, fireDirR, _castRadius, _castDistance, _playerLayer, frameDmg);
                         elapsed += Time.deltaTime;
                         await UniTask.Yield(PlayerLoopTiming.Update, ct);
                     }
 
                     if (fireBeamL != null) fireBeamL.enabled = false;
                     if (fireBeamR != null) fireBeamR.enabled = false;
-
                     if (panel == null || !panel.activeInHierarchy) break;
 
-                    // [이동] 랜덤 X 이동
                     float   targetX = Random.Range(-_randomMoveRangeC, _randomMoveRangeC);
-                    Vector3 dest    = new Vector3(targetX, panel.transform.position.y,
-                                                  panel.transform.position.z);
-                    await LaserUtility.MoveTowardsAsync(
-                        panel.transform, dest, _randomMoveSpeedC, ct);
+                    Vector3 dest    = new Vector3(targetX, panel.transform.position.y, panel.transform.position.z);
+                    await LaserUtility.MoveTowardsAsync(panel.transform, dest, _randomMoveSpeedC, ct);
                 }
             }
             finally
@@ -472,8 +404,7 @@ namespace BossSystem.Patterns
         private Vector3 GetSplitTarget(GameObject panel, BossContext ctx, float angleOffset)
         {
             if (panel == null) return Vector3.zero;
-            Vector3 baseDir  = (ctx.PlayerTransform.position
-                                - panel.transform.position).normalized;
+            Vector3 baseDir   = (ctx.PlayerTransform.position - panel.transform.position).normalized;
             float   baseAngle = Mathf.Atan2(baseDir.y, baseDir.x) * Mathf.Rad2Deg;
             float   rad       = (baseAngle + angleOffset) * Mathf.Deg2Rad;
             Vector3 dir       = new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
