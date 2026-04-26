@@ -29,9 +29,9 @@ MonoBehaviour:
   _wallCastLen: 30
   _playerLayer:
     serializedVersion: 2
-    m_Bits: 0
-  _interactObjPrefab: {fileID: 2572910350527434799, guid: e2ac60d57e9b43e4b88a10fec1c29f30, type: 3}
-  _interactOffset: {x: 0, y: -3}
+    m_Bits: 64
+  _interactObjPrefab: {fileID: 2418765355204226605, guid: 387f1a0704264ab4eab2cb12f06cf20b, type: 3}
+  _interactOffset: {x: 0, y: -8.01}
   _qteTimeLimit: 8
   _successVfxPrefab: {fileID: 0}
   _failVfxPrefab: {fileID: 0}

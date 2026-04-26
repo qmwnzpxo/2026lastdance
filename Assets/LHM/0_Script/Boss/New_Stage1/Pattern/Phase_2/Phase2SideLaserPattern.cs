@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 
@@ -25,7 +25,8 @@ namespace BossSystem.Patterns
         [SerializeField] private LayerMask _playerLayer;
 
         [Header("VFX")]
-        [SerializeField] private LineRenderer _warningLinePrefab;
+        // ★ LineRenderer → GameObject 로 변경: 인스펙터에서 에셋(프리팹) 자유롭게 연결 가능
+        [SerializeField] private GameObject _warningLinePrefab;
         [SerializeField] private Color _warningColor = new Color(1f, 0.5f, 0f, 0.7f);
         [SerializeField] private Color _fireColor = Color.red;
 
@@ -38,8 +39,14 @@ namespace BossSystem.Patterns
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
-            LineRenderer warnLine = _warningLinePrefab != null
-                ? Object.Instantiate(_warningLinePrefab) : null;
+            // ★ GameObject로 생성 후 GetComponent로 LineRenderer 획득
+            GameObject warnLineGo = null;
+            LineRenderer warnLine = null;
+            if (_warningLinePrefab != null)
+            {
+                warnLineGo = Object.Instantiate(_warningLinePrefab);
+                warnLine   = warnLineGo.GetComponent<LineRenderer>();
+            }
 
             try
             {
@@ -79,7 +86,8 @@ namespace BossSystem.Patterns
             }
             finally
             {
-                if (warnLine != null) Object.Destroy(warnLine.gameObject);
+                // ★ GameObject 기준으로 파괴
+                if (warnLineGo != null) Object.Destroy(warnLineGo);
             }
         }
     }

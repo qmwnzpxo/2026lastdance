@@ -26,7 +26,7 @@ MonoBehaviour:
   - {x: -4, y: 3}
   - {x: 0, y: 3}
   - {x: 4, y: 3}
-  _beamLinePrefab: {fileID: 0}
+  _beamLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
   _beamColorA: {r: 1, g: 0, b: 0, a: 1}
   _aimDurationA: 1
   _fireDurationA: 0.3
@@ -37,7 +37,7 @@ MonoBehaviour:
   _chargeMoveSpeedB: 12
   _chargeDamageB: 20
   _chargeDistanceB: 20
-  _splitBeamLinePrefab: {fileID: 0}
+  _splitBeamLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
   _beamColorC: {r: 0, g: 1, b: 0, a: 1}
   _aimDurationC: 1
   _fireDurationC: 0.3

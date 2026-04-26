@@ -12,7 +12,8 @@ GameObject:
   - component: {fileID: 1900039815503846716}
   - component: {fileID: 640195625356514710}
   - component: {fileID: 7815186072320254876}
-  m_Layer: 0
+  - component: {fileID: 3124037156580545987}
+  m_Layer: 7
   m_Name: C
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -117,10 +118,25 @@ CapsuleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Size: {x: 1, y: 2}
   m_Direction: 0
+--- !u!114 &3124037156580545987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3954088109232403542}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fbdd7b6306b9bb41bff7dfc01462e7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maxHP: 1
+  _spriteRenderer: {fileID: 0}
+  _destroyVfxPrefab: {fileID: 0}

@@ -408,22 +408,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32a57007777c964409e08116ab0ea09a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rigid2d: {fileID: 0}
-  playerTransform: {fileID: 0}
-  moveSpeed: 2
-  dashSpeed: 1
-  dashDuration: 2
-  pointA: {fileID: 1646869175}
-  pointB: {fileID: 372723582}
-  dashRange: 1
-  maxHp: 2
-  currentHp: 2
-  attackDamage: 2
-  attackRange: 2
-  attackCooldown: 2
-  isDead: 0
-  isAttacking: 0
-  isPlayerDetected: 0
 --- !u!61 &101601674
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -579,12 +563,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82cf694a2fbbca54d966e25149303b02, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackTransform: {fileID: 801680122}
-  attackBoxSize: {x: 0.8, y: 0.8}
-  attackDelay: 0.2
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 0
 --- !u!114 &101601680
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -597,8 +575,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb3e3729bb9e76940b13f23a16491044, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  detectionRangeX: 10
-  detectionRangeY: 3
 --- !u!1 &153410726
 GameObject:
   m_ObjectHideFlags: 0
@@ -730,11 +706,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5ca7d8187cffb245b4a710b20386e04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHp: 150
-  currentHp: 0
-  bossShield: {fileID: 1811896292}
-  lazerPatten: {fileID: 1837892323}
-  panel: {fileID: 1382195996}
 --- !u!61 &162866204
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -989,12 +960,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 1
-  isLazer: 0
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &338485301
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1234,12 +1199,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 1
-  isLazer: 0
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &372737265
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1609,12 +1568,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 0
-  isLazer: 1
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &561266496
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -2157,12 +2110,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 1
-  isLazer: 0
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &687900368
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -3084,12 +3031,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 1
-  isLazer: 0
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &775070287
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -3167,83 +3108,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 101601678}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &836235489
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 1383491044810759787, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: attackDelay
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 22.57
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -2.9850125
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4507467537571500194, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4533291742678393853, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.00025422973
-      objectReference: {fileID: 0}
-    - target: {fileID: 4533291742678393853, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5893438977847921965, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: dashDuration
-      value: 0.05
-      objectReference: {fileID: 0}
-    - target: {fileID: 9078185286717551111, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_Name
-      value: RangeEnemy&point
-      objectReference: {fileID: 0}
-    - target: {fileID: 9130108575980738002, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 77c068d83693e5a409ebe9f6e39c1b99, type: 3}
 --- !u!1 &882722996
 GameObject:
   m_ObjectHideFlags: 0
@@ -4407,12 +4271,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 1
-  isLazer: 0
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &1162493143
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -4893,9 +4751,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: -0.53550863
+    y: -1.9324325
     width: 1
-    height: 2.0729365
+    height: 4.864865
   near clip plane: 0.1
   far clip plane: 5000
   field of view: 60
@@ -5434,12 +5292,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 0
-  isLazer: 1
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &1381260967
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -5515,39 +5367,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57b8aba858b91f34487dd0477014c90f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  panel:
-  - {fileID: 1384184886}
-  - {fileID: 338485295}
-  - {fileID: 2066187828}
-  - {fileID: 775070281}
-  - {fileID: 372737259}
-  - {fileID: 1162493137}
-  - {fileID: 687900362}
-  panelTransform:
-  - {fileID: 1016758472}
-  - {fileID: 726508793}
-  - {fileID: 386862435}
-  - {fileID: 724726270}
-  - {fileID: 77260446}
-  - {fileID: 351209763}
-  - {fileID: 551836308}
-  panelmoveSpeed: 10
-  currentHp: 1
-  objisDead: 0
-  lineColor: {r: 1, g: 0, b: 0, a: 1}
-  lineWidth: 0.05
-  projectilePrefab: {fileID: 8634794389479141026, guid: e4717d201b7c7a343832886cd5f6c779, type: 3}
-  enemyBase: {fileID: 101601673}
-  imDestorypanel: 00000000000000
-  panelDis: 0
-  bossTransform: {fileID: 1382195997}
-  destorypanel1: 0
-  destorypanel2: 0
-  destorypanel3: 0
-  destorypanel4: 0
-  destorypanel5: 0
-  destorypanel6: 0
-  destorypanel7: 0
 --- !u!4 &1382195997
 Transform:
   m_ObjectHideFlags: 0
@@ -5677,12 +5496,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 1
-  isLazer: 0
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &1384184892
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -6398,7 +6211,7 @@ Transform:
   m_GameObject: {fileID: 1476033905}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 8, y: -2, z: 0}
+  m_LocalPosition: {x: 2.49, y: -2, z: 0}
   m_LocalScale: {x: 2, y: 3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6665,12 +6478,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 0
-  isLazer: 1
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &1645482408
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -7339,12 +7146,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 0
-  isLazer: 1
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &1808846794
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -7435,12 +7236,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db7243f87335a5a4f95a72620ea8a242, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Shield: {fileID: 1909257132}
-  lazerPatten: {fileID: 1837892323}
-  alphaMax: 0.6
-  alphaMin: 0.2
-  alphaStep: 0.2
-  stepInterval: 0.2
 --- !u!1 &1816126133
 GameObject:
   m_ObjectHideFlags: 0
@@ -7690,29 +7485,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efd20e9ceb3414b4c9b3ccdda4498781, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lazerObject:
-  - {fileID: 1645482401}
-  - {fileID: 1381260961}
-  - {fileID: 1808846787}
-  - {fileID: 561266489}
-  lazers:
-  - {fileID: 758966862}
-  - {fileID: 1681767958}
-  - {fileID: 1822725747}
-  - {fileID: 1764436833}
-  firstScle: 0.1
-  lastScale: 1
-  RotateSpeed: 300
-  lineWidth: 0.05
-  lineColor: {r: 1, g: 0, b: 0, a: 1}
-  lazerThickness: 0.1
-  destroyTest0: 0
-  destroyTest1: 0
-  destroyTest2: 0
-  destroyTest3: 0
-  destroy: 00000000
-  allDestory: 0
-  imDestory: 00000000
 --- !u!4 &1837892324
 Transform:
   m_ObjectHideFlags: 0
@@ -8802,12 +8574,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57891be0d849a14ea1b5dc933102171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHp: 1
-  objisDead: 0
-  isPanel: 1
-  isLazer: 0
-  isLazerDead: 00000000
-  isPanelDead: 00000000000000
 --- !u!61 &2066187834
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -8870,7 +8636,6 @@ SceneRoots:
   - {fileID: 630540448}
   - {fileID: 768086952}
   - {fileID: 692407480}
-  - {fileID: 836235489}
   - {fileID: 657497527}
   - {fileID: 1219386491}
   - {fileID: 607390116}

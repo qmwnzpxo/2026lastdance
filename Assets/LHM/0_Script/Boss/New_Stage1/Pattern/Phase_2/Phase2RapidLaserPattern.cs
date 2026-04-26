@@ -1,14 +1,3 @@
-﻿// ──────────────────────────────────────────────────────────────────────────
-// Phase2RapidLaserPattern.cs — PanelHealth 파훼 판정 연동 패치
-//
-// 변경 요약:
-//   · RunDroneAsync: 드론 생성 직후 PanelHealth 컴포넌트를 가져와
-//     OnPanelDestroyed 이벤트에 onDestroyed 콜백 연결
-//   · 플레이어가 드론을 직접 파괴하면 → PanelHealth.Die()
-//     → OnPanelDestroyed → onDestroyed() → destroyedCount++
-//   · 자연 소멸(경고→발사→finally Destroy)도 onDestroyed 호출 유지
-// ──────────────────────────────────────────────────────────────────────────
-
 using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
@@ -39,7 +28,8 @@ namespace BossSystem.Patterns
 
         [Header("VFX")]
         [SerializeField] private GameObject _dronePrefab;
-        [SerializeField] private LineRenderer _warningLinePrefab;
+        // ★ LineRenderer → GameObject 로 변경: 인스펙터에서 에셋(프리팹) 자유롭게 연결 가능
+        [SerializeField] private GameObject _warningLinePrefab;
         [SerializeField] private Color _warningColor = new Color(1f, 0f, 0f, 0.8f);
         [SerializeField] private Color _fireColor = Color.red;
 
@@ -69,7 +59,6 @@ namespace BossSystem.Patterns
 
                 int capturedIdx = i;
 
-                // ★ PanelHealth 연동: 플레이어가 선파괴 시에도 카운트 반영
                 var health = drone.GetComponent<PanelHealth>();
                 if (health != null)
                 {
@@ -88,7 +77,6 @@ namespace BossSystem.Patterns
                 RunDroneAsync(drone, health, targetPos, ctx, ct,
                     onDestroyed: () =>
                     {
-                        // 자연 소멸(발사 후) 카운트
                         if (!droneDestroyed[capturedIdx])
                         {
                             droneDestroyed[capturedIdx] = true;
@@ -100,7 +88,6 @@ namespace BossSystem.Patterns
                     System.TimeSpan.FromSeconds(_spawnInterval), cancellationToken: ct);
             }
 
-            // 전부 파괴 대기 → 파훼 판정
             while (!ct.IsCancellationRequested)
             {
                 if (destroyedCount >= _droneCount)
@@ -115,7 +102,6 @@ namespace BossSystem.Patterns
                 if (d != null) Object.Destroy(d);
         }
 
-        /// <summary>드론 1개 생명주기: 이동 → 경고 → 발사 → 파괴</summary>
         private async UniTaskVoid RunDroneAsync(
             GameObject drone,
             PanelHealth health,
@@ -126,20 +112,23 @@ namespace BossSystem.Patterns
         {
             if (drone == null) return;
 
-            LineRenderer warnLine = _warningLinePrefab != null
-                ? Object.Instantiate(_warningLinePrefab) : null;
+            // ★ GameObject로 생성 후 GetComponent로 LineRenderer 획득
+            GameObject warnLineGo = null;
+            LineRenderer warnLine = null;
+            if (_warningLinePrefab != null)
+            {
+                warnLineGo = Object.Instantiate(_warningLinePrefab);
+                warnLine   = warnLineGo.GetComponent<LineRenderer>();
+            }
 
             try
             {
-                // 1. 이동
                 await LaserUtility.MoveTowardsAsync(
                     drone.transform, targetPos, _droneMoveSpeed, ct);
 
-                // 플레이어에게 이미 파괴되었으면 조기 종료
                 if (drone == null || !drone.activeInHierarchy || ct.IsCancellationRequested)
                     return;
 
-                // 2. 경고 페이드인
                 await LaserUtility.FadeInWarningLineAsync(
                     warnLine,
                     () => drone != null ? drone.transform.position : Vector3.zero,
@@ -149,7 +138,6 @@ namespace BossSystem.Patterns
                 if (drone == null || !drone.activeInHierarchy || ct.IsCancellationRequested)
                     return;
 
-                // 3. 발사
                 Vector3 predicted = GetLeadTarget(ctx);
                 if (warnLine != null)
                     LaserUtility.SetLineImmediate(warnLine,
@@ -165,9 +153,10 @@ namespace BossSystem.Patterns
             }
             finally
             {
-                if (warnLine != null) Object.Destroy(warnLine.gameObject);
+                // ★ GameObject 기준으로 파괴
+                if (warnLineGo != null) Object.Destroy(warnLineGo);
                 if (drone != null) Object.Destroy(drone);
-                onDestroyed?.Invoke(); // 자연 소멸 카운트
+                onDestroyed?.Invoke();
             }
         }
 

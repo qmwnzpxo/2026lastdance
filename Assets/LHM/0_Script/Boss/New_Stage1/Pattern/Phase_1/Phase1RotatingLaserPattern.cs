@@ -6,36 +6,23 @@ namespace BossSystem.Patterns
 {
     // ───────────────────────────────────────────────────────────────────────
     // Phase 1 — 패턴 1. 중앙 회전 레이저 (Swoo Style) [Sequential]
-    //
-    // 흐름:
-    //   1. 보스가 화면 중앙으로 이동
-    //   2. 차지 VFX 재생 (_chargeWaitTime 대기)
-    //   3. 터렛 연결부(TurretJoint) 2개가 보스에 부착 생성 → 공격 가능
-    //   4. 4방향 굵은 레이저 발사 + 시계/반시계 회전 루프
-    //   5. 양쪽 Joint 모두 파괴 시 레이저 정지 → 파훼 완료
-    //
-    // 의존 컴포넌트:
-    //   · _turretJointPrefab : PanelHealth 컴포넌트가 붙어 있어야 함
-    //   · _laserLinePrefab   : LineRenderer 프리팹
-    //   · LaserUtility       : 기존 유틸 재사용
     // ───────────────────────────────────────────────────────────────────────
     [CreateAssetMenu(fileName = "Pattern_Phase1_RotatingLaser",
                      menuName = "BossSystem/Patterns/Phase1_RotatingLaser")]
     public class Phase1RotatingLaserPattern : BossPatternBase
     {
-        // ── Inspector ─────────────────────────────────────────────────────
-
         [Header("Movement")]
         [Tooltip("보스가 이동할 중앙 월드 좌표")]
         [SerializeField] private Vector2 _centerPosition = Vector2.zero;
         [SerializeField] private float   _moveToCenterSpeed = 5f;
 
         [Header("Laser")]
+        // ★ LineRenderer → GameObject 로 변경: 인스펙터에서 에셋(프리팹) 자유롭게 연결 가능
         [Tooltip("레이저 LineRenderer 프리팹")]
-        [SerializeField] private LineRenderer _laserLinePrefab;
-        [SerializeField] private Color        _laserColor   = Color.cyan;
-        [SerializeField] private float        _laserLength  = 25f;
-        [SerializeField] private float        _laserWidth   = 0.4f;
+        [SerializeField] private GameObject _laserLinePrefab;
+        [SerializeField] private Color      _laserColor  = Color.cyan;
+        [SerializeField] private float      _laserLength = 25f;
+        [SerializeField] private float      _laserWidth  = 0.4f;
 
         [Header("Rotation")]
         [Tooltip("초당 회전 각도. 양수 = 반시계, 음수 = 시계")]
@@ -65,10 +52,6 @@ namespace BossSystem.Patterns
         [Tooltip("파훼 완료 후 다음 패턴으로 넘어가기 전 대기 (초)")]
         [SerializeField] private float _breakCelebrationTime = 1f;
 
-        // ─────────────────────────────────────────────────────────────────
-        // OnExecuteAsync
-        // ─────────────────────────────────────────────────────────────────
-
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
             // ── 1. 중앙 이동 ──────────────────────────────────────────────
@@ -97,8 +80,8 @@ namespace BossSystem.Patterns
             ct.ThrowIfCancellationRequested();
 
             // ── 3. 터렛 연결부 소환 ───────────────────────────────────────
-            int jointCount    = _jointOffsets?.Length ?? 0;
-            var joints        = new GameObject[jointCount];
+            int jointCount     = _jointOffsets?.Length ?? 0;
+            var joints         = new GameObject[jointCount];
             int destroyedCount = 0;
 
             for (int i = 0; i < jointCount; i++)
@@ -125,19 +108,27 @@ namespace BossSystem.Patterns
 
             // ── 4. 레이저 4개 생성 ────────────────────────────────────────
             const int LASER_COUNT = 4;
-            var lasers = new LineRenderer[LASER_COUNT];
+            var laserGos = new GameObject[LASER_COUNT];   // ★ GameObject 배열로 관리
+            var lasers   = new LineRenderer[LASER_COUNT];
 
             for (int i = 0; i < LASER_COUNT; i++)
             {
                 if (_laserLinePrefab == null) break;
 
-                var lr         = Object.Instantiate(_laserLinePrefab);
-                lr.startWidth  = _laserWidth;
-                lr.endWidth    = _laserWidth;
-                lr.startColor  = _laserColor;
-                lr.endColor    = _laserColor;
-                lr.enabled     = true;
-                lasers[i]      = lr;
+                // ★ GameObject로 생성 후 GetComponent로 LineRenderer 획득
+                var go         = Object.Instantiate(_laserLinePrefab);
+                var lr         = go.GetComponent<LineRenderer>();
+                laserGos[i]    = go;
+
+                if (lr != null)
+                {
+                    lr.startWidth = _laserWidth;
+                    lr.endWidth   = _laserWidth;
+                    lr.startColor = _laserColor;
+                    lr.endColor   = _laserColor;
+                    lr.enabled    = true;
+                }
+                lasers[i] = lr;
             }
 
             // ── 5. 회전 루프 ──────────────────────────────────────────────
@@ -149,14 +140,12 @@ namespace BossSystem.Patterns
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    // 파훼 조건: 모든 Joint 파괴
                     if (jointCount > 0 && destroyedCount >= jointCount)
                     {
                         Log("All joints destroyed — pattern broken!");
                         break;
                     }
 
-                    // 스핀업 가속
                     elapsed     += Time.deltaTime;
                     float tRatio = elapsed < _spinUpDuration
                         ? (elapsed / _spinUpDuration)
@@ -164,15 +153,14 @@ namespace BossSystem.Patterns
 
                     currentAngle += _rotationSpeed * tRatio * Time.deltaTime;
 
-                    // 레이저 방향/데미지 갱신
                     for (int i = 0; i < LASER_COUNT; i++)
                     {
                         if (lasers[i] == null) continue;
 
-                        float   rad   = (currentAngle + i * 90f) * Mathf.Deg2Rad;
-                        Vector3 dir   = new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
-                        Vector3 from  = ctx.BossTransform.position;
-                        Vector3 to    = from + dir * _laserLength;
+                        float   rad  = (currentAngle + i * 90f) * Mathf.Deg2Rad;
+                        Vector3 dir  = new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
+                        Vector3 from = ctx.BossTransform.position;
+                        Vector3 to   = from + dir * _laserLength;
 
                         lasers[i].SetPosition(0, from);
                         lasers[i].SetPosition(1, to);
@@ -187,8 +175,9 @@ namespace BossSystem.Patterns
             }
             finally
             {
-                foreach (var lr in lasers)
-                    if (lr != null) Object.Destroy(lr.gameObject);
+                // ★ GameObject 기준으로 파괴
+                foreach (var go in laserGos)
+                    if (go != null) Object.Destroy(go);
 
                 foreach (var j in joints)
                     if (j != null) Object.Destroy(j);

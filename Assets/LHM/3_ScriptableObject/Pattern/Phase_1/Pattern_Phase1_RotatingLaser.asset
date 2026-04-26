@@ -15,13 +15,13 @@ MonoBehaviour:
   _patternId: 8
   _patternType: 1
   preDelay: 0
-  _centerPosition: {x: 0, y: 0}
+  _centerPosition: {x: 7.8, y: 6.4}
   _moveToCenterSpeed: 5
-  _laserLinePrefab: {fileID: 0}
+  _laserLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
   _laserColor: {r: 0, g: 1, b: 0.84967804, a: 1}
   _laserLength: 25
   _laserWidth: 0.4
-  _rotationSpeed: 45
+  _rotationSpeed: 20
   _spinUpDuration: 1.5
   _laserDPS: 30
   _laserThickness: 0.3
@@ -29,7 +29,7 @@ MonoBehaviour:
   _playerLayer:
     serializedVersion: 2
     m_Bits: 64
-  _turretJointPrefab: {fileID: 369848673549158141, guid: 90a825150be83224c892b9058b97c664, type: 3}
+  _turretJointPrefab: {fileID: 2572910350527434799, guid: e2ac60d57e9b43e4b88a10fec1c29f30, type: 3}
   _jointOffsets:
   - {x: -1.2, y: 0.5}
   - {x: 1.2, y: 0.5}

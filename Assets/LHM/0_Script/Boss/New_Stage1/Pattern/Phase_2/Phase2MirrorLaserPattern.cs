@@ -1,9 +1,10 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 
 namespace BossSystem.Patterns
-{ // ───────────────────────────────────────────────────────────────────────
+{
+    // ───────────────────────────────────────────────────────────────────────
     // Phase 2-2 — 거울 반사 레이저 (Sequential)
     // ───────────────────────────────────────────────────────────────────────
 
@@ -25,7 +26,8 @@ namespace BossSystem.Patterns
         [SerializeField] private LayerMask _playerLayer;
 
         [Header("VFX")]
-        [SerializeField] private LineRenderer _laserLinePrefab;
+        // ★ LineRenderer → GameObject 로 변경: 인스펙터에서 에셋(프리팹) 자유롭게 연결 가능
+        [SerializeField] private GameObject _laserLinePrefab;
         [SerializeField] private Color _laserColor = Color.red;
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
@@ -49,12 +51,17 @@ namespace BossSystem.Patterns
             var reflectTcs = new UniTaskCompletionSource();
             mirror.OnReflectedToBoss += () => reflectTcs.TrySetResult();
 
-            LineRenderer laserLine = _laserLinePrefab != null
-                ? Object.Instantiate(_laserLinePrefab) : null;
+            // ★ GameObject로 생성 후 GetComponent로 LineRenderer 획득
+            GameObject laserLineGo = null;
+            LineRenderer laserLine = null;
+            if (_laserLinePrefab != null)
+            {
+                laserLineGo = Object.Instantiate(_laserLinePrefab);
+                laserLine   = laserLineGo.GetComponent<LineRenderer>();
+            }
 
             try
             {
-                // 충전 대기 (전조 연출)
                 Log($"Charging laser... ({_chargeTime}s)");
                 await UniTask.Delay(System.TimeSpan.FromSeconds(_chargeTime), cancellationToken: ct);
                 ct.ThrowIfCancellationRequested();
@@ -74,7 +81,8 @@ namespace BossSystem.Patterns
             }
             finally
             {
-                if (laserLine != null) Object.Destroy(laserLine.gameObject);
+                // ★ GameObject 기준으로 파괴
+                if (laserLineGo != null) Object.Destroy(laserLineGo);
                 if (mirrorGo != null) Object.Destroy(mirrorGo);
             }
         }
