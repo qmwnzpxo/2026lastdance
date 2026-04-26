@@ -183,7 +183,13 @@ namespace BossSystem.Patterns
                     if (j != null) Object.Destroy(j);
             }
 
-            // ── 6. 파훼 연출 대기 ─────────────────────────────────────────
+            // ── 6. 파훼 판정 → 방어막 OFF ────────────────────────────────
+            // BreakBarrier() → DamageHandler.OnBarrierBroken
+            //   → BossBlackboard.OnBarrierBroken
+            //   → Phase1ShieldPattern의 breakTcs.TrySetResult() 호출
+            //   → 방어막 VFX 제거 + 무적 해제
+            ctx.DamageHandler.BreakBarrier();
+
             await UniTask.Delay(
                 System.TimeSpan.FromSeconds(_breakCelebrationTime), cancellationToken: ct);
 
