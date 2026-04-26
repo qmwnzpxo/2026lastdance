@@ -41,6 +41,7 @@ public class PlayerMove : MonoBehaviour
     private float verticalInput;
     private bool isTouchingCeiling;   // PlayerMove 전용 (외부에 불필요)
     private bool wasTouchingCeiling;
+    private bool isWallSildeDown; // 벽 슬라이딩 중 아래 입력을 하는지 여부 (애니메이션 전환용)
     private float wallJumpTime = 0.1f;
     private float wallJumpCounter = 0f;
     private int wallJumpDirection;
@@ -157,16 +158,29 @@ public class PlayerMove : MonoBehaviour
     {
         if (!state.isWallSliding) return;
 
+        bool pressingTowardWall   = (state.isTouchingLWall && moveInput < -0.1f)
+                                  ||(state.isTouchingRWall && moveInput >  0.1f);
+        bool pressingAwayFromWall = (state.isTouchingLWall && moveInput >  0.1f)
+                                  ||(state.isTouchingRWall && moveInput < -0.1f);
+
+
         float targetSlideSpeed;
-        if (verticalInput > 0)
+
+        if (verticalInput > 0 || pressingTowardWall)
         {
             targetSlideSpeed = -wallSlideSpeedUp;
+            isWallSildeDown = state.isTouchingRWall;
         }
-        else if (verticalInput < 0)
+        else if (verticalInput < 0 || pressingAwayFromWall)
         {
             targetSlideSpeed = -wallSlideSpeedDown;
+            isWallSildeDown = !state.isTouchingRWall;
         }
-        else targetSlideSpeed = -wallSlideSpeed;
+        else
+        {
+            targetSlideSpeed = -wallSlideSpeed;
+            isWallSildeDown = state.isTouchingRWall;
+        }
 
         float smoothedY = Mathf.Lerp(
             rb.linearVelocity.y, targetSlideSpeed, Time.fixedDeltaTime * 10f);
@@ -268,6 +282,9 @@ public class PlayerMove : MonoBehaviour
     {
         if (spriteRenderer == null) return;
 
+        // 벽 슬라이딩 중에는 이동 방향과 상관없이 스프라이트를 고정 (벽 방향으로 회전하기 때문)
+        if(state.isWallSliding) return;
+
         spriteRenderer.flipX = flipX;
     }
 
@@ -285,11 +302,21 @@ public class PlayerMove : MonoBehaviour
         if (spriteRenderer == null) return;
 
         if (state.isTouchingLWall && !state.isGrounded)
+        {
             spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, -90);
+            spriteRenderer.flipX = isWallSildeDown; // 벽 슬라이딩 중 아래 입력 시 스프라이트를 아래로 뒤집음
+        }
         else if (state.isTouchingRWall && !state.isGrounded)
+        {
             spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 90);
+            spriteRenderer.flipX = isWallSildeDown; // 벽 슬라이딩 중 아래 입력 시 스프라이트를 아래로 뒤집음
+        }
         else
+        {
             spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 0);
+            if(!state.isOnCeiling)
+                spriteRenderer.flipY = false;
+        }
     }
 
     #endregion

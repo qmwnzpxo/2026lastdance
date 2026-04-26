@@ -10,8 +10,9 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private Transform attackTransform;
     [SerializeField] private Vector2   attackBoxSize     = new Vector2(1f, 1f);
     [SerializeField] private float     attackBoxDistance = 1f;
-    [SerializeField] private float     attackSecondHitDelay = 0.3f;
-    //[SerializeField] private float     attackActiveDuration = 0.12f;
+    [SerializeField] private float     attackSecondHitDelay = 0.28f;
+    [SerializeField] private float     attackfloatHitDelay = 0.15f;
+    [SerializeField] private float     attackActiveDuration = 0.1f;
     [SerializeField] private LayerMask enemyLayer;
 
     public float attackRepeatTime = 2;
@@ -76,37 +77,50 @@ public class PlayerCombat : MonoBehaviour
         PerformAttack().Forget();
     }
 
-  private async UniTaskVoid PerformAttack()
-  {
-    state.isAttacking = true;
-
-    ani.Attack();
-
-    Vector2 attackPos = (Vector2)attackTransform.position
-                      + (Vector2)attackTransform.right * attackBoxDistance;
-    if (state.isGrounded)
+    private async UniTaskVoid PerformAttack()
     {
-      for (int i = 0; i < attackRepeatTime; i++)
-      {
-        ExecuteAttackBox(attackPos);
-        await UniTask.WaitForSeconds(attackSecondHitDelay / attackRepeatTime,
-            cancellationToken: this.destroyCancellationToken);
-      }
-    }
-    else if(!state.isGrounded)
-    {
-      ExecuteAttackBox(attackPos); 
-      await UniTask.WaitForSeconds(attackSecondHitDelay,
-            cancellationToken: this.destroyCancellationToken);
-    }
+        state.isAttacking = true;
 
-      //ani.Attack_off();
-      state.isAttacking = false;
-  }
+        ani.Attack();
+
+        Vector2 attackPos = (Vector2)attackTransform.position
+                          + (Vector2)attackTransform.right * attackBoxDistance;
+        if (state.isGrounded||state.isOnCeiling)
+        {
+            for (int i = 0; i < attackRepeatTime; i++)
+            {
+                float elapsed = 0f;
+                while(elapsed < attackActiveDuration)
+                {
+                    ExecuteAttackBox(attackPos);
+
+                    await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
+                    elapsed += Time.fixedDeltaTime;
+                }
+
+                _hitEnemiesInAttack.Clear();
+            }
+        }
+        else
+        {
+            float elapsed = 0f;
+            while (elapsed < attackActiveDuration)
+            {
+                ExecuteAttackBox(attackPos);
+
+                await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
+                elapsed += Time.fixedDeltaTime;
+            }
+
+            _hitEnemiesInAttack.Clear();
+        }
+
+        //ani.Attack_off();
+        state.isAttacking = false;
+    }
 
     void ExecuteAttackBox(Vector2 attackPos)
     {
-        _hitEnemiesInAttack.Clear();
         Collider2D[] hits = Physics2D.OverlapBoxAll(
             attackPos, attackBoxSize, attackTransform.eulerAngles.z, enemyLayer);
 
@@ -125,7 +139,7 @@ public class PlayerCombat : MonoBehaviour
         }
 
         Debug.DrawRay(attackTransform.position,
-            attackTransform.right * attackBoxDistance, Color.magenta, attackSecondHitDelay/attackRepeatTime);
+            attackTransform.right * attackBoxDistance, Color.magenta, attackActiveDuration);
     }
 
     /// <summary>대상 컴포넌트에 맞게 데미지를 전달한다.</summary>

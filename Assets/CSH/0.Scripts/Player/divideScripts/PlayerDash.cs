@@ -256,7 +256,7 @@ public class PlayerDash : MonoBehaviour
 
     void OnDashHitEnemy(Collider2D hit)
     {
-        if(hit==null) return;
+        if (hit == null) return;
         hitEnemiesInDash.Add(hit);
         float damage = state.damage * dashDamage;
         ApplyDamage(hit, damage);

@@ -152,7 +152,7 @@ namespace BTActions
                         // 다음 틱에서 새 ActionPatrol이 다음 포인트로 이동
                         bb.moveable.currentPatrolIndex =
                             (bb.moveable.currentPatrolIndex + 1) % bb.moveable.patrolPoints.Length;
-Debug.Log($"[BTActions] Actionpatrol {bb.moveable.currentPatrolIndex} / {bb.moveable.patrolPoints.Length}");
+//Debug.Log($"[BTActions] Actionpatrol {bb.moveable.currentPatrolIndex} / {bb.moveable.patrolPoints.Length}");
                         break;
                     }
 
