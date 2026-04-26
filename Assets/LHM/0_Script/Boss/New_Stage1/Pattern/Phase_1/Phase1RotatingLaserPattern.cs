@@ -6,6 +6,14 @@ namespace BossSystem.Patterns
 {
     // ───────────────────────────────────────────────────────────────────────
     // Phase 1 — 패턴 1. 중앙 회전 레이저 (Swoo Style) [Sequential]
+    //
+    // 파훼 조건: 터렛 연결부(TurretJoint) 전부 파괴
+    // 파훼 흐름: destroyedCount >= jointCount
+    //            → 회전 루프 break
+    //            → ctx.DamageHandler.BreakBarrier()
+    //            → DamageHandler.OnBarrierBroken 이벤트 발생
+    //            → Phase1ShieldPattern.onBarrierBroken 콜백 호출
+    //            → breakTcs.TrySetResult() → 방어막 5초 해제
     // ───────────────────────────────────────────────────────────────────────
     [CreateAssetMenu(fileName = "Pattern_Phase1_RotatingLaser",
                      menuName = "BossSystem/Patterns/Phase1_RotatingLaser")]
@@ -17,7 +25,6 @@ namespace BossSystem.Patterns
         [SerializeField] private float   _moveToCenterSpeed = 5f;
 
         [Header("Laser")]
-        // ★ LineRenderer → GameObject 로 변경: 인스펙터에서 에셋(프리팹) 자유롭게 연결 가능
         [Tooltip("레이저 LineRenderer 프리팹")]
         [SerializeField] private GameObject _laserLinePrefab;
         [SerializeField] private Color      _laserColor  = Color.cyan;
@@ -108,14 +115,13 @@ namespace BossSystem.Patterns
 
             // ── 4. 레이저 4개 생성 ────────────────────────────────────────
             const int LASER_COUNT = 4;
-            var laserGos = new GameObject[LASER_COUNT];   // ★ GameObject 배열로 관리
+            var laserGos = new GameObject[LASER_COUNT];
             var lasers   = new LineRenderer[LASER_COUNT];
 
             for (int i = 0; i < LASER_COUNT; i++)
             {
                 if (_laserLinePrefab == null) break;
 
-                // ★ GameObject로 생성 후 GetComponent로 LineRenderer 획득
                 var go         = Object.Instantiate(_laserLinePrefab);
                 var lr         = go.GetComponent<LineRenderer>();
                 laserGos[i]    = go;
@@ -132,6 +138,7 @@ namespace BossSystem.Patterns
             }
 
             // ── 5. 회전 루프 ──────────────────────────────────────────────
+            // 파훼 조건: destroyedCount >= jointCount (터렛 전부 파괴)
             Log("Rotating laser active. Destroy both joints to break pattern.");
             float currentAngle = 0f;
             float elapsed      = 0f;
@@ -140,6 +147,7 @@ namespace BossSystem.Patterns
             {
                 while (!ct.IsCancellationRequested)
                 {
+                    // ★ 파훼 판정: 터렛이 모두 파괴되면 루프 탈출
                     if (jointCount > 0 && destroyedCount >= jointCount)
                     {
                         Log("All joints destroyed — pattern broken!");
@@ -175,7 +183,6 @@ namespace BossSystem.Patterns
             }
             finally
             {
-                // ★ GameObject 기준으로 파괴
                 foreach (var go in laserGos)
                     if (go != null) Object.Destroy(go);
 
@@ -183,11 +190,11 @@ namespace BossSystem.Patterns
                     if (j != null) Object.Destroy(j);
             }
 
-            // ── 6. 파훼 판정 → 방어막 OFF ────────────────────────────────
-            // BreakBarrier() → DamageHandler.OnBarrierBroken
-            //   → BossBlackboard.OnBarrierBroken
-            //   → Phase1ShieldPattern의 breakTcs.TrySetResult() 호출
-            //   → 방어막 VFX 제거 + 무적 해제
+            // ── 6. 파훼 판정 → Phase1ShieldPattern 방어막 OFF ────────────
+            // BreakBarrier()
+            //   → DamageHandler.OnBarrierBroken 이벤트 발생
+            //   → Phase1ShieldPattern.onBarrierBroken 콜백 호출
+            //   → 방어막 VFX 제거 + 무적 해제 + 5초 딜타임 시작
             ctx.DamageHandler.BreakBarrier();
 
             await UniTask.Delay(

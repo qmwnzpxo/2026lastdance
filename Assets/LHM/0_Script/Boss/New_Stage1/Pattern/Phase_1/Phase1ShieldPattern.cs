@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 
@@ -33,9 +33,18 @@ namespace BossSystem.Patterns
                               ctx.BossTransform);
 
                 Log("Shield ON. Waiting for break condition...");
+
                 var breakTcs = new UniTaskCompletionSource();
                 System.Action onBarrierBroken = () => breakTcs.TrySetResult();
-                ctx.Blackboard.OnBarrierBroken += onBarrierBroken;
+
+                // ── 이벤트 구독 ───────────────────────────────────────────
+                // Blackboard.OnBarrierBroken : 코어(LaserCore)가 전부 파괴됐을 때
+                // DamageHandler.OnBarrierBroken : 각 패턴이 BreakBarrier()를 직접 호출했을 때
+                //   · Phase1RotatingLaserPattern  — 터렛 전부 파괴
+                //   · Phase1MultiPanelPattern     — 판넬 전부 파괴
+                //   · Phase1NarrowingLaserPattern — QTE 성공 or 벽 겹침
+                ctx.Blackboard.OnBarrierBroken    += onBarrierBroken;
+                ctx.DamageHandler.OnBarrierBroken += onBarrierBroken;
 
                 // WhenAny: 이벤트 or 폴링 조건 중 먼저 충족되는 것
                 await UniTask.WhenAny(
@@ -43,7 +52,9 @@ namespace BossSystem.Patterns
                     WaitForCoresClearedAsync(ctx, ct)
                 );
 
-                ctx.Blackboard.OnBarrierBroken -= onBarrierBroken;
+                // ── 이벤트 해제 ───────────────────────────────────────────
+                ctx.Blackboard.OnBarrierBroken    -= onBarrierBroken;
+                ctx.DamageHandler.OnBarrierBroken -= onBarrierBroken;
 
                 if (vfx != null) Object.Destroy(vfx);
                 // invHandle.Dispose() → ReleaseInvincibility 자동 호출
@@ -57,11 +68,14 @@ namespace BossSystem.Patterns
                     cancellationToken: ct);
 
                 Log("Shield reactivating...");
-                // DestroyedCoreCount 리셋은 BossController.EnterPhaseAsync에서 처리
-                // 여기서는 단순히 루프를 돌아 방어막 재활성화
+                // 루프를 돌아 방어막 재활성화
             }
         }
 
+        /// <summary>
+        /// 폴링 방식 코어 전부 파괴 대기.
+        /// LaserCore 기반 패턴(Phase1LaserPattern 등)에서 코어를 사용하는 경우의 보조 판정.
+        /// </summary>
         private async UniTask WaitForCoresClearedAsync(BossContext ctx, CancellationToken ct)
         {
             while (!ct.IsCancellationRequested)
