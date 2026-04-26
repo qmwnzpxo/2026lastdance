@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using EnemyVersion3.Interfaces;
+using System.Collections.Generic;
 using UnityEngine;
 
 // ※ Script Execution Order: PlayerDash = -1 로 설정할 것
@@ -20,6 +21,8 @@ public class PlayerDash : MonoBehaviour
     [SerializeField] private float tackleSpeed = 50f;
     [SerializeField] private float tackleDamage = 0f;   // 0 = 무데미지
     [SerializeField] private float tackleCooldown = 1f;
+    [SerializeField] private float tackleKnockbackForce = 8f;        // 적 넉백 강도
+    [SerializeField] private float tackleSelfKnockbackRatio = 0.33f; // 플레이어 넉백 비율
 
     // ── 공용 설정 ────────────────────────────
     [Header("공용")]
@@ -425,7 +428,21 @@ public class PlayerDash : MonoBehaviour
     void OnTackleHitEnemy(Collider2D enemy)
     {
         Debug.Log($"몸통박치기 적중: {enemy.name}");
-        ApplyDamage(enemy, state.damage * tackleDamage);
+        //ApplyDamage(enemy,0);
+
+        // IMoveable이 없으면 넉백 처리 안 함
+        var moveable = enemy.GetComponent<EnemyVersion3.Interfaces.IMoveable>();
+        if (moveable == null) return;
+
+        // 적 BT 액션 취소
+        enemy.GetComponent<EnemyBTController>()?.CancelCurrentAction();
+
+        var enemyRb = enemy.GetComponent<Rigidbody2D>();
+        if (enemyRb != null)
+            enemyRb.linearVelocity = tackleDirection * tackleKnockbackForce;
+
+        StopTackle();
+        rb.linearVelocity = -tackleDirection * tackleKnockbackForce * tackleSelfKnockbackRatio;
     }
 
     #endregion

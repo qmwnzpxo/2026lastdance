@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7711742904790139673}
   - component: {fileID: 8288715132913159236}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: HitWorldLight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -149,6 +149,7 @@ MonoBehaviour:
   MaxHP: 10
   isDie: 0
   stamina: 100
+  maxStamina: 100
   dashGauge: 50
   maxDashGauge: 100
   dashGaugePerAttack: 0.3
@@ -162,6 +163,7 @@ MonoBehaviour:
   isWallJumping: 0
   isPowerRun: 0
   dashBuffered: 0
+  attackBuffered: 0
   isDashing: 0
   isTackling: 0
   isTackleGroundRush: 0
@@ -214,6 +216,7 @@ MonoBehaviour:
   attackBoxSize: {x: 1, y: 1}
   attackBoxDistance: 1
   attackSecondHitDelay: 0.3
+  attackActiveDuration: 0.12
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
@@ -238,6 +241,8 @@ MonoBehaviour:
   tackleSpeed: 50
   tackleDamage: 0
   tackleCooldown: 1
+  tackleKnockbackForce: 8
+  tackleSelfKnockbackRatio: 0.33
   attackBoxSize: {x: 1.1, y: 1.3}
   enemyLayer:
     serializedVersion: 2
@@ -560,7 +565,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2558350253558050970}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: attack check
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -593,7 +598,7 @@ GameObject:
   - component: {fileID: 6688604917998028013}
   - component: {fileID: 8931696859395051405}
   - component: {fileID: 8855167486035151956}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -701,7 +706,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5376528988638930902}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: ground check
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -732,7 +737,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2595735820758545400}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: ceiling check
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -764,7 +769,7 @@ GameObject:
   m_Component:
   - component: {fileID: 593990201475790861}
   - component: {fileID: 7763769427215422248}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: HitLight
   m_TagString: Untagged
   m_Icon: {fileID: 0}

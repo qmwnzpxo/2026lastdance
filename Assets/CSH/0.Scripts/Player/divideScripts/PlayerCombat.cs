@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -128,7 +129,14 @@ public class PlayerCombat : MonoBehaviour
     /// <summary>대상 컴포넌트에 맞게 데미지를 전달한다.</summary>
     private void ApplyDamage(Collider2D target, float damage)
     {
-        target.GetComponent<IDamageable>()?.TakeDamage(damage);
+        try
+        {
+            target.GetComponent<IDamageable>()?.TakeDamage(damage);
+        }
+        catch (SystemException ex)
+        {
+            Debug.LogError($"데미지 적용 중 오류: {ex.Message}");
+        }
     }
 
     #endregion

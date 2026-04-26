@@ -176,6 +176,8 @@ public class EnemyBTController : MonoBehaviour
         return hit.collider == null;
     }
 
+    public void CancelCurrentAction() =>_bb.CancelAction();
+
     #endregion
 
     // ────────────────────────────────────────
