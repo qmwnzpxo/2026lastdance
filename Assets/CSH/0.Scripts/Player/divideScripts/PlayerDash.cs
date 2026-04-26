@@ -427,15 +427,16 @@ public class PlayerDash : MonoBehaviour
 
     void OnTackleHitEnemy(Collider2D enemy)
     {
+        if(enemy == null) return;
         Debug.Log($"몸통박치기 적중: {enemy.name}");
         //ApplyDamage(enemy,0);
+
+        // 적 BT 액션 취소
+        enemy.GetComponent<EnemyBTController>()?.CancelCurrentAction();
 
         // IMoveable이 없으면 넉백 처리 안 함
         var moveable = enemy.GetComponent<EnemyVersion3.Interfaces.IMoveable>();
         if (moveable == null) return;
-
-        // 적 BT 액션 취소
-        enemy.GetComponent<EnemyBTController>()?.CancelCurrentAction();
 
         var enemyRb = enemy.GetComponent<Rigidbody2D>();
         if (enemyRb != null)
@@ -462,7 +463,15 @@ public class PlayerDash : MonoBehaviour
     /// <summary>대상 컴포넌트에 맞게 데미지를 전달한다.</summary>
     private void ApplyDamage(Collider2D target, float damage)
     {
-        target.GetComponent<IDamageable>()?.TakeDamage(damage);
+        if (target == null) return;
+        try
+        {
+            target.GetComponent<IDamageable>()?.TakeDamage(damage);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"데미지 적용 중 오류: {ex.Message}");
+        }
     }
 
     #endregion

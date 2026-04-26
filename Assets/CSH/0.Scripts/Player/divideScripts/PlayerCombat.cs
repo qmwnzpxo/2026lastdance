@@ -11,7 +11,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private Vector2   attackBoxSize     = new Vector2(1f, 1f);
     [SerializeField] private float     attackBoxDistance = 1f;
     [SerializeField] private float     attackSecondHitDelay = 0.3f;
-    [SerializeField] private float     attackActiveDuration = 0.12f;
+    //[SerializeField] private float     attackActiveDuration = 0.12f;
     [SerializeField] private LayerMask enemyLayer;
 
     public float attackRepeatTime = 2;
@@ -113,6 +113,8 @@ public class PlayerCombat : MonoBehaviour
         foreach (Collider2D hit in hits)
         {
             if (hit == null || _hitEnemiesInAttack.Contains(hit)) continue;
+            var damageable = hit.GetComponent<IDamageable>();
+            if (damageable == null) continue;
 
             _hitEnemiesInAttack.Add(hit);
 
