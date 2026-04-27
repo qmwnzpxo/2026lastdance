@@ -24,7 +24,7 @@ MonoBehaviour:
   _wallHalfHeight: 15
   _wallMoveSpeed: 4
   _crushDistance: 0.5
-  _wallDPS: 1
+  _wallDPS: 0.01
   _wallThickness: 0.5
   _wallCastLen: 30
   _playerLayer:

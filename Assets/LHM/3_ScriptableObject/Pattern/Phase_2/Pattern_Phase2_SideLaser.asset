@@ -21,7 +21,7 @@ MonoBehaviour:
   _repeatCount: 3
   _laserThickness: 5
   _castDistance: 70
-  _laserDamage: 1
+  _laserDamage: 0.01
   _playerLayer:
     serializedVersion: 2
     m_Bits: 64

@@ -33,12 +33,12 @@ MonoBehaviour:
   _fireBeamWidth: 0.4
   _aimDurationA: 1
   _fireDurationA: 0.3
-  _beamDamageA: 15
+  _beamDamageA: 0.01
   _randomMoveRangeA: 10
   _randomMoveSpeedA: 4
   _chargeAimDurationB: 0.5
   _chargeMoveSpeedB: 12
-  _chargeDamageB: 20
+  _chargeDamageB: 0.01
   _chargeDistanceB: 20
   _splitBeamLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
   _splitFireBeamLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
@@ -48,7 +48,7 @@ MonoBehaviour:
   _aimDurationC: 1
   _fireDurationC: 0.3
   _splitAngle: 20
-  _beamDamageC: 12
+  _beamDamageC: 0.01
   _randomMoveRangeC: 10
   _randomMoveSpeedC: 4
   _castRadius: 0.15

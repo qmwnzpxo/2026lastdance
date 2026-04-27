@@ -5084,7 +5084,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f93b5b26aacedd7438a9ea3baca1e0dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxHP: 150
+  _maxHP: 70
   _dealTimeDuration: 5
   _currentHP: 0
 --- !u!114 &1219386493
