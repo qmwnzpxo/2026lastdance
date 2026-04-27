@@ -13,7 +13,7 @@ namespace BossSystem
         [SerializeField] private float _dealTimeDuration = 5f;
 
         // ── 내부 상태 ────────────────────────────────────────────────────
-        private float _currentHP;
+        public float _currentHP;
         private int   _invincibilityCount;
         private Coroutine _dealTimeCoroutine;
 

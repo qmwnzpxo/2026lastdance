@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 //  BossHealthBarBridge.cs
 //
 //  DamageHandler(보스 HP 데이터) ↔ UnifiedHealthBarVisual(UI 렌더러) 연결 브릿지.
@@ -111,7 +111,7 @@ public class BossHealthBarBridge : MonoBehaviour
         healthBar.SetShimmer(enableShimmer);
 
         // 초기 동기화
-        prevHP    = damageHandler.CurrentHP;
+        prevHP    = damageHandler._currentHP;
         prevMaxHP = damageHandler.MaxHP;
         SyncFill(prevHP, prevMaxHP);
     }
@@ -125,46 +125,46 @@ public class BossHealthBarBridge : MonoBehaviour
         // 테스트 후 이 블록을 삭제하세요.
         if (Input.GetKeyDown(KeyCode.K))
         {
-            Debug.Log($"[Bridge] K 입력 — HP:{damageHandler.CurrentHP}/{damageHandler.MaxHP} " +
+            Debug.Log($"[Bridge] K 입력 — HP:{damageHandler._currentHP}/{damageHandler.MaxHP} " +
                       $"무적:{damageHandler.IsInvincible} 딜타임:{damageHandler.IsDealTimeActive}");
             damageHandler.TakeDamage(10f);
-            Debug.Log($"[Bridge] 데미지 후 — HP:{damageHandler.CurrentHP}");
+            Debug.Log($"[Bridge] 데미지 후 — HP:{damageHandler._currentHP}");
         }
         // ─────────────────────────────────────────────────────────────────
 
-        float currentHP = damageHandler.CurrentHP;
+        float _currentHP = damageHandler._currentHP;
         float maxHP     = damageHandler.MaxHP;
 
         // HP 또는 MaxHP 둘 중 하나라도 바뀌면 UI 갱신
         // Inspector 에서 MaxHP 를 직접 수정해도 여기서 잡힘
-        if (Mathf.Approximately(currentHP, prevHP) &&
+        if (Mathf.Approximately(_currentHP, prevHP) &&
             Mathf.Approximately(maxHP,     prevMaxHP)) return;
 
-        float damage = prevHP - currentHP;
+        float damage = prevHP - _currentHP;
         if (enableShake && damage > 0f)
             healthBar.PlayShakeByDamage(damage, maxHP);
 
-        SyncFill(currentHP, maxHP);
+        SyncFill(_currentHP, maxHP);
 
-        prevHP    = currentHP;
+        prevHP    = _currentHP;
         prevMaxHP = maxHP;
     }
 
-    void SyncFill(float currentHP, float maxHP)
+    void SyncFill(float _currentHP, float maxHP)
     {
-        float ratio = maxHP > 0f ? Mathf.Clamp01(currentHP / maxHP) : 0f;
+        float ratio = maxHP > 0f ? Mathf.Clamp01(_currentHP / maxHP) : 0f;
         healthBar.SetFill(ratio);
     }
 
     // ── 이벤트 핸들러 ─────────────────────────────────────────────────────────
 
     /// <summary>HP 변화 시 자동 호출 (DamageHandler.OnHPChanged). Update() 와 이중으로 잡음.</summary>
-    void HandleHPChanged(float currentHP, float maxHP)
+    void HandleHPChanged(float _currentHP, float maxHP)
     {
         if (!IsReady()) return;
         // Update() 폴링과 중복되지만 이벤트가 먼저 오는 경우를 즉시 처리
-        SyncFill(currentHP, maxHP);
-        prevHP    = currentHP;
+        SyncFill(_currentHP, maxHP);
+        prevHP    = _currentHP;
         prevMaxHP = maxHP;
     }
 
@@ -220,7 +220,7 @@ public class BossHealthBarBridge : MonoBehaviour
     {
         if (!IsReady()) return;
         healthBar.SetFill(damageHandler.HPRatio);
-        prevHP = damageHandler.CurrentHP;
+        prevHP = damageHandler._currentHP;
     }
 
     /// <summary>피격 흔들림 수동 재생.</summary>
