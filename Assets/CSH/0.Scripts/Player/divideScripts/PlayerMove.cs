@@ -182,9 +182,10 @@ public class PlayerMove : MonoBehaviour
             targetSlideSpeed = -wallSlideSpeed * (state.isPowerRun ? 1.5f : 1f);
             isWallSildeDown = state.isTouchingRWall;
         }
-
-        float smoothedY = Mathf.Lerp(
-            rb.linearVelocity.y, targetSlideSpeed, Time.fixedDeltaTime * 10f);
+        float limitVelocity = rb.linearVelocityY;
+        limitVelocity = Mathf.Clamp(limitVelocity,wallSlideSpeedUp,wallSlideSpeedDown);
+        float smoothedY = Mathf.Lerp(limitVelocity
+            , targetSlideSpeed, Time.fixedDeltaTime * 10f);
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, smoothedY);
     }
 
@@ -374,7 +375,6 @@ public class PlayerMove : MonoBehaviour
     /// <summary>중력 스케일을 현재 상태(천장/일반)에 맞게 복원한다.</summary>
     public void RestoreGravity()
     {
-        Debug.Log($"Restoring gravity. OnCeiling: {state.isOnCeiling}");
         rb.gravityScale = state.isOnCeiling
             ? state.ceilingGravityScale
             : state.defaultGravityScale;

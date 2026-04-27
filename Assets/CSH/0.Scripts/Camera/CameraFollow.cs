@@ -2,6 +2,7 @@
 using System.Threading;
 using Unity.Cinemachine;
 using UnityEngine;
+using static UnityEngine.Rendering.DebugUI;
 
 public class CameraFollow : MonoBehaviour
 {
@@ -102,7 +103,7 @@ public class CameraFollow : MonoBehaviour
         lens.OrthographicSize = from;
         cmZoom.Lens = lens;
         cmBrain.DefaultBlend.Time = 0f;
-
+        SetCameraDumping(0f);
         while (!ct.IsCancellationRequested)
         {
             await UniTask.WaitForFixedUpdate(cancellationToken: ct).SuppressCancellationThrow();
@@ -119,10 +120,17 @@ public class CameraFollow : MonoBehaviour
 
             if (t >= 1f) break;
         }
-
+        SetCameraDumping(1f);
         cmBrain.DefaultBlend.Time = defaultBlendTime;
         cmZoom.gameObject.SetActive(false);
         isZooming = false;
+    }
+
+    public void SetCameraDumping(float value)
+    {
+        cmZoom.GetComponent<CinemachineFollow>().TrackerSettings.PositionDamping = new Vector3(value, value, 1);
+        cmGamePlay.GetComponent<CinemachineFollow>().TrackerSettings.PositionDamping = new Vector3(value, value, 1);
+
     }
 
     private void OnDestroy()

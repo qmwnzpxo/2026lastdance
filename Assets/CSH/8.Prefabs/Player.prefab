@@ -216,6 +216,8 @@ MonoBehaviour:
   attackBoxSize: {x: 1, y: 1}
   attackBoxDistance: 1
   attackSecondHitDelay: 0.3
+  attackfloatHitDelay: 0.15
+  attackActiveDuration: 0.1
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
@@ -232,11 +234,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11ed408bcd2d9234eae95c66c085b61c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dashRange: 8
+  dashRange: 10
   dashDamage: 5
   dashSpeed: 50
   dashBoxSize: {x: 1, y: 1}
-  tackleRange: 8
+  tackleRange: 10
   tackleSpeed: 50
   tackleDamage: 0
   tackleCooldown: 1

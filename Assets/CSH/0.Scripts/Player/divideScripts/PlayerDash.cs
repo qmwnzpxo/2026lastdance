@@ -1,5 +1,6 @@
 ﻿using EnemyVersion3.Interfaces;
 using System.Collections.Generic;
+using Unity.Cinemachine;
 using UnityEngine;
 
 // ※ Script Execution Order: PlayerDash = -1 로 설정할 것
@@ -28,7 +29,8 @@ public class PlayerDash : MonoBehaviour
     [Header("공용")]
     [SerializeField] private Vector2 attackBoxSize = new Vector2(1f, 1f);  // Sweep 판정 크기
     [SerializeField] private LayerMask enemyLayer;
-
+    private float cameraDumpingScale = 0.2f;
+    private float originalCameraDumping = 1f;
     // ── 대쉬 내부 상태 ───────────────────────
     private Vector2 dashDirection;
     private Vector2 dashTargetPosition;
@@ -51,6 +53,7 @@ public class PlayerDash : MonoBehaviour
     private LineRenderer line;
     private PlayerAnimation ani;
     private Camera mainCamera;
+    private CameraFollow cameraFollow;
 
     // ────────────────────────────────────────
     #region Unity 생명주기
@@ -58,6 +61,7 @@ public class PlayerDash : MonoBehaviour
     void Awake()
     {
         mainCamera = Camera.main;
+        cameraFollow = mainCamera.transform.parent.GetComponent<CameraFollow>();
         state = GetComponent<PlayerState>();
         playerMove = GetComponent<PlayerMove>();
         line = GetComponent<LineRenderer>();
@@ -155,7 +159,7 @@ public class PlayerDash : MonoBehaviour
         state.isTouchingRWall = false;
 
         rb.gravityScale = 0f;
-
+        cameraFollow.SetCameraDumping(cameraDumpingScale); 
 
 
         dashHitEnemy = false;
@@ -175,6 +179,7 @@ public class PlayerDash : MonoBehaviour
         state.isDashing = false;
         playerMove.JustStoppedDashing = true; // ← 추가
         playerMove.RestoreGravity();
+        cameraFollow.SetCameraDumping(originalCameraDumping);
 
         if (line != null)
             line.enabled = false;
@@ -303,6 +308,7 @@ public class PlayerDash : MonoBehaviour
     private void StartTackle(Vector2 aimDirection)
     {
         rb.gravityScale = 0f;
+        cameraFollow.SetCameraDumping(cameraDumpingScale);
 
         if (state.isGrounded)
         {
@@ -347,6 +353,7 @@ public class PlayerDash : MonoBehaviour
             hasUsedAirTackle = false;
 
         playerMove.RestoreGravity();
+        cameraFollow.SetCameraDumping(originalCameraDumping);
 
         line.enabled = false;
     }
