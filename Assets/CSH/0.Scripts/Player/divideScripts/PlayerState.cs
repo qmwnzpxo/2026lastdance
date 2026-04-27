@@ -101,7 +101,7 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public void TakeDamage(float dmg)
     {
-        if (isDashing)
+        if (isDashing||isHit)
             return;
         HP -= dmg;
         if (HP <= 0)
@@ -109,7 +109,7 @@ public class PlayerState : MonoBehaviour, IDamageable
         else
         {
             //HitstopManager.Instance.TriggerHitstop();
-            //Hited();
+            Hited();
         }
     }
 
@@ -122,18 +122,18 @@ public class PlayerState : MonoBehaviour, IDamageable
         hitCts?.Dispose();
         hitCts=new CancellationTokenSource();
 
-        Hitglow(hitCts.Token).Forget();
+        HitFeedBack(hitCts.Token).Forget();
     }
 
-    public async UniTaskVoid Hitglow(CancellationToken tk)
+    public async UniTaskVoid HitFeedBack(CancellationToken tk)
     {
-        hitLight.enabled = true;
-        hitWorldLight.enabled = true;
+        //hitLight.enabled = true;
+        //hitWorldLight.enabled = true;
         await UniTask.WaitForSeconds(0.3f, cancellationToken: tk)
             .SuppressCancellationThrow();
         isHit = false;
-        hitLight.enabled = false;
-        hitWorldLight.enabled = false;
+        //hitLight.enabled = false;
+        //hitWorldLight.enabled = false;
     }
 
     void Die()

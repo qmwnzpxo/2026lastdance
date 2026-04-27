@@ -17059,6 +17059,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1014071891606882278, guid: 5822f97eade448a4991884bc1c050148, type: 3}
+      propertyPath: dashRange
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1014071891606882278, guid: 5822f97eade448a4991884bc1c050148, type: 3}
+      propertyPath: dashSpeed
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 1014071891606882278, guid: 5822f97eade448a4991884bc1c050148, type: 3}
+      propertyPath: tackleSpeed
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 1759278836418004599, guid: 5822f97eade448a4991884bc1c050148, type: 3}
       propertyPath: m_Name
       value: Player
