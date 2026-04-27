@@ -108,6 +108,7 @@ public class PlayerDash : MonoBehaviour
 
     void HandleDash()
     {
+        if (state.isTackling || state.isTackleGroundRush) return;
         if (Input.GetMouseButtonDown(1))
         {
             // 벽타기 상태 리셋
@@ -153,7 +154,9 @@ public class PlayerDash : MonoBehaviour
         state.isTouchingLWall = false;
         state.isTouchingRWall = false;
 
-        
+        rb.gravityScale = 0f;
+
+
 
         dashHitEnemy = false;
         hitEnemiesInDash.Clear();
@@ -212,12 +215,10 @@ public class PlayerDash : MonoBehaviour
             line.SetPosition(1, dashTargetPosition);
         }
 
-        rb.gravityScale = 0f;
-
         // 게이지 충분 → 강화 대쉬 / 부족 → 태클
         if (state.TryUseDashGauge(state.DashCost))
             TriggerDash();
-        else
+        else 
             TriggerTackleFromDash(dashDirection);
 
         Debug.DrawRay(transform.position, dashDirection * dashRange, Color.red, 1f);
@@ -279,7 +280,7 @@ public class PlayerDash : MonoBehaviour
         tackleCooldownCounter = Mathf.Max(0f, tackleCooldownCounter - Time.deltaTime);
 
         bool inputPressed = Input.GetKeyDown(KeyCode.E);
-        if (!inputPressed || state.isDashing || state.isTackling
+        if (!inputPressed || (state.isDashing || state.DashGauge <= state.DashCost) || state.isTackling
             || state.isTackleGroundRush || tackleCooldownCounter > 0f)
             return;
 
@@ -301,6 +302,8 @@ public class PlayerDash : MonoBehaviour
 
     private void StartTackle(Vector2 aimDirection)
     {
+        rb.gravityScale = 0f;
+
         if (state.isGrounded)
         {
             tackleDirection = new Vector2(Mathf.Sign(aimDirection.x), 0f);
@@ -371,7 +374,11 @@ public class PlayerDash : MonoBehaviour
         Vector2 currentPos = rb.position;
         Vector2 nextPos = currentPos + tackleDirection * tackleSpeed * Time.fixedDeltaTime;
 
-        if (SweepTacklePath(currentPos, nextPos)) return;
+        if (SweepTacklePath(currentPos, nextPos))
+        {
+            StopTackle();
+            return;
+        }
 
         rb.MovePosition(nextPos);
 
@@ -393,7 +400,11 @@ public class PlayerDash : MonoBehaviour
         Vector2 currentPos = rb.position;
         Vector2 nextPos = currentPos + tackleGroundDirection * moveDistance;
 
-        if (SweepTacklePath(currentPos, nextPos)) return;
+        if (SweepTacklePath(currentPos, nextPos))
+        {
+            StopTackle();
+            return;
+        }
 
         rb.MovePosition(nextPos);
         tackleGroundDistanceRemaining -= moveDistance;
