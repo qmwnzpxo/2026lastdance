@@ -134,7 +134,8 @@ public class PlayerMove : MonoBehaviour
         if (state.isWallJumping) return;
         if ((state.isWallSliding && !state.isGrounded) || state.isOnCeiling || state.isPowerRun)
         {
-            state.ModifyGauge(-Time.fixedDeltaTime);
+            float gaugeChange = Time.fixedDeltaTime * (state.isPowerRun ? 1.5f : 1f);
+            state.ModifyGauge(-gaugeChange);
         }
         else
         {
@@ -168,17 +169,17 @@ public class PlayerMove : MonoBehaviour
 
         if (verticalInput > 0 || pressingTowardWall)
         {
-            targetSlideSpeed = -wallSlideSpeedUp;
+            targetSlideSpeed = -wallSlideSpeedUp * (state.isPowerRun ? 1.5f : 1f);
             isWallSildeDown = state.isTouchingRWall;
         }
         else if (verticalInput < 0 || pressingAwayFromWall)
         {
-            targetSlideSpeed = -wallSlideSpeedDown;
+            targetSlideSpeed = -wallSlideSpeedDown * (state.isPowerRun ? 1.5f : 1f);
             isWallSildeDown = !state.isTouchingRWall;
         }
         else
         {
-            targetSlideSpeed = -wallSlideSpeed;
+            targetSlideSpeed = -wallSlideSpeed * (state.isPowerRun ? 1.5f : 1f);
             isWallSildeDown = state.isTouchingRWall;
         }
 
@@ -373,6 +374,7 @@ public class PlayerMove : MonoBehaviour
     /// <summary>중력 스케일을 현재 상태(천장/일반)에 맞게 복원한다.</summary>
     public void RestoreGravity()
     {
+        Debug.Log($"Restoring gravity. OnCeiling: {state.isOnCeiling}");
         rb.gravityScale = state.isOnCeiling
             ? state.ceilingGravityScale
             : state.defaultGravityScale;
