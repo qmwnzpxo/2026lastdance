@@ -131,7 +131,10 @@ Shader "Custom/UI/UnifiedHealthBar"
             #pragma vertex   vert
             #pragma fragment frag
 
-            #pragma shader_feature_local _GHOST_FILL_ON
+            // _GHOST_FILL_ON: 런타임에 EnableKeyword로 켜므로 multi_compile_local 필수
+            // shader_feature_local 로 하면 빌드 시 Variant가 스트리핑되어 작동 안 함
+            #pragma multi_compile_local _ _GHOST_FILL_ON
+            // 나머지는 Material에 미리 구워지므로 shader_feature_local 유지
             #pragma shader_feature_local _GLOW_ON
             #pragma shader_feature_local _INNER_GLOW_ON
             #pragma shader_feature_local _SHIMMER_ON
