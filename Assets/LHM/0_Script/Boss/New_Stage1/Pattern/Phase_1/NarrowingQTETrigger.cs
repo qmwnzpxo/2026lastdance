@@ -1,14 +1,5 @@
 ﻿// ═══════════════════════════════════════════════════════════════════════
 // NarrowingQTETrigger
-//
-// 흐름:
-//   G키 (인터랙트 범위 내) → QTE 시작
-//   → WASD 8개 랜덤 배열 생성 → UI 팝업 표시
-//   → 키 입력 순서대로 맞추기
-//     · 정답: 다음 칸으로 진행 (UI 초록 표시)
-//     · 오답: 빨간 플래시 0.3초 → step = 0 리셋
-//   → 8개 전부 맞추면 OnQTESuccess
-//   → 시간 초과 or 벽 압사면 OnQTEFail
 // ═══════════════════════════════════════════════════════════════════════
 using BossSystem;
 using Cysharp.Threading.Tasks;
@@ -33,52 +24,55 @@ public class NarrowingQTETrigger : MonoBehaviour
     private float _timeLimit;
     private bool _qteTriggered;
 
-    // WASD 풀 & 키 개수
+    // ── 입력 버퍼 ─────────────────────────────────────────────────────
+    private string _inputBuffer = null;
+    private bool _ignoreInput = false;
+
     private static readonly string[] _wasdKeys = { "W", "A", "S", "D" };
     private const int KEY_COUNT = 8;
 
     // ─────────────────────────────────────────────────────────────────
-    // 초기화 (패턴에서 Instantiate 후 호출)
+    // 초기화
     // ─────────────────────────────────────────────────────────────────
 
     public void Initialize(Transform player, float timeLimit, QTEUIController qteUI)
     {
-        Debug.Log($"[QTE] Initialize 호출됨. player={player}, qteUI={qteUI}");
         _playerTransform = player;
         _timeLimit = timeLimit;
         _qteUI = qteUI;
-
 
         if (_qteUI == null)
             _qteUI = Object.FindObjectOfType<QTEUIController>();
 
         if (_qteUI == null)
-            Debug.LogWarning("[NarrowingQTE] QTEUIController를 찾을 수 없습니다. UI 없이 진행합니다.");
+            Debug.LogWarning("[NarrowingQTE] QTEUIController를 찾을 수 없습니다.");
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // G키 감지
+    // Update — G키 감지 / WASD 버퍼 저장
     // ─────────────────────────────────────────────────────────────────
 
     private void Update()
     {
-        Debug.Log($"triggered={_qteTriggered}, player={_playerTransform}, G={Input.GetKeyDown(KeyCode.G)}");
+        if (!_qteTriggered)
+        {
+            if (_playerTransform != null
+                && Input.GetKeyDown(KeyCode.G)
+                && Vector2.Distance(transform.position, _playerTransform.position) <= _interactRadius)
+            {
+                Debug.Log("[NarrowingQTE] G키 → QTE 시작");
+                _qteTriggered = true;
+                RunQTEAsync(this.GetCancellationTokenOnDestroy()).Forget();
+            }
+            return;
+        }
 
-        if (_qteTriggered) return;
-        if (_playerTransform == null) return;
+        if (_ignoreInput || _inputBuffer != null) return;
 
-
-
-
-        if (_qteTriggered) return;
-        if (_playerTransform == null) return;
-        if (!Input.GetKeyDown(KeyCode.G)) return;
-
-        float dist = Vector2.Distance(transform.position, _playerTransform.position);
-        if (dist > _interactRadius) return;
-        Debug.Log($"dist={dist}, radius={_interactRadius}"); // 거리 확인
-        _qteTriggered = true;
-        RunQTEAsync(this.GetCancellationTokenOnDestroy()).Forget();
+        if (Input.GetKeyDown(KeyCode.W)) _inputBuffer = "W";
+        else if (Input.GetKeyDown(KeyCode.A)) _inputBuffer = "A";
+        else if (Input.GetKeyDown(KeyCode.S)) _inputBuffer = "S";
+        else if (Input.GetKeyDown(KeyCode.D)) _inputBuffer = "D";
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -87,11 +81,12 @@ public class NarrowingQTETrigger : MonoBehaviour
 
     private async UniTaskVoid RunQTEAsync(CancellationToken ct)
     {
-        // 1. 랜덤 배열 생성
         string[] sequence = GenerateRandomSequence(KEY_COUNT);
-        Debug.Log($"[NarrowingQTE] Sequence: {string.Join(" - ", sequence)}");
+        Debug.Log($"[NarrowingQTE] 시퀀스: {string.Join(" - ", sequence)}");
 
-        // 2. UI 열기
+        _inputBuffer = null;
+        _ignoreInput = false;
+
         _qteUI?.Show(sequence, _timeLimit);
         _qteUI?.UpdateProgress(0);
 
@@ -101,60 +96,90 @@ public class NarrowingQTETrigger : MonoBehaviour
 
         while (!ct.IsCancellationRequested && elapsed < _timeLimit)
         {
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
             elapsed += Time.deltaTime;
 
-            string pressed = GetPressedWASD();
-            if (pressed != null)
+            if (_inputBuffer == null) continue;
+
+            string pressed = _inputBuffer;
+            _inputBuffer = null;
+
+            Debug.Log($"[NarrowingQTE] 입력={pressed} / 예상={sequence[step]} / step={step}");
+
+            if (pressed == sequence[step])
             {
-                if (pressed == sequence[step])
+                step++;
+                _qteUI?.UpdateProgress(step);
+                Debug.Log($"[NarrowingQTE] 정답! {step}/{KEY_COUNT}");
+
+                if (step >= KEY_COUNT)
                 {
-                    // ── 정답 ─────────────────────────────────────────
-                    step++;
-                    _qteUI?.UpdateProgress(step);
-                    Debug.Log($"[NarrowingQTE] Correct! step={step}/{KEY_COUNT}");
-
-                    if (step >= KEY_COUNT)
-                    {
-                        success = true;
-                        break;
-                    }
-                }
-                else
-                {
-                    // ── 오답 → 0.3초 플래시 후 처음부터 ──────────────
-                    Debug.Log($"[NarrowingQTE] Wrong '{pressed}' (expected '{sequence[step]}'). Reset!");
-                    _qteUI?.ShowWrong(step);
-
-                    await UniTask.Delay(
-                        System.TimeSpan.FromMilliseconds(300), cancellationToken: ct);
-
-                    step = 0;
-                    _qteUI?.UpdateProgress(step);
+                    success = true;
+                    break;
                 }
             }
+            else
+            {
+                Debug.Log($"[NarrowingQTE] 오답! '{pressed}' (예상 '{sequence[step]}') → 1초 후 리셋");
+                _qteUI?.ShowWrong(step);
 
-            await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                _ignoreInput = true;
+                _inputBuffer = null;
+
+                await UniTask.Delay(
+                    System.TimeSpan.FromMilliseconds(1000), cancellationToken: ct);
+
+                _inputBuffer = null;
+                _ignoreInput = false;
+
+                step = 0;
+                _qteUI?.UpdateProgress(0);
+            }
         }
 
-        // 3. 결과 처리
+        // ── 결과 처리 — UI 닫기를 finally로 보장 ─────────────────────
+        _ignoreInput = true;
+
+        try
+        {
+            if (success)
+            {
+                Debug.Log("[NarrowingQTE] 성공!");
+                _qteUI?.ShowSuccess();
+
+                await UniTask.Delay(
+                    System.TimeSpan.FromMilliseconds(800),
+                    cancellationToken: ct).SuppressCancellationThrow();
+            }
+            else
+            {
+                Debug.Log("[NarrowingQTE] 실패 (시간 초과)");
+                _qteUI?.ShowFail();
+
+                await UniTask.Delay(
+                    System.TimeSpan.FromMilliseconds(800),
+                    cancellationToken: ct).SuppressCancellationThrow();
+            }
+        }
+        finally
+        {
+            // ct 취소(씬 전환, 오브젝트 파괴 등) 상황에서도 반드시 UI 닫힘
+            _qteUI?.Hide();
+            Debug.Log("[NarrowingQTE] UI 닫힘");
+        }
+
         if (success)
-        {
-            _qteUI?.ShowSuccess();
-            // 성공 연출 잠깐 보여주고 이벤트 발생
-            await UniTask.Delay(
-                System.TimeSpan.FromMilliseconds(600), cancellationToken: ct)
-                .SuppressCancellationThrow();
             OnQTESuccess?.Invoke();
-        }
         else
-        {
-            _qteUI?.ShowFail();
-            await UniTask.Delay(
-                System.TimeSpan.FromMilliseconds(600), cancellationToken: ct)
-                .SuppressCancellationThrow();
             OnQTEFail?.Invoke();
-        }
+    }
 
+    // ─────────────────────────────────────────────────────────────────
+    // 오브젝트 파괴 시에도 UI 닫기
+    // ─────────────────────────────────────────────────────────────────
+
+    private void OnDestroy()
+    {
         _qteUI?.Hide();
     }
 
@@ -162,24 +187,12 @@ public class NarrowingQTETrigger : MonoBehaviour
     // 유틸
     // ─────────────────────────────────────────────────────────────────
 
-    /// <summary>WASD 중복 허용 랜덤 8개 생성.</summary>
     private static string[] GenerateRandomSequence(int count)
     {
         var seq = new string[count];
         for (int i = 0; i < count; i++)
             seq[i] = _wasdKeys[Random.Range(0, _wasdKeys.Length)];
         return seq;
-    }
-
-    /// <summary>이번 프레임 WASD 입력. 없으면 null.</summary>
-    private static string GetPressedWASD()
-    {
-        Debug.Log(Input.GetKeyDown(KeyCode.W));
-        if (Input.GetKeyDown(KeyCode.W)) return "W";
-        if (Input.GetKeyDown(KeyCode.A)) return "A";
-        if (Input.GetKeyDown(KeyCode.S)) return "S";
-        if (Input.GetKeyDown(KeyCode.D)) return "D";
-        return null;
     }
 
 #if UNITY_EDITOR

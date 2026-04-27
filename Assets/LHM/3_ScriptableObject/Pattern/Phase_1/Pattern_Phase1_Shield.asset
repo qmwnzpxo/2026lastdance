@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Pattern_Phase1_Shield
   m_EditorClassIdentifier: 
   _patternId: 3
-  _patternType: 0
+  _patternType: 1
   preDelay: 0
   _shieldVfxPrefab: {fileID: 2418765355204226605, guid: 387f1a0704264ab4eab2cb12f06cf20b, type: 3}
   _pollInterval: 0.1

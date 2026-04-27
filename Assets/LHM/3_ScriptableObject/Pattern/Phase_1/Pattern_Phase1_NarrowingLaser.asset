@@ -13,18 +13,18 @@ MonoBehaviour:
   m_Name: Pattern_Phase1_NarrowingLaser
   m_EditorClassIdentifier: 
   _patternId: 9
-  _patternType: 1
+  _patternType: 0
   preDelay: 0
   _chargeVfxPrefab: {fileID: 0}
   _chargeDuration: 2
   _laserWallPrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
   _laserWallColor: {r: 1, g: 0, b: 0, a: 1}
-  _wallStartX: 18
+  _wallStartX: 24
+  _wallStopX: 8
   _wallHalfHeight: 15
-  _wallTargetX: 0
   _wallMoveSpeed: 4
   _crushDistance: 0.5
-  _wallDPS: 40
+  _wallDPS: 1
   _wallThickness: 0.5
   _wallCastLen: 30
   _playerLayer:
@@ -36,3 +36,4 @@ MonoBehaviour:
   _successVfxPrefab: {fileID: 0}
   _failVfxPrefab: {fileID: 0}
   _dealTimeDuration: 5
+  _qteUI: {fileID: 0}

@@ -15,15 +15,16 @@ MonoBehaviour:
   _patternId: 6
   _patternType: 0
   preDelay: 0
-  _warningDuration: 3
-  _laserDuration: 0.4
+  _warningDuration: 1.5
+  _laserDuration: 0.5
   _mapEdgeOffset: 20
-  _laserThickness: 0.5
-  _castDistance: 40
-  _laserDamage: 35
+  _repeatCount: 3
+  _laserThickness: 5
+  _castDistance: 70
+  _laserDamage: 1
   _playerLayer:
     serializedVersion: 2
     m_Bits: 64
-  _warningLinePrefab: {fileID: 0}
+  _warningLinePrefab: {fileID: 3665882157017218338, guid: 49ce0cad3c0e7db4eaa64633639ee066, type: 3}
   _warningColor: {r: 1, g: 0.5, b: 0, a: 0.7}
   _fireColor: {r: 1, g: 0, b: 0, a: 1}

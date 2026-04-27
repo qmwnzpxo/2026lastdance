@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Pattern_Phase1_RotatingLaser
   m_EditorClassIdentifier: 
   _patternId: 8
-  _patternType: 1
+  _patternType: 0
   preDelay: 0
   _centerPosition: {x: 7.8, y: 6.4}
   _moveToCenterSpeed: 5
@@ -35,4 +35,4 @@ MonoBehaviour:
   - {x: 1.2, y: 0.5}
   _chargeVfxPrefab: {fileID: 0}
   _chargeWaitTime: 1.5
-  _breakCelebrationTime: 1
+  _dealTimeDuration: 5

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,23 +6,6 @@ using TMPro;
 
 namespace BossSystem
 {
-    // ═══════════════════════════════════════════════════════════════════════
-    // QTEUIController.cs — 화면 중앙 QTE 팝업 UI
-    //
-    // 프리팹 구조 (Canvas 하위):
-    //   QTEPanel (GameObject)
-    //     ├── Background (Image) — 반투명 패널
-    //     ├── TitleText (TMP)    — "!! 패턴 파훼 !!" 등 타이틀
-    //     ├── TimerBar (Slider)  — 남은 시간 게이지
-    //     ├── KeyContainer (HorizontalLayoutGroup)
-    //     │     └── KeySlot x8  — 각 키를 표시하는 슬롯
-    //     └── ResultText (TMP)  — 성공 / 실패 메시지
-    //
-    // KeySlot 구조:
-    //   KeySlot (GameObject)
-    //     ├── Background (Image) — 슬롯 배경
-    //     └── KeyText (TMP)      — "W" / "A" / "S" / "D"
-    // ═══════════════════════════════════════════════════════════════════════
     public class QTEUIController : MonoBehaviour
     {
         [Header("Panel")]
@@ -42,21 +26,23 @@ namespace BossSystem
         [Header("Result")]
         [SerializeField] private TMP_Text _resultText;
         [SerializeField] private Color _successColor = Color.green;
-        [SerializeField] private Color _failColor    = Color.red;
-        [SerializeField] private Color _resetColor   = Color.yellow;
+        [SerializeField] private Color _failColor = Color.red;
+        [SerializeField] private Color _resetColor = Color.yellow;
+
+        [Header("Slot Colors")]
+        [SerializeField] private Color _idleColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+        [SerializeField] private Color _activeColor = Color.white;
+        [SerializeField] private Color _correctColor = Color.green;
+        [SerializeField] private Color _wrongColor = Color.red;
 
         // ── 런타임 ───────────────────────────────────────────────────────
         private readonly List<KeySlotUI> _slots = new(8);
         private float _maxTime;
         private float _elapsed;
-        private bool  _isRunning;
+        private bool _isRunning;
 
-        // ── 슬롯 상태 색상 ────────────────────────────────────────────────
-        [Header("Slot Colors")]
-        [SerializeField] private Color _idleColor    = new Color(0.2f, 0.2f, 0.2f, 1f);
-        [SerializeField] private Color _activeColor  = Color.white;
-        [SerializeField] private Color _correctColor = Color.green;
-        [SerializeField] private Color _wrongColor   = Color.red;
+        // 현재 맞춘 step 수 기억 (ShowWrong 시 초록 유지용)
+        private int _currentStep = 0;
 
         // ─────────────────────────────────────────────────────────────────
         // 공개 API
@@ -65,18 +51,15 @@ namespace BossSystem
         /// <summary>QTE 팝업을 열고 키 배열을 표시.</summary>
         public void Show(string[] keys, float timeLimit)
         {
-            Debug.Log($"[QTE] _keySlotPrefab={_keySlotPrefab}, _keyContainer={_keyContainer}");
-
             _maxTime = timeLimit;
             _elapsed = 0f;
             _isRunning = true;
+            _currentStep = 0;
 
             ClearSlots();
             foreach (var key in keys)
             {
-                Debug.Log($"[QTE] 슬롯 생성 시도: key={key}");
                 var slot = Instantiate(_keySlotPrefab, _keyContainer);
-                Debug.Log($"[QTE] 슬롯 생성됨: {slot}");
                 slot.Setup(key, _idleColor);
                 _slots.Add(slot);
             }
@@ -85,7 +68,7 @@ namespace BossSystem
             {
                 _timerBar.minValue = 0f;
                 _timerBar.maxValue = 1f;
-                _timerBar.value    = 1f;
+                _timerBar.value = 1f;
             }
 
             if (_titleText != null)
@@ -98,34 +81,56 @@ namespace BossSystem
                 _qtePanel.SetActive(true);
         }
 
-        /// <summary>현재 진행 인덱스 하이라이트. step = 다음에 눌러야 할 슬롯 인덱스.</summary>
+        /// <summary>
+        /// 현재 진행 인덱스 하이라이트.
+        /// step 이전 = 초록(정답), step = 흰색(현재 입력 대기), 이후 = 회색
+        /// </summary>
         public void UpdateProgress(int step)
         {
+            _currentStep = step;
             for (int i = 0; i < _slots.Count; i++)
             {
                 if (i < step)
-                    _slots[i].SetColor(_correctColor);   // 이미 맞춤
+                    _slots[i].SetColor(_correctColor);  // 이미 맞춤 → 초록
                 else if (i == step)
-                    _slots[i].SetColor(_activeColor);    // 현재 입력 대상
+                    _slots[i].SetColor(_activeColor);   // 현재 입력 대상 → 흰색
                 else
-                    _slots[i].SetColor(_idleColor);      // 아직 미입력
+                    _slots[i].SetColor(_idleColor);     // 아직 미입력 → 회색
             }
+
+            if (_resultText != null)
+                _resultText.text = "";
         }
 
-        /// <summary>틀렸을 때 짧게 빨간색 플래시 후 초기화 표시.</summary>
+        /// <summary>
+        /// 틀렸을 때:
+        ///   - 이미 맞춘 칸들은 초록 유지
+        ///   - 틀린 칸만 빨간색
+        ///   - "reset!" 텍스트 표시
+        ///   - 1초 후 전체 리셋 연출은 NarrowingQTETrigger에서 UpdateProgress(0) 호출
+        /// </summary>
         public void ShowWrong(int wrongStep)
         {
+            // 이미 맞춘 칸 초록 유지
+            for (int i = 0; i < wrongStep; i++)
+                _slots[i].SetColor(_correctColor);
+
+            // 틀린 칸 빨간색
             if (wrongStep >= 0 && wrongStep < _slots.Count)
                 _slots[wrongStep].SetColor(_wrongColor);
+
+            // 나머지는 회색
+            for (int i = wrongStep + 1; i < _slots.Count; i++)
+                _slots[i].SetColor(_idleColor);
 
             if (_resultText != null)
             {
                 _resultText.color = _resetColor;
-                _resultText.text  = "reset!";
+                _resultText.text = "reset!";
             }
         }
 
-        /// <summary>성공 연출.</summary>
+        /// <summary>성공 연출 — 전부 초록.</summary>
         public void ShowSuccess()
         {
             _isRunning = false;
@@ -135,11 +140,11 @@ namespace BossSystem
             if (_resultText != null)
             {
                 _resultText.color = _successColor;
-                _resultText.text  = "clear!";
+                _resultText.text = "clear!";
             }
         }
 
-        /// <summary>실패 연출 (시간 초과 or 벽 압사).</summary>
+        /// <summary>실패 연출 — 전부 빨간색.</summary>
         public void ShowFail()
         {
             _isRunning = false;
@@ -149,7 +154,7 @@ namespace BossSystem
             if (_resultText != null)
             {
                 _resultText.color = _failColor;
-                _resultText.text  = "fail!";
+                _resultText.text = "fail!";
             }
         }
 
@@ -191,8 +196,5 @@ namespace BossSystem
             if (_qtePanel != null)
                 _qtePanel.SetActive(false);
         }
-
     }
-
-
 }

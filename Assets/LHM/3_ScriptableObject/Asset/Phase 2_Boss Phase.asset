@@ -15,8 +15,8 @@ MonoBehaviour:
   hpThreshold: 0.5
   hpRecoverRatio: 0
   spawnPointIndex: -1
-  persistentPatterns: []
+  persistentPatterns:
+  - {fileID: 11400000, guid: 5c75c3913221ea549884268d697bf063, type: 2}
   sequentialPatterns:
-  - {fileID: 11400000, guid: 71b8fe6a5caf1d0439c952db2fbeda1a, type: 2}
-  - {fileID: 11400000, guid: f23295245e7aafa4dbd3a558be26b681, type: 2}
+  - {fileID: 11400000, guid: ea69b007e5ecbbe4fb583b7ed375dfe5, type: 2}
   - {fileID: 11400000, guid: 949fbdaf4ef9657418e0cefb0ae44abd, type: 2}

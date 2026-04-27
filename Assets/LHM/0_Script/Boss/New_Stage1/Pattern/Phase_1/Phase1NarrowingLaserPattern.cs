@@ -15,10 +15,17 @@ namespace BossSystem.Patterns
         [Header("Laser Walls")]
         [SerializeField] private GameObject _laserWallPrefab;
         [SerializeField] private Color _laserWallColor = Color.red;
-        [SerializeField] private float _wallStartX = 18f;
+
+        [Tooltip("벽 시작 X 위치 (절댓값). 왼쪽=-wallStartX, 오른쪽=+wallStartX\n예) 24 → 왼쪽 -24, 오른쪽 +24")]
+        [SerializeField] private float _wallStartX = 24f;
+
+        [Tooltip("벽이 멈추는 X 위치 (절댓값). 왼쪽=-wallStopX, 오른쪽=+wallStopX\n예) 8 → 왼쪽 -8, 오른쪽 +8 에서 정지 → 맞닿음")]
+        [SerializeField] private float _wallStopX = 8f;
+
         [SerializeField] private float _wallHalfHeight = 15f;
-        [SerializeField] private float _wallTargetX = 0f;
         [SerializeField] private float _wallMoveSpeed = 1.5f;
+
+        [Tooltip("두 벽 사이 거리가 이 값 이하면 압사 판정 (wallStopX 0일 때 사용)")]
         [SerializeField] private float _crushDistance = 0.5f;
 
         [Header("Wall Damage")]
@@ -32,7 +39,7 @@ namespace BossSystem.Patterns
         [SerializeField] private Vector2 _interactOffset = new Vector2(0f, -3f);
 
         [Header("QTE")]
-        [SerializeField] private float _qteTimeLimit = 8f;
+        [SerializeField] private float _qteTimeLimit = 5f;
 
         [Header("Result VFX")]
         [SerializeField] private ParticleSystem _successVfxPrefab;
@@ -43,6 +50,7 @@ namespace BossSystem.Patterns
 
         [Header("UI")]
         [SerializeField] private QTEUIController _qteUI;
+
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
             // ── 1. 차지 연출 ──────────────────────────────────────────────
@@ -69,23 +77,16 @@ namespace BossSystem.Patterns
             GameObject interactObj = null;
             NarrowingQTETrigger qteTrigger = null;
 
-            Debug.Log($"[NarrowingLaser] _interactObjPrefab={_interactObjPrefab}");
-
             if (_interactObjPrefab != null)
             {
                 Vector3 interactPos = ctx.BossTransform.position + (Vector3)_interactOffset;
                 interactObj = Object.Instantiate(_interactObjPrefab, interactPos, Quaternion.identity);
-                Debug.Log($"[NarrowingLaser] interactObj 생성됨={interactObj}");
-
                 qteTrigger = interactObj.GetComponent<NarrowingQTETrigger>();
-                Debug.Log($"[NarrowingLaser] qteTrigger={qteTrigger}");
             }
             else
             {
                 Debug.LogError("[NarrowingLaser] _interactObjPrefab이 null입니다!");
             }
-
-        
 
             var successTcs = new UniTaskCompletionSource<bool>();
 
@@ -94,7 +95,6 @@ namespace BossSystem.Patterns
                 qteTrigger.Initialize(ctx.PlayerTransform, _qteTimeLimit, _qteUI);
                 qteTrigger.OnQTESuccess += () => successTcs.TrySetResult(true);
                 qteTrigger.OnQTEFail += () => successTcs.TrySetResult(false);
-                Debug.Log("[NarrowingLaser] Initialize 호출됨");
             }
             else
             {
@@ -123,7 +123,7 @@ namespace BossSystem.Patterns
 
             ct.ThrowIfCancellationRequested();
 
-            // ── 5. 성공/실패 VFX — 모두 방어막 해제 후 딜타임 ────────────
+            // ── 5. 성공/실패 VFX ──────────────────────────────────────────
             if (qteSuccess)
             {
                 Log("QTE Success!");
@@ -169,6 +169,7 @@ namespace BossSystem.Patterns
             var rightGo = Object.Instantiate(_laserWallPrefab);
             var right = rightGo.GetComponent<LineRenderer>();
 
+            // 왼쪽 벽: 시작 -wallStartX
             if (left != null)
             {
                 left.startColor = left.endColor = _laserWallColor;
@@ -177,6 +178,7 @@ namespace BossSystem.Patterns
                 left.SetPosition(1, new Vector3(-_wallStartX, _wallHalfHeight, 0f));
                 left.enabled = true;
             }
+            // 오른쪽 벽: 시작 +wallStartX
             if (right != null)
             {
                 right.startColor = right.endColor = _laserWallColor;
@@ -190,24 +192,49 @@ namespace BossSystem.Patterns
         }
 
         private async UniTask RunWallsAsync(
-            LineRenderer wallLeft,
-            LineRenderer wallRight,
-            UniTaskCompletionSource<bool> successTcs,
-            CancellationToken ct)
+     LineRenderer wallLeft,
+     LineRenderer wallRight,
+     UniTaskCompletionSource<bool> successTcs,
+     CancellationToken ct)
         {
-            float leftX = -_wallStartX;
-            float rightX = _wallStartX;
+            // 시작 좌표 저장
+            float startLeftX = -_wallStartX;
+            float startRightX = _wallStartX + _wallStopX;
+
+            // 현재 좌표 초기화
+            float leftX = startLeftX;
+            float rightX = startRightX;
+
+            // 목표 좌표 통일
+            float meetPointX = 8f;
+            float leftTarget = meetPointX;
+            float rightTarget = meetPointX;
+
+            // --- [추가된 부분] 동시에 도착하도록 맞춤 속도 계산 ---
+            float leftDistance = Mathf.Abs(leftTarget - startLeftX);
+            float rightDistance = Mathf.Abs(rightTarget - startRightX);
+
+            // 더 멀리 있는 벽을 기준으로 도착하는 데 걸릴 총 시간(Duration) 계산
+            float maxDistance = Mathf.Max(leftDistance, rightDistance);
+            float moveDuration = maxDistance > 0 ? (maxDistance / _wallMoveSpeed) : 0.1f;
+
+            // 정해진 시간(moveDuration) 안에 도착하도록 각 벽의 개별 속도 설정
+            float leftSpeed = leftDistance / moveDuration;
+            float rightSpeed = rightDistance / moveDuration;
+            // --------------------------------------------------------
 
             while (!ct.IsCancellationRequested)
             {
                 if (successTcs.Task.Status != UniTaskStatus.Pending) return;
 
-                leftX = Mathf.MoveTowards(leftX, _wallTargetX, _wallMoveSpeed * Time.deltaTime);
-                rightX = Mathf.MoveTowards(rightX, _wallTargetX, _wallMoveSpeed * Time.deltaTime);
+                // 기존 _wallMoveSpeed 대신 계산된 개별 속도(leftSpeed, rightSpeed)를 사용
+                leftX = Mathf.MoveTowards(leftX, leftTarget, leftSpeed * Time.deltaTime);
+                rightX = Mathf.MoveTowards(rightX, rightTarget, rightSpeed * Time.deltaTime);
 
                 SetWallX(wallLeft, leftX);
                 SetWallX(wallRight, rightX);
 
+                // 벽 데미지
                 LaserUtility.BoxCastAndDamage(
                     new Vector2(leftX, 0f), Vector2.right,
                     _wallThickness, _wallCastLen, _playerLayer, _wallDPS * Time.deltaTime);
@@ -215,9 +242,13 @@ namespace BossSystem.Patterns
                     new Vector2(rightX, 0f), Vector2.left,
                     _wallThickness, _wallCastLen, _playerLayer, _wallDPS * Time.deltaTime);
 
-                if (rightX - leftX <= _crushDistance)
+                // 압사 판정: 두 벽이 목표(8)에 모두 도달했을 때
+                bool leftArrived = Mathf.Abs(leftX - leftTarget) < 0.01f;
+                bool rightArrived = Mathf.Abs(rightX - rightTarget) < 0.01f;
+
+                if (leftArrived && rightArrived)
                 {
-                    Log("Walls crushed.");
+                    Log($"Walls reached target (left={leftX:F1}, right={rightX:F1}). Crushed!");
                     successTcs.TrySetResult(false);
                     return;
                 }
@@ -241,12 +272,10 @@ namespace BossSystem.Patterns
                 cancellationToken: ct).SuppressCancellationThrow();
             tcs.TrySetResult(false);
         }
+
         public void SetQTEUI(QTEUIController qteUI)
         {
             _qteUI = qteUI;
         }
     }
-
 }
-
-

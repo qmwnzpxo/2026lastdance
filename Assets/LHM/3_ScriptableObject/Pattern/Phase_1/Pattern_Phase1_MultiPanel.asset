@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Pattern_Phase1_MultiPanel
   m_EditorClassIdentifier: 
   _patternId: 10
-  _patternType: 1
+  _patternType: 0
   preDelay: 0
   _panelPrefabA: {fileID: 2572910350527434799, guid: e2ac60d57e9b43e4b88a10fec1c29f30, type: 3}
   _panelPrefabB: {fileID: 4891889990374861660, guid: 813669e55a580894f8edc985b08651db, type: 3}
