@@ -65,15 +65,18 @@ namespace BossSystem
         /// <summary>QTE 팝업을 열고 키 배열을 표시.</summary>
         public void Show(string[] keys, float timeLimit)
         {
+            Debug.Log($"[QTE] _keySlotPrefab={_keySlotPrefab}, _keyContainer={_keyContainer}");
+
             _maxTime = timeLimit;
             _elapsed = 0f;
             _isRunning = true;
 
-            // 슬롯 생성
             ClearSlots();
             foreach (var key in keys)
             {
+                Debug.Log($"[QTE] 슬롯 생성 시도: key={key}");
                 var slot = Instantiate(_keySlotPrefab, _keyContainer);
+                Debug.Log($"[QTE] 슬롯 생성됨: {slot}");
                 slot.Setup(key, _idleColor);
                 _slots.Add(slot);
             }

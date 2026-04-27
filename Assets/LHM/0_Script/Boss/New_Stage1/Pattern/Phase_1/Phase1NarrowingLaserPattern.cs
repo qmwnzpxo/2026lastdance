@@ -69,12 +69,23 @@ namespace BossSystem.Patterns
             GameObject interactObj = null;
             NarrowingQTETrigger qteTrigger = null;
 
+            Debug.Log($"[NarrowingLaser] _interactObjPrefab={_interactObjPrefab}");
+
             if (_interactObjPrefab != null)
             {
                 Vector3 interactPos = ctx.BossTransform.position + (Vector3)_interactOffset;
                 interactObj = Object.Instantiate(_interactObjPrefab, interactPos, Quaternion.identity);
+                Debug.Log($"[NarrowingLaser] interactObj 생성됨={interactObj}");
+
                 qteTrigger = interactObj.GetComponent<NarrowingQTETrigger>();
+                Debug.Log($"[NarrowingLaser] qteTrigger={qteTrigger}");
             }
+            else
+            {
+                Debug.LogError("[NarrowingLaser] _interactObjPrefab이 null입니다!");
+            }
+
+        
 
             var successTcs = new UniTaskCompletionSource<bool>();
 
@@ -83,6 +94,7 @@ namespace BossSystem.Patterns
                 qteTrigger.Initialize(ctx.PlayerTransform, _qteTimeLimit, _qteUI);
                 qteTrigger.OnQTESuccess += () => successTcs.TrySetResult(true);
                 qteTrigger.OnQTEFail += () => successTcs.TrySetResult(false);
+                Debug.Log("[NarrowingLaser] Initialize 호출됨");
             }
             else
             {

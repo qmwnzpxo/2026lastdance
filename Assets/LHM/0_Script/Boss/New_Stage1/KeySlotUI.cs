@@ -9,7 +9,11 @@ public class KeySlotUI : MonoBehaviour
 {
     [SerializeField] private Image _background;
     [SerializeField] private TMP_Text _keyText;
-
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.G))
+            Debug.Log("[QTE] G키 눌림 감지");
+    }
     public void Setup(string key, Color bgColor)
     {
         if (_keyText != null) _keyText.text = key;

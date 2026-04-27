@@ -43,6 +43,7 @@ public class NarrowingQTETrigger : MonoBehaviour
 
     public void Initialize(Transform player, float timeLimit, QTEUIController qteUI)
     {
+        Debug.Log($"[QTE] Initialize 호출됨. player={player}, qteUI={qteUI}");
         _playerTransform = player;
         _timeLimit = timeLimit;
         _qteUI = qteUI;
@@ -173,6 +174,7 @@ public class NarrowingQTETrigger : MonoBehaviour
     /// <summary>이번 프레임 WASD 입력. 없으면 null.</summary>
     private static string GetPressedWASD()
     {
+        Debug.Log(Input.GetKeyDown(KeyCode.W));
         if (Input.GetKeyDown(KeyCode.W)) return "W";
         if (Input.GetKeyDown(KeyCode.A)) return "A";
         if (Input.GetKeyDown(KeyCode.S)) return "S";
