@@ -1,5 +1,4 @@
-using UnityEngine;
-using UnityEditor.SceneManagement;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class BossSceneJump : MonoBehaviour

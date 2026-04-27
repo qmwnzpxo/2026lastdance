@@ -18,7 +18,7 @@ MonoBehaviour:
   _warningDuration: 1.5
   _laserDuration: 0.5
   _mapEdgeOffset: 20
-  _repeatCount: 3
+  _repeatCount: 1
   _laserThickness: 5
   _castDistance: 70
   _laserDamage: 1
