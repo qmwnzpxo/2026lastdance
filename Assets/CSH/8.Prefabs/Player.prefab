@@ -199,6 +199,10 @@ MonoBehaviour:
   wallSlideSpeedDown: 10
   wallJumpForceX: 6
   wallJumpForceY: 12
+  _climbEdgeCheckDist: 0.6
+  _climbSpeed: 8
+  _climbHorizSpeed: 8
+  _climbHeight: 1
   spriteRenderer: {fileID: 8931696859395051405}
 --- !u!114 &2826985530563884855
 MonoBehaviour:
@@ -236,10 +240,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dashRange: 10
   dashDamage: 5
-  dashSpeed: 50
+  dashSpeed: 100
   dashBoxSize: {x: 1, y: 1}
   tackleRange: 10
-  tackleSpeed: 50
+  tackleSpeed: 100
   tackleDamage: 0
   tackleCooldown: 1
   tackleKnockbackForce: 8

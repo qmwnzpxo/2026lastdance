@@ -35,6 +35,11 @@ public class EnemyBlackboard
     public float attackRecoveryTime = 0.08f;// 후딜
     public float lastAttackTime = float.MinValue;
 
+    // ── 스턴 ────────────────────────────────────
+    public bool isStunned = false;
+    public float stunDuration = 1f;
+    public float stunDecelerationRate = 1f; // 스턴 지속시간 감소 가속도
+
     // ── 비동기 액션 관리 ────────────────────────
     public string runningActionId = null;
     public CancellationTokenSource actionCts;

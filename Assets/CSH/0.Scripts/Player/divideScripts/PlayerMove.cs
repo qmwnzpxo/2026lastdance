@@ -30,6 +30,13 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float wallJumpForceX = 6f;
     [SerializeField] private float wallJumpForceY = 12f;
 
+    // ── 벽 끝 자동 등반 ──────────────────────
+    [Header("벽 끝 자동 등반")]
+    [SerializeField] private float _climbEdgeCheckDist = 0.6f; // 벽 상단 모서리 감지 레이 길이
+    [SerializeField] private float _climbSpeed = 8f; // 등반 시 위로 올라가는 속도
+    [SerializeField] private float _climbHorizSpeed = 8f; // 등반 시 옆으로 이동하는 속도
+    [SerializeField] private float _climbHeight = 1.0f; // 등반 완료 목표 높이 (이 값만큼 올라가면 종료)
+
     // ── 천장 붙기 ────────────────────────────
     [Header("천장 붙기")]
     [SerializeField] private SpriteRenderer spriteRenderer;
@@ -39,9 +46,16 @@ public class PlayerMove : MonoBehaviour
     private Rigidbody2D rb;
     private float moveInput;
     private float verticalInput;
+
     private bool isTouchingCeiling;   // PlayerMove 전용 (외부에 불필요)
     private bool wasTouchingCeiling;
+    
     private bool isWallSildeDown; // 벽 슬라이딩 중 아래 입력을 하는지 여부 (애니메이션 전환용)
+
+    private bool _isClimbing;
+    private float _climbTargetY;
+    private float _climbDirX;
+
     private float wallJumpTime = 0.1f;
     private float wallJumpCounter = 0f;
     private int wallJumpDirection;
@@ -83,6 +97,7 @@ public class PlayerMove : MonoBehaviour
         HandleCeilingAttach();
         HandleWallSlide();
         HandleJump();
+        HandleClimbEdge();
         HandleGetDamage();
     }
 
@@ -95,6 +110,14 @@ public class PlayerMove : MonoBehaviour
         // Dash / Tackle 중에는 PlayerDash가 물리를 전담
         if (state.isDashing || state.isTackling || state.isTackleGroundRush)
             return;
+
+        // 등반 중에는 등반 물리만 처리
+        if (_isClimbing)
+        {
+            ApplyClimbMovement();
+            return;
+        }
+
         RotateSprite();
         ApplyMovement();
         ApplyWallSlide();
@@ -134,7 +157,7 @@ public class PlayerMove : MonoBehaviour
         if (state.isWallJumping) return;
         if ((state.isWallSliding && !state.isGrounded) || state.isOnCeiling || state.isPowerRun)
         {
-            float gaugeChange = Time.fixedDeltaTime * (state.isPowerRun ? 1.5f : 1f);
+            float gaugeChange = Time.fixedDeltaTime * (state.isPowerRun ? 2f : 1f);
             state.ModifyGauge(-gaugeChange);
         }
         else
@@ -147,7 +170,7 @@ public class PlayerMove : MonoBehaviour
                              && !state.isGrounded && !state.isOnCeiling;
         float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
         float yMove = rb.linearVelocity.y < 0 ? rb.linearVelocity.y - Time.fixedDeltaTime * 10 : rb.linearVelocity.y;
-        rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? 1.5f : 1f), yMove);
+        rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? 2f : 1f), yMove);
     }
 
     void HandlePowerRun()
@@ -169,17 +192,17 @@ public class PlayerMove : MonoBehaviour
 
         if (verticalInput > 0 || pressingTowardWall)
         {
-            targetSlideSpeed = -wallSlideSpeedUp * (state.isPowerRun ? 1.5f : 1f);
+            targetSlideSpeed = -wallSlideSpeedUp * (state.isPowerRun ? 2f : 1f);
             isWallSildeDown = state.isTouchingRWall;
         }
         else if (verticalInput < 0 || pressingAwayFromWall)
         {
-            targetSlideSpeed = -wallSlideSpeedDown * (state.isPowerRun ? 1.5f : 1f);
+            targetSlideSpeed = -wallSlideSpeedDown * (state.isPowerRun ? 2f : 1f);
             isWallSildeDown = !state.isTouchingRWall;
         }
         else
         {
-            targetSlideSpeed = -wallSlideSpeed * (state.isPowerRun ? 1.5f : 1f);
+            targetSlideSpeed = -wallSlideSpeed * (state.isPowerRun ? 2f : 1f);
             isWallSildeDown = state.isTouchingRWall;
         }
         float limitVelocity = rb.linearVelocityY;
@@ -203,6 +226,86 @@ public class PlayerMove : MonoBehaviour
             && !state.isDashing
             && state.stamina > 0;
     }
+
+    #endregion
+    // ────────────────────────────────────────
+    #region 벽 끝 자동 등반
+    /// <summary>
+    /// 벽 슬라이딩 중 벽 상단 모서리를 감지하면 자동으로 등반 시작.
+    /// 감지 원리:
+    ///   - 플레이어 허리 높이에서 벽 방향으로 Raycast → 벽이 있으면 아직 벽 중간
+    ///   - 플레이어 머리 높이에서 같은 방향으로 Raycast → 벽이 없으면 "모서리 발견"
+    /// </summary>
+    void HandleClimbEdge()
+    {
+        // 등반 중이면 완료 체크만
+        if (_isClimbing)
+        {
+            if (rb.position.y >= _climbTargetY || state.isGrounded)
+                FinishClimb();
+            return;
+        }
+
+        // 벽 슬라이딩 중이 아니면 무시
+        if (!state.isWallSliding) return;
+        // 대쉬/태클 중 무시
+        if (state.isDashing || state.isTackling || state.isTackleGroundRush) return;
+
+        bool touchingRight = state.isTouchingRWall;
+        bool touchingLeft = state.isTouchingLWall;
+        if (!touchingRight && !touchingLeft) return;
+
+        float dirX = touchingRight ? 1f : -1f;
+        Vector2 origin = rb.position;
+
+        // ① 허리 높이(현재 위치)에서 벽 방향으로 쏴서 벽이 있는지 확인
+        Vector2 midOrigin = origin + Vector2.up * 0.0f;
+        RaycastHit2D midHit = Physics2D.Raycast(
+            midOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
+
+        // ② 머리 위(_climbEdgeCheckDist만큼) 높이에서 같은 방향으로 쏴서 벽이 없으면 모서리
+        Vector2 topOrigin = origin + Vector2.up * _climbEdgeCheckDist;
+        RaycastHit2D topHit = Physics2D.Raycast(
+            topOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
+
+        // 허리는 막혀있고, 머리 위는 뚫려있으면 → 모서리 감지
+        if (midHit.collider != null && topHit.collider == null)
+        {
+            StartClimb(dirX, origin.y);
+        }
+    }
+
+    void StartClimb(float dirX, float currentY)
+    {
+        _isClimbing = true;
+        _climbDirX = dirX;
+        _climbTargetY = currentY + _climbHeight;
+
+        // 등반 중 벽 슬라이딩 상태 해제
+        state.isWallSliding = false;
+        state.isWallJumping = false;
+
+        rb.gravityScale = 0f; // 등반 중 중력 제거
+    }
+
+    void ApplyClimbMovement()
+    {
+        // 위로 + 벽 방향(벽 위로 올라가면서 살짝 앞으로)
+        rb.linearVelocity = new Vector2(
+            _climbDirX * _climbHorizSpeed,
+            _climbSpeed
+        );
+    }
+
+    void FinishClimb()
+    {
+        _isClimbing = false;
+        RestoreGravity();
+
+        // 등반 완료 후 위쪽으로 약간 튀어오르는 느낌
+        rb.linearVelocity = new Vector2(_climbDirX * _climbHorizSpeed, 2f);
+    }
+
 
     #endregion
     // ────────────────────────────────────────
@@ -407,6 +510,14 @@ public class PlayerMove : MonoBehaviour
             Gizmos.DrawRay(wallCheck.position, Vector2.right * wallCheckDistance);
             Gizmos.color = Color.blue;
             Gizmos.DrawRay(wallCheck.position, Vector2.left * wallCheckDistance);
+
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawRay(
+                wallCheck.position + Vector3.up * _climbEdgeCheckDist,
+                Vector2.right * wallCheckDistance);
+            Gizmos.DrawRay(
+                wallCheck.position + Vector3.up * _climbEdgeCheckDist,
+                Vector2.left * wallCheckDistance);
         }
     }
 

@@ -22,6 +22,9 @@ public class EnemyBTController : MonoBehaviour
     [SerializeField] protected float _attackWindupTime;   // 공격 선 딜레이
     [SerializeField] protected float _attackRecoveryTime; // 공격 후 딜레이
 
+    [Header("스턴")]
+    [SerializeField] protected float _stunDuration;
+
     protected BTNode _root;
     protected EnemyBlackboard _bb;
 
@@ -59,13 +62,18 @@ public class EnemyBTController : MonoBehaviour
     protected virtual BTNode BuildTree()
     {
         return new BTSelector(
-            // 우선순위 1: 후퇴
+            // 우선순위 1: 스턴
+            new BTSequence(
+                new ConditionIsStunned(),
+                new ActionStun()
+            ),
+            // 우선순위 2: 후퇴
             new BTSequence(
                 new ConditionNeedsRetreat(),
                 new ConditionHasMoveable(),
                 new ActionRetreat()
             ),
-            // 우선순위 2: 공격
+            // 우선순위 3: 공격
             new BTSequence(
                 new ConditionIsChasing(),
                 new ConditionInAttackRange(),
@@ -73,12 +81,12 @@ public class EnemyBTController : MonoBehaviour
                 new ConditionAttackCooldownReady(),
                 new ActionAttack()
             ),
-            // 우선순위 3: 추격
+            // 우선순위 4: 추격
             new BTSequence(
                 new ConditionIsChasing(),
                 new ActionChase()
             ),
-            // 우선순위 4: 순찰 (fallback)
+            // 우선순위 5: 순찰 (fallback) or 대기(현재는 순찰이 기본형태)
             new ActionPatrol()
         );
     }
@@ -106,6 +114,7 @@ public class EnemyBTController : MonoBehaviour
             attackCooldown = _attackCooldown,
             attackWindupTime =_attackWindupTime,
             attackRecoveryTime = _attackRecoveryTime,
+            stunDuration = _stunDuration,
             moveable = GetComponent<IMoveable>(),
             enemyCombat = GetComponent<EnemyCombat>(),
         };
@@ -177,6 +186,13 @@ public class EnemyBTController : MonoBehaviour
     }
 
     public void CancelCurrentAction() =>_bb.CancelAction();
+
+    public void ApplyStun()
+    {
+        _bb.stunDuration = _stunDuration;
+        _bb.isStunned = true;
+        _bb.CancelAction(); // 현재 진행 중인 액션 즉시 중단
+    }
 
     #endregion
 

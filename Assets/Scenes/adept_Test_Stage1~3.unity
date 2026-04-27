@@ -2412,6 +2412,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 724761021091530411, guid: 79f63b80de3480840baa5e5b21feb90f, type: 3}
   m_PrefabInstance: {fileID: 216180523}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &256115186 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1759278836418004599, guid: 5822f97eade448a4991884bc1c050148, type: 3}
+  m_PrefabInstance: {fileID: 1514968619}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &285203695
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4993,6 +4998,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3445766824681614244, guid: 79f63b80de3480840baa5e5b21feb90f, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
     - target: {fileID: 3783048009085514690, guid: 79f63b80de3480840baa5e5b21feb90f, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -17059,32 +17068,79 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1014071891606882278, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: dashRange
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 1014071891606882278, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: dashSpeed
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 1014071891606882278, guid: 5822f97eade448a4991884bc1c050148, type: 3}
-      propertyPath: tackleSpeed
-      value: 100
-      objectReference: {fileID: 0}
     - target: {fileID: 1759278836418004599, guid: 5822f97eade448a4991884bc1c050148, type: 3}
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2116187884956094737, guid: 5822f97eade448a4991884bc1c050148, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1759278836418004599, guid: 5822f97eade448a4991884bc1c050148, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1514968630}
   m_SourcePrefab: {fileID: 100100000, guid: 5822f97eade448a4991884bc1c050148, type: 3}
 --- !u!4 &1514968620 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 244544623173344442, guid: 5822f97eade448a4991884bc1c050148, type: 3}
   m_PrefabInstance: {fileID: 1514968619}
   m_PrefabAsset: {fileID: 0}
+--- !u!60 &1514968630
+PolygonCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 256115186}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: -0.2, y: 0.87}
+      - {x: -0.5, y: 0.66}
+      - {x: -0.5, y: -0.6}
+      - {x: -0.2, y: -0.78}
+      - {x: 0.2, y: -0.78}
+      - {x: 0.5, y: -0.6}
+      - {x: 0.5, y: 0.66}
+      - {x: 0.2, y: 0.87}
+  m_UseDelaunayMesh: 0
 --- !u!1 &1515056133
 GameObject:
   m_ObjectHideFlags: 0
@@ -19242,7 +19298,7 @@ Camera:
   far clip plane: 5000
   field of view: 26.160202
   orthographic: 1
-  orthographic size: 8.4375
+  orthographic size: 0.3
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2

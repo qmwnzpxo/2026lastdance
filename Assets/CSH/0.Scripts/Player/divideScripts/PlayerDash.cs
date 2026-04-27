@@ -449,8 +449,8 @@ public class PlayerDash : MonoBehaviour
         Debug.Log($"몸통박치기 적중: {enemy.name}");
         //ApplyDamage(enemy,0);
 
-        // 적 BT 액션 취소
-        enemy.GetComponent<EnemyBTController>()?.CancelCurrentAction();
+        // 적에게 스턴 적용
+        enemy.GetComponent<EnemyBTController>()?.ApplyStun();
 
         // IMoveable이 없으면 넉백 처리 안 함
         var moveable = enemy.GetComponent<EnemyVersion3.Interfaces.IMoveable>();

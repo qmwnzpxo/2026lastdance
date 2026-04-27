@@ -170,4 +170,64 @@ namespace BTActions
             catch (System.OperationCanceledException) { }
         }
     }
+    
+    public class ActionStun : BTAsyncAction
+    {
+        protected override string ActionId => nameof(ActionStun);
+
+        protected override async UniTaskVoid ExecuteAsync(
+            EnemyBlackboard bb, CancellationToken ct)
+        {
+            try
+            {
+                float elapsed = 0f;
+
+                while (!ct.IsCancellationRequested && elapsed < bb.stunDuration)
+                {
+                    // 속도 점점 감소
+                    float currentX = bb.rigid2D.linearVelocity.x;
+                    float currentY = bb.rigid2D.linearVelocity.y;
+
+                    float newX = Mathf.MoveTowards(
+                        currentX, 0f, bb.stunDecelerationRate * Time.fixedDeltaTime);
+                    float newY = Mathf.MoveTowards(
+                        currentY, 0f, bb.stunDecelerationRate * Time.fixedDeltaTime);
+
+                    bb.rigid2D.linearVelocity = new Vector2(newX, newY);
+
+                    elapsed += Time.fixedDeltaTime;
+                    await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                }
+
+                bb.rigid2D.linearVelocity = Vector2.zero;
+                bb.isStunned = false;
+                bb.actionCompleted = true;
+                bb.lastActionResult = NodeState.Success;
+            }
+            catch (System.OperationCanceledException)
+            {
+                bb.isStunned = false;
+            }
+        }
+    }
+
+    public class ActionIdle : BTAsyncAction
+    {
+        protected override string ActionId => nameof(ActionIdle);
+        protected override async UniTaskVoid ExecuteAsync(
+            EnemyBlackboard bb, CancellationToken ct)
+        {
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    if (bb.isDetected) break;
+                    await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                }
+                bb.actionCompleted = true;
+                bb.lastActionResult = NodeState.Success;
+            }
+            catch (System.OperationCanceledException) { }
+        }
+    }
 }

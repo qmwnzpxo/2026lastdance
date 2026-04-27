@@ -40,4 +40,10 @@ namespace BTConditions
         public override NodeState Tick(EnemyBlackboard bb)
             => bb.moveable != null ? NodeState.Success : NodeState.Failure;
     }
+    
+    public class ConditionIsStunned : BTCondition
+    {
+        public override NodeState Tick(EnemyBlackboard bb)
+            => bb.isStunned ? NodeState.Success : NodeState.Failure;
+    }
 }
