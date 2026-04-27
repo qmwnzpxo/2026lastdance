@@ -16,7 +16,7 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class PlayerHealthBarBridge : MonoBehaviour
+public class PlayerStateBridge : MonoBehaviour
 {
     // ── Inspector ─────────────────────────────────────────────────────────────
 
