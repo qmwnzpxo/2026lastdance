@@ -88,6 +88,7 @@ public class EnemyBullet : MonoBehaviour, IDamageable
     }
     public virtual void TakeDamage(float damage)
     {
+        Debug.Log($"enemy bullet take damage");
         ReturnToPool();
     }
 }
