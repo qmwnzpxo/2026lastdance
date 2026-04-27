@@ -353,8 +353,8 @@ MonoBehaviour:
   enableShimmer: 0
   enableShake: 1
   enableDealTimeGlow: 1
-  dealTimeShakeStrength: {x: 14, y: 7}
-  dealTimeShakeDuration: 0.4
+  dealTimeShakeStrength: {x: 30, y: 14}
+  dealTimeShakeDuration: 0.8
 --- !u!114 &3660533445689405165
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -804,8 +804,8 @@ MonoBehaviour:
   rootCanvas: {fileID: 2301365405131623027}
   sourceMaterial: {fileID: 2100000, guid: f1b91584cef42894cab64792f7fe9963, type: 2}
   barSize: {x: 900, y: 20}
-  ghostDelay: 0.3
-  ghostSpeed: 1
+  ghostDelay: 0.15
+  ghostSpeed: 3
 --- !u!114 &2135508973780992977
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -71,7 +71,7 @@ Material:
     - _ShakeAmount: 0
     - _ShakeSpeed: 0
     - _ShimmerIntensity: 1
-    - _ShimmerSpeed: 0.2
+    - _ShimmerSpeed: 0.318
     - _ShimmerWidth: 15
     - _Stencil: 0
     - _StencilComp: 8
