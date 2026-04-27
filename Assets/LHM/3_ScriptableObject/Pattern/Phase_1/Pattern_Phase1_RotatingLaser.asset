@@ -23,7 +23,7 @@ MonoBehaviour:
   _laserWidth: 0.4
   _rotationSpeed: 20
   _spinUpDuration: 1.5
-  _laserDPS: 30
+  _laserDPS: 0.01
   _laserThickness: 0.3
   _castDistance: 30
   _playerLayer:
