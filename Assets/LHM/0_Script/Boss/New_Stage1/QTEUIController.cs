@@ -118,7 +118,7 @@ namespace BossSystem
             if (_resultText != null)
             {
                 _resultText.color = _resetColor;
-                _resultText.text  = "처음부터!";
+                _resultText.text  = "reset!";
             }
         }
 
@@ -132,7 +132,7 @@ namespace BossSystem
             if (_resultText != null)
             {
                 _resultText.color = _successColor;
-                _resultText.text  = "파훼 성공!";
+                _resultText.text  = "clear!";
             }
         }
 
@@ -146,7 +146,7 @@ namespace BossSystem
             if (_resultText != null)
             {
                 _resultText.color = _failColor;
-                _resultText.text  = "실패!";
+                _resultText.text  = "fail!";
             }
         }
 
@@ -188,25 +188,8 @@ namespace BossSystem
             if (_qtePanel != null)
                 _qtePanel.SetActive(false);
         }
+
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // KeySlotUI — 키 한 칸 슬롯
-    // ═══════════════════════════════════════════════════════════════════════
-    public class KeySlotUI : MonoBehaviour
-    {
-        [SerializeField] private Image    _background;
-        [SerializeField] private TMP_Text _keyText;
 
-        public void Setup(string key, Color bgColor)
-        {
-            if (_keyText != null)    _keyText.text  = key;
-            if (_background != null) _background.color = bgColor;
-        }
-
-        public void SetColor(Color color)
-        {
-            if (_background != null) _background.color = color;
-        }
-    }
 }

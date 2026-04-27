@@ -25,6 +25,8 @@ namespace BossSystem
         [SerializeField] private PoolPreloadEntry[] _poolPreloadEntries;
         [SerializeField] private Transform _poolRoot;
 
+        [SerializeField] private QTEUIController _qteUIController;
+
         private DamageHandler _damageHandler;
         private BossBlackboard _blackboard;
         private BossContext _context;
@@ -272,7 +274,13 @@ namespace BossSystem
                         Debug.LogWarning("[BossController] _panelWaypoints가 비어있습니다.");
                     }
                 }
+                if (pattern is Phase1NarrowingLaserPattern narrowingPattern)
+                {
+                    narrowingPattern.SetQTEUI(_qteUIController);
+                    Debug.Log("[BossController] Injected QTEUIController → NarrowingLaserPattern");
+                }
             }
+
         }
 
         // ─────────────────────────────────────────────────────────────────

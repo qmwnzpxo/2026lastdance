@@ -41,6 +41,8 @@ namespace BossSystem.Patterns
         [Tooltip("파훼 후 딜타임 지속 시간(초).")]
         [SerializeField] private float _dealTimeDuration = 5f;
 
+        [Header("UI")]
+        [SerializeField] private QTEUIController _qteUI;
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
             // ── 1. 차지 연출 ──────────────────────────────────────────────
@@ -71,16 +73,16 @@ namespace BossSystem.Patterns
             {
                 Vector3 interactPos = ctx.BossTransform.position + (Vector3)_interactOffset;
                 interactObj = Object.Instantiate(_interactObjPrefab, interactPos, Quaternion.identity);
-                qteTrigger  = interactObj.GetComponent<NarrowingQTETrigger>();
+                qteTrigger = interactObj.GetComponent<NarrowingQTETrigger>();
             }
 
             var successTcs = new UniTaskCompletionSource<bool>();
 
             if (qteTrigger != null)
             {
-                qteTrigger.Initialize(ctx.PlayerTransform, _qteTimeLimit);
+                qteTrigger.Initialize(ctx.PlayerTransform, _qteTimeLimit, _qteUI);
                 qteTrigger.OnQTESuccess += () => successTcs.TrySetResult(true);
-                qteTrigger.OnQTEFail   += () => successTcs.TrySetResult(false);
+                qteTrigger.OnQTEFail += () => successTcs.TrySetResult(false);
             }
             else
             {
@@ -93,7 +95,7 @@ namespace BossSystem.Patterns
             try
             {
                 var wallTask = RunWallsAsync(wallLeft, wallRight, successTcs, ct);
-                var qteTask  = successTcs.Task.AttachExternalCancellation(ct);
+                var qteTask = successTcs.Task.AttachExternalCancellation(ct);
 
                 int winner = await UniTask.WhenAny(wallTask, qteTask);
                 if (winner == 1)
@@ -104,7 +106,7 @@ namespace BossSystem.Patterns
                 if (interactObj != null) Object.Destroy(interactObj);
             }
 
-            if (wallLeftGo  != null) Object.Destroy(wallLeftGo);
+            if (wallLeftGo != null) Object.Destroy(wallLeftGo);
             if (wallRightGo != null) Object.Destroy(wallRightGo);
 
             ct.ThrowIfCancellationRequested();
@@ -150,17 +152,17 @@ namespace BossSystem.Patterns
             if (_laserWallPrefab == null)
                 return (null, null, null, null);
 
-            var leftGo  = Object.Instantiate(_laserWallPrefab);
-            var left    = leftGo.GetComponent<LineRenderer>();
+            var leftGo = Object.Instantiate(_laserWallPrefab);
+            var left = leftGo.GetComponent<LineRenderer>();
             var rightGo = Object.Instantiate(_laserWallPrefab);
-            var right   = rightGo.GetComponent<LineRenderer>();
+            var right = rightGo.GetComponent<LineRenderer>();
 
             if (left != null)
             {
                 left.startColor = left.endColor = _laserWallColor;
                 left.positionCount = 2;
                 left.SetPosition(0, new Vector3(-_wallStartX, -_wallHalfHeight, 0f));
-                left.SetPosition(1, new Vector3(-_wallStartX,  _wallHalfHeight, 0f));
+                left.SetPosition(1, new Vector3(-_wallStartX, _wallHalfHeight, 0f));
                 left.enabled = true;
             }
             if (right != null)
@@ -168,7 +170,7 @@ namespace BossSystem.Patterns
                 right.startColor = right.endColor = _laserWallColor;
                 right.positionCount = 2;
                 right.SetPosition(0, new Vector3(_wallStartX, -_wallHalfHeight, 0f));
-                right.SetPosition(1, new Vector3(_wallStartX,  _wallHalfHeight, 0f));
+                right.SetPosition(1, new Vector3(_wallStartX, _wallHalfHeight, 0f));
                 right.enabled = true;
             }
 
@@ -181,21 +183,21 @@ namespace BossSystem.Patterns
             UniTaskCompletionSource<bool> successTcs,
             CancellationToken ct)
         {
-            float leftX  = -_wallStartX;
-            float rightX =  _wallStartX;
+            float leftX = -_wallStartX;
+            float rightX = _wallStartX;
 
             while (!ct.IsCancellationRequested)
             {
                 if (successTcs.Task.Status != UniTaskStatus.Pending) return;
 
-                leftX  = Mathf.MoveTowards(leftX,  _wallTargetX, _wallMoveSpeed * Time.deltaTime);
+                leftX = Mathf.MoveTowards(leftX, _wallTargetX, _wallMoveSpeed * Time.deltaTime);
                 rightX = Mathf.MoveTowards(rightX, _wallTargetX, _wallMoveSpeed * Time.deltaTime);
 
-                SetWallX(wallLeft,  leftX);
+                SetWallX(wallLeft, leftX);
                 SetWallX(wallRight, rightX);
 
                 LaserUtility.BoxCastAndDamage(
-                    new Vector2(leftX,  0f), Vector2.right,
+                    new Vector2(leftX, 0f), Vector2.right,
                     _wallThickness, _wallCastLen, _playerLayer, _wallDPS * Time.deltaTime);
                 LaserUtility.BoxCastAndDamage(
                     new Vector2(rightX, 0f), Vector2.left,
@@ -227,182 +229,12 @@ namespace BossSystem.Patterns
                 cancellationToken: ct).SuppressCancellationThrow();
             tcs.TrySetResult(false);
         }
+        public void SetQTEUI(QTEUIController qteUI)
+        {
+            _qteUI = qteUI;
+        }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // NarrowingQTETrigger
-    //
-    // 흐름:
-    //   G키 (인터랙트 범위 내) → QTE 시작
-    //   → WASD 8개 랜덤 배열 생성 → UI 팝업 표시
-    //   → 키 입력 순서대로 맞추기
-    //     · 정답: 다음 칸으로 진행 (UI 초록 표시)
-    //     · 오답: 빨간 플래시 0.3초 → step = 0 리셋
-    //   → 8개 전부 맞추면 OnQTESuccess
-    //   → 시간 초과 or 벽 압사면 OnQTEFail
-    // ═══════════════════════════════════════════════════════════════════════
-    [RequireComponent(typeof(Collider2D))]
-    public class NarrowingQTETrigger : MonoBehaviour
-    {
-        [Header("Interact")]
-        [SerializeField] private float _interactRadius = 1.5f;
-
-        [Header("UI")]
-        [Tooltip("씬에 배치된 QTEUIController. 비워두면 FindObjectOfType으로 자동 탐색.")]
-        [SerializeField] private QTEUIController _qteUI;
-
-        // ── 이벤트 ────────────────────────────────────────────────────────
-        public event System.Action OnQTESuccess;
-        public event System.Action OnQTEFail;
-
-        // ── 내부 상태 ─────────────────────────────────────────────────────
-        private Transform _playerTransform;
-        private float     _timeLimit;
-        private bool      _qteTriggered;
-
-        // WASD 풀 & 키 개수
-        private static readonly string[] _wasdKeys = { "W", "A", "S", "D" };
-        private const int KEY_COUNT = 8;
-
-        // ─────────────────────────────────────────────────────────────────
-        // 초기화 (패턴에서 Instantiate 후 호출)
-        // ─────────────────────────────────────────────────────────────────
-
-        public void Initialize(Transform player, float timeLimit)
-        {
-            _playerTransform = player;
-            _timeLimit       = timeLimit;
-
-            if (_qteUI == null)
-                _qteUI = Object.FindObjectOfType<QTEUIController>();
-
-            if (_qteUI == null)
-                Debug.LogWarning("[NarrowingQTE] QTEUIController를 찾을 수 없습니다. UI 없이 진행합니다.");
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // G키 감지
-        // ─────────────────────────────────────────────────────────────────
-
-        private void Update()
-        {
-            if (_qteTriggered) return;
-            if (_playerTransform == null) return;
-            if (!Input.GetKeyDown(KeyCode.G)) return;
-
-            float dist = Vector2.Distance(transform.position, _playerTransform.position);
-            if (dist > _interactRadius) return;
-
-            _qteTriggered = true;
-            RunQTEAsync(this.GetCancellationTokenOnDestroy()).Forget();
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // QTE 메인 루프
-        // ─────────────────────────────────────────────────────────────────
-
-        private async UniTaskVoid RunQTEAsync(CancellationToken ct)
-        {
-            // 1. 랜덤 배열 생성
-            string[] sequence = GenerateRandomSequence(KEY_COUNT);
-            Debug.Log($"[NarrowingQTE] Sequence: {string.Join(" - ", sequence)}");
-
-            // 2. UI 열기
-            _qteUI?.Show(sequence, _timeLimit);
-            _qteUI?.UpdateProgress(0);
-
-            float elapsed = 0f;
-            int   step    = 0;
-            bool  success = false;
-
-            while (!ct.IsCancellationRequested && elapsed < _timeLimit)
-            {
-                elapsed += Time.deltaTime;
-
-                string pressed = GetPressedWASD();
-                if (pressed != null)
-                {
-                    if (pressed == sequence[step])
-                    {
-                        // ── 정답 ─────────────────────────────────────────
-                        step++;
-                        _qteUI?.UpdateProgress(step);
-                        Debug.Log($"[NarrowingQTE] Correct! step={step}/{KEY_COUNT}");
-
-                        if (step >= KEY_COUNT)
-                        {
-                            success = true;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        // ── 오답 → 0.3초 플래시 후 처음부터 ──────────────
-                        Debug.Log($"[NarrowingQTE] Wrong '{pressed}' (expected '{sequence[step]}'). Reset!");
-                        _qteUI?.ShowWrong(step);
-
-                        await UniTask.Delay(
-                            System.TimeSpan.FromMilliseconds(300), cancellationToken: ct);
-
-                        step = 0;
-                        _qteUI?.UpdateProgress(step);
-                    }
-                }
-
-                await UniTask.Yield(PlayerLoopTiming.Update, ct);
-            }
-
-            // 3. 결과 처리
-            if (success)
-            {
-                _qteUI?.ShowSuccess();
-                // 성공 연출 잠깐 보여주고 이벤트 발생
-                await UniTask.Delay(
-                    System.TimeSpan.FromMilliseconds(600), cancellationToken: ct)
-                    .SuppressCancellationThrow();
-                OnQTESuccess?.Invoke();
-            }
-            else
-            {
-                _qteUI?.ShowFail();
-                await UniTask.Delay(
-                    System.TimeSpan.FromMilliseconds(600), cancellationToken: ct)
-                    .SuppressCancellationThrow();
-                OnQTEFail?.Invoke();
-            }
-
-            _qteUI?.Hide();
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // 유틸
-        // ─────────────────────────────────────────────────────────────────
-
-        /// <summary>WASD 중복 허용 랜덤 8개 생성.</summary>
-        private static string[] GenerateRandomSequence(int count)
-        {
-            var seq = new string[count];
-            for (int i = 0; i < count; i++)
-                seq[i] = _wasdKeys[Random.Range(0, _wasdKeys.Length)];
-            return seq;
-        }
-
-        /// <summary>이번 프레임 WASD 입력. 없으면 null.</summary>
-        private static string GetPressedWASD()
-        {
-            if (Input.GetKeyDown(KeyCode.W)) return "W";
-            if (Input.GetKeyDown(KeyCode.A)) return "A";
-            if (Input.GetKeyDown(KeyCode.S)) return "S";
-            if (Input.GetKeyDown(KeyCode.D)) return "D";
-            return null;
-        }
-
-#if UNITY_EDITOR
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, _interactRadius);
-        }
-#endif
-    }
 }
+
+
