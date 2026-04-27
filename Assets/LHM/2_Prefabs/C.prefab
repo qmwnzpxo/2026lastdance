@@ -137,6 +137,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9fbdd7b6306b9bb41bff7dfc01462e7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxHP: 1
+  _maxHP: 6
   _spriteRenderer: {fileID: 0}
   _destroyVfxPrefab: {fileID: 0}

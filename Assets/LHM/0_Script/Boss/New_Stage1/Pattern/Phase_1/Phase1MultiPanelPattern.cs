@@ -36,7 +36,7 @@ namespace BossSystem.Patterns
         [SerializeField] private float _fireBeamWidth = 0.4f;
         [SerializeField] private float _aimDurationA = 1f;
         [SerializeField] private float _fireDurationA = 0.3f;
-        [SerializeField] private float _beamDamageA = 15f;
+        [SerializeField] private float _beamDamageA = 0.01f;
         [SerializeField] private float _randomMoveRangeA = 10f;
         [SerializeField] private float _randomMoveSpeedA = 4f;
 
@@ -55,7 +55,7 @@ namespace BossSystem.Patterns
         [SerializeField] private float _aimDurationC = 1f;
         [SerializeField] private float _fireDurationC = 0.3f;
         [SerializeField] private float _splitAngle = 20f;
-        [SerializeField] private float _beamDamageC = 12f;
+        [SerializeField] private float _beamDamageC = 0.01f;
         [SerializeField] private float _randomMoveRangeC = 10f;
         [SerializeField] private float _randomMoveSpeedC = 4f;
 
