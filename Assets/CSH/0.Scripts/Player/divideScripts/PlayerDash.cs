@@ -29,6 +29,8 @@ public class PlayerDash : MonoBehaviour
     [Header("공용")]
     [SerializeField] private Vector2 attackBoxSize = new Vector2(1f, 1f);  // Sweep 판정 크기
     [SerializeField] private LayerMask enemyLayer;
+    private LayerMask bulletLayer;
+    private LayerMask combined;
     private float cameraDumpingScale = 0.2f;
     private float originalCameraDumping = 1f;
     // ── 대쉬 내부 상태 ───────────────────────
@@ -69,6 +71,9 @@ public class PlayerDash : MonoBehaviour
 
         if (enemyLayer == 0)
             enemyLayer = LayerMask.GetMask("enemy");
+        if (bulletLayer == 0)
+            bulletLayer = LayerMask.GetMask("enemyBullet");
+        combined = enemyLayer | bulletLayer;
     }
 
     void Start()
@@ -251,7 +256,7 @@ public class PlayerDash : MonoBehaviour
 
         dir /= distance;
         RaycastHit2D[] hits = Physics2D.BoxCastAll(
-            from, attackBoxSize + Vector2.one * 0.1f, 0f, dir, distance, enemyLayer);
+            from, attackBoxSize + Vector2.one * 0.1f, 0f, dir, distance, combined);
 
         foreach (RaycastHit2D hit in hits)
         {

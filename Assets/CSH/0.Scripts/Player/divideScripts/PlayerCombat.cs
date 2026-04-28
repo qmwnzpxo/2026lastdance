@@ -13,7 +13,9 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float     attackSecondHitDelay = 0.28f;
     [SerializeField] private float     attackfloatHitDelay = 0.15f;
     [SerializeField] private float     attackActiveDuration = 0.1f;
-    [SerializeField] private LayerMask enemyLayer;
+    private LayerMask enemyLayer;
+    private LayerMask bulletLayer;
+    private LayerMask combined;
 
     public float attackRepeatTime = 2;
 
@@ -36,6 +38,10 @@ public class PlayerCombat : MonoBehaviour
             attackTransform = transform.Find("attack check");
         if (enemyLayer == 0)
             enemyLayer = LayerMask.GetMask("enemy");
+        if(bulletLayer == 0)
+            bulletLayer = LayerMask.GetMask("enemyBullet");
+        combined = enemyLayer | bulletLayer;
+
         mainCamera = Camera.main;
     }
 
@@ -121,8 +127,9 @@ public class PlayerCombat : MonoBehaviour
 
     void ExecuteAttackBox(Vector2 attackPos)
     {
+
         Collider2D[] hits = Physics2D.OverlapBoxAll(
-            attackPos, attackBoxSize, attackTransform.eulerAngles.z, enemyLayer);
+            attackPos, attackBoxSize, attackTransform.eulerAngles.z, combined);
 
         foreach (Collider2D hit in hits)
         {

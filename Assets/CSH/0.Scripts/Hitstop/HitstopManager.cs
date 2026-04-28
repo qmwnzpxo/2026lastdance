@@ -12,10 +12,6 @@ using UnityEngine;
 // 씬 어디서든 HitstopManager.Instance 로 접근 가능
 public class HitstopManager : PersistentSingleton<HitstopManager>
 {
-    // 현재 히트스탑이 진행 중인지 외부에서 확인할 때 사용
-    // 예: 히트스탑 중엔 입력을 무시하고 싶을 때 if (HitstopManager.Instance.IsHitstop) 로 체크
-    public bool IsHitstop { get; private set; }
-
     // ── 취소 토큰 ─────────────────────────────────────────────
     // UniTask의 비동기 작업을 중간에 취소하기 위한 토큰 소스.
     // 히트스탑 도중 새 히트스탑이 요청되면 이전 작업을 취소하고 새로 시작한다.
@@ -28,10 +24,9 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
     /// <param name="timeScale">히트스탑 중 게임 속도 배율. 0에 가까울수록 강한 정지감. 기본값 0.05.</param>
     public void TriggerHitstop(float duration = 0.08f, float timeScale = 0.08f)
     {
-        // 이미 히트스탑이 진행 중이라면 → 이전 작업을 취소하고 새 히트스탑으로 덮어쓴다.
-        // Cancel() : 현재 실행 중인 HitstopRoutine에 "취소 신호"를 보낸다.
-        // Dispose() : 토큰 소스가 사용한 메모리를 즉시 해제한다.
-        _cts?.Cancel();
+        // 이미 히트스탑이 진행 중이면 무시 (중첩 방지)
+        if (_cts != null && !_cts.IsCancellationRequested) return;
+
         _cts?.Dispose();
 
         // 새 취소 토큰 소스 생성 — 이번 히트스탑 전용
@@ -50,9 +45,6 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
     /// </summary>
     private async UniTaskVoid HitstopRoutine(float duration, float timeScale, CancellationToken ct)
     {
-        // 히트스탑 시작 상태 기록
-        IsHitstop = true;
-
         // 게임 전체 시간 배율을 낮춰 슬로우모션 효과 적용
         // Rigidbody, Animator 등 유니티 물리/애니메이션이 모두 이 값의 영향을 받는다.
         Time.timeScale = timeScale;
@@ -76,7 +68,7 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
             // 코루틴(StopCoroutine)은 이 보장이 없어서 timeScale이 낮은 채로
             // 게임이 굳어버리는 버그가 생길 수 있다. UniTask는 이를 구조적으로 방지.
             Time.timeScale = 1f;
-            IsHitstop = false;
+            _cts?.Cancel();
         }
     }
 
