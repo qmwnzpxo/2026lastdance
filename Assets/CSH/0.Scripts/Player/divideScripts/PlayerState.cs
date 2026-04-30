@@ -1,9 +1,13 @@
 ﻿using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-
+public enum PlayerChip
+{
+    pink,    red,    green,    blue,
+}
 /// <summary>
 /// 플레이어 공유 데이터 허브.
 /// PlayerMove / PlayerCombat / PlayerDash 모두 이 컴포넌트를 참조한다.
@@ -57,6 +61,12 @@ public class PlayerState : MonoBehaviour, IDamageable
     [RuntimeOnly, SerializeField] public bool isTackleGroundRush;
     [RuntimeOnly, SerializeField] public bool isAttacking;
     [RuntimeOnly, SerializeField] public bool isHit;
+
+    // ── 칩 설정 ─────────────────────────────
+    [Header("칩 설정")]
+    public PlayerChip currentChip = PlayerChip.pink;
+    public HashSet<PlayerChip> ownedChips = new HashSet<PlayerChip>() { PlayerChip.pink };
+
     public Light2D hitLight;
     public Light2D hitWorldLight;
 
@@ -93,10 +103,24 @@ public class PlayerState : MonoBehaviour, IDamageable
         return true;
     }
 
+    /// <summary>
+    /// 칩 획득. 중복 획득 방지 위해 HashSet으로 관리 
+    /// </summary>
+    public void GetChips(PlayerChip chip)
+    {
+        ownedChips.Add(chip);
+    }
+
     public void GaugeInit()
     {
-        dashGauge=maxDashGauge;
+        dashGauge = maxDashGauge;
         stamina = maxStamina;
+    }
+
+    public void Heal(float amount)
+    {
+        if(isDie) return;
+        HP = Mathf.Min(HP + amount, MaxHP);
     }
 
     public void TakeDamage(float dmg)
