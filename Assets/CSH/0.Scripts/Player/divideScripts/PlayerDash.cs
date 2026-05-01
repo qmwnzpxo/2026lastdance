@@ -57,8 +57,8 @@ public class PlayerDash : MonoBehaviour
     private readonly HashSet<Collider2D> hitEnemiesInDash = new HashSet<Collider2D>();
 
     // ── 파랑 칩 내부 상태 ────────────────────
-    private bool _blueFalling = false; // 낙하 강타 진행 중
-    private bool _blueDashSecondInput = false; // 대시 도중 재입력 받았는지
+    [SerializeField]private bool _blueFalling = false; // 낙하 강타 진행 중
+    [SerializeField]private bool _blueDashSecondInput = false; // 대시 도중 재입력 받았는지
 
     // ── 초록 칩 내부 상태 ────────────────────
     private bool _greenDashing = false; // 초록 칩 연속 돌진 중
@@ -158,7 +158,7 @@ public class PlayerDash : MonoBehaviour
 
     void HandleDash()
     {
-        if (state.isTackling || state.isTackleGroundRush) return;
+        if (state.isTackling || state.isTackleGroundRush || _blueDashSecondInput) return;
 
         if (Input.GetMouseButtonDown(1))
         {
@@ -338,14 +338,14 @@ public class PlayerDash : MonoBehaviour
     private async UniTaskVoid GreenDashRoutine(CancellationToken ct)
     {
         _greenDashing = true;
-        cameraFollow.SetCameraDumping(cameraDumpingScale);
-
         for (int i = 0; i < greenDashCount; i++)
         {
             if (ct.IsCancellationRequested) break;
 
             // 매 돌진마다 현재 마우스 방향 계산
             Vector2 dir = GetMouseDirection();
+            cameraFollow.SetCameraDumping(cameraDumpingScale);
+
             Vector2 start = rb.position;
             Vector2 target = start + dir * greenDashRange;
 
@@ -484,6 +484,7 @@ public class PlayerDash : MonoBehaviour
         _blueFallCts = new CancellationTokenSource();
 
         _blueFalling = true;
+        Debug.Log($"blueFall start");
         rb.gravityScale = 0f;
         rb.linearVelocity = Vector2.down * blueFallSpeed;
         cameraFollow.SetCameraDumping(cameraDumpingScale);
@@ -503,6 +504,7 @@ public class PlayerDash : MonoBehaviour
     void BlueSlamLand()
     {
         _blueFalling = false;
+        Debug.Log($"blueFall end");
 
         // 범위 내 적 전체 데미지
         Collider2D[] hits = Physics2D.OverlapCircleAll(
