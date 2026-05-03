@@ -169,6 +169,7 @@ MonoBehaviour:
   isTackleGroundRush: 0
   isAttacking: 0
   isHit: 0
+  currentChip: 0
   hitLight: {fileID: 7763769427215422248}
   hitWorldLight: {fileID: 8288715132913159236}
 --- !u!114 &4673611001169730460
@@ -222,9 +223,6 @@ MonoBehaviour:
   attackSecondHitDelay: 0.3
   attackfloatHitDelay: 0.15
   attackActiveDuration: 0.1
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 128
   attackRepeatTime: 2
 --- !u!114 &1014071891606882278
 MonoBehaviour:
@@ -248,10 +246,19 @@ MonoBehaviour:
   tackleCooldown: 1
   tackleKnockbackForce: 8
   tackleSelfKnockbackRatio: 0.33
+  greenDashCount: 3
+  greenDashRange: 5
+  greenDashSpeed: 55
+  greenDashInterval: 0.09
+  blueFallSpeed: 80
+  blueSlamRadius: 3
+  blueSlamDamage: 8
   attackBoxSize: {x: 1.1, y: 1.3}
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
+  _blueFalling: 0
+  _blueDashSecondInput: 0
 --- !u!114 &5451511713479336876
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -564,8 +571,8 @@ PolygonCollider2D:
     - - {x: -0.2, y: 0.87}
       - {x: -0.5, y: 0.66}
       - {x: -0.5, y: -0.6}
-      - {x: -0.2, y: -0.78}
-      - {x: 0.2, y: -0.78}
+      - {x: -0.22, y: -0.81}
+      - {x: 0.22, y: -0.81}
       - {x: 0.5, y: -0.6}
       - {x: 0.5, y: 0.66}
       - {x: 0.2, y: 0.87}
