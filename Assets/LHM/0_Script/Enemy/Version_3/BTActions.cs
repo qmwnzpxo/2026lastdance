@@ -91,6 +91,7 @@ namespace BTActions
             }
             try
             {
+                var tmg = CustomTimeManager.Instance;
                 while (!ct.IsCancellationRequested)
                 {
                     // 공격 범위 진입 또는 추격 해제 → BT가 다음 틱에 브랜치 재선택
@@ -141,7 +142,7 @@ namespace BTActions
 
                     bb.rigid2D.linearVelocity =
                         bb.moveable.GetSlopeVelocity(dirX, 
-                        bb.moveable.moveSpeed * CustomTimeManager.Instance.EnemyTimeScale, 
+                        bb.moveable.moveSpeed * tmg.EnemyTimeScale, 
                         bb.groundLayer);
 
                     await UniTask.WaitForFixedUpdate(cancellationToken: ct);
@@ -169,6 +170,7 @@ namespace BTActions
             }
             try
             {
+                var tmg = CustomTimeManager.Instance;
                 while (!ct.IsCancellationRequested)
                 {
                     if (bb.isDetected) break;
@@ -193,7 +195,9 @@ namespace BTActions
                     }
 
                     bb.rigid2D.linearVelocity = 
-                        bb.moveable.GetSlopeVelocity(dirX, bb.moveable.moveSpeed, bb.groundLayer);
+                        bb.moveable.GetSlopeVelocity(dirX, 
+                        bb.moveable.moveSpeed * tmg.EnemyTimeScale, 
+                        bb.groundLayer);
                     await UniTask.WaitForFixedUpdate(cancellationToken: ct);
                 }
 

@@ -83,6 +83,11 @@ public class PlayerMove : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         state = GetComponent<PlayerState>();
         ani = GetComponent<PlayerAnimation>();
+
+        timeScaleReceiver = GetComponent<TimeScaleReceiver>();
+        timeScaleReceiver._animator = ani.ani;
+        timeScaleReceiver._rb = rb;
+
         rb.gravityScale = state.defaultGravityScale;
 
         if (spriteRenderer == null)
@@ -91,12 +96,6 @@ public class PlayerMove : MonoBehaviour
         flipSpriteScale = new Vector3(normalSpriteScale.x,-normalSpriteScale.y,normalSpriteScale.z);
     }
 
-    private void OnEnable()
-    {
-        timeScaleReceiver = GetComponent<TimeScaleReceiver>();
-        timeScaleReceiver._animator = ani.ani;
-        timeScaleReceiver._rb = rb;
-    }
 
     void Update()
     {
@@ -182,7 +181,8 @@ public class PlayerMove : MonoBehaviour
 
         bool blockedByWall = (state.isTouchingLWall || state.isTouchingRWall)
                              && !state.isGrounded && !state.isOnCeiling;
-        float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
+        float scale = CustomTimeManager.Instance.PlayerTimeScale;
+        float xMove = blockedByWall ? 0f : moveInput * moveSpeed * scale;
         float yMove = rb.linearVelocity.y < 0 ?
               rb.linearVelocity.y - CustomTime.ScaledFixedDeltaTime(state.category) * 10 
             : rb.linearVelocity.y;

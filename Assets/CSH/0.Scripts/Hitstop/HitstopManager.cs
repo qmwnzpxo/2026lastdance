@@ -27,6 +27,7 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
         // 이미 히트스탑이 진행 중이면 무시 (중첩 방지)
         if (_cts != null && !_cts.IsCancellationRequested) return;
 
+        Debug.Log($"[HitstopManager] called HItstop");
         _cts?.Dispose();
 
         // 새 취소 토큰 소스 생성 — 이번 히트스탑 전용

@@ -10,6 +10,7 @@ using UnityEngine;
 public class TimeScaleReceiver : MonoBehaviour
 {
     [SerializeField] private TimeCategory _category;
+    private bool _pendingSubscribe = false;
 
     public Animator _animator;
     public Rigidbody2D _rb;
@@ -24,12 +25,29 @@ public class TimeScaleReceiver : MonoBehaviour
 
     void OnEnable()
     {
-        Subscribe(true);
+        if (CustomTimeManager.Instance != null)
+            Subscribe(true);
+        else
+            _pendingSubscribe = true;
+    }
+
+    void Start()
+    {
+        if (_pendingSubscribe)
+        {
+            Subscribe(true);
+            _pendingSubscribe = false;
+        }
 
         if (CustomTimeManager.Instance != null)
             OnScaleChanged(CustomTimeManager.Instance.GetTimeScale(_category));
     }
-    void OnDisable() => Subscribe(false);
+
+    void OnDisable()
+    {
+        _pendingSubscribe = false;
+        Subscribe(false);
+    }
 
     private void Subscribe(bool on)
     {

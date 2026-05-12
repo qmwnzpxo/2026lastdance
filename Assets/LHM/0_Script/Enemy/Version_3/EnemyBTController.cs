@@ -50,6 +50,12 @@ public class EnemyBTController : MonoBehaviour
         }
     }
 
+    public virtual void ReInit()
+    {
+        InitBlackboad();
+        _root = BuildTree();
+    }
+
     protected virtual void OnDestroy()
     {
         _bb.CancelAction();
