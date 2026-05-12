@@ -55,7 +55,10 @@ public class PlayerCombat : MonoBehaviour
 
         // 디버그 히트스톱 (필요 없으면 제거)
         if (Input.GetKeyDown(KeyCode.H))
-            HitstopManager.Instance.TriggerHitstop();
+        {
+            Debug.Log($"[PlayerCombat] called HItstop");
+            HitstopManager.Instance.TriggerHitstop(duration:1f,timeScale:0.5f);
+        }
     }
 
     #endregion
@@ -91,6 +94,8 @@ public class PlayerCombat : MonoBehaviour
 
         Vector2 attackPos = (Vector2)attackTransform.position
                           + (Vector2)attackTransform.right * attackBoxDistance;
+
+        var timemanager= CustomTimeManager.Instance;
         if (state.isGrounded||state.isOnCeiling)
         {
             for (int i = 0; i < attackRepeatTime; i++)
@@ -101,7 +106,7 @@ public class PlayerCombat : MonoBehaviour
                     ExecuteAttackBox(attackPos);
 
                     await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
-                    elapsed += Time.fixedDeltaTime;
+                    elapsed += timemanager.PlayerFixedDeltaTime;
                 }
 
                 _hitEnemiesInAttack.Clear();
@@ -115,7 +120,7 @@ public class PlayerCombat : MonoBehaviour
                 ExecuteAttackBox(attackPos);
 
                 await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
-                elapsed += Time.fixedDeltaTime;
+                elapsed += timemanager.PlayerFixedDeltaTime;
             }
 
             _hitEnemiesInAttack.Clear();

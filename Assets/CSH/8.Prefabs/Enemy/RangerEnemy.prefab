@@ -166,6 +166,7 @@ GameObject:
   - component: {fileID: 1252793774797778127}
   - component: {fileID: 1995655948830851193}
   - component: {fileID: 1484529788877594546}
+  - component: {fileID: 7718417277500079934}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Untagged
@@ -273,15 +274,17 @@ MonoBehaviour:
   _gaugeIncreaseRate: 50
   _gaugeDecreaseRate: 100
   _chaseEndDuration: 0.3
+  _currentgauge: 0
   _attackRange: 6
   _attackCooldown: 2
   _attackWindupTime: 0.05
   _attackRecoveryTime: 0.3
+  _stunDuration: 0
   _moveSpeed: 2
-  _patrolPoints:
-  - {fileID: 7131721996732386464}
-  - {fileID: 4231589021006177264}
-  _currentPatrolIndex: 0
+  _patrolDirection: 1
+  _patrolEdgeCheckX: 0.5
+  _patrolEdgeCheckY: 1.2
+  _patrolWallCheckX: 0.4
   _retreatTriggerRange: 2
   _retreatDistance: 3
 --- !u!114 &1995655948830851193
@@ -315,6 +318,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 1
   currentHp: 0
+--- !u!114 &7718417277500079934
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6817507609393330341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff609d009baf6cb499b08f45306312fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _category: 1
 --- !u!1 &8993986695552314233
 GameObject:
   m_ObjectHideFlags: 0

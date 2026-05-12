@@ -1,8 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
-using EnemyVersion3.Interfaces;
 using System.Collections.Generic;
 using System.Threading;
-using Unity.Cinemachine;
 using UnityEngine;
 
 // ※ Script Execution Order: PlayerDash = -1 로 설정할 것
@@ -17,16 +15,7 @@ public class PlayerDash : MonoBehaviour
     [SerializeField] private float dashDamage = 5f;
     [SerializeField] private float dashSpeed = 50f;
     [SerializeField] private Vector2 dashBoxSize = new Vector2(1f, 0.4f);
-
-    // ── 태클 설정 ────────────────────────────
-    [Header("태클 (몸통박치기)")]
-    [SerializeField] private float tackleRange = 8f;
-    [SerializeField] private float tackleSpeed = 50f;
-    [SerializeField] private float tackleDamage = 0f;   // 0 = 무데미지
-    [SerializeField] private float tackleCooldown = 1f;
-    [SerializeField] private float tackleKnockbackForce = 8f;        // 적 넉백 강도
-    [SerializeField] private float tackleSelfKnockbackRatio = 0.33f; // 플레이어 넉백 비율
-    
+        
     // ── 초록 칩 설정 ─────────────────────────
     [Header("초록 칩 - 3연 돌진")]
     [SerializeField] private int greenDashCount = 3;
@@ -52,8 +41,8 @@ public class PlayerDash : MonoBehaviour
     // ── 대쉬 내부 상태 ───────────────────────
     private Vector2 dashDirection;
     private Vector2 dashTargetPosition;
-    private float dashRemainingDistance;
     private bool dashHitEnemy;
+    private Vector2 dashOrigin;
     private readonly HashSet<Collider2D> hitEnemiesInDash = new HashSet<Collider2D>();
 
     // ── 파랑 칩 내부 상태 ────────────────────
@@ -66,14 +55,6 @@ public class PlayerDash : MonoBehaviour
     // ── CTS ──────────────────────────────────
     private CancellationTokenSource _greenDashCts;
     private CancellationTokenSource _blueFallCts;
-
-    // ── 태클 내부 상태 ───────────────────────
-    private Vector2 tackleDirection;
-    private Vector2 tackleGroundDirection;
-    private float tackleGroundDistanceRemaining;
-    private float tackleCounter;
-    private float tackleCooldownCounter;
-    private bool hasUsedAirTackle;
 
     // ── 참조 ─────────────────────────────────
     private PlayerState state;
@@ -111,12 +92,8 @@ public class PlayerDash : MonoBehaviour
 
     void Update()
     {
-        // 착지 시 에어태클 플래그 초기화
-        if (state.isGrounded && !state.isTackling && !state.isTackleGroundRush)
-            hasUsedAirTackle = false;
-
         HandleDash();
-        HandleTackle();
+        //HandleTackle();
     }
 
      void FixedUpdate()
@@ -131,16 +108,16 @@ public class PlayerDash : MonoBehaviour
             FixedUpdateDash();
             return;
         }
-        if (state.isTackling)
-        {
-            FixedUpdateTackle();
-            return;
-        }
-        if (state.isTackleGroundRush)
-        {
-            FixedUpdateGroundRush();
-            return;
-        }
+        //if (state.isTackling)
+        //{
+        //    FixedUpdateTackle();
+        //    return;
+        //}
+        //if (state.isTackleGroundRush)
+        //{
+        //    FixedUpdateGroundRush();
+        //    return;
+        //}
     }
 
     void OnDestroy()
@@ -208,17 +185,6 @@ public class PlayerDash : MonoBehaviour
                     return;
             }
         }
-
-        // 대쉬 진행 중 종료 조건 체크
-        if (state.isDashing)
-        {
-            dashRemainingDistance -= dashSpeed * Time.deltaTime;
-
-            Collider2D wallHit = Physics2D.OverlapBox(
-                transform.position, dashBoxSize, 0f, playerMove.GroundLayer);
-            if (wallHit != null) { StopDash(); return; }
-            if (dashRemainingDistance <= 0f) StopDash();
-        }
     }
 
     #endregion
@@ -229,25 +195,27 @@ public class PlayerDash : MonoBehaviour
     {
         dashDirection = dir;
 
-        Vector2 origin = (Vector2)transform.position + dashDirection * 0.05f;
+        Vector2 origin = (Vector2)transform.position;
+        Vector2 rayOrigin = origin + dashDirection * 0.05f;
+
         RaycastHit2D groundHit = Physics2D.Raycast(
             origin, dashDirection, dashRange, playerMove.GroundLayer);
+
         dashTargetPosition = groundHit.collider != null
-            ? groundHit.point
-            : (Vector2)transform.position + dashDirection * dashRange;
+            ? groundHit.point - dashDirection * 0.05f
+            : origin + dashDirection * dashRange;
 
-        dashRemainingDistance = Vector2.Distance(transform.position, dashTargetPosition);
 
-        SetLineRenderer(transform.position, dashTargetPosition, true);
+        SetLineRenderer(origin, dashTargetPosition, true);
 
         if (state.TryUseDashGauge(state.DashCost))
-            TriggerDash();
-        else
-            TriggerTackleFromDash(dashDirection);
+            TriggerDash(origin);
     }
 
-    void TriggerDash()
+    void TriggerDash(Vector2 origin)
     {
+        dashOrigin = origin;
+
         state.isGrounded = false;
         state.isOnCeiling = false;
         state.isTouchingLWall = false;
@@ -259,9 +227,8 @@ public class PlayerDash : MonoBehaviour
         dashHitEnemy = false;
         hitEnemiesInDash.Clear();
 
-        dashDirection = GetMouseDirection();
+        rb.linearVelocity = Vector2.zero;
         state.isDashing = true;
-        rb.linearVelocity = dashDirection * dashSpeed;
     }
 
     void StopDash()
@@ -284,11 +251,13 @@ public class PlayerDash : MonoBehaviour
 
     void FixedUpdateDash()
     {
-        Vector2 currentPos = rb.position;
-        Vector2 nextPos = Vector2.MoveTowards(
-            currentPos, dashTargetPosition, dashSpeed * Time.fixedDeltaTime);
-        SweepDashEnemies(currentPos, nextPos);
-        rb.MovePosition(nextPos);
+        rb.MovePosition(dashTargetPosition);
+
+        // 4. 원래 위치 → 목표 위치 구간 전체를 한 번에 공격 판정
+        SweepDashEnemies(dashOrigin, dashTargetPosition);
+
+        // 이동·판정 완료, 즉시 종료
+        StopDash();
     }
     void SweepDashEnemies(Vector2 from, Vector2 to)
     {
@@ -428,7 +397,7 @@ public class PlayerDash : MonoBehaviour
     #region 파랑 칩 – 대각 대시 + 낙하 공격
     void ExecuteBlueDash()
     {
-        // 마우스 방향을 대각선 4방향 중 하나로 스냅
+        // 마우스 방향을 대각선 2방향 중 하나로 스냅
         Vector2 rawDir = GetMouseDirection();
         Vector2 snappedDir = SnapToDiagonal(rawDir);
 
@@ -440,8 +409,6 @@ public class PlayerDash : MonoBehaviour
         dashTargetPosition = groundHit.collider != null
             ? groundHit.point
             : (Vector2)transform.position + dashDirection * dashRange;
-
-        dashRemainingDistance = Vector2.Distance(transform.position, dashTargetPosition);
 
         SetLineRenderer(transform.position, dashTargetPosition, true);
 
@@ -462,18 +429,14 @@ public class PlayerDash : MonoBehaviour
             state.isDashing = true;
             rb.linearVelocity = dashDirection * dashSpeed;
         }
-        else
-        {
-            TriggerTackleFromDash(dashDirection);
-        }
     }
 
-    /// <summary>입력 벡터를 가장 가까운 45° 대각선(4방향)으로 스냅</summary>
+    /// <summary>입력 벡터를 가장 가까운 45° 대각선(상단 2방향)으로 스냅</summary>
     private Vector2 SnapToDiagonal(Vector2 dir)
     {
         // 대각선 4방향: (±√0.5, ±√0.5)
         float x = dir.x >= 0f ? 1f : -1f;
-        float y = dir.y >= 0f ? 1f : -1f;
+        float y = -1f;
         return new Vector2(x, y).normalized;
     }
 
@@ -525,6 +488,63 @@ public class PlayerDash : MonoBehaviour
 
     #endregion
     // ────────────────────────────────────────
+    #region 공통 유틸
+
+    /// <summary>현재 마우스 커서 방향의 normalized 벡터를 반환한다.</summary>
+    private Vector2 GetMouseDirection()
+    {
+        Vector3 mouseScreenPos = Input.mousePosition;
+        mouseScreenPos.z = -mainCamera.transform.position.z;
+        Vector2 mouseWorldPos = mainCamera.ScreenToWorldPoint(mouseScreenPos);
+        Vector2 dir = (mouseWorldPos - (Vector2)transform.position).normalized;
+        return dir == Vector2.zero ? Vector2.right : dir;
+    }
+
+    /// <summary>대상 컴포넌트에 맞게 데미지를 전달한다.</summary>
+    private void ApplyDamage(Collider2D target, float damage)
+    {
+        if (target == null) return;
+        try
+        {
+            target.GetComponent<IDamageable>()?.TakeDamage(damage);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"데미지 적용 중 오류: {ex.Message}");
+        }
+    }
+
+    private void SetLineRenderer(Vector3 from, Vector3 to, bool enabled)
+    {
+        if (line == null) return;
+        line.enabled = enabled;
+        if (enabled) { line.SetPosition(0, from); line.SetPosition(1, to); }
+    }
+
+    #endregion
+    // ────────────────────────────────────────
+    #region Gizmos
+
+    void OnDrawGizmosSelected()
+    {
+        // 대쉬 박스 (벽 충돌 판정용)
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireCube(transform.position, dashBoxSize);
+
+        if (_blueFalling)
+        {
+            Gizmos.color = new Color(0f, 0.5f, 1f, 0.4f);
+            Gizmos.DrawWireSphere(transform.position, blueSlamRadius);
+        }
+    }
+
+    #endregion
+}
+
+
+#region 태클(래거시)
+/*
+
     #region 태클 – Update 입력
 
     void HandleTackle()
@@ -703,65 +723,11 @@ public class PlayerDash : MonoBehaviour
         var moveable = enemy.GetComponent<EnemyVersion3.Interfaces.IMoveable>();
         if (moveable == null) return;
 
-        var enemyRb = enemy.GetComponent<Rigidbody2D>();
-        if (enemyRb != null)
-            enemyRb.linearVelocity = tackleDirection * tackleKnockbackForce;
-
         StopTackle();
-        rb.linearVelocity = -tackleDirection * tackleKnockbackForce * tackleSelfKnockbackRatio;
     }
 
     #endregion
     // ────────────────────────────────────────
-    #region 공통 유틸
 
-    /// <summary>현재 마우스 커서 방향의 normalized 벡터를 반환한다.</summary>
-    private Vector2 GetMouseDirection()
-    {
-        Vector3 mouseScreenPos = Input.mousePosition;
-        mouseScreenPos.z = -mainCamera.transform.position.z;
-        Vector2 mouseWorldPos = mainCamera.ScreenToWorldPoint(mouseScreenPos);
-        Vector2 dir = (mouseWorldPos - (Vector2)transform.position).normalized;
-        return dir == Vector2.zero ? Vector2.right : dir;
-    }
-
-    /// <summary>대상 컴포넌트에 맞게 데미지를 전달한다.</summary>
-    private void ApplyDamage(Collider2D target, float damage)
-    {
-        if (target == null) return;
-        try
-        {
-            target.GetComponent<IDamageable>()?.TakeDamage(damage);
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"데미지 적용 중 오류: {ex.Message}");
-        }
-    }
-
-    private void SetLineRenderer(Vector3 from, Vector3 to, bool enabled)
-    {
-        if (line == null) return;
-        line.enabled = enabled;
-        if (enabled) { line.SetPosition(0, from); line.SetPosition(1, to); }
-    }
-
-    #endregion
-    // ────────────────────────────────────────
-    #region Gizmos
-
-    void OnDrawGizmosSelected()
-    {
-        // 대쉬 박스 (벽 충돌 판정용)
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireCube(transform.position, dashBoxSize);
-
-        if (_blueFalling)
-        {
-            Gizmos.color = new Color(0f, 0.5f, 1f, 0.4f);
-            Gizmos.DrawWireSphere(transform.position, blueSlamRadius);
-        }
-    }
-
-    #endregion
-}
+*/
+#endregion

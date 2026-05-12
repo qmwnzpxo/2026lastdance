@@ -6,16 +6,22 @@ public class RangerEnemyBTController : EnemyBTController, IMoveable
     // ── 이동 ────────────────────────────────────
     [Header("이동")]
     public float _moveSpeed = 2f;
-    public Transform[] _patrolPoints;
-    public int _currentPatrolIndex = 0;
-
     public float moveSpeed => _moveSpeed;
-    public Transform[] patrolPoints => _patrolPoints;
-    public int currentPatrolIndex
+
+    // ── 지면 순찰 ───────────────────────────────
+    [Header("지면 순찰")]
+    [SerializeField] private int _patrolDirection = 1;
+    [SerializeField] private float _patrolEdgeCheckX = 0.5f;
+    [SerializeField] private float _patrolEdgeCheckY = 1.2f;
+    [SerializeField] private float _patrolWallCheckX = 0.4f;
+    public int patrolDirection
     {
-        get => _currentPatrolIndex;
-        set => _currentPatrolIndex = value;
+        get => _patrolDirection;
+        set => _patrolDirection = value;
     }
+    public float patrolEdgeCheckX => _patrolEdgeCheckX;
+    public float patrolEdgeCheckY => _patrolEdgeCheckY;
+    public float patrolWallCheckX => _patrolWallCheckX;
 
     // ── 후퇴 ────────────────────────────────────
     [Header("후퇴")]
@@ -40,12 +46,30 @@ public class RangerEnemyBTController : EnemyBTController, IMoveable
         Debug.Log(_groundLayer.value);
         InitBlackboad();
 
+
+        _root = BuildTree();
+    }
+
+    protected override void InitBlackboad()
+    {
+        base.InitBlackboad();
+
         _bb.moveable.retreatTriggerRange = _retreatTriggerRange;
         _bb.moveable.retreatDistance = _retreatDistance;
         GetComponent<EnemyCombat>()?.Initialize(_bb.playerTransform);
+    }
 
 
-        _root = BuildTree();
+    public Vector2 GetSlopeVelocity(float dirX, float speed, LayerMask groundLayer)
+    {
+        RaycastHit2D hit = Physics2D.Raycast(
+            transform.position, Vector2.down, _patrolEdgeCheckY, groundLayer);
+
+        Vector2 moveDir = hit.collider != null
+            ? Mathf.Sign(dirX) * -Vector2.Perpendicular(hit.normal)
+            : new Vector2(Mathf.Sign(dirX), 0f);
+
+        return moveDir * speed;
     }
 
 

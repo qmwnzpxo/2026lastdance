@@ -45,9 +45,9 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
     /// </summary>
     private async UniTaskVoid HitstopRoutine(float duration, float timeScale, CancellationToken ct)
     {
-        // 게임 전체 시간 배율을 낮춰 슬로우모션 효과 적용
-        // Rigidbody, Animator 등 유니티 물리/애니메이션이 모두 이 값의 영향을 받는다.
-        Time.timeScale = timeScale;
+        var mgr = CustomTimeManager.Instance;
+
+        mgr.SetHitstopMultiplier(timeScale);
 
         try
         {
@@ -67,7 +67,8 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
             // try가 정상 완료되든, catch로 취소되든 finally는 "반드시" 실행된다.
             // 코루틴(StopCoroutine)은 이 보장이 없어서 timeScale이 낮은 채로
             // 게임이 굳어버리는 버그가 생길 수 있다. UniTask는 이를 구조적으로 방지.
-            Time.timeScale = 1f;
+            mgr.ResetHitstopMultiplier();
+
             _cts?.Cancel();
         }
     }

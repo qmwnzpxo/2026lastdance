@@ -100,6 +100,7 @@ GameObject:
   - component: {fileID: 2826985530563884855}
   - component: {fileID: 1014071891606882278}
   - component: {fileID: 5451511713479336876}
+  - component: {fileID: 2525676359785419320}
   - component: {fileID: 5146102955874661066}
   - component: {fileID: 5384373373426967025}
   - component: {fileID: 6426699971133962300}
@@ -244,8 +245,6 @@ MonoBehaviour:
   tackleSpeed: 100
   tackleDamage: 0
   tackleCooldown: 1
-  tackleKnockbackForce: 8
-  tackleSelfKnockbackRatio: 0.33
   greenDashCount: 3
   greenDashRange: 5
   greenDashSpeed: 55
@@ -272,6 +271,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ani: {fileID: 8855167486035151956}
+--- !u!114 &2525676359785419320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1759278836418004599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff609d009baf6cb499b08f45306312fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _category: 0
 --- !u!50 &5146102955874661066
 Rigidbody2D:
   serializedVersion: 5

@@ -3,7 +3,7 @@ using BTConditions;
 using EnemyVersion3.Interfaces;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
+[RequireComponent(typeof(Rigidbody2D), typeof(Collider2D), typeof(TimeScaleReceiver))]
 public class EnemyBTController : MonoBehaviour
 {
     [Header("탐지")]
@@ -15,6 +15,7 @@ public class EnemyBTController : MonoBehaviour
     [SerializeField] protected float _gaugeIncreaseRate;
     [SerializeField] protected float _gaugeDecreaseRate;
     [SerializeField] protected float _chaseEndDuration;
+    [RuntimeOnly,SerializeField] protected float _currentgauge; // 디버그용
 
     [Header("공격")]
     [SerializeField] protected float _attackRange;
@@ -35,7 +36,6 @@ public class EnemyBTController : MonoBehaviour
     {
         if (_groundLayer == 0)
             _groundLayer = LayerMask.GetMask("ground");
-        Debug.Log(_groundLayer.value);
         InitBlackboad();
         _root = BuildTree();
     }
@@ -46,6 +46,7 @@ public class EnemyBTController : MonoBehaviour
         {
             UpdateBlackboard();
             _root.Tick(_bb);
+            _currentgauge = _bb.detectGauge; // 디버그용
         }
     }
 

@@ -97,11 +97,52 @@ namespace BTActions
                     if (bb.DistanceToPlayer <= bb.attackRange) break;
                     if (!bb.isDetected) break;
 
-                    float dirX = bb.playerTransform.position.x
-                               - bb.selfTransform.position.x;
-                    bb.rigid2D.linearVelocity = new Vector2(
-                        Mathf.Sign(dirX) * (float)bb.moveable?.moveSpeed,
-                        bb.rigid2D.linearVelocity.y);
+                    float dirX = Mathf.Sign(
+                        bb.playerTransform.position.x - bb.selfTransform.position.x);
+                    Vector2 pos = bb.selfTransform.position;
+
+                    bool wallAhead = Physics2D.Raycast(
+                        pos,
+                        new Vector2(dirX, 0f),
+                        bb.moveable.patrolWallCheckX,
+                        bb.groundLayer);
+
+                    if (wallAhead)
+                    {
+                        // 정지 후 대기
+                        // hasLOS: 플레이어가 보이면 → 외부 루프 continue로 추격 재개
+                        // !isDetected: 게이지 소진 → 외부 루프 break로 순찰 복귀
+                        while (!ct.IsCancellationRequested)
+                        {
+                            bb.rigid2D.linearVelocity =
+                                new Vector2(0f, bb.rigid2D.linearVelocity.y);
+
+                            if (bb.hasLOS) break; // 시야 확보 → 추격 재개
+                            if (!bb.isDetected) break; // 게이지 소진 → 순찰 복귀
+
+                            await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                        }
+                        continue;
+                    }
+                    
+                    Vector2 edgeOrigin = pos + new Vector2(dirX * bb.moveable.patrolEdgeCheckX, 0f);
+                    bool groundAhead = Physics2D.Raycast(
+                        edgeOrigin, Vector2.down,
+                        bb.moveable.patrolEdgeCheckY,
+                        bb.groundLayer);
+
+                    if (!groundAhead)
+                    {
+                        bb.rigid2D.linearVelocity =
+                            new Vector2(0f, bb.rigid2D.linearVelocity.y);
+                        await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                        continue;
+                    }
+
+                    bb.rigid2D.linearVelocity =
+                        bb.moveable.GetSlopeVelocity(dirX, 
+                        bb.moveable.moveSpeed * CustomTimeManager.Instance.EnemyTimeScale, 
+                        bb.groundLayer);
 
                     await UniTask.WaitForFixedUpdate(cancellationToken: ct);
                 }
@@ -128,38 +169,31 @@ namespace BTActions
             }
             try
             {
-                if (bb.moveable.patrolPoints == null || bb.moveable.patrolPoints.Length == 0)
-                {
-                    await UniTask.WaitForFixedUpdate(cancellationToken: ct);
-                    bb.actionCompleted = true;
-                    bb.lastActionResult = NodeState.Success;
-                    return;
-                }
-
-                Transform target = bb.moveable.patrolPoints[bb.moveable.currentPatrolIndex];
-
                 while (!ct.IsCancellationRequested)
                 {
                     if (bb.isDetected) break;
 
-                    Vector2 current = bb.selfTransform.position;
-                    Vector2 targetPos = target.position;
+                    float dirX = bb.moveable.patrolDirection;
 
-                    if (Vector2.Distance(current, targetPos) < 0.1f
-                        || Mathf.Abs(targetPos.x - current.x) < 0.1f)
+                    Vector2 pos = bb.selfTransform.position;
+                    bool wallAhead = Physics2D.Raycast(pos, new Vector2(dirX, 0f),
+                        bb.moveable.patrolWallCheckX, bb.groundLayer);
+
+                    Vector2 edgeOrigin = pos + new Vector2(dirX * bb.moveable.patrolEdgeCheckX, 0f);
+                    bool groundAhead = Physics2D.Raycast(edgeOrigin, Vector2.down,
+                        bb.moveable.patrolEdgeCheckY, bb.groundLayer);
+
+                    if (wallAhead || !groundAhead)
                     {
-                        // 포인트 도달 → 인덱스 증가 후 이번 액션 종료
-                        // 다음 틱에서 새 ActionPatrol이 다음 포인트로 이동
-                        bb.moveable.currentPatrolIndex =
-                            (bb.moveable.currentPatrolIndex + 1) % bb.moveable.patrolPoints.Length;
-//Debug.Log($"[BTActions] Actionpatrol {bb.moveable.currentPatrolIndex} / {bb.moveable.patrolPoints.Length}");
-                        break;
+                        // 방향 반전 후 한 프레임 정지
+                        bb.moveable.patrolDirection = -bb.moveable.patrolDirection;
+                        bb.rigid2D.linearVelocity = new Vector2(0f, bb.rigid2D.linearVelocity.y);
+                        await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                        continue;
                     }
 
-                    bb.rigid2D.linearVelocity = new Vector2(
-                        (targetPos - current).normalized.x * (float)bb.moveable?.moveSpeed,
-                        bb.rigid2D.linearVelocity.y);
-
+                    bb.rigid2D.linearVelocity = 
+                        bb.moveable.GetSlopeVelocity(dirX, bb.moveable.moveSpeed, bb.groundLayer);
                     await UniTask.WaitForFixedUpdate(cancellationToken: ct);
                 }
 
@@ -184,18 +218,7 @@ namespace BTActions
 
                 while (!ct.IsCancellationRequested && elapsed < bb.stunDuration)
                 {
-                    // 속도 점점 감소
-                    float currentX = bb.rigid2D.linearVelocity.x;
-                    float currentY = bb.rigid2D.linearVelocity.y;
-
-                    float newX = Mathf.MoveTowards(
-                        currentX, 0f, bb.stunDecelerationRate * Time.fixedDeltaTime);
-                    float newY = Mathf.MoveTowards(
-                        currentY, 0f, bb.stunDecelerationRate * Time.fixedDeltaTime);
-
-                    bb.rigid2D.linearVelocity = new Vector2(newX, newY);
-
-                    elapsed += Time.fixedDeltaTime;
+                    elapsed += CustomTimeManager.Instance.EnemyFixedDeltaTime;
                     await UniTask.WaitForFixedUpdate(cancellationToken: ct);
                 }
 
