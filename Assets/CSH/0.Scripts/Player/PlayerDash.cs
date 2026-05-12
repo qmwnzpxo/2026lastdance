@@ -1,6 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 // ※ Script Execution Order: PlayerDash = -1 로 설정할 것
@@ -53,6 +54,8 @@ public class PlayerDash : MonoBehaviour
     private bool _greenDashing = false; // 초록 칩 연속 돌진 중
 
     // ── CTS ──────────────────────────────────
+    private CancellationTokenSource _pinkDashCts;
+    private CancellationTokenSource _redDashCts;
     private CancellationTokenSource _greenDashCts;
     private CancellationTokenSource _blueFallCts;
 
@@ -103,31 +106,37 @@ public class PlayerDash : MonoBehaviour
             FixedUpdateBlueFall();
             return;
         }
+
+
         if (state.isDashing)
         {
             FixedUpdateDash();
             return;
         }
-        //if (state.isTackling)
-        //{
-        //    FixedUpdateTackle();
-        //    return;
-        //}
-        //if (state.isTackleGroundRush)
-        //{
-        //    FixedUpdateGroundRush();
-        //    return;
-        //}
-    }
 
-    void OnDestroy()
+
+    }
+    
+    void CtsFree()
     {
+        _pinkDashCts?.Cancel();
+        _pinkDashCts?.Dispose();
+        _redDashCts?.Cancel();
+        _redDashCts?.Dispose();
         _greenDashCts?.Cancel();
         _greenDashCts?.Dispose();
         _blueFallCts?.Cancel();
         _blueFallCts?.Dispose();
     }
+    void OnDestroy()
+    {
+        CtsFree();
+    }
 
+    void OnDisable()
+    {
+        CtsFree();
+    }
 
     #endregion
     // ────────────────────────────────────────
@@ -190,8 +199,19 @@ public class PlayerDash : MonoBehaviour
     #endregion
     // ────────────────────────────────────────
     #region 핑크(기본) 대쉬
+    private void ExecuteDash(Vector2 dir)
+    {
+        if (!state.TryUseDashGauge(state.DashCost)) return;
+        
+        _pinkDashCts?.Cancel();
+        _pinkDashCts?.Dispose();
+        _pinkDashCts = new CancellationTokenSource();
 
-    void ExecuteDash(Vector2 dir)
+        ExecuteDash(dir, _pinkDashCts).Forget();
+    }
+
+
+    private async UniTaskVoid ExecuteDash(Vector2 dir,CancellationTokenSource cts)
     {
         dashDirection = dir;
 
@@ -201,6 +221,8 @@ public class PlayerDash : MonoBehaviour
         RaycastHit2D groundHit = Physics2D.Raycast(
             origin, dashDirection, dashRange, playerMove.GroundLayer);
 
+        await CustomTime.WaitForScaledSeconds(0.06f, state.category, cts);
+        
         dashTargetPosition = groundHit.collider != null
             ? groundHit.point - dashDirection * 0.05f
             : origin + dashDirection * dashRange;
@@ -245,20 +267,23 @@ public class PlayerDash : MonoBehaviour
         if (!_blueDashSecondInput && state.dashBuffered)
         {
             state.dashBuffered = false;
-            ExecuteDash(GetMouseDirection());
+            ExecuteDash(GetMouseDirection(),_pinkDashCts).Forget();
         }
     }
 
     void FixedUpdateDash()
     {
+
+
         rb.MovePosition(dashTargetPosition);
 
-        // 4. 원래 위치 → 목표 위치 구간 전체를 한 번에 공격 판정
+        // 원래 위치 → 목표 위치 구간 전체를 한 번에 공격 판정
         SweepDashEnemies(dashOrigin, dashTargetPosition);
-
+        
         // 이동·판정 완료, 즉시 종료
         StopDash();
     }
+
     void SweepDashEnemies(Vector2 from, Vector2 to)
     {
         Vector2 dir = to - from;
@@ -292,12 +317,16 @@ public class PlayerDash : MonoBehaviour
         }
     }
     #endregion
+
     // ────────────────────────────────────────
     #region 초록 칩 – 3연 돌진
     void StartGreenDash()
     {
         if (!state.TryUseDashGauge(state.DashCost)) return;
-
+        if (_greenDashing)
+        {
+            return;
+        }
         _greenDashCts?.Cancel();
         _greenDashCts?.Dispose();
         _greenDashCts = new CancellationTokenSource();
@@ -307,6 +336,7 @@ public class PlayerDash : MonoBehaviour
     private async UniTaskVoid GreenDashRoutine(CancellationToken ct)
     {
         _greenDashing = true;
+
         for (int i = 0; i < greenDashCount; i++)
         {
             if (ct.IsCancellationRequested) break;
@@ -331,13 +361,14 @@ public class PlayerDash : MonoBehaviour
             rb.linearVelocity = dir * greenDashSpeed;
 
             HashSet<Collider2D> hitThisDash = new HashSet<Collider2D>();
+            var timeManager = CustomTimeManager.Instance;
             float traveled = 0f;
             float dist = Vector2.Distance(start, target);
 
             while (!ct.IsCancellationRequested && traveled < dist)
             {
                 Vector2 cur = rb.position;
-                Vector2 next = Vector2.MoveTowards(cur, target, greenDashSpeed * Time.fixedDeltaTime);
+                Vector2 next = Vector2.MoveTowards(cur, target, greenDashSpeed * timeManager.PlayerFixedDeltaTime);
 
                 // 스윕 판정
                 Vector2 sweepDir = next - cur;
@@ -359,14 +390,14 @@ public class PlayerDash : MonoBehaviour
                 }
 
                 rb.MovePosition(next);
-                traveled += greenDashSpeed * Time.fixedDeltaTime;
+                traveled += greenDashSpeed * timeManager.PlayerFixedDeltaTime;
 
                 // 벽 충돌 시 돌진 중단
                 Collider2D wallHit = Physics2D.OverlapBox(
                     rb.position, dashBoxSize, 0f, playerMove.GroundLayer);
                 if (wallHit != null) break;
 
-                await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                
             }
 
             state.isDashing = false;
@@ -376,7 +407,7 @@ public class PlayerDash : MonoBehaviour
             {
                 rb.linearVelocity = Vector2.zero;
                 rb.gravityScale = 0f; // 대기 중 공중에 고정
-                await UniTask.WaitForSeconds(greenDashInterval, cancellationToken: ct)
+                await CustomTime.WaitForScaledSeconds(greenDashInterval, state.category, ct)
                     .SuppressCancellationThrow();
             }
         }
@@ -508,7 +539,7 @@ public class PlayerDash : MonoBehaviour
         {
             target.GetComponent<IDamageable>()?.TakeDamage(damage);
         }
-        catch (System.Exception ex)
+        catch (System.NullReferenceException ex)
         {
             Debug.LogError($"데미지 적용 중 오류: {ex.Message}");
         }

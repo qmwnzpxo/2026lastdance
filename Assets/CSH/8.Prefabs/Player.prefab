@@ -16,7 +16,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7711742904790139673
 Transform:
   m_ObjectHideFlags: 0
@@ -171,6 +171,7 @@ MonoBehaviour:
   isAttacking: 0
   isHit: 0
   currentChip: 0
+  category: 0
   hitLight: {fileID: 7763769427215422248}
   hitWorldLight: {fileID: 8288715132913159236}
 --- !u!114 &4673611001169730460
@@ -192,8 +193,8 @@ MonoBehaviour:
     m_Bits: 1024
   groundCheck: {fileID: 5376528988638930902}
   ceilingCheck: {fileID: 2595735820758545400}
-  groundCheckSize: {x: 0.44, y: 0.1}
-  ceilingCheckSize: {x: 0.44, y: 0.1}
+  groundCheckSize: {x: 0.6, y: 0.1}
+  ceilingCheckSize: {x: 0.6, y: 0.1}
   wallCheck: {fileID: 6688604917998028013}
   wallCheckDistance: 0.52
   wallSlideSpeed: 2.5
@@ -241,10 +242,6 @@ MonoBehaviour:
   dashDamage: 5
   dashSpeed: 100
   dashBoxSize: {x: 1, y: 1}
-  tackleRange: 10
-  tackleSpeed: 100
-  tackleDamage: 0
-  tackleCooldown: 1
   greenDashCount: 3
   greenDashRange: 5
   greenDashSpeed: 55
@@ -808,7 +805,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &593990201475790861
 Transform:
   m_ObjectHideFlags: 0

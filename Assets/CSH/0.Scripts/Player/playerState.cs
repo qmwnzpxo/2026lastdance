@@ -15,6 +15,7 @@ public enum PlayerChip
 /// </summary>
 [DefaultExecutionOrder(-2)]
 [RequireComponent(typeof(PlayerMove), typeof(PlayerCombat), typeof(PlayerDash))]
+[RequireComponent(typeof(TimeScaleReceiver))]
 public class PlayerState : MonoBehaviour, IDamageable
 {
     // ── 스탯 ──────────────────────────────────
@@ -67,6 +68,9 @@ public class PlayerState : MonoBehaviour, IDamageable
     public PlayerChip currentChip = PlayerChip.pink;
     public HashSet<PlayerChip> ownedChips = new HashSet<PlayerChip>() { PlayerChip.pink };
 
+    // ── 시간 설정 ─────────────────────────────
+    public TimeCategory category = TimeCategory.Player;
+
     public Light2D hitLight;
     public Light2D hitWorldLight;
 
@@ -76,10 +80,10 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public void Awake()
     {
-        if (hitLight == null)
-            hitLight = transform.Find("Hit Light").GetComponent<Light2D>();
-        if (hitWorldLight == null)
-            hitWorldLight = transform.Find("Hit World Light").GetComponent<Light2D>();
+        //if (hitLight == null)
+        //    hitLight = transform.Find("Hit Light").GetComponent<Light2D>();
+        //if (hitWorldLight == null)
+        //    hitWorldLight = transform.Find("Hit World Light").GetComponent<Light2D>();
         GaugeInit();
     }
 
@@ -153,7 +157,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     {
         //hitLight.enabled = true;
         //hitWorldLight.enabled = true;
-        await UniTask.WaitForSeconds(0.3f, cancellationToken: tk)
+        await CustomTime.WaitForScaledSeconds(0.3f, category, tk)
             .SuppressCancellationThrow();
         isHit = false;
         //hitLight.enabled = false;

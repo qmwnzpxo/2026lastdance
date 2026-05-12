@@ -13,7 +13,7 @@ public static class CustomTime
     {
         var mgr = CustomTimeManager.Instance;
         float elapsed = 0f;
-
+        
         while (elapsed < duration)
         {
             bool canceled = await UniTask
@@ -24,6 +24,10 @@ public static class CustomTime
             // 배율이 0이면 elapsed가 증가하지 않아 자연스럽게 정지
             elapsed += mgr.GetFixedDeltaTime(cat);
         }
+    }
+    public static async UniTask WaitForScaledSeconds(float duration, TimeCategory cat, CancellationTokenSource cts)
+    {
+        await WaitForScaledSeconds(duration, cat, cts.Token);
     }
 
     /// <summary>

@@ -18,11 +18,13 @@ public class EnemyBullet : MonoBehaviour, IDamageable
     protected Vector2 direction;
     protected float traveledDistance;
     protected Rigidbody2D rb;
+    protected CustomTimeManager customTimeManager;
 
     // ── 초기화 ──────────────────────────────────
     protected virtual void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        customTimeManager = CustomTimeManager.Instance;
         rb.gravityScale = 0f; // 기본: 중력 없음
     }
 

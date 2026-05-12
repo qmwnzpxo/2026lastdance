@@ -95,7 +95,7 @@ public class PlayerCombat : MonoBehaviour
         Vector2 attackPos = (Vector2)attackTransform.position
                           + (Vector2)attackTransform.right * attackBoxDistance;
 
-        var timemanager= CustomTimeManager.Instance;
+        var timeManager = CustomTimeManager.Instance;
         if (state.isGrounded||state.isOnCeiling)
         {
             for (int i = 0; i < attackRepeatTime; i++)
@@ -106,7 +106,7 @@ public class PlayerCombat : MonoBehaviour
                     ExecuteAttackBox(attackPos);
 
                     await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
-                    elapsed += timemanager.PlayerFixedDeltaTime;
+                    elapsed += timeManager.PlayerFixedDeltaTime;
                 }
 
                 _hitEnemiesInAttack.Clear();
@@ -120,7 +120,7 @@ public class PlayerCombat : MonoBehaviour
                 ExecuteAttackBox(attackPos);
 
                 await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
-                elapsed += timemanager.PlayerFixedDeltaTime;
+                elapsed += timeManager.PlayerFixedDeltaTime;
             }
 
             _hitEnemiesInAttack.Clear();

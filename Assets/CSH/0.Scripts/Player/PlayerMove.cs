@@ -40,6 +40,7 @@ public class PlayerMove : MonoBehaviour
     // ── 천장 붙기 ────────────────────────────
     [Header("천장 붙기")]
     [SerializeField] private SpriteRenderer spriteRenderer;
+    [EditorOnly, SerializeField] private Transform spriteTransform;
     private bool justStoppedDashing; // PlayerDash에서 StopDash 직후 세팅
 
     // ── 내부 필드 ────────────────────────────
@@ -61,8 +62,12 @@ public class PlayerMove : MonoBehaviour
     private int wallJumpDirection;
     private CancellationTokenSource wallJumpCts;
 
+    private Vector3 normalSpriteScale;
+    private Vector3 flipSpriteScale;
+
     private PlayerState state;
     private PlayerAnimation ani;
+    private TimeScaleReceiver timeScaleReceiver;
 
     // ── PlayerDash에서 필요한 공개 접근자 ───
     public Rigidbody2D Rb => rb;
@@ -82,6 +87,15 @@ public class PlayerMove : MonoBehaviour
 
         if (spriteRenderer == null)
             spriteRenderer = GetComponent<SpriteRenderer>();
+        normalSpriteScale = spriteTransform.localScale;
+        flipSpriteScale = new Vector3(normalSpriteScale.x,-normalSpriteScale.y,normalSpriteScale.z);
+    }
+
+    private void OnEnable()
+    {
+        timeScaleReceiver = GetComponent<TimeScaleReceiver>();
+        timeScaleReceiver._animator = ani.ani;
+        timeScaleReceiver._rb = rb;
     }
 
     void Update()
@@ -157,19 +171,21 @@ public class PlayerMove : MonoBehaviour
         if (state.isWallJumping) return;
         if ((state.isWallSliding && !state.isGrounded) || state.isOnCeiling || state.isPowerRun)
         {
-            float gaugeChange = Time.fixedDeltaTime * (state.isPowerRun ? 2f : 1f);
+            float gaugeChange = CustomTime.ScaledFixedDeltaTime(state.category) * (state.isPowerRun ? 2f : 1f);
             state.ModifyGauge(-gaugeChange);
         }
         else
         {
-            state.ModifyGauge(Time.fixedDeltaTime * 5);
+            state.ModifyGauge(CustomTime.ScaledFixedDeltaTime(state.category) * 5);
         }
         FlipYSprite(state.isOnCeiling);
 
         bool blockedByWall = (state.isTouchingLWall || state.isTouchingRWall)
                              && !state.isGrounded && !state.isOnCeiling;
         float xMove = blockedByWall ? 0f : moveInput * moveSpeed;
-        float yMove = rb.linearVelocity.y < 0 ? rb.linearVelocity.y - Time.fixedDeltaTime * 10 : rb.linearVelocity.y;
+        float yMove = rb.linearVelocity.y < 0 ?
+              rb.linearVelocity.y - CustomTime.ScaledFixedDeltaTime(state.category) * 10 
+            : rb.linearVelocity.y;
         rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? 2f : 1f), yMove);
     }
 
@@ -208,7 +224,7 @@ public class PlayerMove : MonoBehaviour
         float limitVelocity = rb.linearVelocityY;
         limitVelocity = Mathf.Clamp(limitVelocity,wallSlideSpeedUp,wallSlideSpeedDown);
         float smoothedY = Mathf.Lerp(limitVelocity
-            , targetSlideSpeed, Time.fixedDeltaTime * 10f);
+            , targetSlideSpeed, CustomTime.ScaledFixedDeltaTime(state.category) * 10f);
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, smoothedY);
     }
 
@@ -343,7 +359,7 @@ public class PlayerMove : MonoBehaviour
     private async UniTaskVoid StartWallJumpCooldown(CancellationToken ct)
     {
         wallJumpCounter = wallJumpTime;
-        await UniTask.WaitForSeconds(wallJumpTime, cancellationToken: ct);
+        await CustomTime.WaitForScaledSeconds(wallJumpTime, state.category, ct);
         wallJumpCounter = 0f;
         state.isWallJumping = false;
     }
@@ -398,7 +414,8 @@ public class PlayerMove : MonoBehaviour
         if (spriteRenderer == null) return;
 
         //spriteRenderer.transform.localScale = flipY ? ceilingSpriteScale : spriteScale;
-        spriteRenderer.flipY = flipY;
+        //spriteRenderer.flipY = flipY;
+        spriteTransform.localScale = flipY ? flipSpriteScale : normalSpriteScale;
     }
 
     /// <summary>스프라이트 벽 방향에 따른 회전</summary>
@@ -408,17 +425,20 @@ public class PlayerMove : MonoBehaviour
 
         if (state.isTouchingLWall && !state.isGrounded)
         {
-            spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, -90);
+            //spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, -90);
+            spriteTransform.rotation = Quaternion.Euler(0, 0, -90);
             spriteRenderer.flipX = isWallSildeDown; // 벽 슬라이딩 중 아래 입력 시 스프라이트를 아래로 뒤집음
         }
         else if (state.isTouchingRWall && !state.isGrounded)
         {
-            spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 90);
+            //spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 90);
+            spriteTransform.rotation = Quaternion.Euler(0, 0, 90);
             spriteRenderer.flipX = isWallSildeDown; // 벽 슬라이딩 중 아래 입력 시 스프라이트를 아래로 뒤집음
         }
         else
         {
-            spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 0);
+            //spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 0);
+            spriteTransform.rotation = Quaternion.Euler(0, 0, 0);
             if(!state.isOnCeiling)
                 spriteRenderer.flipY = false;
         }

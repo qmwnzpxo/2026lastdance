@@ -3,7 +3,7 @@
 public class PlayerAnimation : MonoBehaviour
 {
     PlayerState state;
-    [SerializeField]Animator ani;
+    [SerializeField]public Animator ani;
     void Start()
     {
         state = GetComponent<PlayerState>();

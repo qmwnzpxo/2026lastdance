@@ -114,6 +114,8 @@ public class CustomTimeManager : PersistentSingleton<CustomTimeManager>
     /// </summary>
     public void SetHitstopMultiplier(float multiplier)
     {
+        //ApplyScale(ref _hitstopMultiplier, multiplier, OnPlayerTimeScaleChanged);
+
         _hitstopMultiplier = Mathf.Max(0f, multiplier);
         // 세 카테고리 모두 이벤트 발행 (hitstop은 전체에 영향)
         OnPlayerTimeScaleChanged?.Invoke(PlayerTimeScale);

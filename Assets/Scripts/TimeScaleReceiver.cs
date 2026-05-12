@@ -1,4 +1,5 @@
 ﻿using System;
+using TMPro.Examples;
 using UnityEngine;
 
 /// <summary>
@@ -10,13 +11,15 @@ public class TimeScaleReceiver : MonoBehaviour
 {
     [SerializeField] private TimeCategory _category;
 
-    private Animator _animator;
-    private Rigidbody2D _rb;
+    public Animator _animator;
+    public Rigidbody2D _rb;
 
     void Awake()
     {
-        _animator = GetComponent<Animator>();
-        _rb = GetComponent<Rigidbody2D>();
+        if (_animator == null)
+            _animator = GetComponent<Animator>();
+        if (_rb == null)
+            _rb = GetComponent<Rigidbody2D>();
     }
 
     void OnEnable()
@@ -30,6 +33,7 @@ public class TimeScaleReceiver : MonoBehaviour
 
     private void Subscribe(bool on)
     {
+        Debug.Log($"[TimeScaleReciver] Subscribed");
         var mgr = CustomTimeManager.Instance;
         if (mgr == null) return;
 
@@ -68,5 +72,7 @@ public class TimeScaleReceiver : MonoBehaviour
         // 물리: 완전 정지면 velocity도 0, 재개 시 복구는 각 이동 스크립트가 담당
         if (_rb != null && scale <= 0f)
             _rb.linearVelocity = Vector2.zero;
+
+        Debug.Log(_animator.speed);
     }
 }
