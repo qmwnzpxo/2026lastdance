@@ -1,0 +1,133 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Noise_V2
+  m_Shader: {fileID: 4800000, guid: d2a6510e8a0602445afd50d307ece3b1, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _CHROMA_ON
+  - _FLASH_ON
+  - _GRAIN_ON
+  - _NOISELAYER_ON
+  - _PIXEL_ON
+  - _SCAN_ON
+  - _VJUMP_ON
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MaskTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NoiseTex:
+        m_Texture: {fileID: 2800000, guid: 0e09c18f8e9f2334dbc48a27664deb61, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Alpha: 0.633
+    - _BarrelOn: 0
+    - _BarrelPulse: 0
+    - _BarrelStrength: 0.2
+    - _BlockFrequency: 0.738
+    - _BlockNoiseMix: 0.603
+    - _BlockOn: 0
+    - _BlockSize: 0.224
+    - _BlockSpeed: 23
+    - _BlockStrength: 0.274
+    - _ChromaAngle: 133
+    - _ChromaOn: 1
+    - _ChromaSpeed: 0
+    - _ChromaStrength: 0.0026
+    - _DriftDensity: 99
+    - _DriftOn: 0
+    - _DriftSpeed: 3.7
+    - _DriftStrength: 0.02
+    - _EnableExternalAlpha: 0
+    - _FlashDuration: 0.129
+    - _FlashOn: 1
+    - _FlashRate: 30
+    - _FlashStrength: 1
+    - _GrainColored: 0.849
+    - _GrainIntensity: 0.698
+    - _GrainOn: 1
+    - _GrainSize: 6.36
+    - _GrainSpeed: 51.1
+    - _Intensity: 1
+    - _NoiseBias: -0.089
+    - _NoiseContrast: 3.02
+    - _NoiseDirX: 0.902
+    - _NoiseDirY: -1
+    - _NoiseFreqX: 50
+    - _NoiseFreqY: 1.4
+    - _NoiseLacunarity: 2.898
+    - _NoiseLayerOn: 1
+    - _NoiseLayerSpeed: 9.31
+    - _NoiseOctaves: 3.39
+    - _NoisePersist: 0.5
+    - _NoiseScale: 67.2
+    - _NoiseSharpness: 6.21
+    - _NoiseStrength: 0.207
+    - _NoiseTiling: 5.94
+    - _PixelOn: 1
+    - _PixelSize: 1
+    - _ScanDensity: 696
+    - _ScanNoise: 0.2
+    - _ScanOn: 1
+    - _ScanSpeed: 1
+    - _ScanStrength: 0.25
+    - _ScanThickness: 0.5
+    - _ScatterCellDensity: 10.81
+    - _ScatterColorized: 0.22
+    - _ScatterFrequency: 0.534
+    - _ScatterOn: 0
+    - _ScatterPatchScale: 0.1
+    - _ScatterRotation: 0.013
+    - _ScatterSpeed: 5
+    - _ScatterStrength: 0.734
+    - _UseNoiseTex: 0
+    - _VJumpFrequency: 0.3
+    - _VJumpOn: 1
+    - _VJumpSpeed: 4.13
+    - _VJumpStrength: 0.364
+    - _VignetteOn: 0
+    - _VignettePulse: 0
+    - _VignetteRadius: 0.8
+    - _VignetteSoft: 0.4
+    - _ZWrite: 0
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _FlashColor: {r: 0.19999996, g: 1, b: 0.9, a: 1}
+    - _GlitchColor: {r: 0.2216981, g: 1, b: 0.7402547, a: 1}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+    - _ScanColor: {r: 0, g: 1, b: 0.8, a: 1}
+    - _VignetteColor: {r: 0, g: 0, b: 0, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
