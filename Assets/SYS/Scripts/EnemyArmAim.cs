@@ -16,25 +16,63 @@ public class EnemyArmAim : MonoBehaviour
     [SerializeField] private float minAngle = -60f;
     [SerializeField] private float maxAngle = 60f;
 
+    [Header("Recoil - Angle")]
+    [SerializeField] private float recoilAngle = 45f;
+    [SerializeField] private float recoilRiseSpeed = 800f;
+    [SerializeField] private float recoilReturnSpeed = 12f;
+
+    [Header("Recoil - Position")]
+    [SerializeField] private float recoilPushDist = 0.3f;   // 뒤로 밀리는 거리
+    [SerializeField] private float recoilPushSpeed = 800f;  // 밀리는 속도
+    [SerializeField] private float recoilPullSpeed = 10f;   // 복귀 속도
+
     private Transform _player;
     private bool _isFacingRight = true;
+
+    // 각도 반동
+    private float _recoilAngleOffset = 0f;
+    private float _recoilAngleTarget = 0f;
+    private bool _recoilAngleRising = false;
+
+    // 위치 반동
+    private Vector3 _armBaseLocalPos;         // 원래 로컬 위치 (flip 고려)
+    private float _recoilPosOffset = 0f;      // 뒤로 밀린 거리 (스칼라)
+    private float _recoilPosTarget = 0f;
+    private bool _recoilPosRising = false;
 
     private void Awake()
     {
         var playerObj = GameObject.FindWithTag("Player");
         if (playerObj != null) _player = playerObj.transform;
+
+        _armBaseLocalPos = armPivot.localPosition;
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.N))
+            TriggerRecoil();
+
+        UpdateRecoil();
     }
 
     private void LateUpdate()
     {
         if (_player == null || armPivot == null) return;
 
+        // ── 위치 반동 적용 ──
+        // 현재 aim 방향 반대(뒤)로 밀기
+        float aimWorldAngle = armPivot.rotation.eulerAngles.z;
+        float pushRad = (aimWorldAngle + 180f) * Mathf.Deg2Rad;
+        Vector3 pushDir = new Vector3(Mathf.Cos(pushRad), Mathf.Sin(pushRad), 0f);
+        armPivot.localPosition = _armBaseLocalPos + pushDir * _recoilPosOffset;
+
+        // ── 각도 반동 + aim ──
         float dist = Vector2.Distance(bodyTransform.position, _player.position);
         Vector2 dir = _player.position - armPivot.position;
         float rawAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
 
         float targetWorldAngle;
-
         if (dist <= detectionRange)
         {
             TryFlip(rawAngle);
@@ -42,27 +80,72 @@ public class EnemyArmAim : MonoBehaviour
         }
         else
         {
-            targetWorldAngle = 0f; // 기본 자세 (flipX가 방향 처리)
+            targetWorldAngle = 0f;
         }
 
-        // ★ localEulerAngles → rotation (월드 기준)
-        // 부모 localScale.x 음수여도 Y 반전 없음
+        float recoilSign = _isFacingRight ? 1f : -1f;
+        float finalAngle = targetWorldAngle + _recoilAngleOffset * recoilSign;
+
         armPivot.rotation = Quaternion.Lerp(
             armPivot.rotation,
-            Quaternion.Euler(0f, 0f, targetWorldAngle),
+            Quaternion.Euler(0f, 0f, finalAngle),
             Time.deltaTime * rotationSpeed);
+    }
+
+    public void TriggerRecoil()
+    {
+        // 각도
+        _recoilAngleOffset = 0f;
+        _recoilAngleTarget = recoilAngle;
+        _recoilAngleRising = true;
+
+        // 위치
+        _recoilPosOffset = 0f;
+        _recoilPosTarget = recoilPushDist;
+        _recoilPosRising = true;
+    }
+
+    private void UpdateRecoil()
+    {
+        // 각도
+        if (_recoilAngleRising)
+        {
+            _recoilAngleOffset = Mathf.MoveTowards(_recoilAngleOffset, _recoilAngleTarget, recoilRiseSpeed * Time.deltaTime);
+            if (Mathf.Approximately(_recoilAngleOffset, _recoilAngleTarget))
+            {
+                _recoilAngleRising = false;
+                _recoilAngleTarget = 0f;
+            }
+        }
+        else
+        {
+            _recoilAngleOffset = Mathf.Lerp(_recoilAngleOffset, 0f, recoilReturnSpeed * Time.deltaTime);
+            if (Mathf.Abs(_recoilAngleOffset) < 0.01f) _recoilAngleOffset = 0f;
+        }
+
+        // 위치
+        if (_recoilPosRising)
+        {
+            _recoilPosOffset = Mathf.MoveTowards(_recoilPosOffset, _recoilPosTarget, recoilPushSpeed * Time.deltaTime);
+            if (Mathf.Approximately(_recoilPosOffset, _recoilPosTarget))
+            {
+                _recoilPosRising = false;
+                _recoilPosTarget = 0f;
+            }
+        }
+        else
+        {
+            _recoilPosOffset = Mathf.Lerp(_recoilPosOffset, 0f, recoilPullSpeed * Time.deltaTime);
+            if (_recoilPosOffset < 0.001f) _recoilPosOffset = 0f;
+        }
     }
 
     private float GetTargetWorldAngle(float rawAngle)
     {
         if (_isFacingRight)
-        {
-            // 오른쪽: rawAngle 그대로 클램프
             return Mathf.Clamp(rawAngle, minAngle, maxAngle);
-        }
         else
         {
-            // 왼쪽: 180° 기준 상대각도 → 클램프 → flipX 보정(-180°) 상쇄
             float rel = NormalizeAngle(rawAngle - 180f);
             return Mathf.Clamp(rel, minAngle, maxAngle);
         }
@@ -78,12 +161,17 @@ public class EnemyArmAim : MonoBehaviour
     {
         _isFacingRight = !_isFacingRight;
 
+        float currentZ = armPivot.rotation.eulerAngles.z;
+        float correctedZ = currentZ + (_isFacingRight ? 180f : -180f);
+        armPivot.rotation = Quaternion.Euler(0f, 0f, correctedZ);
+
         if (bodyRenderer != null) bodyRenderer.flipX = !_isFacingRight;
         if (armRenderer != null) armRenderer.flipX = !_isFacingRight;
 
-        Vector3 pos = armPivot.localPosition;
-        pos.x = -pos.x;
-        armPivot.localPosition = pos;
+        // 베이스 위치도 flip
+        _armBaseLocalPos = armPivot.localPosition;
+        _armBaseLocalPos.x = -_armBaseLocalPos.x;
+        armPivot.localPosition = _armBaseLocalPos;
     }
 
     private float NormalizeAngle(float angle)
