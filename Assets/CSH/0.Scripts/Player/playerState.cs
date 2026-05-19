@@ -23,9 +23,9 @@ public class PlayerState : MonoBehaviour, IDamageable
     public float damage = 1f;
     public float HP = 10;
     public float MaxHP = 10;
-    [RuntimeOnly, SerializeField] public bool isDie = false;
     public float stamina = 100f;
     public float maxStamina = 100f;
+    [RuntimeOnly, SerializeField] public bool isDie = false;
 
     // ── 대쉬 게이지 ───────────────────────────
     [Header("대쉬 게이지")]
@@ -35,7 +35,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     public float dashGaugePerAttack = 10f;
 
     public float DashGauge => dashGauge;
-    public float MaxDashGauge => maxDashGauge;
+    public float MaxDashGauge { get => maxDashGauge; set => maxDashGauge = value; }
     public float DashCost => dashCost;
 
     // ── 중력 설정 ─────────────────────────────
@@ -66,7 +66,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     // ── 칩 설정 ─────────────────────────────
     [Header("칩 설정")]
     public PlayerChip currentChip = PlayerChip.pink;
-    public HashSet<PlayerChip> ownedChips = new HashSet<PlayerChip>() { PlayerChip.pink };
+    public HashSet<PlayerChip> ownedChips = new HashSet<PlayerChip>() { PlayerChip.pink }; // 보유한 칩 종류
 
     // ── 시간 설정 ─────────────────────────────
     public TimeCategory category = TimeCategory.Player;
@@ -84,7 +84,7 @@ public class PlayerState : MonoBehaviour, IDamageable
         //    hitLight = transform.Find("Hit Light").GetComponent<Light2D>();
         //if (hitWorldLight == null)
         //    hitWorldLight = transform.Find("Hit World Light").GetComponent<Light2D>();
-        GaugeInit();
+        InitState();
     }
 
     // ── 게이지 메서드 ─────────────────────────
@@ -115,8 +115,9 @@ public class PlayerState : MonoBehaviour, IDamageable
         ownedChips.Add(chip);
     }
 
-    public void GaugeInit()
+    public void InitState()
     {
+        HP = MaxHP;
         dashGauge = maxDashGauge;
         stamina = maxStamina;
     }

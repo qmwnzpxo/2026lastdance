@@ -10,10 +10,12 @@ public class PlayerMove : MonoBehaviour
     // ── 이동 ─────────────────────────────────
     [Header("이동")]
     [SerializeField] private float moveSpeed = 10f;
+    public float MoveSpeed { get => moveSpeed; set => moveSpeed = value; }
 
     // ── 점프 ─────────────────────────────────
     [Header("점프")]
     [SerializeField] private float jumpForce = 8f;
+    public float JumpForce { get => jumpForce; set => jumpForce = value; }
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private Transform ceilingCheck;
