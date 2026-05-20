@@ -23,9 +23,11 @@ public class EnemyState : MonoBehaviour, IDamageable
 
     public virtual void Die()
     {
-        GetComponent<EnemyBTController>().enabled = false; // BT 비활성화
-        GetComponent<Collider2D>().enabled = false; // 충돌체 비활성화
-        GetComponent<Rigidbody2D>().simulated = false; // 물리 시뮬레이션 비활성화
+        var BTcon = GetComponent<EnemyBTController>();
+        BTcon.enabled = false; // BT 비활성화
+        BTcon.requireInit = true;
+        var col = GetComponent<Collider2D>().enabled = false; // 충돌체 비활성화
+        var rb = GetComponent<Rigidbody2D>().simulated = false; // 물리 시뮬레이션 비활성화
         gameObject.SetActive(false);
     }
 }

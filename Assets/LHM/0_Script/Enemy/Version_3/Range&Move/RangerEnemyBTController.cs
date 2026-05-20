@@ -1,12 +1,12 @@
 ﻿using UnityEngine;
 using EnemyVersion3.Interfaces;
 
+[RequireComponent(typeof(EnemyArmAim))]
 public class RangerEnemyBTController : EnemyBTController, IMoveable
 {
     // ── 이동 ────────────────────────────────────
     [Header("이동")]
     public float _moveSpeed = 2f;
-    public float moveSpeed => _moveSpeed;
 
     // ── 지면 순찰 ───────────────────────────────
     [Header("지면 순찰")]
@@ -14,41 +14,28 @@ public class RangerEnemyBTController : EnemyBTController, IMoveable
     [SerializeField] private float _patrolEdgeCheckX = 0.5f;
     [SerializeField] private float _patrolEdgeCheckY = 1.2f;
     [SerializeField] private float _patrolWallCheckX = 0.4f;
-    public int patrolDirection
-    {
-        get => _patrolDirection;
-        set => _patrolDirection = value;
-    }
-    public float patrolEdgeCheckX => _patrolEdgeCheckX;
-    public float patrolEdgeCheckY => _patrolEdgeCheckY;
-    public float patrolWallCheckX => _patrolWallCheckX;
 
     // ── 후퇴 ────────────────────────────────────
     [Header("후퇴")]
     public float _retreatTriggerRange = 0;
     public float _retreatDistance = 0;
-    public float retreatTriggerRange
-    {
-        get => _retreatTriggerRange;
-        set => _retreatTriggerRange = value;
-    }
-    public float retreatDistance
-    {
-        get => _retreatDistance;
-        set => _retreatDistance = value;
-    }
+
+    // ── 팔 회전 ─────────────────────────────────
+    protected EnemyArmAim _armAim;
+
+    // ── 외부 API ────────────────────────────────
+    public float moveSpeed => _moveSpeed;
+    public float patrolEdgeCheckX => _patrolEdgeCheckX;
+    public float patrolEdgeCheckY => _patrolEdgeCheckY;
+    public float patrolWallCheckX => _patrolWallCheckX;
+    public int patrolDirection { get => _patrolDirection;
+        set => _patrolDirection = value; }
+    public float retreatTriggerRange { get => _retreatTriggerRange;
+        set => _retreatTriggerRange = value; }
+    public float retreatDistance { get => _retreatDistance;
+        set => _retreatDistance = value; }
     public bool needsRetreat { get; set; }
 
-    protected override void Awake()
-    {
-        if (_groundLayer == 0)
-            _groundLayer = LayerMask.GetMask("ground");
-        Debug.Log(_groundLayer.value);
-        InitBlackboad();
-
-
-        _root = BuildTree();
-    }
 
     protected override void InitBlackboad()
     {
@@ -59,6 +46,12 @@ public class RangerEnemyBTController : EnemyBTController, IMoveable
         GetComponent<EnemyCombat>()?.Initialize(_bb.playerTransform);
     }
 
+    public override void ReInit()
+    {
+        base.ReInit();
+        _armAim=GetComponent<EnemyArmAim>();
+        _armAim.EnemyBlackBoard = _bb;
+    }
 
     public Vector2 GetSlopeVelocity(float dirX, float speed, LayerMask groundLayer)
     {

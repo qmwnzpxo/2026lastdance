@@ -17,8 +17,11 @@ public class TimeScaleReceiver : MonoBehaviour
 
     void Awake()
     {
-        if (_animator == null)
-            _animator = GetComponent<Animator>();
+        if (_animator == null) { 
+            TryGetComponent<Animator>(out var ani);
+            _animator = ani;
+        }
+
         if (_rb == null)
             _rb = GetComponent<Rigidbody2D>();
     }
@@ -85,12 +88,14 @@ public class TimeScaleReceiver : MonoBehaviour
     {
         // 애니메이션 속도
         if (_animator != null)
+        {
             _animator.speed = scale;
+            Debug.Log(_animator.speed);
+        }
 
         // 물리: 완전 정지면 velocity도 0, 재개 시 복구는 각 이동 스크립트가 담당
         if (_rb != null && scale <= 0f)
             _rb.linearVelocity = Vector2.zero;
 
-        Debug.Log(_animator.speed);
     }
 }

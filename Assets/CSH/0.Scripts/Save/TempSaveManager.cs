@@ -1,9 +1,6 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// 스테이지 진행 중 임시 데이터를 PlayerPrefs로 관리하는 싱글톤.
-/// 게임을 꺼도 데이터가 유지되며, 명시적으로 Clear()를 호출해야 소멸한다.
-///
 /// 저장 시점:
 ///   - 체크포인트 통과     → RegisterRespawn()
 ///   - 이벤트/구간 완료    → CompleteEvent()
@@ -13,6 +10,7 @@
 /// 소멸 시점:
 ///   - 스테이지 클리어     → CommitAndClear()  (SaveData에 반영 후 소멸)
 ///   - 챕터 재시작         → Clear()           (반영 없이 소멸)
+///   - 스테이지 진행중 종료 → Clear()           (반영 없이 소멸)
 /// </summary>
 public class TempSaveManager : PersistentSingleton<TempSaveManager>
 {
@@ -190,13 +188,13 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
 
     private void SaveToDisk()
     {
-        PlayerPrefs.SetString(TEMP_KEY, JsonUtility.ToJson(_data));
-        PlayerPrefs.Save();
+        //PlayerPrefs.SetString(TEMP_KEY, JsonUtility.ToJson(_data));
+        //PlayerPrefs.Save();
     }
 
     private TempSaveData LoadFromDisk()
     {
-        if (!PlayerPrefs.HasKey(TEMP_KEY)) return null;
+        //if (!PlayerPrefs.HasKey(TEMP_KEY)) return null;
         return JsonUtility.FromJson<TempSaveData>(PlayerPrefs.GetString(TEMP_KEY));
     }
 

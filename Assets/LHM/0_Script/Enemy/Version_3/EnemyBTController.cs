@@ -29,6 +29,11 @@ public class EnemyBTController : MonoBehaviour
     protected BTNode _root;
     protected EnemyBlackboard _bb;
 
+    [HideInInspector]public bool requireInit = true;
+    // ─── 외부 API ───────────────────────────────
+    public EnemyBlackboard _BB { get => _bb; }
+
+
     // ────────────────────────────────────────────
     #region Unity 생명주기
 
@@ -36,8 +41,8 @@ public class EnemyBTController : MonoBehaviour
     {
         if (_groundLayer == 0)
             _groundLayer = LayerMask.GetMask("ground");
-        InitBlackboad();
-        _root = BuildTree();
+        if (requireInit)
+            ReInit();
     }
 
     protected virtual void FixedUpdate()
@@ -54,11 +59,18 @@ public class EnemyBTController : MonoBehaviour
     {
         InitBlackboad();
         _root = BuildTree();
+        requireInit = false;
     }
 
     protected virtual void OnDestroy()
     {
         _bb.CancelAction();
+    }
+
+    public virtual void Enable()
+    {
+        if (requireInit)
+            ReInit();
     }
 
     #endregion
@@ -119,8 +131,6 @@ public class EnemyBTController : MonoBehaviour
             chaseEndDuration = _chaseEndDuration,
             attackRange = _attackRange,
             attackCooldown = _attackCooldown,
-            attackWindupTime =_attackWindupTime,
-            attackRecoveryTime = _attackRecoveryTime,
             stunDuration = _stunDuration,
             moveable = GetComponent<IMoveable>(),
             enemyCombat = GetComponent<EnemyCombat>(),

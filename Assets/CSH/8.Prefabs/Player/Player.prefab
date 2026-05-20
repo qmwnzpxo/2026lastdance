@@ -148,9 +148,9 @@ MonoBehaviour:
   damage: 1
   HP: 10
   MaxHP: 10
-  isDie: 0
   stamina: 100
   maxStamina: 100
+  isDie: 0
   dashGauge: 50
   maxDashGauge: 100
   dashGaugePerAttack: 0.3
@@ -206,7 +206,8 @@ MonoBehaviour:
   _climbSpeed: 8
   _climbHorizSpeed: 8
   _climbHeight: 1
-  spriteRenderer: {fileID: 8931696859395051405}
+  spriteRenderer: {fileID: 4829895224763142948}
+  spriteTransform: {fileID: 6688604917998028013}
 --- !u!114 &2826985530563884855
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -267,7 +268,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f611780d0f0ebf48b0679e3aae32eb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ani: {fileID: 8855167486035151956}
+  ani: {fileID: 5846648695814981030}
 --- !u!114 &2525676359785419320
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,6 +282,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _category: 0
+  _animator: {fileID: 5846648695814981030}
+  _rb: {fileID: 5146102955874661066}
 --- !u!50 &5146102955874661066
 Rigidbody2D:
   serializedVersion: 5
@@ -626,8 +629,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6688604917998028013}
-  - component: {fileID: 8931696859395051405}
-  - component: {fileID: 8855167486035151956}
   m_Layer: 0
   m_Name: body
   m_TagString: Untagged
@@ -647,16 +648,50 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 2.7, y: 2.7, z: 2.7}
   m_ConstrainProportionsScale: 1
-  m_Children: []
+  m_Children:
+  - {fileID: 2337620002274787337}
   m_Father: {fileID: 244544623173344442}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &8931696859395051405
+--- !u!1 &4532960464336095568
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2337620002274787337}
+  - component: {fileID: 4829895224763142948}
+  - component: {fileID: 5846648695814981030}
+  m_Layer: 0
+  m_Name: sprite
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2337620002274787337
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4532960464336095568}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.31, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6688604917998028013}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &4829895224763142948
 SpriteRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4255497971797572998}
+  m_GameObject: {fileID: 4532960464336095568}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -693,7 +728,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 0
   m_Sprite: {fileID: -1992654757, guid: 395998c61033fe44aa61bf429fe07cc5, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -705,14 +740,14 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!95 &8855167486035151956
+--- !u!95 &5846648695814981030
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4255497971797572998}
+  m_GameObject: {fileID: 4532960464336095568}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: b69dbb41ddae4cb4c9073166a58402b2, type: 2}

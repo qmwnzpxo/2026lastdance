@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class EnemyArmAim : MonoBehaviour
 {
@@ -22,23 +22,28 @@ public class EnemyArmAim : MonoBehaviour
     [SerializeField] private float recoilReturnSpeed = 12f;
 
     [Header("Recoil - Position")]
-    [SerializeField] private float recoilPushDist = 0.3f;   // µÚ·Î ¹Ğ¸®´Â °Å¸®
-    [SerializeField] private float recoilPushSpeed = 800f;  // ¹Ğ¸®´Â ¼Óµµ
-    [SerializeField] private float recoilPullSpeed = 10f;   // º¹±Í ¼Óµµ
+    [SerializeField] private float recoilPushDist = 0.3f;   // ë’¤ë¡œ ë°€ë¦¬ëŠ” ê±°ë¦¬
+    [SerializeField] private float recoilPushSpeed = 800f;  // ë°€ë¦¬ëŠ” ì†ë„
+    [SerializeField] private float recoilPullSpeed = 10f;   // ë³µê·€ ì†ë„
 
     private Transform _player;
+    private EnemyBlackboard _enemyBB;
     private bool _isFacingRight = true;
 
-    // °¢µµ ¹İµ¿
+    // ê°ë„ ë°˜ë™
     private float _recoilAngleOffset = 0f;
     private float _recoilAngleTarget = 0f;
     private bool _recoilAngleRising = false;
 
-    // À§Ä¡ ¹İµ¿
-    private Vector3 _armBaseLocalPos;         // ¿ø·¡ ·ÎÄÃ À§Ä¡ (flip °í·Á)
-    private float _recoilPosOffset = 0f;      // µÚ·Î ¹Ğ¸° °Å¸® (½ºÄ®¶ó)
+    // ìœ„ì¹˜ ë°˜ë™
+    private Vector3 _armBaseLocalPos;         // ì›ë˜ ë¡œì»¬ ìœ„ì¹˜ (flip ê³ ë ¤)
+    private float _recoilPosOffset = 0f;      // ë’¤ë¡œ ë°€ë¦° ê±°ë¦¬ (ìŠ¤ì¹¼ë¼)
     private float _recoilPosTarget = 0f;
     private bool _recoilPosRising = false;
+
+    // ì™¸ë¶€ API
+    public float DetactionRange { get => detectionRange; set => detectionRange = value; }
+    public EnemyBlackboard EnemyBlackBoard { get => _enemyBB; set => _enemyBB = value; }
 
     private void Awake()
     {
@@ -60,16 +65,21 @@ public class EnemyArmAim : MonoBehaviour
     {
         if (_player == null || armPivot == null) return;
 
-        // ¦¡¦¡ À§Ä¡ ¹İµ¿ Àû¿ë ¦¡¦¡
-        // ÇöÀç aim ¹æÇâ ¹İ´ë(µÚ)·Î ¹Ğ±â
+        // â”€â”€ ìœ„ì¹˜ ë°˜ë™ ì ìš© â”€â”€
+        // í˜„ì¬ aim ë°©í–¥ ë°˜ëŒ€(ë’¤)ë¡œ ë°€ê¸°
         float aimWorldAngle = armPivot.rotation.eulerAngles.z;
         float pushRad = (aimWorldAngle + 180f) * Mathf.Deg2Rad;
         Vector3 pushDir = new Vector3(Mathf.Cos(pushRad), Mathf.Sin(pushRad), 0f);
         armPivot.localPosition = _armBaseLocalPos + pushDir * _recoilPosOffset;
 
-        // ¦¡¦¡ °¢µµ ¹İµ¿ + aim ¦¡¦¡
+        // â”€â”€ ê°ë„ ë°˜ë™ + aim â”€â”€
         float dist = Vector2.Distance(bodyTransform.position, _player.position);
-        Vector2 dir = _player.position - armPivot.position;
+        Vector2 dir;
+        if (_enemyBB.hasLOS)
+            dir = _player.position - armPivot.position;
+        else
+            dir = armPivot.right;
+
         float rawAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
 
         float targetWorldAngle;
@@ -94,12 +104,12 @@ public class EnemyArmAim : MonoBehaviour
 
     public void TriggerRecoil()
     {
-        // °¢µµ
+        // ê°ë„
         _recoilAngleOffset = 0f;
         _recoilAngleTarget = recoilAngle;
         _recoilAngleRising = true;
 
-        // À§Ä¡
+        // ìœ„ì¹˜
         _recoilPosOffset = 0f;
         _recoilPosTarget = recoilPushDist;
         _recoilPosRising = true;
@@ -107,7 +117,7 @@ public class EnemyArmAim : MonoBehaviour
 
     private void UpdateRecoil()
     {
-        // °¢µµ
+        // ê°ë„
         if (_recoilAngleRising)
         {
             _recoilAngleOffset = Mathf.MoveTowards(_recoilAngleOffset, _recoilAngleTarget, recoilRiseSpeed * Time.deltaTime);
@@ -123,7 +133,7 @@ public class EnemyArmAim : MonoBehaviour
             if (Mathf.Abs(_recoilAngleOffset) < 0.01f) _recoilAngleOffset = 0f;
         }
 
-        // À§Ä¡
+        // ìœ„ì¹˜
         if (_recoilPosRising)
         {
             _recoilPosOffset = Mathf.MoveTowards(_recoilPosOffset, _recoilPosTarget, recoilPushSpeed * Time.deltaTime);
@@ -168,7 +178,7 @@ public class EnemyArmAim : MonoBehaviour
         if (bodyRenderer != null) bodyRenderer.flipX = !_isFacingRight;
         if (armRenderer != null) armRenderer.flipX = !_isFacingRight;
 
-        // º£ÀÌ½º À§Ä¡µµ flip
+        // ë² ì´ìŠ¤ ìœ„ì¹˜ë„ flip
         _armBaseLocalPos = armPivot.localPosition;
         _armBaseLocalPos.x = -_armBaseLocalPos.x;
         armPivot.localPosition = _armBaseLocalPos;

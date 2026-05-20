@@ -20,7 +20,7 @@ public class EnemyCombat : MonoBehaviour
     {
         _poolKey = _bulletPrefab != null ? _bulletPrefab.poolKey : string.Empty;
     }
-    public void Initialize(Transform playerTransform)
+    public virtual void Initialize(Transform playerTransform)
     {
         _playerTransform = playerTransform;
     }
@@ -36,7 +36,7 @@ public class EnemyCombat : MonoBehaviour
         await UniTask.WaitForSeconds(_postDelay, cancellationToken: ct);
     }
 
-    private void Shoot()
+    protected virtual void Shoot()
     {
         if (_playerTransform == null)
         {

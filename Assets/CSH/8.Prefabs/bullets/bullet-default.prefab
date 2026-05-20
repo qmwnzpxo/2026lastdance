@@ -221,3 +221,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _category: 1
+  _animator: {fileID: 0}
+  _rb: {fileID: 6184258857001789297}

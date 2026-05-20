@@ -2,7 +2,7 @@
 using System.Threading;
 using Unity.Cinemachine;
 using UnityEngine;
-using static UnityEngine.Rendering.DebugUI;
+//using static UnityEngine.Rendering.DebugUI;
 
 public class CameraFollow : MonoBehaviour
 {

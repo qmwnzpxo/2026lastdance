@@ -31,8 +31,6 @@ public class EnemyBlackboard
     // ── 공격 ────────────────────────────────────
     public float attackRange = 5f;
     public float attackCooldown = 2f;
-    public float attackWindupTime = 0.1f;   // 공격 시작 전
-    public float attackRecoveryTime = 0.08f;// 후딜
     public float lastAttackTime = float.MinValue;
 
     // ── 스턴 ────────────────────────────────────
