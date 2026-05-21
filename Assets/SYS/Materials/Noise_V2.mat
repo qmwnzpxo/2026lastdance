@@ -12,12 +12,17 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _BARREL_ON
+  - _BLOCK_ON
   - _CHROMA_ON
+  - _DRIFT_ON
   - _FLASH_ON
   - _GRAIN_ON
   - _NOISELAYER_ON
   - _PIXEL_ON
   - _SCAN_ON
+  - _SCATTER_ON
+  - _VIGNETTE_ON
   - _VJUMP_ON
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -53,21 +58,21 @@ Material:
     m_Ints: []
     m_Floats:
     - _Alpha: 0.633
-    - _BarrelOn: 0
+    - _BarrelOn: 1
     - _BarrelPulse: 0
     - _BarrelStrength: 0.2
-    - _BlockFrequency: 0.738
-    - _BlockNoiseMix: 0.603
-    - _BlockOn: 0
-    - _BlockSize: 0.224
+    - _BlockFrequency: 0.17
+    - _BlockNoiseMix: 0
+    - _BlockOn: 1
+    - _BlockSize: 0.005
     - _BlockSpeed: 23
     - _BlockStrength: 0.274
-    - _ChromaAngle: 133
+    - _ChromaAngle: 308
     - _ChromaOn: 1
-    - _ChromaSpeed: 0
-    - _ChromaStrength: 0.0026
+    - _ChromaSpeed: 10
+    - _ChromaStrength: 0.023
     - _DriftDensity: 99
-    - _DriftOn: 0
+    - _DriftOn: 1
     - _DriftSpeed: 3.7
     - _DriftStrength: 0.02
     - _EnableExternalAlpha: 0
@@ -76,26 +81,26 @@ Material:
     - _FlashRate: 30
     - _FlashStrength: 1
     - _GrainColored: 0.849
-    - _GrainIntensity: 0.698
+    - _GrainIntensity: 0.24
     - _GrainOn: 1
-    - _GrainSize: 6.36
+    - _GrainSize: 6.55
     - _GrainSpeed: 51.1
     - _Intensity: 1
-    - _NoiseBias: -0.089
-    - _NoiseContrast: 3.02
+    - _NoiseBias: -0.52
+    - _NoiseContrast: 10
     - _NoiseDirX: 0.902
     - _NoiseDirY: -1
-    - _NoiseFreqX: 50
-    - _NoiseFreqY: 1.4
+    - _NoiseFreqX: 29.3
+    - _NoiseFreqY: 143
     - _NoiseLacunarity: 2.898
     - _NoiseLayerOn: 1
     - _NoiseLayerSpeed: 9.31
     - _NoiseOctaves: 3.39
     - _NoisePersist: 0.5
     - _NoiseScale: 67.2
-    - _NoiseSharpness: 6.21
+    - _NoiseSharpness: 0.1
     - _NoiseStrength: 0.207
-    - _NoiseTiling: 5.94
+    - _NoiseTiling: 10
     - _PixelOn: 1
     - _PixelSize: 1
     - _ScanDensity: 696
@@ -104,21 +109,21 @@ Material:
     - _ScanSpeed: 1
     - _ScanStrength: 0.25
     - _ScanThickness: 0.5
-    - _ScatterCellDensity: 10.81
-    - _ScatterColorized: 0.22
+    - _ScatterCellDensity: 30
+    - _ScatterColorized: 1
     - _ScatterFrequency: 0.534
-    - _ScatterOn: 0
-    - _ScatterPatchScale: 0.1
-    - _ScatterRotation: 0.013
-    - _ScatterSpeed: 5
-    - _ScatterStrength: 0.734
+    - _ScatterOn: 1
+    - _ScatterPatchScale: 0.33
+    - _ScatterRotation: 1
+    - _ScatterSpeed: 20
+    - _ScatterStrength: 2
     - _UseNoiseTex: 0
     - _VJumpFrequency: 0.3
     - _VJumpOn: 1
     - _VJumpSpeed: 4.13
     - _VJumpStrength: 0.364
-    - _VignetteOn: 0
-    - _VignettePulse: 0
+    - _VignetteOn: 1
+    - _VignettePulse: 2.83
     - _VignetteRadius: 0.8
     - _VignetteSoft: 0.4
     - _ZWrite: 0

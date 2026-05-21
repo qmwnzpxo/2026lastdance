@@ -1,4 +1,4 @@
-Shader "URP2D/FX/ScreenGlitch_V2"
+﻿Shader "URP2D/FX/ScreenGlitch_V2"
 {
     Properties
     {
@@ -565,6 +565,10 @@ Shader "URP2D/FX/ScreenGlitch_V2"
                 // ── 노이즈 산포 ─────────────────────────────────────
                 #ifdef _SCATTER_ON
                 {
+                    float lum = dot(col, float3(0.299, 0.587, 0.114));
+                    float a   = saturate(lum * I * 2.0
+                                   + blockActive * I * 0.4
+                                   + scanContrib  * 0.4) * _Alpha;
                     float  sT    = floor(t * _ScatterSpeed);
                     float2 cellUV = uv * _ScatterCellDensity;
                     float2 cellID = floor(cellUV);
@@ -627,7 +631,7 @@ Shader "URP2D/FX/ScreenGlitch_V2"
                     }
 
                     col += scatterCol * _ScatterStrength * I;
-                    a   = saturate(a + scatterA * _ScatterStrength * I * _Alpha);
+                    a = saturate(a + scatterA * _ScatterStrength * I * _Alpha);
                 }
                 #endif
                 // ── 알파 ────────────────────────────────────────────
