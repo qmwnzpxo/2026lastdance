@@ -92,9 +92,11 @@ namespace DialogueSystem
             var info = _tmp.textInfo;
             if (info == null || info.characterCount == 0) return;
 
+            // 원본 버텍스 데이터를 작업용 배열에 복사 (Dynamic 폰트 안전 처리)
+            info.CopyMeshInfoVertexData();
+
             foreach (var region in _effects)
             {
-                // 타이프라이터 속도 이펙트는 버텍스 조작 불필요
                 if (region.type is TextEffectType.Typefast or TextEffectType.Typeslow)
                     continue;
 
@@ -102,35 +104,35 @@ namespace DialogueSystem
                 for (int ci = region.startChar; ci <= end; ci++)
                 {
                     var charInfo = info.characterInfo[ci];
+
+                    // isVisible: TMP가 실제로 렌더링하는 글자만 처리
                     if (!charInfo.isVisible) continue;
 
                     int mat = charInfo.materialReferenceIndex;
                     int vi  = charInfo.vertexIndex;
+
+                    // meshInfo 배열 범위 체크
+                    if (mat >= info.meshInfo.Length) continue;
                     var verts  = info.meshInfo[mat].vertices;
                     var colors = info.meshInfo[mat].colors32;
+                    if (vi + 3 >= verts.Length) continue;
 
-                    // 글자 중심
                     Vector3 center = (verts[vi] + verts[vi + 1] + verts[vi + 2] + verts[vi + 3]) * 0.25f;
 
                     switch (region.type)
                     {
-                        case TextEffectType.Shake:   Shake(verts, vi, ci);                    break;
-                        case TextEffectType.Wave:    Wave(verts, vi, ci);                     break;
-                        case TextEffectType.BigPop:  BigPop(verts, vi, ci, center);           break;
-                        case TextEffectType.Break:   Break(verts, vi, ci, center);            break;
-                        case TextEffectType.Rainbow: Rainbow(colors, vi, ci);                 break;
+                        case TextEffectType.Shake:   Shake(verts, vi, ci);           break;
+                        case TextEffectType.Wave:    Wave(verts, vi, ci);            break;
+                        case TextEffectType.BigPop:  BigPop(verts, vi, ci, center);  break;
+                        case TextEffectType.Break:   Break(verts, vi, ci, center);   break;
+                        case TextEffectType.Rainbow: Rainbow(colors, vi, ci);        break;
                     }
                 }
             }
 
-            // 변경된 버텍스/색상 메시에 반영
-            for (int i = 0; i < info.meshInfo.Length; i++)
-            {
-                var mesh = info.meshInfo[i];
-                mesh.mesh.vertices = mesh.vertices;
-                mesh.mesh.colors32 = mesh.colors32;
-                _tmp.UpdateGeometry(mesh.mesh, i);
-            }
+            // Unity 6 TMP 권장 방식으로 메시 업데이트
+            _tmp.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices |
+                                  TMP_VertexDataUpdateFlags.Colors32);
         }
 
         // ── 각 이펙트 구현 ─────────────────────────────────────────────────────
