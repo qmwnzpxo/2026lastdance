@@ -27,6 +27,13 @@ public class CameraFollow : MonoBehaviour
 
     private CancellationTokenSource zoom_cts;
 
+    private CancellationTokenSource _lockdownCts;
+    private float _savedOrthoSize;
+    private bool _isLockdown = false;
+
+
+    // ─── 초기화 ─────────────────────────────────
+#region
     private void Awake()
     {
         if (target == null)
@@ -48,20 +55,40 @@ public class CameraFollow : MonoBehaviour
 
     }
 
-    private void LateUpdate()
-    {
-        if (isfirstZooming == false)
-        {isfirstZooming = true;
-            startWhenZoom().Forget();
-        }
-    }
-
     private void Start()
     {
         cmZoom.gameObject.SetActive(false);
         cmGamePlay.gameObject.SetActive(true);
 
     }
+#endregion
+
+    // ─── 생명주기 ───────────────────────────────
+#region
+    private void LateUpdate()
+    {
+        if (isfirstZooming == false)
+        {
+            isfirstZooming = true;
+            startWhenZoom().Forget();
+        }
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.R)&&!isZooming)
+            ZoomCamera(fromOrtho, toOrtho, duration);
+    }
+#endregion
+
+    // ─── 줌 ─────────────────────────────────
+    #region
+    public void Zoom(float targetOrtho, float zoomDuration)
+    {
+        if(isZooming) return; // 이미 줌 중이면 무시
+        ZoomCamera(cmZoom.Lens.OrthographicSize, targetOrtho, zoomDuration);
+    }
+
     async UniTask startWhenZoom()
     {
         await UniTask.Delay(50);
@@ -70,17 +97,6 @@ public class CameraFollow : MonoBehaviour
         await UniTask.WaitForSeconds(2f);
 
         return;
-    }
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.R)&&!isZooming)
-            ZoomCamera(fromOrtho, toOrtho, duration);
-    }
-
-    public void Zoom(float targetOrtho, float zoomDuration)
-    {
-        if(isZooming) return; // 이미 줌 중이면 무시
-        ZoomCamera(cmZoom.Lens.OrthographicSize, targetOrtho, zoomDuration);
     }
 
     private void ZoomCamera(float from, float to, float zoomDuration)
@@ -132,10 +148,113 @@ public class CameraFollow : MonoBehaviour
         cmGamePlay.GetComponent<CinemachineFollow>().TrackerSettings.PositionDamping = new Vector3(value, value, 1);
 
     }
+#endregion
 
+    // ─── 락다운 ─────────────────────────────────
+#region 락다운 카메라
+
+    /// <summary>
+    /// 락다운 시작
+    /// roomCenter - 카메라가 바라볼 위치, targetOrtho - 락다운 시 카메라 크기, duration - 전환 시간
+    /// </summary>
+    public void StartLockdown(Transform roomCenter, float targetOrtho, float duration)
+    {
+        if (_isLockdown) return;
+        _isLockdown = true;
+
+        _lockdownCts?.Cancel();
+        _lockdownCts?.Dispose();
+        _lockdownCts = new CancellationTokenSource();
+
+        LockdownEnterAsync(roomCenter, targetOrtho, duration, _lockdownCts.Token).Forget();
+    }
+
+    // 락다운 해제
+    public void EndLockdown(float duration = 0.4f)
+    {
+        if (!_isLockdown) return;
+        _isLockdown = false;
+
+        _lockdownCts?.Cancel();
+        _lockdownCts?.Dispose();
+        _lockdownCts = new CancellationTokenSource();
+
+        LockdownExitAsync(duration, _lockdownCts.Token).Forget();
+    }
+
+    private async UniTaskVoid LockdownEnterAsync(
+        Transform roomCenter, float targetOrtho, float duration, CancellationToken ct)
+    {
+        // 현재 ortho 저장, 타겟을 방 중앙으로 교체
+        _savedOrthoSize = cmGamePlay.Lens.OrthographicSize;
+        cmZoom.Follow = roomCenter;
+
+        float from = cmGamePlay.Lens.OrthographicSize;
+        float timer = 0f;
+
+        cmBrain.DefaultBlend.Time = 0f;
+        SetCameraDumping(0f);   // 즉시 방 중앙으로 이동
+        cmZoom.gameObject.SetActive(true);
+
+        var lens = cmZoom.Lens;
+        lens.OrthographicSize = from;
+        cmZoom.Lens = lens;
+
+        while (!ct.IsCancellationRequested)
+        {
+            bool canceled = await UniTask
+                .WaitForFixedUpdate(cancellationToken: ct)
+                .SuppressCancellationThrow();
+            if (canceled) break;
+
+            timer += Time.fixedDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / duration));
+
+            lens = cmZoom.Lens;
+            lens.OrthographicSize = Mathf.Lerp(from, targetOrtho, t);
+            cmZoom.Lens = lens;
+
+            if (timer >= duration) break;
+        }
+    }
+
+    private async UniTaskVoid LockdownExitAsync(float duration, CancellationToken ct)
+    {
+        cmZoom.Follow = target;
+
+        float from = cmZoom.Lens.OrthographicSize;
+        float to = _savedOrthoSize;
+        float timer = 0f;
+
+        while (!ct.IsCancellationRequested)
+        {
+            bool canceled = await UniTask
+                .WaitForFixedUpdate(cancellationToken: ct)
+                .SuppressCancellationThrow();
+            if (canceled) break;
+
+            timer += Time.fixedDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / duration));
+
+            var lens = cmZoom.Lens;
+            lens.OrthographicSize = Mathf.Lerp(from, to, t);
+            cmZoom.Lens = lens;
+
+            if (timer >= duration) break;
+        }
+
+        SetCameraDumping(1f);
+        cmBrain.DefaultBlend.Time = defaultBlendTime;
+        cmZoom.gameObject.SetActive(false);
+        isZooming = false;
+    }
+
+#endregion
     private void OnDestroy()
     {
         zoom_cts?.Cancel();
         zoom_cts?.Dispose();
+        _lockdownCts?.Cancel();
+        _lockdownCts?.Dispose();
     }
 }

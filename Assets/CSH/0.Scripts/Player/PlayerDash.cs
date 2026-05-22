@@ -467,7 +467,7 @@ public class PlayerDash : MonoBehaviour
     {
         // 대각선 4방향: (±√0.5, ±√0.5)
         float x = dir.x >= 0f ? 1f : -1f;
-        float y = -1f;
+        float y = 1f;
         return new Vector2(x, y).normalized;
     }
 

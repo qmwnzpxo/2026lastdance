@@ -27,15 +27,15 @@ public class SaveData
     public List<StageChoice> choices = new List<StageChoice>();
 
     // ── 카르마 ────────────────────────────
-    public float karma;
+    public float karma;         // -100 ~ 100
 
     // ── 동기화 파편 ───────────────────────
-    // 총 획득 파편
-    public float totalShard;
-    // 스탯에 사용한 파편
-    public float usedShard;
+    public float totalShard;    // 총 획득 파편
+
+    public float usedShard;     // 스탯에 사용한 파편
 
     // ── 적 난이도 누적치 ──────────────────
-
+    public int brutalChoiceCount;   // 잔인한 선택지 횟수
+    public float difficultyScore;   // 난이도 점수
 
 }

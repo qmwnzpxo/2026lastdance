@@ -17,6 +17,8 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float jumpForce = 8f;
     public float JumpForce { get => jumpForce; set => jumpForce = value; }
     [SerializeField] private LayerMask groundLayer;
+    private LayerMask groundOnlyLayer;
+    private LayerMask walkableLayer;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private Transform ceilingCheck;
     [SerializeField] private Vector2 groundCheckSize = new Vector2(0.44f, 0.1f);
@@ -73,7 +75,7 @@ public class PlayerMove : MonoBehaviour
 
     // ── PlayerDash에서 필요한 공개 접근자 ───
     public Rigidbody2D Rb => rb;
-    public LayerMask GroundLayer => groundLayer;
+    public LayerMask GroundLayer => walkableLayer;
     public Transform GroundCheck => groundCheck;
     public Vector2 GroundCheckSize => groundCheckSize;
     public bool JustStoppedDashing { get => justStoppedDashing; set => justStoppedDashing = value; }
@@ -96,6 +98,12 @@ public class PlayerMove : MonoBehaviour
             spriteRenderer = GetComponent<SpriteRenderer>();
         normalSpriteScale = spriteTransform.localScale;
         flipSpriteScale = new Vector3(normalSpriteScale.x,-normalSpriteScale.y,normalSpriteScale.z);
+        if(groundLayer == 0)
+        {
+            groundLayer = LayerMask.GetMask("ground");
+        }
+        groundOnlyLayer = LayerMask.GetMask("groundOnly");
+        walkableLayer = groundLayer | groundOnlyLayer;
     }
 
 
@@ -145,7 +153,7 @@ public class PlayerMove : MonoBehaviour
     void CheckGround()
     {
         state.isGrounded = Physics2D.OverlapBox(
-            groundCheck.position, groundCheckSize, 0f, groundLayer);
+            groundCheck.position, groundCheckSize, 0f, walkableLayer);
     }
 
     void CheckCeiling()
@@ -193,7 +201,7 @@ public class PlayerMove : MonoBehaviour
 
     void HandlePowerRun()
     {
-        state.isPowerRun = Input.GetKey(KeyCode.LeftShift);
+        state.isPowerRun = Input.GetKey(KeyCode.LeftShift) && moveInput != 0;
     }
 
     void ApplyWallSlide()

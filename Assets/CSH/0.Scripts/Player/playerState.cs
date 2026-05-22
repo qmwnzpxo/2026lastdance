@@ -1,5 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -87,6 +88,21 @@ public class PlayerState : MonoBehaviour, IDamageable
         InitState();
     }
 
+    public void Update()
+    {
+        if(Input.GetKey(KeyCode.LeftShift)&&Input.GetKeyDown(KeyCode.G))
+        {
+            GetChips(PlayerChip.red);
+            GetChips(PlayerChip.green);
+            GetChips(PlayerChip.blue);
+        }
+
+        if (Input.GetKey(KeyCode.R))
+        {
+            MoveNextChip();
+        }
+    }
+
     // ── 게이지 메서드 ─────────────────────────
     public void AddDashGauge(float amount)
     {
@@ -120,6 +136,7 @@ public class PlayerState : MonoBehaviour, IDamageable
         HP = MaxHP;
         dashGauge = maxDashGauge;
         stamina = maxStamina;
+        GetChips(PlayerChip.pink);
     }
 
     public void Heal(float amount)
@@ -172,6 +189,32 @@ public class PlayerState : MonoBehaviour, IDamageable
             //playerMove.CancelAllTask();
 
         }
+    }
+
+    public void Revive()
+    {
+        isDie = false;
+        InitState();
+    }
+    private void MoveNextChip()
+    {
+        PlayerChip? nextChip = ownedChips
+            .Where(chip => chip > currentChip)
+            .OrderBy(chip => chip)
+            .Cast<PlayerChip?>()
+            .FirstOrDefault();
+
+        if (nextChip.HasValue)
+        {
+            currentChip = nextChip.Value;
+        }
+        else
+        {
+            // 더 큰 값이 없으면 가장 작은 칩으로
+            currentChip = ownedChips.Min();
+        }
+
+        Debug.Log(currentChip);
     }
     void OnDestroy() // 추가
     {
