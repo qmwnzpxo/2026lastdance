@@ -7,6 +7,8 @@ public class EnemyState : MonoBehaviour, IDamageable
     public float maxHp = 10f;
     public float currentHp;
 
+    // LockdownRoom이 구독하는 사망 이벤트
+    public event System.Action<EnemyState> OnDeath;
 
     public void Awake()
     {
@@ -28,6 +30,9 @@ public class EnemyState : MonoBehaviour, IDamageable
         BTcon.requireInit = true;
         var col = GetComponent<Collider2D>().enabled = false; // 충돌체 비활성화
         var rb = GetComponent<Rigidbody2D>().simulated = false; // 물리 시뮬레이션 비활성화
+
+        OnDeath?.Invoke(this);
+
         gameObject.SetActive(false);
     }
 }

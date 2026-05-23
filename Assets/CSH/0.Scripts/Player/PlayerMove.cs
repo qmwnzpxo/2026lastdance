@@ -11,6 +11,7 @@ public class PlayerMove : MonoBehaviour
     [Header("이동")]
     [SerializeField] private float moveSpeed = 10f;
     public float MoveSpeed { get => moveSpeed; set => moveSpeed = value; }
+    private bool _lastFacingRight = true;
 
     // ── 점프 ─────────────────────────────────
     [Header("점프")]
@@ -55,11 +56,11 @@ public class PlayerMove : MonoBehaviour
     private bool isTouchingCeiling;   // PlayerMove 전용 (외부에 불필요)
     private bool wasTouchingCeiling;
     
-    private bool isWallSildeDown; // 벽 슬라이딩 중 아래 입력을 하는지 여부 (애니메이션 전환용)
+    private bool isWallSlideDown; // 벽 슬라이딩 중 아래 입력을 하는지 여부 (애니메이션 전환용)
 
-    private bool _isClimbing;
-    private float _climbTargetY;
-    private float _climbDirX;
+    private bool isClimbing;
+    private float climbTargetY;
+    private float climbDirX;
 
     private float wallJumpTime = 0.1f;
     private float wallJumpCounter = 0f;
@@ -78,7 +79,9 @@ public class PlayerMove : MonoBehaviour
     public LayerMask GroundLayer => walkableLayer;
     public Transform GroundCheck => groundCheck;
     public Vector2 GroundCheckSize => groundCheckSize;
-    public bool JustStoppedDashing { get => justStoppedDashing; set => justStoppedDashing = value; }
+    private bool _dashJustStopped;
+
+    void OnDashStopped() => _dashJustStopped = true;
 
     // ────────────────────────────────────────
     #region Unity 생명주기
@@ -104,6 +107,13 @@ public class PlayerMove : MonoBehaviour
         }
         groundOnlyLayer = LayerMask.GetMask("groundOnly");
         walkableLayer = groundLayer | groundOnlyLayer;
+
+        if (state == null)
+        {
+            state=GetComponent<PlayerState>();
+        }
+
+        state.OnDashStopped += OnDashStopped;
     }
 
 
@@ -126,16 +136,23 @@ public class PlayerMove : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (Mathf.Abs(rb.linearVelocityX) >= 0.01)
+        float velX = rb.linearVelocityX;
+        if (Mathf.Abs(velX) >= 0.01f)
         {
-            FlipXSprite(rb.linearVelocityX >= 0.01 ? true : false);
+            bool facingRight = velX > 0f;
+            if (facingRight != _lastFacingRight) // 변경될 때만 호출
+            {
+                _lastFacingRight = facingRight;
+                FlipXSprite(facingRight);
+            }
         }
+
         // Dash / Tackle 중에는 PlayerDash가 물리를 전담
         if (state.isDashing || state.isTackling || state.isTackleGroundRush)
             return;
 
         // 등반 중에는 등반 물리만 처리
-        if (_isClimbing)
+        if (isClimbing)
         {
             ApplyClimbMovement();
             return;
@@ -219,17 +236,17 @@ public class PlayerMove : MonoBehaviour
         if (verticalInput > 0 || pressingTowardWall)
         {
             targetSlideSpeed = -wallSlideSpeedUp * (state.isPowerRun ? 2f : 1f);
-            isWallSildeDown = state.isTouchingRWall;
+            isWallSlideDown = state.isTouchingRWall;
         }
         else if (verticalInput < 0 || pressingAwayFromWall)
         {
             targetSlideSpeed = -wallSlideSpeedDown * (state.isPowerRun ? 2f : 1f);
-            isWallSildeDown = !state.isTouchingRWall;
+            isWallSlideDown = !state.isTouchingRWall;
         }
         else
         {
             targetSlideSpeed = -wallSlideSpeed * (state.isPowerRun ? 2f : 1f);
-            isWallSildeDown = state.isTouchingRWall;
+            isWallSlideDown = state.isTouchingRWall;
         }
         float limitVelocity = rb.linearVelocityY;
         limitVelocity = Mathf.Clamp(limitVelocity,wallSlideSpeedUp,wallSlideSpeedDown);
@@ -265,9 +282,9 @@ public class PlayerMove : MonoBehaviour
     void HandleClimbEdge()
     {
         // 등반 중이면 완료 체크만
-        if (_isClimbing)
+        if (isClimbing)
         {
-            if (rb.position.y >= _climbTargetY || state.isGrounded)
+            if (rb.position.y >= climbTargetY || state.isGrounded)
                 FinishClimb();
             return;
         }
@@ -303,9 +320,9 @@ public class PlayerMove : MonoBehaviour
 
     void StartClimb(float dirX, float currentY)
     {
-        _isClimbing = true;
-        _climbDirX = dirX;
-        _climbTargetY = currentY + _climbHeight;
+        isClimbing = true;
+        climbDirX = dirX;
+        climbTargetY = currentY + _climbHeight;
 
         // 등반 중 벽 슬라이딩 상태 해제
         state.isWallSliding = false;
@@ -318,18 +335,18 @@ public class PlayerMove : MonoBehaviour
     {
         // 위로 + 벽 방향(벽 위로 올라가면서 살짝 앞으로)
         rb.linearVelocity = new Vector2(
-            _climbDirX * _climbHorizSpeed,
+            climbDirX * _climbHorizSpeed,
             _climbSpeed
         );
     }
 
     void FinishClimb()
     {
-        _isClimbing = false;
+        isClimbing = false;
         RestoreGravity();
 
         // 등반 완료 후 위쪽으로 약간 튀어오르는 느낌
-        rb.linearVelocity = new Vector2(_climbDirX * _climbHorizSpeed, 2f);
+        rb.linearVelocity = new Vector2(climbDirX * _climbHorizSpeed, 2f);
     }
 
 
@@ -382,7 +399,7 @@ public class PlayerMove : MonoBehaviour
     {
         bool justTouchedCeiling = isTouchingCeiling && !wasTouchingCeiling;
 
-        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing || state.isTackling || justStoppedDashing))
+        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing || state.isTackling || _dashJustStopped))
         {
             state.isOnCeiling = true;
             RestoreGravity();
@@ -393,7 +410,7 @@ public class PlayerMove : MonoBehaviour
             DetachFromCeiling();
 
         wasTouchingCeiling = isTouchingCeiling;
-        justStoppedDashing = false; // ← 매 프레임 리셋
+        _dashJustStopped = false;
     }
 
     void DetachFromCeiling()
@@ -437,13 +454,13 @@ public class PlayerMove : MonoBehaviour
         {
             //spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, -90);
             spriteTransform.rotation = Quaternion.Euler(0, 0, -90);
-            spriteRenderer.flipX = isWallSildeDown; // 벽 슬라이딩 중 아래 입력 시 스프라이트를 아래로 뒤집음
+            spriteRenderer.flipX = isWallSlideDown; // 벽 슬라이딩 중 아래 입력 시 스프라이트를 아래로 뒤집음
         }
         else if (state.isTouchingRWall && !state.isGrounded)
         {
             //spriteRenderer.transform.rotation = Quaternion.Euler(0, 0, 90);
             spriteTransform.rotation = Quaternion.Euler(0, 0, 90);
-            spriteRenderer.flipX = isWallSildeDown; // 벽 슬라이딩 중 아래 입력 시 스프라이트를 아래로 뒤집음
+            spriteRenderer.flipX = isWallSlideDown; // 벽 슬라이딩 중 아래 입력 시 스프라이트를 아래로 뒤집음
         }
         else
         {
@@ -563,6 +580,7 @@ public class PlayerMove : MonoBehaviour
 
     void OnDestroy()
     {
+        state.OnDashStopped -= OnDashStopped;
         wallJumpCts?.Cancel();
         wallJumpCts?.Dispose();
     }

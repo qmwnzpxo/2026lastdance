@@ -24,10 +24,8 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
     /// <param name="timeScale">히트스탑 중 게임 속도 배율. 0에 가까울수록 강한 정지감. 기본값 0.05.</param>
     public void TriggerHitstop(float duration = 0.08f, float timeScale = 0.08f)
     {
-        // 이미 히트스탑이 진행 중이면 무시 (중첩 방지)
-        if (_cts != null && !_cts.IsCancellationRequested) return;
-
-        Debug.Log($"[HitstopManager] called HItstop");
+        // 덮어쓰기
+        _cts.Cancel();
         _cts?.Dispose();
 
         // 새 취소 토큰 소스 생성 — 이번 히트스탑 전용
@@ -73,6 +71,12 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
             _cts?.Cancel();
         }
     }
+
+    // ── 프리셋 ───────────────────────
+    public void TriggerLight() => TriggerHitstop(0.05f, 0.05f);
+    public void TriggerMedium()=> TriggerHitstop(0.08f, 0.02f);
+    public void TriggerHeavy() => TriggerHitstop(0.12f, 0.01f);
+
 
     // ── 정리 ──────────────────────────────────────────────────
     void OnDestroy()

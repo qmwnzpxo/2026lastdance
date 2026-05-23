@@ -29,7 +29,7 @@ public class EnemyBTController : MonoBehaviour
     protected BTNode _root;
     protected EnemyBlackboard _bb;
 
-    [HideInInspector]public bool requireInit = true;
+    [HideInInspector] public bool requireInit = true;
     // ─── 외부 API ───────────────────────────────
     public EnemyBlackboard _BB { get => _bb; }
 
@@ -64,13 +64,21 @@ public class EnemyBTController : MonoBehaviour
 
     protected virtual void OnDestroy()
     {
-        _bb.CancelAction();
+        _bb?.CancelAction();
     }
 
-    public virtual void Enable()
+    protected virtual void OnEnable()
     {
         if (requireInit)
             ReInit();
+    }
+
+    public virtual void OnDisable()
+    {
+        _bb.CancelAction();
+        _root = null;
+        _bb = null;
+        requireInit = true;
     }
 
     #endregion

@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class EnemyBulletPool : MonoBehaviour
+public class EnemyBulletPool : PersistentSingleton<EnemyBulletPool>
 {
-    #region// ── 변수 선언 ──────────────────────────────────
 
     [System.Serializable]
     public class BulletEntry
@@ -21,23 +20,15 @@ public class EnemyBulletPool : MonoBehaviour
 
     private Dictionary<string, Queue<GameObject>> pools;
     private Dictionary<string, BulletEntry> entryMap;
-    #endregion
 
-    #region// ── 싱글톤 ──────────────────────────────────
-    public static EnemyBulletPool Instance { get; private set; }
+
+    // ── 초기화 ──────────────────────────────────
+    #region
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-
         InitPools();
     }
 
-    // ── 초기화 ──────────────────────────────────
     private void InitPools()
     {
         pools = new Dictionary<string, Queue<GameObject>>();

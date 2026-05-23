@@ -59,6 +59,7 @@ public class CameraFollow : MonoBehaviour
     {
         cmZoom.gameObject.SetActive(false);
         cmGamePlay.gameObject.SetActive(true);
+        startWhenZoom().Forget();
 
     }
 #endregion
@@ -70,7 +71,6 @@ public class CameraFollow : MonoBehaviour
         if (isfirstZooming == false)
         {
             isfirstZooming = true;
-            startWhenZoom().Forget();
         }
     }
 
@@ -91,10 +91,9 @@ public class CameraFollow : MonoBehaviour
 
     async UniTask startWhenZoom()
     {
-        await UniTask.Delay(50);
+        await UniTask.Delay(50, cancellationToken:this.destroyCancellationToken);
         Debug.Log("zoomStart");
         ZoomCamera(fromOrtho, toOrtho, duration);
-        await UniTask.WaitForSeconds(2f);
 
         return;
     }
@@ -112,34 +111,40 @@ public class CameraFollow : MonoBehaviour
     private async UniTaskVoid ZoomAsync(float from, float to, float zoomDuration, CancellationToken ct)
     {
         isZooming = true;
-        float timer = 0f;
-        cmZoom.gameObject.SetActive(true);
-
-        var lens = cmZoom.Lens;
-        lens.OrthographicSize = from;
-        cmZoom.Lens = lens;
-        cmBrain.DefaultBlend.Time = 0f;
-        SetCameraDumping(0f);
-        while (!ct.IsCancellationRequested)
+        try
         {
-            await UniTask.WaitForFixedUpdate(cancellationToken: ct).SuppressCancellationThrow();
-            if (ct.IsCancellationRequested) break;
+            float timer = 0f;
+            cmZoom.gameObject.SetActive(true);
 
-            timer += Time.fixedDeltaTime;
-            float t = Mathf.Clamp01(timer / zoomDuration);
-            float smoothT = Mathf.SmoothStep(0f, 1f, t);
-
-            lens = cmZoom.Lens;
-            lens.OrthographicSize = Mathf.Lerp(from, to, smoothT);
+            var lens = cmZoom.Lens;
+            lens.OrthographicSize = from;
             cmZoom.Lens = lens;
-            cinemachineFollow.FollowOffset.y = Mathf.Lerp(0f, 1f, smoothT);
+            cmBrain.DefaultBlend.Time = 0f;
+            SetCameraDumping(0f);
+            while (!ct.IsCancellationRequested)
+            {
+                await UniTask.WaitForFixedUpdate(cancellationToken: ct).SuppressCancellationThrow();
+                if (ct.IsCancellationRequested) break;
 
-            if (t >= 1f) break;
+                timer += Time.fixedDeltaTime;
+                float t = Mathf.Clamp01(timer / zoomDuration);
+                float smoothT = Mathf.SmoothStep(0f, 1f, t);
+
+                lens = cmZoom.Lens;
+                lens.OrthographicSize = Mathf.Lerp(from, to, smoothT);
+                cmZoom.Lens = lens;
+                cinemachineFollow.FollowOffset.y = Mathf.Lerp(0f, 1f, smoothT);
+
+                if (t >= 1f) break;
+            }
+            SetCameraDumping(1f);
         }
-        SetCameraDumping(1f);
-        cmBrain.DefaultBlend.Time = defaultBlendTime;
-        cmZoom.gameObject.SetActive(false);
-        isZooming = false;
+        finally
+        {
+            cmBrain.DefaultBlend.Time = defaultBlendTime;
+            cmZoom.gameObject.SetActive(false);
+            isZooming = false;
+        }
     }
 
     public void SetCameraDumping(float value)
@@ -170,7 +175,7 @@ public class CameraFollow : MonoBehaviour
     }
 
     // 락다운 해제
-    public void EndLockdown(float duration = 0.4f)
+    public void EndLockdown(float duration = 1f)
     {
         if (!_isLockdown) return;
         _isLockdown = false;

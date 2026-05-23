@@ -230,8 +230,8 @@ public class PlayerDash : MonoBehaviour
 
         SetLineRenderer(origin, dashTargetPosition, true);
 
-        if (state.TryUseDashGauge(state.DashCost))
-            TriggerDash(origin);
+        //if (state.TryUseDashGauge(state.DashCost))
+        TriggerDash(origin);
     }
 
     void TriggerDash(Vector2 origin)
@@ -256,7 +256,8 @@ public class PlayerDash : MonoBehaviour
     void StopDash()
     {
         state.isDashing = false;
-        playerMove.JustStoppedDashing = true;
+        state.Hited(0.05f);
+        state.NotifyDashStopped();
         playerMove.RestoreGravity();
         cameraFollow.SetCameraDumping(originalCameraDumping);
 
@@ -273,7 +274,6 @@ public class PlayerDash : MonoBehaviour
 
     void FixedUpdateDash()
     {
-
 
         rb.MovePosition(dashTargetPosition);
 
@@ -323,10 +323,7 @@ public class PlayerDash : MonoBehaviour
     void StartGreenDash()
     {
         if (!state.TryUseDashGauge(state.DashCost)) return;
-        if (_greenDashing)
-        {
-            return;
-        }
+        if (_greenDashing) return; // 이미 돌진 중이면 무시
         _greenDashCts?.Cancel();
         _greenDashCts?.Dispose();
         _greenDashCts = new CancellationTokenSource();
@@ -414,7 +411,7 @@ public class PlayerDash : MonoBehaviour
 
         // 3연 돌진 완료
         state.isDashing = false;
-        playerMove.JustStoppedDashing = true;
+        state.NotifyDashStopped();
         playerMove.RestoreGravity();
         cameraFollow.SetCameraDumping(originalCameraDumping);
         rb.linearVelocity = Vector2.up * 0.05f;
@@ -507,7 +504,7 @@ public class PlayerDash : MonoBehaviour
             ApplyDamage(hit, state.damage * blueSlamDamage);
 
         // 상태 복구
-        playerMove.JustStoppedDashing = true;
+        state.NotifyDashStopped();
         playerMove.RestoreGravity();
         cameraFollow.SetCameraDumping(originalCameraDumping);
         rb.linearVelocity = Vector2.zero;

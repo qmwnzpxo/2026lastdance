@@ -95,13 +95,29 @@ public class PlayerCombat : MonoBehaviour
         Vector2 attackPos = (Vector2)attackTransform.position
                           + (Vector2)attackTransform.right * attackBoxDistance;
 
-        var timeManager = CustomTimeManager.Instance;
-        if (state.isGrounded||state.isOnCeiling)
+        try
         {
-            for (int i = 0; i < attackRepeatTime; i++)
+            var timeManager = CustomTimeManager.Instance;
+            if (state.isGrounded || state.isOnCeiling)
+            {
+                for (int i = 0; i < attackRepeatTime; i++)
+                {
+                    float elapsed = 0f;
+                    while (elapsed < attackActiveDuration)
+                    {
+                        ExecuteAttackBox(attackPos);
+
+                        await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
+                        elapsed += timeManager.PlayerFixedDeltaTime;
+                    }
+
+                    _hitEnemiesInAttack.Clear();
+                }
+            }
+            else
             {
                 float elapsed = 0f;
-                while(elapsed < attackActiveDuration)
+                while (elapsed < attackActiveDuration)
                 {
                     ExecuteAttackBox(attackPos);
 
@@ -112,22 +128,11 @@ public class PlayerCombat : MonoBehaviour
                 _hitEnemiesInAttack.Clear();
             }
         }
-        else
+        finally
         {
-            float elapsed = 0f;
-            while (elapsed < attackActiveDuration)
-            {
-                ExecuteAttackBox(attackPos);
-
-                await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
-                elapsed += timeManager.PlayerFixedDeltaTime;
-            }
-
-            _hitEnemiesInAttack.Clear();
+            //ani.Attack_off();
+            state.isAttacking = false;
         }
-
-        //ani.Attack_off();
-        state.isAttacking = false;
     }
 
     void ExecuteAttackBox(Vector2 attackPos)

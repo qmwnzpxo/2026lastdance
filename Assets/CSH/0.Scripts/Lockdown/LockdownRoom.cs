@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
@@ -12,23 +13,35 @@ public class LockdownRoom : MonoBehaviour
     [SerializeField] private Collider2D[] _gates;
 
     [Header("카메라 기준점")]
-    [SerializeField] private Transform _roomCenter;     // 락다운 중 카메라가 바라볼 위치
-    [SerializeField] private float _lockdownOrthoSize = 10f;  // 락다운 시 줌아웃 크기
-    [SerializeField] private float _zoomDuration = 0.4f;
+    [SerializeField] private Transform _roomCenter;
 
-    [Header("클리어 조건 - 적 목록")]
-    [SerializeField] private EnemyState[] _enemies;
+    [Header("카메라 줌 설정")]
+    [SerializeField] private float lockdownMargin = 1.2f;
+    [SerializeField] private float aspectRatio = 16f / 9f;
+    [SerializeField] private float zoomDuration = 1f;
+    public float LockdownOrthoSize => _lockdownOrthoSize;
+
+    [Header("적 오브젝트")]
+    [Tooltip("락다운 구역에 속한 적 오브젝트 목록. 씬에 미리 배치해 둔다.")]
+    [SerializeField] private List<GameObject> _enemyObjects = new();
 
     // ── 내부 상태 ──────────────────────────
+    private float _lockdownOrthoSize;
     private bool _isLocked = false;
+
+    private readonly List<EnemyState> _activeEnemies = new();
+    private int _aliveCount;
+
     private CameraFollow _cameraFollow;
     private CancellationTokenSource _cts;
 
     // ────────────────────────────────────────
+    #region Unity 생명주기
+
     private void Awake()
     {
-        // 메인 카메라의 부모에 CameraFollow가 있는 구조 (기존 코드 기준)
         _cameraFollow = Camera.main.transform.parent.GetComponent<CameraFollow>();
+        PreDeactivateEnemies();
         SetGatesActive(false);
     }
 
@@ -38,48 +51,120 @@ public class LockdownRoom : MonoBehaviour
         StartLockdown();
     }
 
-    // ── 락다운 시작 ──────────────────────────
+    private void OnDestroy()
+    {
+        UnsubscribeAll();
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+
+    #endregion
+
+    // ────────────────────────────────────────
+    #region 락다운 시작 / 종료
+
     private void StartLockdown()
     {
         _isLocked = true;
         SetGatesActive(true);
 
-        _cameraFollow.StartLockdown(_roomCenter, _lockdownOrthoSize, _zoomDuration);
+        _lockdownOrthoSize = CalculateOrtho();
+        _cameraFollow.Zoom(_lockdownOrthoSize, zoomDuration);
 
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _cts = new CancellationTokenSource();
-        WaitForAllEnemiesDead(_cts.Token).Forget();
+        ActivateEnemies();
     }
 
-    // ── 전멸 대기 ────────────────────────────
-    private async UniTaskVoid WaitForAllEnemiesDead(CancellationToken ct)
+    private void EndLockdown()
     {
-        await UniTask.WaitUntil(AllEnemiesDead, cancellationToken: ct)
-                     .SuppressCancellationThrow();
+        _isLocked = false;
+        SetGatesActive(false);
+        _cameraFollow.EndLockdown(zoomDuration);
+    }
 
-        if (!ct.IsCancellationRequested)
+    // 락다운을 강제 종료한다 (스킵, 디버그 등 비정상 종료 경로용)
+    public void ForceEndLockdown()
+    {
+        UnsubscribeAll();
+        EndLockdown();
+        Debug.Log($"[LockdownRoom] {name}: 락다운 강제 종료.");
+    }
+
+    #endregion
+
+    // ────────────────────────────────────────
+    #region 적 관리
+
+    private void PreDeactivateEnemies()
+    {
+        foreach (var obj in _enemyObjects)
+        {
+            if (obj != null)
+                obj.SetActive(false);
+        }
+    }
+
+    private void ActivateEnemies()
+    {
+        _activeEnemies.Clear();
+        _aliveCount = 0;
+
+        foreach (var obj in _enemyObjects)
+        {
+            if (obj == null) continue;
+
+            obj.SetActive(true);
+
+            var state = obj.GetComponent<EnemyState>();
+            if (state == null)
+            {
+                state = obj.GetComponentInChildren<EnemyState>();
+                if (state == null)
+                {
+                    Debug.LogWarning($"[LockdownRoom] {obj.name}에 EnemyState 컴포넌트가 없습니다.");
+                    continue;
+                }
+            }
+
+            state.OnDeath += OnEnemyDeath;
+            _activeEnemies.Add(state);
+            _aliveCount++;
+        }
+
+        if (_aliveCount == 0)
+        {
+            Debug.LogWarning($"[LockdownRoom] {name}: 유효한 적이 없어 즉시 클리어됩니다.");
+            EndLockdown();
+            return;
+        }
+
+        Debug.Log($"[LockdownRoom] {name}: 락다운 시작. 적 수={_aliveCount}");
+    }
+
+    private void OnEnemyDeath(EnemyState dead)
+    {
+        dead.OnDeath -= OnEnemyDeath;
+        _aliveCount--;
+        Debug.Log($"[LockdownRoom] {name}: 적 사망 ({dead.name}). 남은 수={_aliveCount}");
+
+        if (_aliveCount <= 0)
             EndLockdown();
     }
 
-    private bool AllEnemiesDead()
+    private void UnsubscribeAll()
     {
-        foreach (var enemy in _enemies)
+        foreach (var state in _activeEnemies)
         {
-            if (enemy != null && enemy.gameObject.activeSelf)
-                return false;
+            if (state != null)
+                state.OnDeath -= OnEnemyDeath;
         }
-        return true;
+        _activeEnemies.Clear();
     }
 
-    // ── 락다운 해제 ──────────────────────────
-    private void EndLockdown()
-    {
-        SetGatesActive(false);
-        _cameraFollow.EndLockdown(_zoomDuration);
-    }
+    #endregion
 
-    // ── 게이트 토글 ──────────────────────────
+    // ────────────────────────────────────────
+    #region 게이트 / OrthoSize
+
     private void SetGatesActive(bool active)
     {
         foreach (var gate in _gates)
@@ -88,17 +173,51 @@ public class LockdownRoom : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
+    private float CalculateOrtho()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
+        float maxY = float.MinValue;
+        float maxX = float.MinValue;
+
+        foreach (var gate in _gates)
+        {
+            if (gate == null) continue;
+            float distY = Mathf.Abs(gate.transform.position.y - _roomCenter.position.y);
+            float distX = Mathf.Abs(gate.transform.position.x - _roomCenter.position.x);
+            maxY = Mathf.Max(maxY, distY);
+            maxX = Mathf.Max(maxX, distX);
+        }
+
+        float requiredByY = maxY;
+        float requiredByX = maxX / aspectRatio;
+
+        return Mathf.Max(requiredByY, requiredByX) * lockdownMargin;
     }
 
-    // ── Gizmos ───────────────────────────────
+    #endregion
+
+    // ────────────────────────────────────────
+    #region Gizmos
+
     private void OnDrawGizmosSelected()
     {
         if (_roomCenter == null) return;
         Gizmos.color = new Color(1f, 0.3f, 0.3f, 0.4f);
         Gizmos.DrawWireSphere(_roomCenter.position, _lockdownOrthoSize * 0.5f);
     }
+
+    #endregion
+
+    // ────────────────────────────────────────
+    #region 에디터
+
+#if UNITY_EDITOR
+    [ContextMenu("Debug: Force Clear Lockdown")]
+    private void Debug_ForceClear()
+    {
+        if (!Application.isPlaying) return;
+        ForceEndLockdown();
+    }
+#endif
+
+    #endregion
 }

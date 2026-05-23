@@ -74,10 +74,15 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public Light2D hitLight;
     public Light2D hitWorldLight;
-
     CancellationTokenSource hitCts;
-
     TrailRenderer moveTrail;
+
+    // ── 이벤트 ─────────────────────────────
+    public event System.Action UseStamina;
+
+    public event System.Action OnDashStopped;
+    public void NotifyDashStopped() => OnDashStopped?.Invoke();
+
 
     public void Awake()
     {
@@ -147,8 +152,9 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public void TakeDamage(float dmg)
     {
-        if (isDashing||isHit)
+        if (isDashing)
             return;
+        if(isHit || isDie) return;
         HP -= dmg;
         if (HP <= 0)
             Die();
@@ -159,23 +165,23 @@ public class PlayerState : MonoBehaviour, IDamageable
         }
     }
 
-    public void Hited()
+    public void Hited(float duration = 0.3f)
     {
-        if (isHit) return;
+        //if (isHit) return;
 
         isHit = true;
         hitCts?.Cancel();
         hitCts?.Dispose();
         hitCts=new CancellationTokenSource();
 
-        HitFeedBack(hitCts.Token).Forget();
+        HitFeedBack(hitCts.Token, duration).Forget();
     }
 
-    public async UniTaskVoid HitFeedBack(CancellationToken tk)
+    public async UniTaskVoid HitFeedBack(CancellationToken tk, float duration = 0.3f)
     {
         //hitLight.enabled = true;
         //hitWorldLight.enabled = true;
-        await CustomTime.WaitForScaledSeconds(0.3f, category, tk)
+        await CustomTime.WaitForScaledSeconds(duration, category, tk)
             .SuppressCancellationThrow();
         isHit = false;
         //hitLight.enabled = false;
