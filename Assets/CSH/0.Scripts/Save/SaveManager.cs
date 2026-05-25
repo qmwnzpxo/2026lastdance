@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using UnityEngine;
 
+// 현재 오류로 인해 세이브들은 사용하지 않음
 /// <summary>
 /// 영구 저장 데이터를 JSON 파일로 관리하는 싱글톤.
 /// 저장 위치: Application.persistentDataPath/save.json

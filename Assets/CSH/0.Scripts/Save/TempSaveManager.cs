@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+// 현재 오류로 인해 세이브들은 사용하지 않음
 /// <summary>
 /// 저장 시점:
 ///   - 체크포인트 통과     → RegisterRespawn()

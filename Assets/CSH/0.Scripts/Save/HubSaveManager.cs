@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-// 거점 씬 저장을 위해 만든 세이브 매니저
+// 현재 오류로 인해 세이브들은 사용하지 않음
+// 거점 씬 저장을 위해 만든 세이브 매니저 
 public class HubSaveManager : MonoBehaviour
 {
     [SerializeField] private PlayerState _playerState;

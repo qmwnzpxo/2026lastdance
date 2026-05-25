@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+// 현재 오류로 인해 세이브들은 사용하지 않음
 public class TempSaveManager_2 : TempSaveManager
 {
     // "진행 중" 플래그 키만 PlayerPrefs에 유지

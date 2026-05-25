@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 
+// 현재 오류로 인해 세이브들은 사용하지 않음
 /// <summary>
 /// 임시 저장 데이터. PlayerPrefs에 저장되어 게임을 꺼도 유지된다.
 /// 스테이지 클리어 시 필요한 데이터를 SaveData로 넘긴 뒤 소멸.
