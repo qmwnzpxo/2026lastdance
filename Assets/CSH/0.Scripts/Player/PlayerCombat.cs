@@ -10,9 +10,9 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private Transform attackTransform;
     [SerializeField] private Vector2   attackBoxSize     = new Vector2(1f, 1f);
     [SerializeField] private float     attackBoxDistance = 1f;
-    [SerializeField] private float     attackSecondHitDelay = 0.28f;
+    [SerializeField] private float     attackSecondHitDelay = 0.427f;
     [SerializeField] private float     attackfloatHitDelay = 0.15f;
-    [SerializeField] private float     attackActiveDuration = 0.1f;
+    [SerializeField] private float     attackActiveDuration = 0.233f;
     private LayerMask enemyLayer;
     private LayerMask bulletLayer;
     private LayerMask combined;
@@ -103,7 +103,7 @@ public class PlayerCombat : MonoBehaviour
                 for (int i = 0; i < attackRepeatTime; i++)
                 {
                     float elapsed = 0f;
-                    while (elapsed < attackActiveDuration)
+                    while (elapsed < attackSecondHitDelay/attackRepeatTime)
                     {
                         ExecuteAttackBox(attackPos);
 
