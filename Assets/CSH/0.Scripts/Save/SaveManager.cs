@@ -1,26 +1,4 @@
-﻿//using UnityEngine;
-
-//public class SaveManager : PersistentSingleton<SaveManager>
-//{
-//    private const string SAVE_KEY = "SaveData";
-
-//    public void Save(SaveData data)
-//    {
-//        string json = JsonUtility.ToJson(data);
-//        PlayerPrefs.SetString(SAVE_KEY, json);
-//        PlayerPrefs.Save();
-//    }
-
-//    public SaveData Load()
-//    {
-//        if (!PlayerPrefs.HasKey(SAVE_KEY))
-//            return new SaveData();
-
-//        string json = PlayerPrefs.GetString(SAVE_KEY);
-//        return JsonUtility.FromJson<SaveData>(json);
-//    }
-//}
-using System.IO;
+﻿using System.IO;
 using UnityEngine;
 
 /// <summary>

@@ -7,6 +7,7 @@ public class EnemyCombat : MonoBehaviour
     [Header("딜레이")]
     [SerializeField] private float _preDelay = 0.1f;
     [SerializeField] private float _postDelay = 0.3f;
+    public bool _isAttack = false;
 
     [Header("투사체")]
     [SerializeField] private EnemyBullet _bulletPrefab;
@@ -28,12 +29,14 @@ public class EnemyCombat : MonoBehaviour
     /// <summary>ActionAttack에서 호출. 선딜 → 발사 → 후딜 순서로 실행.</summary>
     public async UniTask ExecuteAttack(CancellationToken ct)
     {
+        _isAttack = true;
         await UniTask.WaitForSeconds(_preDelay, cancellationToken: ct);
 
         ct.ThrowIfCancellationRequested();
         Shoot();
 
         await UniTask.WaitForSeconds(_postDelay, cancellationToken: ct);
+        _isAttack = false;
     }
 
     protected virtual void Shoot()

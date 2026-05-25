@@ -165,6 +165,7 @@ public class PlayerMove : MonoBehaviour
     }
 
     #endregion
+
     // ────────────────────────────────────────
     #region 물리 체크
     void CheckGround()
@@ -189,6 +190,7 @@ public class PlayerMove : MonoBehaviour
     }
 
     #endregion
+
     // ────────────────────────────────────────
     #region 이동
 
@@ -257,6 +259,7 @@ public class PlayerMove : MonoBehaviour
 
 
     #endregion
+
     // ────────────────────────────────────────
     #region 벽타기
 
@@ -271,6 +274,7 @@ public class PlayerMove : MonoBehaviour
     }
 
     #endregion
+
     // ────────────────────────────────────────
     #region 벽 끝 자동 등반
     /// <summary>
@@ -351,6 +355,7 @@ public class PlayerMove : MonoBehaviour
 
 
     #endregion
+    
     // ────────────────────────────────────────
     #region 점프
 
@@ -392,6 +397,7 @@ public class PlayerMove : MonoBehaviour
     }
 
     #endregion
+
     // ────────────────────────────────────────
     #region 천장 붙기
 
@@ -422,10 +428,11 @@ public class PlayerMove : MonoBehaviour
     }
 
     #endregion
+
     // ────────────────────────────────────────
     #region 스프라이트 플립 및 회전
 
-    /// <summary>스프라이트 플립</summary>
+    // 스프라이트 플립
     void FlipXSprite(bool flipX)
     {
         if (spriteRenderer == null) return;
@@ -445,7 +452,7 @@ public class PlayerMove : MonoBehaviour
         spriteTransform.localScale = flipY ? flipSpriteScale : normalSpriteScale;
     }
 
-    /// <summary>스프라이트 벽 방향에 따른 회전</summary>
+    // 스프라이트 벽 방향에 따른 회전
     void RotateSprite()
     {
         if (spriteRenderer == null) return;
@@ -507,13 +514,11 @@ public class PlayerMove : MonoBehaviour
         }
     }
 
-
-
     #endregion
     // ────────────────────────────────────────
     #region 공개 메서드 (PlayerDash에서 호출)
 
-    /// <summary>벽타기 관련 상태를 초기화한다. Dash / Tackle 시작 시 호출.</summary>
+    // 벽타기 관련 상태를 초기화한다. Dash / Tackle 시작 시 호출
     public void ResetWallState()
     {
         state.isWallJumping = false;
@@ -522,7 +527,7 @@ public class PlayerMove : MonoBehaviour
         wallJumpCts?.Cancel();
     }
 
-    /// <summary>중력 스케일을 현재 상태(천장/일반)에 맞게 복원한다.</summary>
+    // 중력 스케일을 현재 상태(천장/일반)에 맞게 복원한다
     public void RestoreGravity()
     {
         rb.gravityScale = state.isOnCeiling
@@ -536,6 +541,7 @@ public class PlayerMove : MonoBehaviour
             state.TakeDamage(0f);
     }
     #endregion
+
     // ────────────────────────────────────────
     #region Gizmos
 
@@ -569,6 +575,7 @@ public class PlayerMove : MonoBehaviour
     }
 
     #endregion
+
     // ────────────────────────────────────────
     #region Lifecycle
 

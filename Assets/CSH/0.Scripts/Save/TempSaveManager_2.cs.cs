@@ -9,7 +9,6 @@ public class TempSaveManager_2 : TempSaveManager
     public TempSaveData Data => _data;
 
 
-
     // ─── 초기화(게임 시작) ────────────────────────────────────
     #region
     protected override void Awake()

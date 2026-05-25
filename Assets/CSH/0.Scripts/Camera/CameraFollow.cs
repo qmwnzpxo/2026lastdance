@@ -32,8 +32,8 @@ public class CameraFollow : MonoBehaviour
     private bool _isLockdown = false;
 
 
-    // ─── 초기화 ─────────────────────────────────
-#region
+    // ────────────────────────────────────────
+    #region 초기화 
     private void Awake()
     {
         if (target == null)
@@ -62,10 +62,10 @@ public class CameraFollow : MonoBehaviour
         startWhenZoom().Forget();
 
     }
-#endregion
+    #endregion
 
-    // ─── 생명주기 ───────────────────────────────
-#region
+    // ──────────────────────────────────────
+    #region 생명주기
     private void LateUpdate()
     {
         if (isfirstZooming == false)
@@ -79,10 +79,10 @@ public class CameraFollow : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R)&&!isZooming)
             ZoomCamera(fromOrtho, toOrtho, duration);
     }
-#endregion
+    #endregion
 
-    // ─── 줌 ─────────────────────────────────
-    #region
+    // ────────────────────────────────────
+    #region 줌 
     public void Zoom(float targetOrtho, float zoomDuration)
     {
         if(isZooming) return; // 이미 줌 중이면 무시
@@ -155,8 +155,8 @@ public class CameraFollow : MonoBehaviour
     }
 #endregion
 
-    // ─── 락다운 ─────────────────────────────────
-#region 락다운 카메라
+    // ────────────────────────────────────
+    #region 락다운 카메라
 
     /// <summary>
     /// 락다운 시작
@@ -254,7 +254,7 @@ public class CameraFollow : MonoBehaviour
         isZooming = false;
     }
 
-#endregion
+    #endregion
     private void OnDestroy()
     {
         zoom_cts?.Cancel();

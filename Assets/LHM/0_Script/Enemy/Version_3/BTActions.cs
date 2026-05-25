@@ -61,7 +61,7 @@ namespace BTActions
 
             try
             {
-
+                if(bb.enemyCombat._isAttack) return;
                 Debug.Log($"[BT Action attack] executeattack called");
                 await bb.enemyCombat.ExecuteAttack(ct);
 

@@ -45,12 +45,14 @@ public class LockdownRoom : MonoBehaviour
         SetGatesActive(false);
     }
 
+    // 트리거 작동시 락다운 시작
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (_isLocked || !other.CompareTag("Player")) return;
         StartLockdown();
     }
 
+    // 종료/씬 이동시 원활한 흐름을 위한 작업
     private void OnDestroy()
     {
         UnsubscribeAll();
@@ -62,7 +64,7 @@ public class LockdownRoom : MonoBehaviour
 
     // ────────────────────────────────────────
     #region 락다운 시작 / 종료
-
+    // 락다운을 시작한다
     private void StartLockdown()
     {
         _isLocked = true;
@@ -74,6 +76,7 @@ public class LockdownRoom : MonoBehaviour
         ActivateEnemies();
     }
 
+    // 락다운을 종료한다 (정상 흐름)
     private void EndLockdown()
     {
         _isLocked = false;
@@ -97,7 +100,7 @@ public class LockdownRoom : MonoBehaviour
 
     // ────────────────────────────────────────
     #region 적 관리
-
+    // 적들을 전부 비활성화 시킨다
     private void PreDeactivateEnemies()
     {
         foreach (var obj in _enemyObjects)
@@ -107,6 +110,7 @@ public class LockdownRoom : MonoBehaviour
         }
     }
 
+    // 트리거 작동시 적들을 활성화 시킨다
     private void ActivateEnemies()
     {
         _activeEnemies.Clear();
@@ -144,6 +148,7 @@ public class LockdownRoom : MonoBehaviour
         Debug.Log($"[LockdownRoom] {name}: 락다운 시작. 적 수={_aliveCount}");
     }
 
+    // 적 사망 이벤트시 살아있는 적 카운트 감소
     private void OnEnemyDeath(EnemyState dead)
     {
         dead.OnDeath -= OnEnemyDeath;
@@ -154,6 +159,7 @@ public class LockdownRoom : MonoBehaviour
             EndLockdown();
     }
 
+    // 이벤트 구독 해지
     private void UnsubscribeAll()
     {
         foreach (var state in _activeEnemies)
@@ -168,7 +174,7 @@ public class LockdownRoom : MonoBehaviour
 
     // ────────────────────────────────────────
     #region 게이트 / OrthoSize
-
+    // 게이트 (비)활성화
     private void SetGatesActive(bool active)
     {
         foreach (var gate in _gates)
@@ -181,6 +187,7 @@ public class LockdownRoom : MonoBehaviour
         }
     }
 
+    // 게이트의 위치값중 가장 큰 것들로 카메라가 비출 렌즈 사이즈를 구함
     private float CalculateOrtho()
     {
         float maxY = float.MinValue;
@@ -229,3 +236,33 @@ public class LockdownRoom : MonoBehaviour
 
     #endregion
 }
+
+/* 사용안함
+    // ────────────────────────────────────────
+    #region 
+    public void fadeoutDialogue()
+    {
+        var dialogueSystem = FindFirstObjectByType<SystemMessageUI>();
+        if (dialogueSystem != null)
+        {
+            var canvasGroup = dialogueSystem.GetComponent<CanvasGroup>();
+
+        }
+    }
+
+    public async UniTaskVoid fadePlayer(float from, float to, float duration, CanvasGroup group, CancellationToken ct)
+    {
+        if(group == null) return;
+
+        while (!ct.IsCancellationRequested)
+        {
+            float elapsed = 0;
+            while (elapsed < duration)
+            {
+
+            }
+            await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
+        }
+    }
+    #endregion
+*/

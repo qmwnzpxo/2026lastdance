@@ -26,6 +26,7 @@ public class EnemyArmAim : MonoBehaviour
     [SerializeField] private float recoilPushDist = 0.3f;   // 뒤로 밀리는 거리
     [SerializeField] private float recoilPushSpeed = 800f;  // 밀리는 속도
     [SerializeField] private float recoilPullSpeed = 10f;   // 복귀 속도
+    private bool isRecoil = false;
 
     private Transform _player;
     private EnemyBlackboard _enemyBB;
