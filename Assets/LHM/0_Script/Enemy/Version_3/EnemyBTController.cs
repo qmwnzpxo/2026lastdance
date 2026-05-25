@@ -42,10 +42,10 @@ public class EnemyBTController : MonoBehaviour
     {
         if (_groundLayer == 0)
             _groundLayer = LayerMask.GetMask("ground");
-        if (requireInit)
-            ReInit();
         if(_state == null)
             _state=GetComponent<EnemyState>();
+        if (requireInit)
+            ReInit();
     }
 
     protected virtual void FixedUpdate()
