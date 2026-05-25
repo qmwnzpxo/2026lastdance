@@ -535,12 +535,12 @@ MonoBehaviour:
   rotationSpeed: 10
   minAngle: -60
   maxAngle: 60
-  recoilAngle: 45
-  recoilRiseSpeed: 800
-  recoilReturnSpeed: 12
-  recoilPushDist: 0.3
+  recoilAngle: 50
+  recoilRiseSpeed: 1000
+  recoilReturnSpeed: 10
+  recoilPushDist: 0.075
   recoilPushSpeed: 800
-  recoilPullSpeed: 10
+  recoilPullSpeed: 30
 --- !u!114 &7718417277500079934
 MonoBehaviour:
   m_ObjectHideFlags: 0
