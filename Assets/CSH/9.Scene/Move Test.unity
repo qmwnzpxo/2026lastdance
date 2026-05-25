@@ -2622,6 +2622,11 @@ MonoBehaviour:
   fromOrtho: 1.5
   toOrtho: 8.4375
   target: {fileID: 8298914050407329553}
+--- !u!4 &2066259484 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8232750599677345352, guid: 79f63b80de3480840baa5e5b21feb90f, type: 3}
+  m_PrefabInstance: {fileID: 2518029750882271620}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2518029750882271620
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2674,6 +2679,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5477173930121776343, guid: 79f63b80de3480840baa5e5b21feb90f, type: 3}
+      propertyPath: FirePivot
+      value: 
+      objectReference: {fileID: 2066259484}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

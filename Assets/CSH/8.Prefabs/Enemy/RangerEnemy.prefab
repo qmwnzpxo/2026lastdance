@@ -530,6 +530,7 @@ MonoBehaviour:
   armPivot: {fileID: 4322976711124115870}
   bodyRenderer: {fileID: 5951646698359368313}
   armRenderer: {fileID: 3206365314595198296}
+  firePivot: {fileID: 8232750599677345352}
   detectionRange: 8
   rotationSpeed: 10
   minAngle: -60

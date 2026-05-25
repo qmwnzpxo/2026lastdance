@@ -10,10 +10,16 @@ public class EnemyState : MonoBehaviour, IDamageable
     // LockdownRoom이 구독하는 사망 이벤트
     public event System.Action<EnemyState> OnDeath;
 
-    public void Awake()
+    protected virtual void Awake()
     {
         currentHp = maxHp;
     }
+
+    public virtual void Init()
+    {
+        currentHp = maxHp;
+    }
+
     public virtual void TakeDamage(float damage)
     {
         currentHp -= damage;

@@ -79,6 +79,10 @@ public class LockdownRoom : MonoBehaviour
         _isLocked = false;
         SetGatesActive(false);
         _cameraFollow.EndLockdown(zoomDuration);
+
+        // 재 입장 방지
+        gameObject.GetComponent<Collider2D>().enabled = false;
+        gameObject.SetActive(false);
     }
 
     // 락다운을 강제 종료한다 (스킵, 디버그 등 비정상 종료 경로용)
@@ -169,7 +173,11 @@ public class LockdownRoom : MonoBehaviour
     {
         foreach (var gate in _gates)
         {
-            if (gate != null) gate.enabled = active;
+            if (gate != null)
+            {
+                gate.enabled = active;
+                gate.gameObject.SetActive(active);
+            }
         }
     }
 

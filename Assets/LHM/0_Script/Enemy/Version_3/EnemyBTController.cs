@@ -28,6 +28,7 @@ public class EnemyBTController : MonoBehaviour
 
     protected BTNode _root;
     protected EnemyBlackboard _bb;
+    protected EnemyState _state;
 
     [HideInInspector] public bool requireInit = true;
     // ─── 외부 API ───────────────────────────────
@@ -43,6 +44,8 @@ public class EnemyBTController : MonoBehaviour
             _groundLayer = LayerMask.GetMask("ground");
         if (requireInit)
             ReInit();
+        if(_state == null)
+            _state=GetComponent<EnemyState>();
     }
 
     protected virtual void FixedUpdate()
@@ -60,6 +63,7 @@ public class EnemyBTController : MonoBehaviour
         InitBlackboad();
         _root = BuildTree();
         requireInit = false;
+        _state.Init();
     }
 
     protected virtual void OnDestroy()
