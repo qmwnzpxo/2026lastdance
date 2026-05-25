@@ -198,7 +198,7 @@ public class CameraFollow : MonoBehaviour
         float timer = 0f;
 
         cmBrain.DefaultBlend.Time = 0f;
-        SetCameraDumping(0f);   // 즉시 방 중앙으로 이동
+        SetCameraDumping(0.5f);
         cmZoom.gameObject.SetActive(true);
 
         var lens = cmZoom.Lens;

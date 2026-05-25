@@ -69,7 +69,7 @@ public class LockdownRoom : MonoBehaviour
         SetGatesActive(true);
 
         _lockdownOrthoSize = CalculateOrtho();
-        _cameraFollow.Zoom(_lockdownOrthoSize, zoomDuration);
+        _cameraFollow.StartLockdown(_roomCenter,_lockdownOrthoSize, zoomDuration);
 
         ActivateEnemies();
     }
