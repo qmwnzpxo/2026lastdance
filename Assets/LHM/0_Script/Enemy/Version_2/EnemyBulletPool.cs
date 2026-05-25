@@ -24,8 +24,9 @@ public class EnemyBulletPool : PersistentSingleton<EnemyBulletPool>
 
     // ── 초기화 ──────────────────────────────────
     #region
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         InitPools();
     }
 
