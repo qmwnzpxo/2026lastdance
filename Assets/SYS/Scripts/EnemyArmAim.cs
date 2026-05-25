@@ -7,6 +7,7 @@ public class EnemyArmAim : MonoBehaviour
     [SerializeField] private Transform armPivot;
     [SerializeField] private SpriteRenderer bodyRenderer;
     [SerializeField] private SpriteRenderer armRenderer;
+    [SerializeField] private Transform firePivot;
 
     [Header("Range")]
     [SerializeField] private float detectionRange = 8f;
@@ -41,6 +42,8 @@ public class EnemyArmAim : MonoBehaviour
     private float _recoilPosTarget = 0f;
     private bool _recoilPosRising = false;
 
+    private Vector3 _fireBaseLocalPos;
+
     // 외부 API
     public float DetactionRange { get => detectionRange; set => detectionRange = value; }
     public EnemyBlackboard EnemyBlackBoard { get => _enemyBB; set => _enemyBB = value; }
@@ -51,6 +54,7 @@ public class EnemyArmAim : MonoBehaviour
         if (playerObj != null) _player = playerObj.transform;
 
         _armBaseLocalPos = armPivot.localPosition;
+        _fireBaseLocalPos = firePivot.localPosition;
     }
 
     private void Update()
@@ -182,6 +186,11 @@ public class EnemyArmAim : MonoBehaviour
         _armBaseLocalPos = armPivot.localPosition;
         _armBaseLocalPos.x = -_armBaseLocalPos.x;
         armPivot.localPosition = _armBaseLocalPos;
+
+        // 발사 위치도 flip
+        _fireBaseLocalPos = armPivot.localPosition;
+        _fireBaseLocalPos.x = -_fireBaseLocalPos.x;
+        firePivot.localPosition = _armBaseLocalPos;
     }
 
     private float NormalizeAngle(float angle)

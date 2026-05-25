@@ -25,7 +25,7 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
     public void TriggerHitstop(float duration = 0.08f, float timeScale = 0.08f)
     {
         // 덮어쓰기
-        _cts.Cancel();
+        _cts?.Cancel();
         _cts?.Dispose();
 
         // 새 취소 토큰 소스 생성 — 이번 히트스탑 전용
