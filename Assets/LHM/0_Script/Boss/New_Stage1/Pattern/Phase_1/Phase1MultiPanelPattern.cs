@@ -64,7 +64,6 @@ namespace BossSystem.Patterns
         [SerializeField] private float _castDistance = 30f;
         [SerializeField] private LayerMask _playerLayer;
 
-        // ★ 추가
         [Tooltip("파훼 후 딜타임 지속 시간(초). DamageHandler의 Deal Time Duration과 동일하게 설정.")]
         [SerializeField] private float _dealTimeDuration = 5f;
 

@@ -28,7 +28,7 @@ namespace BossSystem.Patterns
 
         [Header("VFX")]
         [SerializeField] private GameObject _dronePrefab;
-        // ★ LineRenderer → GameObject 로 변경: 인스펙터에서 에셋(프리팹) 자유롭게 연결 가능
+
         [SerializeField] private GameObject _warningLinePrefab;
         [SerializeField] private Color _warningColor = new Color(1f, 0f, 0f, 0.8f);
         [SerializeField] private Color _fireColor = Color.red;
@@ -112,7 +112,6 @@ namespace BossSystem.Patterns
         {
             if (drone == null) return;
 
-            // ★ GameObject로 생성 후 GetComponent로 LineRenderer 획득
             GameObject warnLineGo = null;
             LineRenderer warnLine = null;
             if (_warningLinePrefab != null)
@@ -153,7 +152,7 @@ namespace BossSystem.Patterns
             }
             finally
             {
-                // ★ GameObject 기준으로 파괴
+
                 if (warnLineGo != null) Object.Destroy(warnLineGo);
                 if (drone != null) Object.Destroy(drone);
                 onDestroyed?.Invoke();

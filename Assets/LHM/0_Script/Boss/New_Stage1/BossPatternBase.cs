@@ -5,16 +5,7 @@ using UnityEngine;
 
 /// <summary>
 /// ScriptableObject 기반 패턴 베이스.
-///
-/// ── ScriptableObject 선택 이유 ───────────────────────────────────────
-///   1. 패턴 데이터를 에셋으로 분리 → Inspector 직접 조정
-///   2. 공유 인스턴스 → 런타임 메모리 절약
-///   3. Addressable로 Hot-reload 가능
-///
-/// ⚠️ ScriptableObject는 공유 인스턴스이므로 인스턴스 필드에
-///    실행 상태(타이머, 카운터)를 저장하면 안 된다.
-///    모든 실행 상태는 로컬 변수 또는 BossContext로 관리할 것.
-/// </summary>
+
 public abstract class BossPatternBase : ScriptableObject, IBossPattern
 {
     [Header("Pattern Identity")]

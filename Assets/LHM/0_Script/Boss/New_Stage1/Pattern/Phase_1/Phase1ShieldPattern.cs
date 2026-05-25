@@ -4,14 +4,6 @@ using UnityEngine;
 
 namespace BossSystem.Patterns
 {
-    // ───────────────────────────────────────────────────────────────────────
-    // Phase 1-1 — 방어막 (Persistent)
-    //
-    // [변경] 5초 딜타임 대기를 ShieldPattern이 아닌 각 Sequential 패턴이 담당.
-    //        OnBarrierBroken 수신 시 방어막(VFX + 무적)만 즉시 해제하고 루프 재시작.
-    //        Sequential 패턴에서 BreakBarrier() + await delay + return 하면
-    //        자연스럽게 "파훼 → 딜타임 5초 → 다음 패턴"이 된다.
-    // ───────────────────────────────────────────────────────────────────────
 
     [CreateAssetMenu(fileName = "Pattern_Phase1_Shield",
                      menuName = "BossSystem/Patterns/Phase1_Shield")]
@@ -20,8 +12,6 @@ namespace BossSystem.Patterns
         [Header("Shield")]
         [SerializeField] private GameObject _shieldVfxPrefab;
         [SerializeField, Range(0.05f, 0.5f)] private float _pollInterval = 0.1f;
-
-        // ★ 제거: _barrierDownDuration (딜타임 대기는 각 패턴이 직접 처리)
 
         protected override async UniTask OnExecuteAsync(BossContext ctx, CancellationToken ct)
         {
@@ -57,13 +47,10 @@ namespace BossSystem.Patterns
 
                 if (ct.IsCancellationRequested) return;
 
-                // ★ 변경: 방어막만 즉시 해제하고 루프 재시작.
-                //         딜타임 5초는 각 Sequential 패턴(BreakBarrier 호출 측)이
-                //         await UniTask.Delay(_dealTime, ct) 후 return.
+
                 Log("Shield BROKEN. Waiting for sequential pattern to finish deal-time...");
 
-                // 방어막 재활성화는 다음 루프 진입 시 수행.
-                // 다음 Sequential 패턴이 시작될 때까지 Shield는 무적 없이 대기.
+
                 await WaitBarrierRestoredAsync(ctx, ct);
 
                 Log("Shield reactivating...");

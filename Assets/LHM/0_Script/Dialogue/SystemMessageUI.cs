@@ -9,10 +9,6 @@ using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 
-/// <summary>
-/// Inspector에서 RectTransform, CanvasGroup, TextMeshProUGUI를 연결해 사용.
-/// Canvas의 Render Mode는 Screen Space - Overlay 권장.
-/// </summary>
 public class SystemMessageUI : MonoBehaviour
 {
     // ── Inspector ─────────────────────────────────────────────────────────

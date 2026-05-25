@@ -26,7 +26,6 @@ namespace BossSystem.Patterns
         [SerializeField] private LayerMask _playerLayer;
 
         [Header("VFX")]
-        // ★ LineRenderer → GameObject 로 변경: 인스펙터에서 에셋(프리팹) 자유롭게 연결 가능
         [SerializeField] private GameObject _laserLinePrefab;
         [SerializeField] private Color _laserColor = Color.red;
 
@@ -51,7 +50,7 @@ namespace BossSystem.Patterns
             var reflectTcs = new UniTaskCompletionSource();
             mirror.OnReflectedToBoss += () => reflectTcs.TrySetResult();
 
-            // ★ GameObject로 생성 후 GetComponent로 LineRenderer 획득
+
             GameObject laserLineGo = null;
             LineRenderer laserLine = null;
             if (_laserLinePrefab != null)
@@ -81,7 +80,6 @@ namespace BossSystem.Patterns
             }
             finally
             {
-                // ★ GameObject 기준으로 파괴
                 if (laserLineGo != null) Object.Destroy(laserLineGo);
                 if (mirrorGo != null) Object.Destroy(mirrorGo);
             }
