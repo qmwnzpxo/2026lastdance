@@ -37477,6 +37477,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 5363591498518332488, guid: 5822f97eade448a4991884bc1c050148, type: 3}
+      propertyPath: dashGaugePerAttack
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 6688604917998028013, guid: 5822f97eade448a4991884bc1c050148, type: 3}
       propertyPath: m_LocalScale.x
       value: 2.7
