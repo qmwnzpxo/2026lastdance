@@ -190,7 +190,7 @@ public class PlayerDash : MonoBehaviour
 
                 default:
                     // 핑크(기본): 기존 대시
-                    ExecuteDash(GetMouseDirection());
+                    ExecutePinkDash(GetMouseDirection());
                     return;
             }
         }
@@ -199,7 +199,7 @@ public class PlayerDash : MonoBehaviour
     #endregion
     // ────────────────────────────────────────
     #region 핑크(기본) 대쉬
-    private void ExecuteDash(Vector2 dir)
+    private void ExecutePinkDash(Vector2 dir)
     {
         if (!state.TryUseDashGauge(state.DashCost)) return;
         

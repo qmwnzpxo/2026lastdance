@@ -153,7 +153,7 @@ MonoBehaviour:
   isDie: 0
   dashGauge: 50
   maxDashGauge: 100
-  dashGaugePerAttack: 0.3
+  dashGaugePerAttack: 5
   defaultGravityScale: 1.2
   ceilingGravityScale: -1.2
   isGrounded: 0
@@ -731,7 +731,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_Sprite: {fileID: -1992654757, guid: 395998c61033fe44aa61bf429fe07cc5, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
+  m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 1, y: 1}
