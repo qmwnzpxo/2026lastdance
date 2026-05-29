@@ -26,7 +26,7 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
     protected override void Awake()
     {
         base.Awake();
-        _data = LoadFromDisk() ?? new TempSaveData();
+        _data = new TempSaveData();
     }
 
     #endregion
@@ -39,7 +39,6 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
         _data.respawnX = position.x;
         _data.respawnY = position.y;
         _data.hasRespawnPoint = true;
-        SaveToDisk();
         Debug.Log($"[TempSave] 체크포인트 등록: {position}");
     }
 
@@ -79,7 +78,6 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
         }
 
         _data.pendingKarma += karmaChange;
-        SaveToDisk();
         Debug.Log($"[TempSave] 선택지: {choiceId} → {selectedIndex} / 카르마 {karmaChange:+0.#;-0.#} (누적: {_data.pendingKarma})");
     }
 
@@ -96,14 +94,12 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
     public void AddKarma(float amount)
     {
         _data.pendingKarma += amount;
-        SaveToDisk();
         Debug.Log($"[TempSave] 카르마 변경: {amount:+0.#;-0.#} (누적: {_data.pendingKarma})");
     }
 
     public void UsedShard(float amount)
     {
         _data.pendingShard -= amount;
-        SaveToDisk();
         Debug.Log($"[TempSave] 파편 사용: {amount} (남은 누적: {_data.pendingShard})");
     }
 
@@ -157,8 +153,6 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
     public void Clear()
     {
         _data = new TempSaveData();
-        PlayerPrefs.DeleteKey(TEMP_KEY);
-        PlayerPrefs.Save();
         Debug.Log("[TempSave] 임시 저장 초기화");
     }
 
@@ -175,7 +169,6 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
             return;
         }
         _data.completedEvents.Add(eventId);
-        SaveToDisk();
         Debug.Log($"[TempSave] 이벤트 완료: {eventId}");
     }
 
@@ -184,20 +177,4 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
 
     #endregion
 
-    // ────────────────────────────────────────────────────────
-    #region 디스크 I/O
-
-    private void SaveToDisk()
-    {
-        //PlayerPrefs.SetString(TEMP_KEY, JsonUtility.ToJson(_data));
-        //PlayerPrefs.Save();
-    }
-
-    private TempSaveData LoadFromDisk()
-    {
-        //if (!PlayerPrefs.HasKey(TEMP_KEY)) return null;
-        return JsonUtility.FromJson<TempSaveData>(PlayerPrefs.GetString(TEMP_KEY));
-    }
-
-    #endregion
 }
