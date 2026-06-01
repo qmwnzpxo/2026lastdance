@@ -2,9 +2,9 @@
 using System.Threading;
 using UnityEngine;
 
-// ※ Script Execution Order 설정 필요
-//   PlayerDash: -1  /  PlayerMove: 0
-//   (Project Settings > Script Execution Order)
+// Script Execution Order 설정 필요
+// PlayerDash: -1  /  PlayerMove: 0
+// (Project Settings > Script Execution Order)
 public class PlayerMove : MonoBehaviour
 {
     // ── 이동 ─────────────────────────────────
@@ -12,6 +12,9 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float moveSpeed = 10f;
     public float MoveSpeed { get => moveSpeed; set => moveSpeed = value; }
     private bool _lastFacingRight = true;
+
+    private float runSpeed = 2f;
+    public float RunSpeed { get { return runSpeed; } set { runSpeed = value; } }
 
     // ── 점프 ─────────────────────────────────
     [Header("점프")]
@@ -199,7 +202,7 @@ public class PlayerMove : MonoBehaviour
         if (state.isWallJumping) return;
         if ((state.isWallSliding && !state.isGrounded) || state.isOnCeiling || state.isPowerRun)
         {
-            float gaugeChange = CustomTime.ScaledFixedDeltaTime(state.category) * (state.isPowerRun ? 2f : 1f);
+            float gaugeChange = CustomTime.ScaledFixedDeltaTime(state.category) * (state.isPowerRun ? RunSpeed : 1f);
             state.ModifyGauge(-gaugeChange);
         }
         else
@@ -215,7 +218,7 @@ public class PlayerMove : MonoBehaviour
         float yMove = rb.linearVelocity.y < 0 ?
               rb.linearVelocity.y - CustomTime.ScaledFixedDeltaTime(state.category) * 10 
             : rb.linearVelocity.y;
-        rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? 2f : 1f), yMove);
+        rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? RunSpeed : 1f), yMove);
     }
 
     void HandlePowerRun()
@@ -237,17 +240,17 @@ public class PlayerMove : MonoBehaviour
 
         if (verticalInput > 0 || pressingTowardWall)
         {
-            targetSlideSpeed = -wallSlideSpeedUp * (state.isPowerRun ? 2f : 1f);
+            targetSlideSpeed = -wallSlideSpeedUp * (state.isPowerRun ? RunSpeed : 1f);
             isWallSlideDown = state.isTouchingRWall;
         }
         else if (verticalInput < 0 || pressingAwayFromWall)
         {
-            targetSlideSpeed = -wallSlideSpeedDown * (state.isPowerRun ? 2f : 1f);
+            targetSlideSpeed = -wallSlideSpeedDown * (state.isPowerRun ? RunSpeed : 1f);
             isWallSlideDown = !state.isTouchingRWall;
         }
         else
         {
-            targetSlideSpeed = -wallSlideSpeed * (state.isPowerRun ? 2f : 1f);
+            targetSlideSpeed = -wallSlideSpeed * (state.isPowerRun ? RunSpeed : 1f);
             isWallSlideDown = state.isTouchingRWall;
         }
         float limitVelocity = rb.linearVelocityY;
@@ -305,12 +308,12 @@ public class PlayerMove : MonoBehaviour
         float dirX = touchingRight ? 1f : -1f;
         Vector2 origin = rb.position;
 
-        // ① 허리 높이(현재 위치)에서 벽 방향으로 쏴서 벽이 있는지 확인
+        // 허리 높이(현재 위치)에서 벽 방향으로 쏴서 벽이 있는지 확인
         Vector2 midOrigin = origin + Vector2.up * 0.0f;
         RaycastHit2D midHit = Physics2D.Raycast(
             midOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
 
-        // ② 머리 위(_climbEdgeCheckDist만큼) 높이에서 같은 방향으로 쏴서 벽이 없으면 모서리
+        // 머리 위(_climbEdgeCheckDist만큼) 높이에서 같은 방향으로 쏴서 벽이 없으면 모서리
         Vector2 topOrigin = origin + Vector2.up * _climbEdgeCheckDist;
         RaycastHit2D topHit = Physics2D.Raycast(
             topOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);

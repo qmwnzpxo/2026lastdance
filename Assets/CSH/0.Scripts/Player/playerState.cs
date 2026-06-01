@@ -161,11 +161,11 @@ public class PlayerState : MonoBehaviour, IDamageable
         else
         {
             //HitstopManager.Instance.TriggerHitstop();
-            Hited();
+            StartImmunity();
         }
     }
 
-    public void Hited(float duration = 0.3f)
+    public void StartImmunity(float duration = 0.3f)
     {
         //if (isHit) return;
 

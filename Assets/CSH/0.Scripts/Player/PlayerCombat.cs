@@ -9,10 +9,14 @@ public class PlayerCombat : MonoBehaviour
     [Header("공격")]
     [SerializeField] private Transform attackTransform;
     [SerializeField] private Vector2   attackBoxSize     = new Vector2(1f, 1f);
+    [RuntimeOnly] public float AttackBoxSize { set { attackBoxSize.x = value; attackBoxSize.y = value; } }
+
     [SerializeField] private float     attackBoxDistance = 1f;
     [SerializeField] private float     attackSecondHitDelay = 0.427f;
     [SerializeField] private float     attackfloatHitDelay = 0.15f;
     [SerializeField] private float     attackActiveDuration = 0.233f;
+    public float AttackSpeed = 1f;
+
     private LayerMask enemyLayer;
     private LayerMask bulletLayer;
     private LayerMask combined;
@@ -108,7 +112,7 @@ public class PlayerCombat : MonoBehaviour
                         ExecuteAttackBox(attackPos);
 
                         await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
-                        elapsed += timeManager.PlayerFixedDeltaTime;
+                        elapsed += timeManager.PlayerFixedDeltaTime * AttackSpeed;
                     }
 
                     _hitEnemiesInAttack.Clear();
@@ -122,7 +126,7 @@ public class PlayerCombat : MonoBehaviour
                     ExecuteAttackBox(attackPos);
 
                     await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
-                    elapsed += timeManager.PlayerFixedDeltaTime;
+                    elapsed += timeManager.PlayerFixedDeltaTime * AttackSpeed;
                 }
 
                 _hitEnemiesInAttack.Clear();

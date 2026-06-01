@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 
-// 현재 오류로 인해 세이브들은 사용하지 않음
 /// <summary>
 /// 저장 시점:
 ///   - 체크포인트 통과     → RegisterRespawn()
@@ -15,8 +14,6 @@
 /// </summary>
 public class TempSaveManager : PersistentSingleton<TempSaveManager>
 {
-    private const string TEMP_KEY = "TempSaveData";
-
     private TempSaveData _data;
     public TempSaveData Data => _data;
 
@@ -63,7 +60,8 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
         if (existing != null)
         {
             _data.pendingKarma -= existing.karmaChange;
-            _data.pendingShard += existing.karmaChange; // 카르마 변화량을 파편으로 환산하여 누적 (예시: 1 카르마 = 1 파편)
+            if(existing.karmaChange>0)
+                _data.pendingShard += existing.karmaChange; // 카르마 변화량을 파편으로 환산하여 누적 (예시: 1 카르마 = 1 파편)
             existing.selectedIndex = selectedIndex;
             existing.karmaChange = karmaChange;
         }

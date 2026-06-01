@@ -16,7 +16,7 @@ public class PlayerDash : MonoBehaviour
     [SerializeField] private float dashDamage = 5f;
     [SerializeField] private float dashSpeed = 50f;
     [SerializeField] private Vector2 dashBoxSize = new Vector2(1f, 0.4f);
-        
+
     // ── 초록 칩 설정 ─────────────────────────
     [Header("초록 칩 - 3연 돌진")]
     [SerializeField] private int greenDashCount = 3;
@@ -33,6 +33,7 @@ public class PlayerDash : MonoBehaviour
     // ── 공용 설정 ────────────────────────────
     [Header("공용")]
     [SerializeField] private Vector2 attackBoxSize = new Vector2(1f, 1f);  // Sweep 판정 크기
+    [RuntimeOnly] public float DashAttackBoxSize { set { attackBoxSize.x = value; attackBoxSize.y = value - 0.6f; } }
     [SerializeField] private LayerMask enemyLayer;
     private LayerMask bulletLayer;
     private LayerMask combined;
@@ -57,6 +58,7 @@ public class PlayerDash : MonoBehaviour
     private CancellationTokenSource _pinkDashCts;
     private CancellationTokenSource _redDashCts;
     private CancellationTokenSource _greenDashCts;
+    private CancellationTokenSource _blueQTECts;
     private CancellationTokenSource _blueFallCts;
 
     // ── 참조 ─────────────────────────────────
@@ -103,18 +105,14 @@ public class PlayerDash : MonoBehaviour
     {
         if (_blueFalling)
         {
-            FixedUpdateBlueFall();
             return;
         }
-
 
         if (state.isDashing)
         {
             FixedUpdateDash();
             return;
         }
-
-
     }
     
     void CtsFree()
@@ -125,6 +123,8 @@ public class PlayerDash : MonoBehaviour
         _redDashCts?.Dispose();
         _greenDashCts?.Cancel();
         _greenDashCts?.Dispose();
+        _blueQTECts?.Cancel();
+        _blueQTECts?.Dispose();
         _blueFallCts?.Cancel();
         _blueFallCts?.Dispose();
     }
@@ -256,7 +256,7 @@ public class PlayerDash : MonoBehaviour
     void StopDash()
     {
         state.isDashing = false;
-        state.Hited(0.05f);
+        state.StartImmunity(0.06f);
         state.NotifyDashStopped();
         playerMove.RestoreGravity();
         cameraFollow.SetCameraDumping(originalCameraDumping);
@@ -264,10 +264,18 @@ public class PlayerDash : MonoBehaviour
         if (line != null) line.enabled = false;
         if (!state.isOnCeiling)
             rb.linearVelocity = Vector2.up * 0.05f;
+        if (state.currentChip == PlayerChip.blue)
+        {
+            StartBlueQTE();
+            return;
 
+        }
         if (!_blueDashSecondInput && state.dashBuffered)
         {
             state.dashBuffered = false;
+            _pinkDashCts?.Cancel();
+            _pinkDashCts?.Dispose();
+            _pinkDashCts = new CancellationTokenSource();
             ExecuteDash(GetMouseDirection(),_pinkDashCts).Forget();
         }
     }
@@ -324,6 +332,7 @@ public class PlayerDash : MonoBehaviour
     {
         if (!state.TryUseDashGauge(state.DashCost)) return;
         if (_greenDashing) return; // 이미 돌진 중이면 무시
+
         _greenDashCts?.Cancel();
         _greenDashCts?.Dispose();
         _greenDashCts = new CancellationTokenSource();
@@ -333,44 +342,45 @@ public class PlayerDash : MonoBehaviour
     private async UniTaskVoid GreenDashRoutine(CancellationToken ct)
     {
         _greenDashing = true;
+        var tmg = CustomTimeManager.Instance;
 
         for (int i = 0; i < greenDashCount; i++)
         {
             if (ct.IsCancellationRequested) break;
 
-            // 매 돌진마다 현재 마우스 방향 계산
-            Vector2 dir = GetMouseDirection();
             cameraFollow.SetCameraDumping(cameraDumpingScale);
 
-            Vector2 start = rb.position;
-            Vector2 target = start + dir * greenDashRange;
+            // 매 돌진마다 현재 마우스 방향 계산
+            Vector2 dir = GetMouseDirection();
+            Vector2 start = rb.position;;
 
             // 지형 충돌 보정
             RaycastHit2D groundHit = Physics2D.Raycast(
                 start + dir * 0.05f, dir, greenDashRange, playerMove.GroundLayer);
-            if (groundHit.collider != null)
-                target = groundHit.point;
+            Vector2 target = groundHit.collider != null
+                ? groundHit.point - dir * 0.1f
+                : start + dir * greenDashRange;
 
-            SetLineRenderer(start, target, true);
+            //SetLineRenderer(start, target, true); 
 
             rb.gravityScale = 0f;
             state.isDashing = true;
-            rb.linearVelocity = dir * greenDashSpeed;
+            rb.linearVelocity = Vector2.zero;
 
-            HashSet<Collider2D> hitThisDash = new HashSet<Collider2D>();
-            var timeManager = CustomTimeManager.Instance;
+            var hitThisDash = new HashSet<Collider2D>();
             float traveled = 0f;
             float dist = Vector2.Distance(start, target);
 
             while (!ct.IsCancellationRequested && traveled < dist)
             {
+                float step = greenDashSpeed * tmg.PlayerFixedDeltaTime;
                 Vector2 cur = rb.position;
-                Vector2 next = Vector2.MoveTowards(cur, target, greenDashSpeed * timeManager.PlayerFixedDeltaTime);
+                Vector2 next = Vector2.MoveTowards(cur, target, step);
 
                 // 스윕 판정
                 Vector2 sweepDir = next - cur;
                 float sweepDist = sweepDir.magnitude;
-                if (sweepDist > 0f)
+                if (sweepDist > 0.001f)
                 {
                     var hits = Physics2D.BoxCastAll(
                         cur, attackBoxSize + Vector2.one * 0.1f, 0f,
@@ -381,25 +391,30 @@ public class PlayerDash : MonoBehaviour
                         {
                             hitThisDash.Add(h.collider);
                             ApplyDamage(h.collider, state.damage * dashDamage);
-                            HitstopManager.Instance.TriggerHitstop(0.04f);
+                            HitstopManager.Instance.TriggerMedium();
                         }
                     }
                 }
 
+                bool wallHit = sweepDist > 0.001f && Physics2D.BoxCast(
+                   cur,
+                   dashBoxSize,
+                   0f,
+                   sweepDir.normalized,
+                   sweepDist + 0.05f,
+                   playerMove.GroundLayer);
+
                 rb.MovePosition(next);
-                traveled += greenDashSpeed * timeManager.PlayerFixedDeltaTime;
+                traveled += step;
 
-                // 벽 충돌 시 돌진 중단
-                Collider2D wallHit = Physics2D.OverlapBox(
-                    rb.position, dashBoxSize, 0f, playerMove.GroundLayer);
-                if (wallHit != null) break;
+                if (wallHit) break;
 
-                
+                await UniTask.WaitForFixedUpdate(cancellationToken: ct);
             }
 
             state.isDashing = false;
 
-            // 마지막 돌진이 아니면 잠깐 대기 (방향 변경 기회)
+            // 마지막 돌진이 아니면 잠깐 대기
             if (i < greenDashCount - 1 && !ct.IsCancellationRequested)
             {
                 rb.linearVelocity = Vector2.zero;
@@ -468,6 +483,45 @@ public class PlayerDash : MonoBehaviour
         return new Vector2(x, y).normalized;
     }
 
+    void StartBlueQTE()
+    {
+        _blueQTECts?.Cancel();
+        _blueQTECts?.Dispose();
+        _blueQTECts = new CancellationTokenSource();
+        BlueQTERoutine(_blueQTECts.Token).Forget();
+    }
+    private async UniTaskVoid BlueQTERoutine(CancellationToken ct)
+    {
+        var tmg = CustomTimeManager.Instance;
+
+        // 플레이어 + 적 슬로우 (1초)
+        tmg.SetPlayerTimeScale(0.2f, duration: 1f);
+        tmg.SetEnemyTimeScale(0.2f, duration: 1f);
+
+        float elapsed = 0f;
+        bool activated = false;
+
+        while (elapsed < 1f && !ct.IsCancellationRequested)
+        {
+            elapsed += Time.unscaledDeltaTime;
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                activated = true;
+                break;
+            }
+            // Yield으로 update 프레임마다 대기 (슬로우 중에도 입력 체크 가능)
+            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken: ct);
+        }
+
+        // 슬로우 즉시 해제
+        tmg.SetPlayerTimeScale(1f);
+        tmg.SetEnemyTimeScale(1f);
+
+        if (activated && !ct.IsCancellationRequested)
+            StartBlueFall();
+    }
+
     void StartBlueFall()
     {
         _blueFallCts?.Cancel();
@@ -477,20 +531,45 @@ public class PlayerDash : MonoBehaviour
         _blueFalling = true;
         Debug.Log($"blueFall start");
         rb.gravityScale = 0f;
-        rb.linearVelocity = Vector2.down * blueFallSpeed;
+        rb.linearVelocity = Vector2.zero;
         cameraFollow.SetCameraDumping(cameraDumpingScale);
+
+        BlueFallRoutine(_blueFallCts.Token).Forget();
     }
 
-    void FixedUpdateBlueFall()
+    private async UniTaskVoid BlueFallRoutine(CancellationToken ct)
     {
-        rb.linearVelocity = Vector2.down * blueFallSpeed;
+        var tmg = CustomTimeManager.Instance;
 
-        // 착지 감지
-        bool landed = Physics2D.OverlapBox(
-            playerMove.GroundCheck.position, playerMove.GroundCheckSize, 0f, playerMove.GroundLayer);
-        if (landed)
-            BlueSlamLand();
+        while (!ct.IsCancellationRequested && _blueFalling)
+        {
+            float step = blueFallSpeed * tmg.PlayerFixedDeltaTime;
+            Vector2 cur = rb.position;
+            Vector2 next = cur + Vector2.down * step;
+
+            // 고속 낙하 시 지형 관통 방지: BoxCast로 착지 감지
+            RaycastHit2D hit = Physics2D.BoxCast(
+                cur,
+                playerMove.GroundCheckSize,
+                0f,
+                Vector2.down,
+                step + 0.1f,
+                playerMove.GroundLayer);
+
+            if (hit.collider != null)
+            {
+                // 착지 지점에 딱 맞춰 이동 후 강타
+                rb.MovePosition(new Vector2(cur.x, hit.point.y + playerMove.GroundCheckSize.y * 0.5f));
+                await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                BlueSlamLand();
+                return;
+            }
+
+            rb.MovePosition(next);
+            await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+        }
     }
+
 
     void BlueSlamLand()
     {
@@ -511,7 +590,7 @@ public class PlayerDash : MonoBehaviour
         _blueDashSecondInput = false;
         if (line != null) line.enabled = false;
 
-        HitstopManager.Instance.TriggerHitstop(0.12f, 0.05f);
+        HitstopManager.Instance.TriggerHeavy();
     }
 
     #endregion

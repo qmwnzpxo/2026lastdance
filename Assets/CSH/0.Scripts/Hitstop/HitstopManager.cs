@@ -5,8 +5,7 @@ using UnityEngine;
 
 /// <summary>
 /// 히트스탑(타격 시 일시적 슬로우모션) 효과를 전역으로 관리하는 싱글톤 매니저.
-/// Time.timeScale을 일시적으로 낮춰 타격감을 연출하고,
-/// UI/파티클은 unscaledTime을 사용해 히트스탑 영향을 받지 않도록 설계.
+/// CustonTimeManager의 각 타입별 timeScale을 일시적으로 낮춰 타격감을 연출하고,
 /// </summary>
 // ── 싱글톤 ────────────────────────────────────────────────
 // 씬 어디서든 HitstopManager.Instance 로 접근 가능
