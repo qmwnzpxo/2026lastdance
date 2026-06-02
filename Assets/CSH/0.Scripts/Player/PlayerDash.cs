@@ -343,7 +343,7 @@ public class PlayerDash : MonoBehaviour
     {
         _greenDashing = true;
         var tmg = CustomTimeManager.Instance;
-
+        Debug.Log($"[PlayerDash] green dash start");
         for (int i = 0; i < greenDashCount; i++)
         {
             if (ct.IsCancellationRequested) break;
@@ -352,7 +352,8 @@ public class PlayerDash : MonoBehaviour
 
             // 매 돌진마다 현재 마우스 방향 계산
             Vector2 dir = GetMouseDirection();
-            Vector2 start = rb.position;;
+            Vector2 start = rb.position;
+            Debug.Log($"[PlayerDash] green dash start pos : {start.x}:{start.y}");
 
             // 지형 충돌 보정
             RaycastHit2D groundHit = Physics2D.Raycast(
@@ -397,11 +398,7 @@ public class PlayerDash : MonoBehaviour
                 }
 
                 bool wallHit = sweepDist > 0.001f && Physics2D.BoxCast(
-                   cur,
-                   dashBoxSize,
-                   0f,
-                   sweepDir.normalized,
-                   sweepDist + 0.05f,
+                   cur, dashBoxSize, 0f, sweepDir.normalized, sweepDist + 0.05f,
                    playerMove.GroundLayer);
 
                 rb.MovePosition(next);
@@ -494,15 +491,17 @@ public class PlayerDash : MonoBehaviour
     {
         var tmg = CustomTimeManager.Instance;
 
-        // 플레이어 + 적 슬로우 (1초)
-        tmg.SetPlayerTimeScale(0.2f, duration: 1f);
-        tmg.SetEnemyTimeScale(0.2f, duration: 1f);
+        // 플레이어 + 적 슬로우
+        tmg.SetPlayerTimeScale(0.02f);
+        tmg.SetEnemyTimeScale(0.02f);
 
         float elapsed = 0f;
         bool activated = false;
 
         while (elapsed < 1f && !ct.IsCancellationRequested)
         {
+            tmg.SetPlayerTimeScale(elapsed / 2);
+            tmg.SetEnemyTimeScale(elapsed / 2);
             elapsed += Time.unscaledDeltaTime;
 
             if (Input.GetKeyDown(KeyCode.Space))
