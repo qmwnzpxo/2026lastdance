@@ -17,8 +17,9 @@ GameObject:
   - component: {fileID: 2023106828772255}
   - component: {fileID: 5515305960613711534}
   - component: {fileID: 8666941810540424932}
-  m_Layer: 0
-  m_Name: Enemy1-A
+  - component: {fileID: 1690636021949884914}
+  m_Layer: 7
+  m_Name: Enemy0-1-B
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -113,7 +114,7 @@ MonoBehaviour:
   _groundLayer:
     serializedVersion: 2
     m_Bits: 1024
-  _gaugeIncreaseRate: 10
+  _gaugeIncreaseRate: 100
   _gaugeDecreaseRate: 50
   _chaseEndDuration: 1
   _currentgauge: 0
@@ -126,8 +127,8 @@ MonoBehaviour:
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
-  _patrolEdgeCheckY: 1.2
-  _patrolWallCheckX: 0.4
+  _patrolEdgeCheckY: 1.4
+  _patrolWallCheckX: 1.6
   _retreatTriggerRange: 0
   _retreatDistance: 0
 --- !u!114 &187573438063900057
@@ -144,6 +145,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _preDelay: 0.1
   _postDelay: 0.3
+  _isAttack: 0
   _bulletPrefab: {fileID: 7544929931349441539, guid: 70492ea0ad2893b4595fc53b2b11ed18, type: 3}
   _fireTransform: {fileID: 1411284378757828562}
   _damage: 1
@@ -178,6 +180,7 @@ MonoBehaviour:
   armPivot: {fileID: 1192606328707000536}
   bodyRenderer: {fileID: 7404335318752127255}
   armRenderer: {fileID: 5238811481184654161}
+  firePivot: {fileID: 1411284378757828562}
   detectionRange: 8
   rotationSpeed: 10
   minAngle: -60
@@ -274,8 +277,30 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _category: 1
-  _animator: {fileID: 0}
+  _animator: {fileID: 1690636021949884914}
   _rb: {fileID: 2023106828772255}
+--- !u!95 &1690636021949884914
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837660261499592793}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 6adac09620b48b443964381aeb8f4569, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &5957513746892658133
 GameObject:
   m_ObjectHideFlags: 0

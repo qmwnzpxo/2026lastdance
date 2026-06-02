@@ -78,6 +78,38 @@ public class RangerEnemyBTController : EnemyBTController, IMoveable
 
         Gizmos.color = retreatdisColor;
         Gizmos.DrawWireSphere(transform.position, _retreatDistance);
+
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(transform.position, transform.forward);
+
+        DrawGroundCheckGizmos();
+    }
+
+    private void DrawGroundCheckGizmos()
+    {
+        Vector3 pos = transform.position;
+        Gizmos.color = new Color(1f, 0.5f, 0f, 1f); // 주황
+        Gizmos.DrawRay(pos, Vector3.right * _patrolWallCheckX);
+        Gizmos.DrawRay(pos, Vector3.left * _patrolWallCheckX);
+
+        Gizmos.DrawWireSphere(pos + Vector3.right * _patrolWallCheckX, 0.05f);
+        Gizmos.DrawWireSphere(pos + Vector3.left * _patrolWallCheckX, 0.05f);
+
+        // ── 절벽 감지 (좌우 발판 끝 확인) ────────────────────────
+        Gizmos.color = new Color(0f, 0.8f, 1f, 1f); // 하늘색
+
+        Vector3 rightEdgeOrigin = pos + Vector3.right * _patrolEdgeCheckX;
+        Gizmos.DrawWireSphere(rightEdgeOrigin, 0.05f);
+        Gizmos.DrawRay(rightEdgeOrigin, Vector3.down * _patrolEdgeCheckY);
+
+        Vector3 leftEdgeOrigin = pos + Vector3.left * _patrolEdgeCheckX;
+        Gizmos.DrawWireSphere(leftEdgeOrigin, 0.05f);
+        Gizmos.DrawRay(leftEdgeOrigin, Vector3.down * _patrolEdgeCheckY);
+
+        // 절벽 감지 끝점
+        Gizmos.color = new Color(0f, 0.4f, 1f, 0.6f);
+        Gizmos.DrawWireSphere(rightEdgeOrigin + Vector3.down * _patrolEdgeCheckY, 0.05f);
+        Gizmos.DrawWireSphere(leftEdgeOrigin + Vector3.down * _patrolEdgeCheckY, 0.05f);
     }
 
     #endregion

@@ -13,7 +13,7 @@ public class PlayerCombat : MonoBehaviour
 
     [SerializeField] private float     attackBoxDistance = 1f;
     [SerializeField] private float     attackSecondHitDelay = 0.427f;
-    [SerializeField] private float     attackfloatHitDelay = 0.15f;
+    //[SerializeField] private float     attackfloatHitDelay = 0.15f;
     [SerializeField] private float     attackActiveDuration = 0.233f;
     public float AttackSpeed = 1f;
 

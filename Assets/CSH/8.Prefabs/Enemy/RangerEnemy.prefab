@@ -478,7 +478,7 @@ MonoBehaviour:
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
-  _patrolEdgeCheckY: 1.2
+  _patrolEdgeCheckY: 1.4
   _patrolWallCheckX: 0.4
   _retreatTriggerRange: 2
   _retreatDistance: 3
@@ -510,6 +510,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _preDelay: 0.1
   _postDelay: 0.3
+  _isAttack: 0
   _bulletPrefab: {fileID: 7544929931349441539, guid: 70492ea0ad2893b4595fc53b2b11ed18, type: 3}
   _fireTransform: {fileID: 8232750599677345352}
   _damage: 1

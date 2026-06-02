@@ -75,10 +75,10 @@ public class PlayerState : MonoBehaviour, IDamageable
     public Light2D hitLight;
     public Light2D hitWorldLight;
     CancellationTokenSource hitCts;
-    TrailRenderer moveTrail;
+    //TrailRenderer moveTrail;
 
     // ── 이벤트 ─────────────────────────────
-    public event System.Action UseStamina;
+    //public event System.Action UseStamina;
 
     public event System.Action OnDashStopped;
     public void NotifyDashStopped() => OnDashStopped?.Invoke();
