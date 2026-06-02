@@ -59,10 +59,10 @@ public class PlayerState : MonoBehaviour, IDamageable
     // ── 액션 상태 (컴포넌트 간 상호 참조용) ──
     [Header("액션 상태")]
     [RuntimeOnly, SerializeField] public bool isDashing;
-    [RuntimeOnly, SerializeField] public bool isTackling;
-    [RuntimeOnly, SerializeField] public bool isTackleGroundRush;
     [RuntimeOnly, SerializeField] public bool isAttacking;
     [RuntimeOnly, SerializeField] public bool isHit;
+    [RuntimeOnly, SerializeField] public bool isRedDashRecording;
+    [RuntimeOnly, SerializeField] public bool isRedDashPlaying;
 
     // ── 칩 설정 ─────────────────────────────
     [Header("칩 설정")]
@@ -152,9 +152,8 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public void TakeDamage(float dmg)
     {
-        if (isDashing)
-            return;
-        if(isHit || isDie) return;
+        if (isDashing || isRedDashRecording) return;
+        if (isHit || isDie) return;
         HP -= dmg;
         if (HP <= 0)
             Die();

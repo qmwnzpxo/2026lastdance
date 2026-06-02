@@ -166,10 +166,10 @@ MonoBehaviour:
   dashBuffered: 0
   attackBuffered: 0
   isDashing: 0
-  isTackling: 0
-  isTackleGroundRush: 0
   isAttacking: 0
   isHit: 0
+  isRedDashRecording: 0
+  isRedDashPlaying: 0
   currentChip: 0
   category: 0
   hitLight: {fileID: 7763769427215422248}
@@ -224,8 +224,8 @@ MonoBehaviour:
   attackBoxSize: {x: 1, y: 1}
   attackBoxDistance: 1
   attackSecondHitDelay: 0.3
-  attackfloatHitDelay: 0.15
   attackActiveDuration: 0.1
+  AttackSpeed: 1
   attackRepeatTime: 2
 --- !u!114 &1014071891606882278
 MonoBehaviour:
@@ -243,10 +243,13 @@ MonoBehaviour:
   dashDamage: 5
   dashSpeed: 100
   dashBoxSize: {x: 1, y: 1}
+  redRecordDuration: 5
+  redRecordFPS: 30
+  Ghost: {fileID: 0}
   greenDashCount: 3
   greenDashRange: 5
-  greenDashSpeed: 55
-  greenDashInterval: 0.09
+  greenDashSpeed: 100
+  _greenDashInterval: 0.75
   blueFallSpeed: 80
   blueSlamRadius: 3
   blueSlamDamage: 8

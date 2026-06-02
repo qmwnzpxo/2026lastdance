@@ -49,7 +49,6 @@ public class PlayerMove : MonoBehaviour
     [Header("천장 붙기")]
     [SerializeField] private SpriteRenderer spriteRenderer;
     [EditorOnly, SerializeField] private Transform spriteTransform;
-    private bool justStoppedDashing; // PlayerDash에서 StopDash 직후 세팅
 
     // ── 내부 필드 ────────────────────────────
     private Rigidbody2D rb;
@@ -82,6 +81,8 @@ public class PlayerMove : MonoBehaviour
     public LayerMask GroundLayer => walkableLayer;
     public Transform GroundCheck => groundCheck;
     public Vector2 GroundCheckSize => groundCheckSize;
+    public SpriteRenderer SpriteRenderer => spriteRenderer;
+    public Transform SpriteTransform => spriteTransform;
     private bool _dashJustStopped;
 
     void OnDashStopped() => _dashJustStopped = true;
@@ -151,7 +152,7 @@ public class PlayerMove : MonoBehaviour
         }
 
         // Dash / Tackle 중에는 PlayerDash가 물리를 전담
-        if (state.isDashing || state.isTackling || state.isTackleGroundRush)
+        if (state.isDashing || state.isRedDashPlaying)
             return;
 
         // 등반 중에는 등반 물리만 처리
@@ -298,8 +299,8 @@ public class PlayerMove : MonoBehaviour
 
         // 벽 슬라이딩 중이 아니면 무시
         if (!state.isWallSliding) return;
-        // 대쉬/태클 중 무시
-        if (state.isDashing || state.isTackling || state.isTackleGroundRush) return;
+        // 대쉬 중 무시
+        if (state.isDashing) return;
 
         bool touchingRight = state.isTouchingRWall;
         bool touchingLeft = state.isTouchingLWall;
@@ -408,7 +409,7 @@ public class PlayerMove : MonoBehaviour
     {
         bool justTouchedCeiling = isTouchingCeiling && !wasTouchingCeiling;
 
-        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing || state.isTackling || _dashJustStopped))
+        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing))
         {
             state.isOnCeiling = true;
             RestoreGravity();
