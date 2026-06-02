@@ -22,7 +22,7 @@ public class PlayerDash : MonoBehaviour
     [SerializeField] private int greenDashCount = 3;
     [SerializeField] private float greenDashRange = 5f;
     [SerializeField] private float greenDashSpeed = 55f;
-    [SerializeField] private float greenDashInterval = 0.09f; // 돌진 사이 대기 시간
+    [SerializeField] private float _greenDashInterval = 0.09f; // 돌진 사이 입력 대기 시간
     
     // ── 파랑 칩 설정 ─────────────────────────
     [Header("파랑 칩 - 대각 대시 + 낙하 강타")]
@@ -52,7 +52,9 @@ public class PlayerDash : MonoBehaviour
     [SerializeField]private bool _blueDashSecondInput = false; // 대시 도중 재입력 받았는지
 
     // ── 초록 칩 내부 상태 ────────────────────
-    private bool _greenDashing = false; // 초록 칩 연속 돌진 중
+    private bool _greenDashing = false; // 초록 칩 대시 모션중
+    private int  _greenComboStep = 0; // 초록 칩 대시 몇 번째 단계인지
+    private bool _greenDashBuffered = false; // 초록 칩 대시 중 입력(버퍼 포함)
 
     // ── CTS ──────────────────────────────────
     private CancellationTokenSource _pinkDashCts;
@@ -110,6 +112,7 @@ public class PlayerDash : MonoBehaviour
 
         if (state.isDashing)
         {
+            if (_greenDashing) return;
             FixedUpdateDash();
             return;
         }
@@ -157,9 +160,12 @@ public class PlayerDash : MonoBehaviour
                 return;
             }
 
-            // ─── 초록 칩: 연속 돌진 중 무시 ───
-            if (state.currentChip == PlayerChip.green && _greenDashing)
+            // ─── 초록 칩: 콤보 진행 중이면 다음 대쉬 입력으로 처리 ───
+            if (state.currentChip == PlayerChip.green && (_greenDashing || _greenComboStep > 0))
+            {
+                _greenDashBuffered = true;
                 return;
+            }
 
             playerMove.ResetWallState();
             ani.Attack_flash();
@@ -327,111 +333,148 @@ public class PlayerDash : MonoBehaviour
     #endregion
 
     // ────────────────────────────────────────
-    #region 초록 칩 – 3연 돌진
+    #region 초록 칩 – 입력식 최대 3연속 대쉬
     void StartGreenDash()
     {
+        if (_greenDashing || _greenComboStep > 0) return; // 이미 돌진 중이면 무시
         if (!state.TryUseDashGauge(state.DashCost)) return;
-        if (_greenDashing) return; // 이미 돌진 중이면 무시
 
         _greenDashCts?.Cancel();
         _greenDashCts?.Dispose();
         _greenDashCts = new CancellationTokenSource();
-        GreenDashRoutine(_greenDashCts.Token).Forget();
+        GreenDashComboRoutine(_greenDashCts.Token).Forget();
     }
 
-    private async UniTaskVoid GreenDashRoutine(CancellationToken ct)
+    private async UniTaskVoid GreenDashComboRoutine(CancellationToken ct)
     {
-        _greenDashing = true;
-        var tmg = CustomTimeManager.Instance;
-        Debug.Log($"[PlayerDash] green dash start");
-        for (int i = 0; i < greenDashCount; i++)
+        _greenComboStep = 0;
+        _greenDashBuffered = false;
+
+        try
         {
-            if (ct.IsCancellationRequested) break;
-
-            cameraFollow.SetCameraDumping(cameraDumpingScale);
-
-            // 매 돌진마다 현재 마우스 방향 계산
-            Vector2 dir = GetMouseDirection();
-            Vector2 start = rb.position;
-            Debug.Log($"[PlayerDash] green dash start pos : {start.x}:{start.y}");
-
-            // 지형 충돌 보정
-            RaycastHit2D groundHit = Physics2D.Raycast(
-                start + dir * 0.05f, dir, greenDashRange, playerMove.GroundLayer);
-            Vector2 target = groundHit.collider != null
-                ? groundHit.point - dir * 0.1f
-                : start + dir * greenDashRange;
-
-            //SetLineRenderer(start, target, true); 
-
-            rb.gravityScale = 0f;
-            state.isDashing = true;
-            rb.linearVelocity = Vector2.zero;
-
-            var hitThisDash = new HashSet<Collider2D>();
-            float traveled = 0f;
-            float dist = Vector2.Distance(start, target);
-
-            while (!ct.IsCancellationRequested && traveled < dist)
+            while (_greenComboStep < greenDashCount && !ct.IsCancellationRequested)
             {
-                float step = greenDashSpeed * tmg.PlayerFixedDeltaTime;
-                Vector2 cur = rb.position;
-                Vector2 next = Vector2.MoveTowards(cur, target, step);
+                // 1회 대쉬 수행
+                await GreenDashSegment(ct);
+                _greenComboStep++;
 
-                // 스윕 판정
-                Vector2 sweepDir = next - cur;
-                float sweepDist = sweepDir.magnitude;
-                if (sweepDist > 0.001f)
-                {
-                    var hits = Physics2D.BoxCastAll(
-                        cur, attackBoxSize + Vector2.one * 0.1f, 0f,
-                        sweepDir.normalized, sweepDist, enemyLayer);
-                    foreach (var h in hits)
-                    {
-                        if (h.collider != null && !hitThisDash.Contains(h.collider))
-                        {
-                            hitThisDash.Add(h.collider);
-                            ApplyDamage(h.collider, state.damage * dashDamage);
-                            HitstopManager.Instance.TriggerMedium();
-                        }
-                    }
-                }
+                if (_greenComboStep >= greenDashCount) break; // 마지막 대쉬 완료 → 종료
 
-                bool wallHit = sweepDist > 0.001f && Physics2D.BoxCast(
-                   cur, dashBoxSize, 0f, sweepDir.normalized, sweepDist + 0.05f,
-                   playerMove.GroundLayer);
-
-                rb.MovePosition(next);
-                traveled += step;
-
-                if (wallHit) break;
-
-                await UniTask.WaitForFixedUpdate(cancellationToken: ct);
-            }
-
-            state.isDashing = false;
-
-            // 마지막 돌진이 아니면 잠깐 대기
-            if (i < greenDashCount - 1 && !ct.IsCancellationRequested)
-            {
+                // 다음 대쉬 입력 대기 (0.75초). 공중에 잠시 고정.
                 rb.linearVelocity = Vector2.zero;
-                rb.gravityScale = 0f; // 대기 중 공중에 고정
-                await CustomTime.WaitForScaledSeconds(greenDashInterval, state.category, ct)
-                    .SuppressCancellationThrow();
+                rb.gravityScale = 0f;
+
+                bool advanced = await WaitGreenWindow(ct);
+                if (!advanced) break; // 입력 없음 → 콤보 종료(초기화)
             }
         }
+        finally
+        {
+            EndGreenCombo();
+        }
+    }
 
-        // 3연 돌진 완료
+    private async UniTask<bool> WaitGreenWindow(CancellationToken ct)
+    {
+        float t = 0f;
+        while (t < _greenDashInterval)
+        {
+            if (ct.IsCancellationRequested) return false;
+            if (_greenDashBuffered) return true; // 입력(또는 이동 중 버퍼된 입력) 감지
+
+            bool canceled = await UniTask
+                .WaitForFixedUpdate(cancellationToken: ct)
+                .SuppressCancellationThrow();
+            if (canceled) return false;
+
+            t += CustomTime.ScaledFixedDeltaTime(state.category);
+        }
+        return _greenDashBuffered;
+    }
+
+    private async UniTask GreenDashSegment(CancellationToken ct)
+    {
+        _greenDashing = true;
+        _greenDashBuffered = false; // 이번 대쉬를 트리거한 입력 소모
+        ani.Attack_flash();
+
+        Vector2 dir = GetMouseDirection();
+        cameraFollow.SetCameraDumping(cameraDumpingScale);
+       
+        Vector2 start = rb.position;
+        Vector2 target = start + dir * greenDashRange;
+
+        RaycastHit2D groundHit = Physics2D.Raycast(
+            start + dir * 0.05f, dir, greenDashRange, playerMove.GroundLayer);
+        if (groundHit.collider != null)
+            target = groundHit.point;
+
+        SetLineRenderer(start, target, true);
+
+        rb.gravityScale = 0f;
+        state.isDashing = true;
+        rb.linearVelocity = Vector2.zero;
+
+        HashSet<Collider2D> hitThisDash = new HashSet<Collider2D>();
+        var timeManager = CustomTimeManager.Instance;
+        float traveled = 0f;
+        float dist = Vector2.Distance(start, target);
+
+        while (!ct.IsCancellationRequested && traveled < dist)
+        {
+            Vector2 cur = rb.position;
+            Vector2 next = Vector2.MoveTowards(cur, target, greenDashSpeed * timeManager.PlayerFixedDeltaTime);
+
+            // 스윕 판정
+            Vector2 sweepDir = next - cur;
+            float sweepDist = sweepDir.magnitude;
+            if (sweepDist > 0f)
+            {
+                var hits = Physics2D.BoxCastAll(
+                    cur, attackBoxSize + Vector2.one * 0.1f, 0f,
+                    sweepDir.normalized, sweepDist, enemyLayer);
+                foreach (var h in hits)
+                {
+                    if (h.collider != null && !hitThisDash.Contains(h.collider))
+                    {
+                        hitThisDash.Add(h.collider);
+                        ApplyDamage(h.collider, state.damage * dashDamage);
+                        HitstopManager.Instance.TriggerHitstop(0.04f);
+                    }
+                }
+            }
+
+            rb.MovePosition(next);
+            traveled += greenDashSpeed * timeManager.PlayerFixedDeltaTime;
+
+            // 벽 충돌 시 돌진 중단
+            Collider2D wallHit = Physics2D.OverlapBox(
+                rb.position, dashBoxSize, 0f, playerMove.GroundLayer);
+            if (wallHit != null) break;
+
+            bool canceled = await UniTask
+                .WaitForFixedUpdate(cancellationToken: ct)
+                .SuppressCancellationThrow();
+            if (canceled) break;
+        }
+
+        state.isDashing = false;
+        _greenDashing = false;
+    }
+
+    void EndGreenCombo()
+    {
+        _greenComboStep = 0;
+        _greenDashBuffered = false;
+        _greenDashing = false;
+
         state.isDashing = false;
         state.NotifyDashStopped();
         playerMove.RestoreGravity();
         cameraFollow.SetCameraDumping(originalCameraDumping);
         rb.linearVelocity = Vector2.up * 0.05f;
         if (line != null) line.enabled = false;
-
-        _greenDashing = false;
     }
-
     #endregion
     // ────────────────────────────────────────
     #region 파랑 칩 – 대각 대시 + 낙하 공격
