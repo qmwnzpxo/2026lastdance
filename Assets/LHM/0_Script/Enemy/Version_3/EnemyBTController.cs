@@ -20,8 +20,6 @@ public class EnemyBTController : MonoBehaviour
     [Header("공격")]
     [SerializeField] protected float _attackRange;
     [SerializeField] protected float _attackCooldown;
-    [SerializeField] protected float _attackWindupTime;   // 공격 선 딜레이
-    [SerializeField] protected float _attackRecoveryTime; // 공격 후 딜레이
 
     [Header("스턴")]
     [SerializeField] protected float _stunDuration;
@@ -216,9 +214,12 @@ public class EnemyBTController : MonoBehaviour
 
     public void CancelCurrentAction() =>_bb.CancelAction();
 
-    public void ApplyStun()
+    public void ApplyStun(float duration = 0f)
     {
-        _bb.stunDuration = _stunDuration;
+        if (duration > 0f)
+            _bb.stunDuration = _stunDuration;
+        else 
+            _bb.stunDuration = duration;
         _bb.isStunned = true;
         _bb.CancelAction(); // 현재 진행 중인 액션 즉시 중단
     }

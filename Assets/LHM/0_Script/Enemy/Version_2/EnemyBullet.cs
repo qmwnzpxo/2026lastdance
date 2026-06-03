@@ -53,11 +53,12 @@ public class EnemyBullet : MonoBehaviour, IDamageable
     // ── 충돌 ────────────────────────────────────
     protected virtual void OnTriggerEnter2D(Collider2D other)
     {
+        Debug.Log($"Trigger 진입: {other.gameObject.name}, layer={other.gameObject.layer}");
+
         // 플레이어 레이어
         if (((1 << other.gameObject.layer) & playerLayer) != 0)
         {
-            OnHitPlayer(other);
-            ReturnToPool();
+            OnHitPlayer(other);            
             return;
         }
 
@@ -65,20 +66,22 @@ public class EnemyBullet : MonoBehaviour, IDamageable
         if (((1 << other.gameObject.layer) & groundLayer) != 0)
         {
             OnHitGround(other);
-            ReturnToPool();
         }
     }
 
     /// <summary>플레이어 적중 시 처리. 서브클래스에서 override 가능.</summary>
     protected virtual void OnHitPlayer(Collider2D other)
     {
-        other.GetComponent<IDamageable>()?.TakeDamage(damage);
+        other.gameObject.GetComponent<IDamageable>()?.TakeDamage(damage);
+        HitstopManager.Instance.TriggerLight();
+        ReturnToPool();
     }
 
     /// <summary>지형 적중 시 처리. 서브클래스에서 override 가능.</summary>
     protected virtual void OnHitGround(Collider2D other)
     {
         // 기본: 그냥 반환. 서브클래스에서 파열 등 추가 가능.
+        ReturnToPool();
     }
 
     // ── 풀 반환 ──────────────────────────────────

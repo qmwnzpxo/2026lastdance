@@ -68,7 +68,7 @@ public class EnemyArmAim : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (_player == null || armPivot == null) return;
+        if (_player == null || armPivot == null || isRecoil) return;
 
         // ── 위치 반동 적용 ──
         // 현재 aim 방향 반대(뒤)로 밀기
@@ -95,16 +95,22 @@ public class EnemyArmAim : MonoBehaviour
         }
         else
         {
-            targetWorldAngle = 0f;
+            targetWorldAngle = -99f;
         }
 
         float recoilSign = _isFacingRight ? 1f : -1f;
         float finalAngle = targetWorldAngle + _recoilAngleOffset * recoilSign;
-
         armPivot.rotation = Quaternion.Lerp(
             armPivot.rotation,
             Quaternion.Euler(0f, 0f, finalAngle),
             Time.deltaTime * rotationSpeed);
+
+        if (Mathf.Abs(NormalizeAngle(finalAngle)) - 
+            Mathf.Abs(NormalizeAngle(armPivot.rotation.z)) <= 0.05f)
+        {
+            isRecoil = false;
+        }
+
     }
 
     public void TriggerRecoil()
@@ -118,6 +124,7 @@ public class EnemyArmAim : MonoBehaviour
         _recoilPosOffset = 0f;
         _recoilPosTarget = recoilPushDist;
         _recoilPosRising = true;
+        isRecoil = true;
     }
 
     private void UpdateRecoil()

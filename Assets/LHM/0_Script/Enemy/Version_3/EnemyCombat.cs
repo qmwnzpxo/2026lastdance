@@ -61,7 +61,7 @@ public class EnemyCombat : MonoBehaviour
         Vector2 direction = ((Vector2)_playerTransform.position - firePos).normalized;
 
         Debug.Log($"[EnemyCombat] {name}: 공격 시작.");
-        obj.transform.SetPositionAndRotation(firePos, Quaternion.identity);
+        obj.transform.SetPositionAndRotation(firePos, Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg));
         obj.GetComponent<EnemyBullet>().Init(direction, _damage);
     }
 

@@ -58,16 +58,15 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     // ── 액션 상태 (컴포넌트 간 상호 참조용) ──
     [Header("액션 상태")]
-    [RuntimeOnly, SerializeField] public bool isDashing;
-    [RuntimeOnly, SerializeField] public bool isAttacking;
-    [RuntimeOnly, SerializeField] public bool isHit;
-    [RuntimeOnly, SerializeField] public bool isRedDashRecording;
-    [RuntimeOnly, SerializeField] public bool isRedDashPlaying;
-
+    [RuntimeOnly, SerializeField] public bool isDashing = false;
+    [RuntimeOnly, SerializeField] public bool isAttacking = false;
+    [RuntimeOnly, SerializeField] public bool isHit = false;
+    [RuntimeOnly, SerializeField] public bool isRedDashRecording = false;
+    [RuntimeOnly, SerializeField] public bool isRedDashPlaying = false;
     // ── 칩 설정 ─────────────────────────────
     [Header("칩 설정")]
     public PlayerChip currentChip = PlayerChip.pink;
-    public HashSet<PlayerChip> ownedChips = new HashSet<PlayerChip>() { PlayerChip.pink }; // 보유한 칩 종류
+    public List<PlayerChip> ownedChips = new List<PlayerChip>() { PlayerChip.pink }; // 보유한 칩 종류
 
     // ── 시간 설정 ─────────────────────────────
     public TimeCategory category = TimeCategory.Player;
@@ -102,7 +101,7 @@ public class PlayerState : MonoBehaviour, IDamageable
             GetChips(PlayerChip.blue);
         }
 
-        if (Input.GetKey(KeyCode.R))
+        if (Input.GetKeyDown(KeyCode.B))
         {
             MoveNextChip();
         }
@@ -120,7 +119,7 @@ public class PlayerState : MonoBehaviour, IDamageable
         stamina = Mathf.Clamp(stamina, 0, 100);
     }
 
-    /// <summary>게이지 소비. 잔량 부족 시 false 반환.</summary>
+    // 게이지 소비. 잔량 부족 시 false 반환
     public bool TryUseDashGauge(float amount)
     {
         if (dashGauge < amount) return false;
@@ -128,11 +127,9 @@ public class PlayerState : MonoBehaviour, IDamageable
         return true;
     }
 
-    /// <summary>
-    /// 칩 획득. 중복 획득 방지 위해 HashSet으로 관리 
-    /// </summary>
     public void GetChips(PlayerChip chip)
     {
+        if (ownedChips.Contains(chip)) return; // 이미 보유한 칩이면 무시
         ownedChips.Add(chip);
     }
 

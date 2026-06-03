@@ -219,6 +219,7 @@ namespace BTActions
             try
             {
                 float elapsed = 0f;
+                bb.isStunned = true;
 
                 while (!ct.IsCancellationRequested && elapsed < bb.stunDuration)
                 {

@@ -36,7 +36,7 @@ public class HubSaveManager : MonoBehaviour
     {
         SaveData data = BuildSaveData();
         playerState.currentChip = PlayerChip.pink;
-        playerState.ownedChips = new HashSet<PlayerChip>() { PlayerChip.pink };
+        playerState.ownedChips = new List<PlayerChip>() { PlayerChip.pink };
         SaveManager.Instance.Save(data);
         // TODO: 씬 매니저 제작후 현재 저장된 챕터에 맞는 씬으로 이동하는 코드 추가 할것
     }
