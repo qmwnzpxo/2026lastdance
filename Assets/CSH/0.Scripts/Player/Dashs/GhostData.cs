@@ -13,6 +13,6 @@ public struct GhostMoveData
 
 public struct GhostAttackData
 {
-    public float timestamp;
+    public int moveFrameIndex;
     public Quaternion rotation;
 }

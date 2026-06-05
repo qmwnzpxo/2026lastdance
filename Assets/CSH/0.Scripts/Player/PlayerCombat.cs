@@ -24,6 +24,7 @@ public class PlayerCombat : MonoBehaviour
     public float attackRepeatTime = 2;
 
     private HashSet<Collider2D> _hitEnemiesInAttack = new HashSet<Collider2D>();
+    public event Action<Quaternion> OnAttackInput;
 
     private PlayerState state;
     private PlayerAnimation ani;
@@ -86,7 +87,16 @@ public class PlayerCombat : MonoBehaviour
 
     void HandleAttack()
     {
-        if (!Input.GetMouseButtonDown(0) || state.isAttacking) return;
+        if (!Input.GetMouseButtonDown(0)) return;
+
+        if (state.isRedDashRecording)
+        {
+            OnAttackInput?.Invoke(attackTransform.rotation);
+            return;
+        }
+
+        if (!state.isAttacking) return;
+
         PerformAttack().Forget();
     }
     public void TriggerRedDashAttack(Quaternion attackRotation)
