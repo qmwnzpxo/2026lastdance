@@ -149,8 +149,8 @@ public class CameraFollow : MonoBehaviour
 
     public void SetCameraDumping(float value)
     {
-        cmZoom.GetComponent<CinemachineFollow>().TrackerSettings.PositionDamping = new Vector3(value, value, 1);
-        cmGamePlay.GetComponent<CinemachineFollow>().TrackerSettings.PositionDamping = new Vector3(value, value, 1);
+        cmZoom.gameObject.GetComponent<CinemachineFollow>().TrackerSettings.PositionDamping = new Vector3(value, value, 1);
+        cmGamePlay.gameObject.GetComponent<CinemachineFollow>().TrackerSettings.PositionDamping = new Vector3(value, value, 1);
 
     }
 #endregion

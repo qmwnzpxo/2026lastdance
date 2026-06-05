@@ -88,14 +88,14 @@ public class PlayerCombat : MonoBehaviour
     void HandleAttack()
     {
         if (!Input.GetMouseButtonDown(0)) return;
+        if (!state.isAttacking) return;
 
         if (state.isRedDashRecording)
         {
             OnAttackInput?.Invoke(attackTransform.rotation);
+            PerformAttack().Forget();
             return;
         }
-
-        if (!state.isAttacking) return;
 
         PerformAttack().Forget();
     }
