@@ -26,17 +26,17 @@ MonoBehaviour:
   secondaryColor: {r: 0.09803922, g: 0.13725491, b: 0.1764706, a: 1}
   negativeColor: {r: 1, g: 0.29411766, b: 0.29411766, a: 1}
   backgroundColor: {r: 0.09803922, g: 0.13725491, b: 0.1764706, a: 1}
-  fontLight: {fileID: 11400000, guid: 561b17b1e2e773d4dbdf4095f3b05cca, type: 2}
-  fontRegular: {fileID: 11400000, guid: 8e8f97682e668e94cb30d2e6b8e13d84, type: 2}
-  fontMedium: {fileID: 11400000, guid: 3c499bda0f839fa40ae8c42951d5779d, type: 2}
-  fontSemiBold: {fileID: 11400000, guid: 928da2220a0ff5e44aa484bdb0006131, type: 2}
-  fontBold: {fileID: 11400000, guid: e66011e4b0dfee745b0bdcceedc236fd, type: 2}
-  customFont: {fileID: 0}
+  fontLight: {fileID: 11400000, guid: 23eb380437aba214bb58c64da333598b, type: 2}
+  fontRegular: {fileID: 11400000, guid: b5c7d886567465a4e91601bd450ba72d, type: 2}
+  fontMedium: {fileID: 11400000, guid: a300235461a44fd42a3b6e9aabacff8e, type: 2}
+  fontSemiBold: {fileID: 11400000, guid: 9598e18774b0bd34b889c7e36bc32cc5, type: 2}
+  fontBold: {fileID: 11400000, guid: 1de5d4c77590ca04ea388199c6b0ab64, type: 2}
+  customFont: {fileID: 11400000, guid: 7db2c7ac2dfa0bf44a1456ff02ca9787, type: 2}
   enableLocalization: 0
   localizationSettings: {fileID: 11400000, guid: 2cbd73cf0fc79bf4ab2e27e18b1ba7c8, type: 2}
   currentLanguage: {fileID: 11400000, guid: 8d3376ccffec1fb4eb27e25b3629b305, type: 2}
   brandLogo: {fileID: 21300000, guid: 78ca0ac98a59e2d49a61da6d805033a7, type: 3}
-  gameLogo: {fileID: 21300000, guid: db29e29da505c4348be353a9303e4de2, type: 3}
+  gameLogo: {fileID: 21300000, guid: 896818a86dfb76543854fe35c3f3d1a5, type: 3}
   enableSplashScreen: 1
   showSplashScreenOnce: 1
   pakType: 0
