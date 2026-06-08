@@ -12,6 +12,8 @@ public partial class PlayerDash : MonoBehaviour
     SpriteRenderer GhostSprite;
     SpriteRenderer playerSprite;
 
+    PlayerCombat combat;
+
     private int _currentMoveFrame = 0;
 
     void StartRedDash()
@@ -55,7 +57,8 @@ public partial class PlayerDash : MonoBehaviour
                 moveFrameIndex = _currentMoveFrame,
                 rotation = rot
             });
-        var combat = GetComponent<PlayerCombat>();
+        if(combat == null)
+            combat = GetComponent<PlayerCombat>();
         combat.OnAttackInput += OnAttack;
         try
         {   // 기록 루프 
@@ -122,7 +125,8 @@ public partial class PlayerDash : MonoBehaviour
         tmg.SetPlayerTimeScale(1.2f);
         tmg.SetEnemyTimeScale(0.8f);
 
-        var combat = GetComponent<PlayerCombat>();
+        if (combat == null)
+            combat = GetComponent<PlayerCombat>();
 
         float replayTimer = 0f;
         int moveIndex = 0;
@@ -135,7 +139,7 @@ public partial class PlayerDash : MonoBehaviour
             {
                 if (replayTimer > 0.08f && state.isHit) break;
 
-                replayTimer += Time.unscaledDeltaTime * 1.2f;
+                replayTimer += tmg.PlayerFixedDeltaTime;
 
                 // 위치 재생
                 if (moveIndex < _ghostMoveRecords.Count - 1)
@@ -167,7 +171,7 @@ public partial class PlayerDash : MonoBehaviour
                     combat.TriggerRedDashAttack(atk.rotation);
                 }
 
-                await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                await CustomTime.WaitForScaledSeconds(tmg.PlayerFixedDeltaTime, TimeCategory.Player, ct);
             }
         }
         finally

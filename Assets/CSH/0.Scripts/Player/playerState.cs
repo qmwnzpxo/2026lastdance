@@ -22,11 +22,12 @@ public class PlayerState : MonoBehaviour, IDamageable
     // ── 스탯 ──────────────────────────────────
     [Header("스탯")]
     public float damage = 1f;
-    public float HP = 10;
-    public float MaxHP = 10;
+    public float currentHP = 10;
+    public float maxHP = 100f;
     public float stamina = 100f;
     public float maxStamina = 100f;
-    [RuntimeOnly, SerializeField] public bool isDie = false;
+    [RuntimeOnly, SerializeField] public bool isDead = false;
+    private float invincibilityTime = 0.3f;
 
     // ── 대쉬 게이지 ───────────────────────────
     [Header("대쉬 게이지")]
@@ -135,33 +136,28 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public void InitState()
     {
-        HP = MaxHP;
+        currentHP = maxHP;
         dashGauge = maxDashGauge;
         stamina = maxStamina;
         GetChips(PlayerChip.pink);
     }
 
-    public void Heal(float amount)
-    {
-        if(isDie) return;
-        HP = Mathf.Min(HP + amount, MaxHP);
-    }
-
     public void TakeDamage(float dmg)
     {
+        if(isDead) return;
         if (isDashing || isRedDashRecording) return;
-        if (isHit || isDie) return;
-        HP -= dmg;
-        if (HP <= 0)
+        if (isHit)
+        currentHP -= dmg;
+        if (currentHP <= 0)
             Die();
         else
         {
             //HitstopManager.Instance.TriggerHitstop();
-            StartImmunity();
+            StartImmunity(invincibilityTime);
         }
     }
 
-    public void StartImmunity(float duration = 0.3f)
+    public void StartImmunity(float duration)
     {
         //if (isHit) return;
 
@@ -186,18 +182,43 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     void Die()
     {
-        Debug.Log("Player has died.");
-        {
-            //playerMove.CancelAllTask();
+        if (isDead)
+            return;
 
-        }
+        isDead = true;
+        Debug.Log("Player died!");
     }
 
     public void Revive()
     {
-        isDie = false;
+        isDead = false;
         InitState();
     }
+
+    public void Heal(float amount)
+    {
+        if (isDead)
+            return;
+
+        currentHP = Mathf.Min(currentHP + amount, maxHP);
+        Debug.Log($"Player healed {amount}. Current HP: {currentHP}/{maxHP}");
+    }
+
+    public float GetCurrentHP()
+    {
+        return currentHP;
+    }
+
+    public float GetMaxHP()
+    {
+        return maxHP;
+    }
+
+    public bool IsDead()
+    {
+        return isDead;
+    }
+
     private void MoveNextChip()
     {
         PlayerChip? nextChip = ownedChips

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -110,6 +110,7 @@ public class BossAttackPatterns : MonoBehaviour
     [Header("판정 박스 설정")]
     [SerializeField] private Transform stompHitBox;
     [SerializeField] private Transform chargeHitBox;
+    [SerializeField] private LayerMask playerLayer;
 
     [Header("곡사포 파편 프리팹")]
     [SerializeField] private GameObject airBurstPelletPrefab;   // AirBurst 파편 프리팹
@@ -125,6 +126,9 @@ public class BossAttackPatterns : MonoBehaviour
         
         if (rb2d == null)
             rb2d = GetComponent<Rigidbody2D>();
+
+        if(playerLayer == 0)
+            playerLayer = LayerMask.GetMask("player");
     }
 
     /// <summary>
@@ -246,7 +250,7 @@ public class BossAttackPatterns : MonoBehaviour
             Collider2D[] hitTargets = Physics2D.OverlapBoxAll(
                 stompHitBox.position,
                 stompHitBox.localScale,
-                0f
+                0f, playerLayer
             );
 
             foreach (Collider2D target in hitTargets)
@@ -254,7 +258,7 @@ public class BossAttackPatterns : MonoBehaviour
                 if (target.CompareTag("Player"))
                 {
                     // 플레이어에게 데미지 적용
-                    target.GetComponent<PlayerHealth>()?.TakeDamage(stompDamage);
+                    target.GetComponent<IDamageable>()?.TakeDamage(stompDamage);
                 }
             }
         }

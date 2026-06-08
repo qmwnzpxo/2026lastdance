@@ -1,9 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 플레이어 체력 관리 스크립트
 /// </summary>
-public class PlayerHealth : MonoBehaviour
+public class PlayerHealth : MonoBehaviour, IDamageable
 {
     [Header("플레이어 체력 설정")]
     [SerializeField] private float maxHP = 100f;

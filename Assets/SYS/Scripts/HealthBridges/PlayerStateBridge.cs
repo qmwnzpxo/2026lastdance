@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 //  PlayerHealthBarBridge.cs
 //
 //  PlayerState ↔ UnifiedHealthBarVisual 연결 브릿지.
@@ -72,7 +72,7 @@ public class PlayerStateBridge : MonoBehaviour
             hpBar.SetInnerGlow(hpInnerGlow);
             hpBar.SetShimmer(hpShimmer);
             SyncHP();
-            prevHP = playerState.HP;
+            prevHP = playerState.currentHP;
         }
 
         // 스태미나 바 초기화
@@ -103,13 +103,13 @@ public class PlayerStateBridge : MonoBehaviour
         // ── HP ────────────────────────────────────────────────────────────────
         if (hpBar != null)
         {
-            float hp = playerState.HP;
+            float hp = playerState.currentHP;
             if (!Mathf.Approximately(hp, prevHP))
             {
                 float delta = prevHP - hp;
                 SyncHP();
                 if (hpShake && delta > 0f)
-                    hpBar.PlayShakeByDamage(delta, playerState.MaxHP);
+                    hpBar.PlayShakeByDamage(delta, playerState.maxHP);
                 prevHP = hp;
             }
         }
@@ -141,8 +141,8 @@ public class PlayerStateBridge : MonoBehaviour
 
     void SyncHP()
     {
-        float ratio = playerState.MaxHP > 0f
-            ? Mathf.Clamp01(playerState.HP / playerState.MaxHP)
+        float ratio = playerState.maxHP > 0f
+            ? Mathf.Clamp01(playerState.currentHP / playerState.maxHP)
             : 0f;
         hpBar.SetFill(ratio);
     }
@@ -169,7 +169,7 @@ public class PlayerStateBridge : MonoBehaviour
     public void ForceSync()
     {
         if (playerState == null) return;
-        if (hpBar      != null) { SyncHP();      prevHP      = playerState.HP; }
+        if (hpBar      != null) { SyncHP();      prevHP      = playerState.currentHP; }
         if (staminaBar != null) { SyncStamina(); prevStamina = playerState.stamina; }
         if (dashBar    != null) { SyncDash();    prevDash    = playerState.DashGauge; }
     }

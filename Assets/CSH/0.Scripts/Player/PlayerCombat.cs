@@ -88,7 +88,7 @@ public class PlayerCombat : MonoBehaviour
     void HandleAttack()
     {
         if (!Input.GetMouseButtonDown(0)) return;
-        if (!state.isAttacking) return;
+        if (state.isAttacking) return;
 
         if (state.isRedDashRecording)
         {
@@ -108,9 +108,10 @@ public class PlayerCombat : MonoBehaviour
         Vector2 attackPos = (Vector2)attackTransform.position
                           + (Vector2)attackTransform.right * attackBoxDistance;
 
-        // 즉시 공격 박스 실행 (코루틴 대기 없이 1회 판정)
-        ExecuteAttackBox(attackPos);
-        _hitEnemiesInAttack.Clear(); // 다음 연타를 위해 바로 클리어
+
+        PerformAttack().Forget();
+        //ExecuteAttackBox(attackPos);
+        //_hitEnemiesInAttack.Clear(); // 다음 연타를 위해 바로 클리어
     }
 
     private async UniTaskVoid PerformAttack()

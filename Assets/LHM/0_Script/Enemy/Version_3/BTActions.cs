@@ -2,7 +2,7 @@
 using System.Threading;
 using UnityEngine;
 
-namespace BTActions
+namespace EnemyVersion3
 {
     public class ActionRetreat : BTAsyncAction
     {

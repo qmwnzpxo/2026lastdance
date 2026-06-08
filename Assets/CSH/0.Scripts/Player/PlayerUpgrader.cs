@@ -108,8 +108,8 @@ public class PlayerUpgrader : MonoBehaviour
         switch (stat)
         {
             case UpgradeStat.MaxHP:
-                playerState.MaxHP = data.baseMaxHP + total;
-                playerState.HP = Mathf.Min(playerState.HP, playerState.MaxHP);
+                playerState.maxHP = data.baseMaxHP + total;
+                playerState.currentHP = Mathf.Min(playerState.currentHP, playerState.maxHP);
                 break;
             case UpgradeStat.MaxStamina:
                 playerState.maxStamina = data.baseMaxStamina + total;

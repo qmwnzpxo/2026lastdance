@@ -29,14 +29,14 @@ public class EnemyBlackboard
     public float chaseEndDuration = 1f;
 
     // ── 공격 ────────────────────────────────────
-    public float attackRange = 5f;
-    public float attackCooldown = 2f;
+    public float attackRange;
+    public float attackCooldown;
     public float lastAttackTime = float.MinValue;
 
     // ── 스턴 ────────────────────────────────────
     public bool isStunned = false;
     public float stunDuration = 1f;
-    public float stunDecelerationRate = 1f; // 스턴 지속시간 감소 가속도
+    public float stunDecelerationRate = 1f; // 스턴 지속시간 감소 가속도(기계들의 경우 일종의 롤 강인함 개념)
 
     // ── 비동기 액션 관리 ────────────────────────
     public string runningActionId = null;

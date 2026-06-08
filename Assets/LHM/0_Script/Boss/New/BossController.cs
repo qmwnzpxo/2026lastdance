@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using BossBT;
@@ -38,7 +38,7 @@ public enum AttackPattern
 /// FSM: 보스 생애주기와 페이즈 전환 관리
 /// BT: Attacking 상태 내부에서 공격 패턴 결정
 /// </summary>
-public class BossController : MonoBehaviour
+public class BossController : MonoBehaviour, IDamageable
 {
     [Header("보스 기본 스탯")]
     [SerializeField] private float maxHP = 500f;

@@ -17,8 +17,8 @@ public class RangerEnemyBTController : EnemyBTController, IMoveable
 
     // ── 후퇴 ────────────────────────────────────
     [Header("후퇴")]
-    public float _retreatTriggerRange = 0;
-    public float _retreatDistance = 0;
+    [SerializeField] private float _retreatTriggerRange = 0;
+    [SerializeField] private float _retreatDistance = 0;
 
     // ── 팔 회전 ─────────────────────────────────
     protected EnemyArmAim _armAim;

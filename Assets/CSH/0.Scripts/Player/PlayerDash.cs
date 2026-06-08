@@ -43,7 +43,7 @@ public partial class PlayerDash : MonoBehaviour
     // ── 공용 설정 ────────────────────────────
     [Header("공용")]
     [SerializeField] private Vector2 attackBoxSize = new Vector2(1f, 1f);  // Sweep 판정 크기
-    [RuntimeOnly] public float DashAttackBoxSize { set { attackBoxSize.x = value; attackBoxSize.y = value - 0.6f; } }
+    [RuntimeOnly] public float DashAttackBoxSize { set { attackBoxSize.x = value; attackBoxSize.y = value; } }
     [SerializeField] private LayerMask enemyLayer;
     private LayerMask bulletLayer;
     private LayerMask combined;
@@ -77,6 +77,7 @@ public partial class PlayerDash : MonoBehaviour
     private PlayerState state;
     private PlayerMove playerMove;
     private Rigidbody2D rb;
+    private PolygonCollider2D col;
     private LineRenderer line;
     private PlayerAnimation ani;
     private Camera mainCamera;
@@ -93,6 +94,7 @@ public partial class PlayerDash : MonoBehaviour
         playerMove = GetComponent<PlayerMove>();
         line = GetComponent<LineRenderer>();
         ani = GetComponent<PlayerAnimation>();
+        col = GetComponent<PolygonCollider2D>();
 
         if (enemyLayer == 0)
             enemyLayer = LayerMask.GetMask("enemy");
@@ -249,7 +251,7 @@ public partial class PlayerDash : MonoBehaviour
         await CustomTime.WaitForScaledSeconds(0.06f, state.category, cts);
         
         dashTargetPosition = groundHit.collider != null
-            ? groundHit.point - dashDirection * 0.05f
+            ? groundHit.point - dashDirection
             : origin + dashDirection * dashRange;
 
 
@@ -325,7 +327,7 @@ public partial class PlayerDash : MonoBehaviour
 
         dir /= distance;
         RaycastHit2D[] hits = Physics2D.BoxCastAll(
-            from, attackBoxSize + Vector2.one * 0.1f, 0f, dir, distance, combined);
+            from, attackBoxSize, 0f, dir, distance, combined);
 
         foreach (RaycastHit2D hit in hits)
         {
