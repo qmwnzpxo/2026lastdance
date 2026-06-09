@@ -94,6 +94,10 @@ public class PlayerMove : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         state = GetComponent<PlayerState>();
         ani = GetComponent<PlayerAnimation>();
+        if (state == null)
+        {
+            state = GetComponent<PlayerState>();
+        }
 
         timeScaleReceiver = GetComponent<TimeScaleReceiver>();
         timeScaleReceiver._animator = ani.ani;
@@ -112,10 +116,6 @@ public class PlayerMove : MonoBehaviour
         groundOnlyLayer = LayerMask.GetMask("groundOnly");
         walkableLayer = groundLayer | groundOnlyLayer;
 
-        if (state == null)
-        {
-            state=GetComponent<PlayerState>();
-        }
 
         state.OnDashStopped += OnDashStopped;
     }

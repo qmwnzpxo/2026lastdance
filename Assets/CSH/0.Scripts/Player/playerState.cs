@@ -96,13 +96,14 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public void Update()
     {
-        if(Input.GetKey(KeyCode.LeftShift)&&Input.GetKeyDown(KeyCode.G))
+#if UNITY_EDITOR
+        if (Input.GetKey(KeyCode.LeftShift)&&Input.GetKeyDown(KeyCode.G))
         {
             GetChips(PlayerChip.red);
             GetChips(PlayerChip.green);
             GetChips(PlayerChip.blue);
         }
-
+#endif
         if (Input.GetKeyDown(KeyCode.B))
         {
             MoveNextChip();
@@ -145,9 +146,8 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public void TakeDamage(float dmg)
     {
-        if(isDead) return;
+        if (isDead || isHit) return;
         if (isDashing || isRedDashRecording) return;
-        if (isHit)
         currentHP -= dmg;
         if (currentHP <= 0)
             Die();

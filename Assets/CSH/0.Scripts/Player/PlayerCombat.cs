@@ -93,7 +93,6 @@ public class PlayerCombat : MonoBehaviour
         if (state.isRedDashRecording)
         {
             OnAttackInput?.Invoke(attackTransform.rotation);
-            PerformAttack().Forget();
             return;
         }
 
