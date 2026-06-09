@@ -399,7 +399,8 @@ namespace Michsky.UI.Heat
                 if (i == currentPanelIndex)
                     continue;
 
-                panels[i].panelObject.gameObject.SetActive(false);
+                if (panels[i] != null && panels[i].panelObject != null)
+                    panels[i].panelObject.gameObject.SetActive(false);
             }
         }
 
