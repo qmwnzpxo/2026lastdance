@@ -69,7 +69,7 @@ public class TutorialManager : MonoBehaviour
             () => Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame,
             // Step 5: 우클릭(일섬)
             () => Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame,
-            // Step 6: 적섬멸 완료시
+            // Step 6: 적섬멸 완료시 -- 임시로 m키 입력으로 대체. 이하 동일(추후 수정 필요)
             () => Keyboard.current != null && Keyboard.current.mKey.wasPressedThisFrame,
             // Step 7: 벽 붙기 완료시
             () => Keyboard.current != null && Keyboard.current.mKey.wasPressedThisFrame,
