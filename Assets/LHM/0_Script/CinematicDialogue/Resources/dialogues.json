@@ -1,0 +1,30 @@
+[
+  {
+    "id": "intro_01",
+    "speakerName": "제니스",
+    "text": "안녕하세요. <speed=0.05>[wait:0.5] 저는 제니스입니다. [click]",
+    "nextIds": ["intro_02"],
+    "jumpId": ""
+  },
+  {
+    "id": "intro_02",
+    "speakerName": "제니스",
+    "text": "오늘 당신을 만나게 되어 기쁩니다. <speed=0.1>[event:CameraShake] [wait:1.0] 이제 시작해볼까요? [click]",
+    "nextIds": ["intro_03"],
+    "jumpId": ""
+  },
+  {
+    "id": "intro_03",
+    "speakerName": "리티",
+    "text": "[wait:0.3] 안녕! 나는 리티야. <pulse> 잘 지내니? [click] [jump:ending_01]",
+    "nextIds": [],
+    "jumpId": "ending_01"
+  },
+  {
+    "id": "ending_01",
+    "speakerName": "시스템",
+    "text": "[wait:1.0] 대화가 종료되었습니다. <speed=0.03> 감사합니다!",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

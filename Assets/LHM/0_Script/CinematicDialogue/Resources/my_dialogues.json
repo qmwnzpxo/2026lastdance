@@ -1,0 +1,30 @@
+[
+  {
+    "id": "test_01",
+    "speakerName": "테스트1",
+    "text": "안녕! 나는 테스트 캐릭터야. [click]",
+    "nextIds": ["test_02"],
+    "jumpId": ""
+  },
+  {
+    "id": "test_02",
+    "speakerName": "테스트2",
+    "text": "[wait:0.5] 처음 만나는군요! [click]",
+    "nextIds": [],
+    "jumpId": ""
+  },
+  {
+    "id": "custom_01",
+    "speakerName": "플레이어",
+    "text": "<speed=0.1>타이핑이 느린 대사입니다... [click]",
+    "nextIds": ["custom_02"],
+    "jumpId": ""
+  },
+  {
+    "id": "custom_02",
+    "speakerName": "NPC",
+    "text": "[wait:1.0] 1초 기다린 후 나타나는 대사! [event:PlaySound] [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]
