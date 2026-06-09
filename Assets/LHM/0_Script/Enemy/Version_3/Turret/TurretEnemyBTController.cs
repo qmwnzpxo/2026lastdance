@@ -1,6 +1,5 @@
-﻿using BTActions;
-using BTConditions;
-using UnityEngine;
+﻿using UnityEngine;
+using EnemyVersion3;
 
 [RequireComponent(typeof(EnemyArmAim))]
 public class  TurretEnemyBTController : EnemyBTController

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Rigidbody2D),typeof(TimeScaleReceiver))]
 public class EnemyBullet : MonoBehaviour, IDamageable
 {
     // ── 설정 ────────────────────────────────────
@@ -19,11 +19,13 @@ public class EnemyBullet : MonoBehaviour, IDamageable
     protected float traveledDistance;
     protected Rigidbody2D rb;
     protected CustomTimeManager customTimeManager;
+    protected TimeScaleReceiver timeScaleReceiver;
 
     // ── 초기화 ──────────────────────────────────
     protected virtual void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        timeScaleReceiver = GetComponent<TimeScaleReceiver>();
         customTimeManager = CustomTimeManager.Instance;
         rb.gravityScale = 0f; // 기본: 중력 없음
     }
@@ -44,7 +46,7 @@ public class EnemyBullet : MonoBehaviour, IDamageable
     // ── 이동 / 거리 체크 ─────────────────────────
     protected virtual void FixedUpdate()
     {
-        traveledDistance += speed * Time.fixedDeltaTime;
+        traveledDistance += speed * customTimeManager.EnemyFixedDeltaTime;
 
         if (traveledDistance >= maxTravelDistance)
             ReturnToPool();

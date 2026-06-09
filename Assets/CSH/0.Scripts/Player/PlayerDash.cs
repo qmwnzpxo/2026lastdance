@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using CSHPlayer;
 
 // ※ Script Execution Order: PlayerDash = -1 로 설정할 것
 //   (Project Settings > Script Execution Order)
@@ -101,9 +102,13 @@ public partial class PlayerDash : MonoBehaviour
         if (bulletLayer == 0)
             bulletLayer = LayerMask.GetMask("enemyBullet");
         combined = enemyLayer | bulletLayer;
-        if (Ghost == null)
+        if (Ghost == null && ghostSprite == null)
+        {
             Ghost = new GameObject("PlayerGhost");
-        GhostSprite = Ghost.AddComponent<SpriteRenderer>();
+            ghostSprite = Ghost.AddComponent<SpriteRenderer>();
+        }
+        if(ghostSprite == null)
+            ghostSprite = Ghost.GetComponent<SpriteRenderer>();
         playerSprite = playerMove.SpriteRenderer;
     }
 
@@ -186,6 +191,8 @@ public partial class PlayerDash : MonoBehaviour
                 _greenDashBuffered = true;
                 return;
             }
+
+            if (state.isRedDashRecording || state.isRedDashPlaying) return;
 
             playerMove.ResetWallState();
             ani.Attack_flash();

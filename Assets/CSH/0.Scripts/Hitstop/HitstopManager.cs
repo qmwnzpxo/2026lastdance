@@ -84,6 +84,6 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
         // 진행 중인 비동기 작업을 취소하고 timeScale을 정상으로 복구
         _cts?.Cancel();
         _cts?.Dispose();
-        Time.timeScale = 1f;
+        CustomTimeManager.Instance?.ResetHitstopMultiplier();
     }
 }

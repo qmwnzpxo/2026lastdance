@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using CSHPlayer;
 
 /// <summary>
 /// Red Dash 시스템 구현
@@ -9,8 +10,10 @@ using UnityEngine;
 /// </summary>
 public partial class PlayerDash : MonoBehaviour
 {
-    SpriteRenderer GhostSprite;
     SpriteRenderer playerSprite;
+    
+    SpriteRenderer ghostSprite;
+    Rigidbody2D ghostRb;
 
     PlayerCombat combat;
 
@@ -38,8 +41,8 @@ public partial class PlayerDash : MonoBehaviour
         // 시작 위치 저장 및 잔상 초기화
         Vector2 startPosition = transform.position;
         Ghost.transform.position = startPosition;
-        GhostSprite.sprite = playerSprite.sprite;
-        GhostSprite.color = new Color(1f, 1f, 1f, 0.4f);
+        ghostSprite.sprite = playerSprite.sprite;
+        ghostSprite.color = new Color(1f, 1f, 1f, 0.4f);
 
         // 본체(유령 역할)를 붉고 반투명하게 변경
         Color originalColor = playerSprite.color;
@@ -111,6 +114,7 @@ public partial class PlayerDash : MonoBehaviour
             combat.OnAttackInput -= OnAttack;
             state.isRedDashRecording = false;
             playerSprite.color = originalColor;
+            Ghost.SetActive(false);
         }
     }
     private async UniTask PlaybackRoutine(CancellationToken ct)

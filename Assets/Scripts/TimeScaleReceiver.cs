@@ -1,6 +1,6 @@
 ﻿using System;
-using TMPro.Examples;
 using UnityEngine;
+using CSHPlayer;
 
 /// <summary>
 /// Player / Enemy / Clone 오브젝트에 부착.

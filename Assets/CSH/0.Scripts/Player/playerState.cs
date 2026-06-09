@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using CSHPlayer;
 
 public enum PlayerChip
 {

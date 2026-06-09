@@ -121,8 +121,11 @@ public class TempSaveManager : PersistentSingleton<TempSaveManager>
         // 진행도
         saveData.currentStage++;
 
-        // 카르마 합산
+        // 합산
         saveData.karma += _data.pendingKarma;
+        saveData.totalShard += _data.pendingShard;
+        //saveData.brutalChoiceCount += _data.choices.
+
 
         // 선택지 누적 (중복 choiceId는 덮어씀)
         foreach (var choice in _data.choices)
