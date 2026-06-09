@@ -409,7 +409,7 @@ public class PlayerMove : MonoBehaviour
     {
         bool justTouchedCeiling = isTouchingCeiling && !wasTouchingCeiling;
 
-        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing))
+        if (justTouchedCeiling && !state.isOnCeiling && (state.isDashing || _dashJustStopped))
         {
             state.isOnCeiling = true;
             RestoreGravity();

@@ -1,7 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using CSHPlayer;
 
@@ -9,7 +8,7 @@ using CSHPlayer;
 //   (Project Settings > Script Execution Order)
 //   → PlayerDash.FixedUpdate 가 PlayerMove.FixedUpdate 보다 먼저 실행되어야 return 분기가 정상 동작
 /// <summary>
-/// 플레이어 대쉬 시스템 총괄 스크립트?
+/// 플레이어 대쉬 
 /// - 핑크 칩: 기본 대쉬
 /// </summary>
 [DefaultExecutionOrder(-1)]
@@ -25,8 +24,9 @@ public partial class PlayerDash : MonoBehaviour
     [Header("빨강 칩 - 프로-모션")]
     [SerializeField] private float redRecordDuration = 5f;
     [SerializeField] private float redRecordFPS = 30f;
-    private List<GhostMoveData> _ghostMoveRecords = new List<GhostMoveData>();
-    private List<GhostAttackData> _ghostAttackRecords = new List<GhostAttackData>();
+    private List<GhostMoveData> moveRecords = new List<GhostMoveData>();
+    private List<GhostEventData> eventRecords = new List<GhostEventData>();
+    private List<EnemySnapshotData> enemySnapshots = new List<EnemySnapshotData>();
     [SerializeField] private GameObject Ghost;
     // ── 초록 칩 설정 ─────────────────────────
     [Header("초록 칩 - 3연 돌진")]
@@ -116,6 +116,7 @@ public partial class PlayerDash : MonoBehaviour
     {
         // Awake 이후 PlayerMove.Rb 접근이 안전
         rb = playerMove.Rb;
+        Ghost.SetActive(false);
     }
 
     void Update()
@@ -236,7 +237,8 @@ public partial class PlayerDash : MonoBehaviour
     private void ExecutePinkDash(Vector2 dir)
     {
         if (!state.TryUseDashGauge(state.DashCost)) return;
-        
+        if (state.isDashing) return;
+
         _pinkDashCts?.Cancel();
         _pinkDashCts?.Dispose();
         _pinkDashCts = new CancellationTokenSource();

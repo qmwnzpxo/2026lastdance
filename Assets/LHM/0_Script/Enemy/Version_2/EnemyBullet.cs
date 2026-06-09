@@ -26,8 +26,11 @@ public class EnemyBullet : MonoBehaviour, IDamageable
     {
         rb = GetComponent<Rigidbody2D>();
         timeScaleReceiver = GetComponent<TimeScaleReceiver>();
-        customTimeManager = CustomTimeManager.Instance;
         rb.gravityScale = 0f; // 기본: 중력 없음
+    }
+    protected void Start()
+    {
+        customTimeManager = CustomTimeManager.Instance;
     }
 
     /// <summary>

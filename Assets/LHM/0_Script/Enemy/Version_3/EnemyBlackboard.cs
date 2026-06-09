@@ -1,4 +1,4 @@
-﻿using EnemyVersion3.Interfaces;
+﻿using EnemyVersion3;
 using System.Threading;
 using UnityEngine;
 

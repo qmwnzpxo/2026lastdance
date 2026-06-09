@@ -30,13 +30,18 @@ public class EnemyCombat : MonoBehaviour
     public async UniTask ExecuteAttack(CancellationToken ct)
     {
         _isAttack = true;
-        await UniTask.WaitForSeconds(_preDelay, cancellationToken: ct);
+        try
+        {
+            await UniTask.WaitForSeconds(_preDelay, cancellationToken: ct);
 
-        ct.ThrowIfCancellationRequested();
-        Shoot();
-
-        await UniTask.WaitForSeconds(_postDelay, cancellationToken: ct);
-        _isAttack = false;
+            ct.ThrowIfCancellationRequested();
+            Shoot();
+            await UniTask.WaitForSeconds(_postDelay, cancellationToken: ct);
+        }
+        finally
+        {
+            _isAttack = false;
+        }
     }
 
     protected virtual void Shoot()

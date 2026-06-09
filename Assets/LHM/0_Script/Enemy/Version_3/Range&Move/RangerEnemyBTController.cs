@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using EnemyVersion3.Interfaces;
+using EnemyVersion3;
 
 [RequireComponent(typeof(EnemyArmAim))]
 public class RangerEnemyBTController : EnemyBTController, IMoveable

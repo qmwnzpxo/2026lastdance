@@ -1,5 +1,4 @@
-﻿using EnemyVersion3.Interfaces;
-using EnemyVersion3;
+﻿using EnemyVersion3;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D), typeof(TimeScaleReceiver))]
@@ -215,10 +214,7 @@ public class EnemyBTController : MonoBehaviour
 
     public void ApplyStun(float duration = 0f)
     {
-        if (duration > 0f)
-            _bb.stunDuration = _stunDuration;
-        else 
-            _bb.stunDuration = duration;
+        _bb.stunDuration = duration > 0f ? duration : _stunDuration;
         _bb.isStunned = true;
         _bb.CancelAction(); // 현재 진행 중인 액션 즉시 중단
     }

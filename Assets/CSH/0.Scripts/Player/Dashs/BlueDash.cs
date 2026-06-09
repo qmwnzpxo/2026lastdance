@@ -112,33 +112,39 @@ public partial class PlayerDash : MonoBehaviour
     private async UniTaskVoid BlueFallRoutine(CancellationToken ct)
     {
         var tmg = CustomTimeManager.Instance;
-
-        while (!ct.IsCancellationRequested && _blueFalling)
+        try
         {
-            float step = blueFallSpeed * tmg.PlayerFixedDeltaTime;
-            Vector2 cur = rb.position;
-            Vector2 next = cur + Vector2.down * step;
-
-            // 고속 낙하 시 지형 관통 방지: BoxCast로 착지 감지
-            RaycastHit2D hit = Physics2D.BoxCast(
-                cur,
-                playerMove.GroundCheckSize,
-                0f,
-                Vector2.down,
-                step + 0.1f,
-                playerMove.GroundLayer);
-
-            if (hit.collider != null)
+            while (!ct.IsCancellationRequested && _blueFalling)
             {
-                // 착지 지점에 딱 맞춰 이동 후 강타
-                rb.MovePosition(new Vector2(cur.x, hit.point.y + playerMove.GroundCheckSize.y * 0.5f));
-                await UniTask.WaitForFixedUpdate(cancellationToken: ct);
-                BlueSlamLand();
-                return;
-            }
+                float step = blueFallSpeed * tmg.PlayerFixedDeltaTime;
+                Vector2 cur = rb.position;
+                Vector2 next = cur + Vector2.down * step;
 
-            rb.MovePosition(next);
-            await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                // 고속 낙하 시 지형 관통 방지: BoxCast로 착지 감지
+                RaycastHit2D hit = Physics2D.BoxCast(
+                    cur,
+                    playerMove.GroundCheckSize,
+                    0f,
+                    Vector2.down,
+                    step + 0.1f,
+                    playerMove.GroundLayer);
+
+                if (hit.collider != null)
+                {
+                    // 착지 지점에 딱 맞춰 이동 후 강타
+                    rb.MovePosition(new Vector2(cur.x, hit.point.y + playerMove.GroundCheckSize.y * 0.5f));
+                    await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+                    BlueSlamLand();
+                    return;
+                }
+
+                rb.MovePosition(next);
+                await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+            }
+        }
+        finally
+        {
+            _blueFalling = false;
         }
     }
 

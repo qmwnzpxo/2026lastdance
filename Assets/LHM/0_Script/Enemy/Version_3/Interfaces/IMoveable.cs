@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 
-namespace EnemyVersion3.Interfaces
+namespace EnemyVersion3
 {
     public interface IMoveable
     {

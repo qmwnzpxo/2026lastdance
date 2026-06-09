@@ -61,7 +61,12 @@ namespace EnemyVersion3
 
             try
             {
-                if(bb.enemyCombat._isAttack) return;
+                if (bb.enemyCombat._isAttack)
+                {
+                    bb.actionCompleted = true;
+                    bb.lastActionResult = NodeState.Success;
+                    return;
+                }
                 Debug.Log($"[BT Action attack] executeattack called");
                 await bb.enemyCombat.ExecuteAttack(ct);
 
