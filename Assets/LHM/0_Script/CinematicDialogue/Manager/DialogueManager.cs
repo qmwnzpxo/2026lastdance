@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -31,15 +31,18 @@ namespace DialogSystem.CinematicDialogue
         private float _currentTypeSpeed = 0.05f;  // 기본 타이핑 속도 (글자당 초)
         private const float DEFAULT_TYPE_SPEED = 0.05f;
 
+        // 싱글톤 설정
+        public static DialogueManager Instance { get; private set; }
+
         private void Awake()
         {
-            // 싱글톤 패턴 (선택사항)
-            // if (Instance != null && Instance != this)
-            // {
-            //     Destroy(gameObject);
-            //     return;
-            // }
-            // Instance = this;
+            //싱글톤 패턴(선택사항)
+             if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
 
             _state = new DialoguePlaybackState();
             LoadDatabase();
@@ -73,12 +76,20 @@ namespace DialogSystem.CinematicDialogue
         /// <summary>
         /// 주어진 ID의 대사부터 재생을 시작한다.
         /// </summary>
-        public async UniTask PlayDialogueAsync(string dialogueId, CancellationToken externalCt = default)
+        public async UniTask PlayDialogueAsync
+            (string dialogueId, Transform spawnPoint = null, CancellationToken externalCt = default)
         {
             _playbackCts?.Cancel();
             _playbackCts?.Dispose();
             _playbackCts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
             var ct = _playbackCts.Token;
+
+            // 말풍선 등장 위치
+            if (spawnPoint != null && _displayText != null)
+            {
+                Canvas canvas = _displayText.GetComponentInParent<Canvas>();
+                if (canvas != null) canvas.transform.position = spawnPoint.position;
+            }
 
             DialogueEntry entry = _database.FindDialogue(dialogueId);
             if (entry == null)
