@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -46,7 +46,7 @@ namespace DialogSystem.CinematicDialogue
             try
             {
                 // "intro_01" 부터 재생 시작
-                await _dialogueManager.PlayDialogueAsync("intro_01", _exampleCts.Token);
+                await _dialogueManager.PlayDialogueAsync("intro_01", externalCt: _exampleCts.Token);
             }
             finally
             {
