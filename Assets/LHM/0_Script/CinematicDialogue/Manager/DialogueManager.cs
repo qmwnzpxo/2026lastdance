@@ -18,7 +18,7 @@ namespace DialogSystem.CinematicDialogue
         public static DialogueManager Instance { get; private set; }
 
         [SerializeField] private GameObject _dialoguePanel; // 하단 대화창
-        [SerializeField] private TextAsset _dialogueJsonAsset;  // JSON 리소스
+        //[SerializeField] private TextAsset _dialogueJsonAsset;  // JSON 리소스. 삭제 예정
         [SerializeField] private TextMeshProUGUI _displayText;  // 텍스트 표시용 TMP
         [SerializeField] private TextMeshProUGUI _speakerNameText;  // 화자 이름 표시용
 
@@ -46,7 +46,7 @@ namespace DialogSystem.CinematicDialogue
             Instance = this;
 
             _state = new DialoguePlaybackState();
-            LoadDatabase();
+            //LoadDatabase(); 삭제 예정
 
             // 하단 대화창 끄기
             if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
@@ -55,17 +55,17 @@ namespace DialogSystem.CinematicDialogue
         /// <summary>
         /// JSON 파일에서 대화 데이터베이스를 로드한다.
         /// </summary>
-        private void LoadDatabase()
+        private void LoadDatabase(TextAsset jsonAsset)
         {
-            if (_dialogueJsonAsset == null)
+            if (jsonAsset == null)
             {
-                Debug.LogError("[DialogueManager] Dialogue JSON 에셋이 할당되지 않음");
+                Debug.LogError("[DialogueManager] JSON 에셋이 할당되지 않음");
                 return;
             }
 
             try
             {
-                string json = _dialogueJsonAsset.text;
+                string json = jsonAsset.text;
                 // JSON 배열을 수용하기 위해 래핑
                 string wrappedJson = $"{{\"dialogues\":{json}}}";
                 _database = JsonUtility.FromJson<DialogueDatabase>(wrappedJson);
@@ -81,14 +81,60 @@ namespace DialogSystem.CinematicDialogue
         /// 주어진 ID의 대사부터 재생을 시작한다.
         /// </summary>
         public async UniTask PlayDialogueAsync
-            (string dialogueId, /*Transform spawnPoint = null,*/ CancellationToken externalCt = default)
+            (TextAsset jsonAsset, string startDialogueId, 
+            /*Transform spawnPoint = null,*/ CancellationToken externalCt = default)
         {
             _playbackCts?.Cancel();
             _playbackCts?.Dispose();
             _playbackCts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
             var ct = _playbackCts.Token;
 
-            DialogueEntry entry = _database.FindDialogue(dialogueId);
+            LoadDatabase(jsonAsset);
+
+            if (_dialoguePanel != null) _dialoguePanel.SetActive(true);
+
+            string currentId = startDialogueId;
+
+            try
+            {
+                // currentId가 존재하는 동안 계속 다음 대사로 넘어가며 반복(단락 이어가기)
+                while (!string.IsNullOrEmpty(currentId))
+                {
+                    DialogueEntry entry = _database.FindDialogue(currentId);
+                    if (entry == null) break;
+
+                    // 한 단락 재생 완료 대기 (이 안에서 [click] 커맨드를 만나면 E키를 기다립니다)
+                    string textCommandJump = await PlayDialogueInternalAsync(entry, ct);
+
+                    // 다음으로 이동할 단락 ID 결정 로직
+                    if (!string.IsNullOrEmpty(textCommandJump))
+                    {
+                        currentId = textCommandJump; // 1. 대사 텍스트 내의 [jump:xxx] 커맨드가 최우선
+                    }
+                    else if (!string.IsNullOrEmpty(entry.jumpId))
+                    {
+                        currentId = entry.jumpId;    // 2. JSON에 명시된 jumpId
+                    }
+                    else if (entry.nextIds != null && entry.nextIds.Count > 0) // !!(배열이면 Count 대신 Length 사용)
+                    {
+                        currentId = entry.nextIds[0]; // 3. JSON에 명시된 nextIds의 첫 번째 요소
+                    }
+                    else
+                    {
+                        currentId = null; // 연결된 대사가 없으면 반복문 종료
+                    }
+
+                    // 중복 키 입력 방지를 위해 1프레임 대기
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                }
+            }
+            finally
+            {
+                // 모든 대화가 끝나면 UI 닫기
+                Stop();
+            }
+
+            /*DialogueEntry entry = _database.FindDialogue(currentId);
 
             if (entry == null)
             {
@@ -114,14 +160,14 @@ namespace DialogSystem.CinematicDialogue
             {
                 _playbackCts?.Dispose();
                 _playbackCts = null;
-            }
+            }*/
         }
 
         /// <summary>
         /// 대사 재생의 실제 구현.
         /// DialogueEntry의 텍스트를 파싱하고 커맨드를 순차 실행한다.
         /// </summary>
-        private async UniTask PlayDialogueInternalAsync(DialogueEntry entry, CancellationToken ct)
+        private async UniTask<string> PlayDialogueInternalAsync(DialogueEntry entry, CancellationToken ct)
         {
             _state.currentEntry = entry;
             _state.isWaitingForInput = false;
@@ -156,6 +202,8 @@ namespace DialogSystem.CinematicDialogue
                 // 자동으로 다음 대사 재생 (선택사항)
                 // await PlayDialogueAsync(jumpTarget, ct);
             }
+
+            return jumpTarget;
         }
 
         /// <summary>

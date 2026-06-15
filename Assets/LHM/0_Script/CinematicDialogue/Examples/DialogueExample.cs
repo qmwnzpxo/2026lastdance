@@ -11,6 +11,8 @@ namespace DialogSystem.CinematicDialogue
     public class DialogueExample : MonoBehaviour
     {
         [SerializeField] private DialogueManager _dialogueManager;
+        [SerializeField] private TextAsset _dialogueJson;
+
         private CancellationTokenSource _exampleCts;
 
         private void Update()
@@ -32,6 +34,7 @@ namespace DialogSystem.CinematicDialogue
         /// </summary>
         private async UniTask StartDialogueSequence()
         {
+            if (_dialogueJson == null) return;
             _exampleCts?.Cancel();
             _exampleCts?.Dispose();
             _exampleCts = new CancellationTokenSource();
@@ -46,7 +49,7 @@ namespace DialogSystem.CinematicDialogue
             try
             {
                 // "intro_01" 부터 재생 시작
-                await _dialogueManager.PlayDialogueAsync("intro_01", externalCt: _exampleCts.Token);
+                await _dialogueManager.PlayDialogueAsync(_dialogueJson, "intro_01", externalCt: _exampleCts.Token);
             }
             finally
             {

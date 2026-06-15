@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -11,7 +11,8 @@ namespace DialogSystem.CinematicDialogue
     public class SimpleDialogueTest : MonoBehaviour
     {
         [SerializeField] private DialogueManager _dialogueManager;
-        
+        [SerializeField] private TextAsset _dialogueJson;
+
         // 키와 대사 ID 매핑
         private Dictionary<KeyCode, string> _keyBindings = new()
         {
@@ -70,8 +71,9 @@ namespace DialogSystem.CinematicDialogue
         /// </summary>
         private void PlayDialogue(string dialogueId)
         {
+            if (_dialogueJson == null) return;
             Debug.Log($"[SimpleDialogueTest] 재생 시작: {dialogueId}");
-            _dialogueManager.PlayDialogueAsync(dialogueId).Forget();
+            _dialogueManager.PlayDialogueAsync(_dialogueJson, dialogueId).Forget();
         }
 
         /// <summary>
