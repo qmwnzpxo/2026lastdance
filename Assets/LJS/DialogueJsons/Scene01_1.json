@@ -1,0 +1,58 @@
+[
+  {
+    "id": "Scene_01_1",
+    "speakerName": "저질 용병A 1",
+    "text": "야, 너 여기서 뭐해? [click]",
+    "nextIds": ["Scene_01_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_01_2",
+    "speakerName": "저질 용병A 2",
+    "text": "평소랑 같지. 소문 듣고, 의뢰 찾고. [click]",
+    "nextIds": ["Scene_01_3"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_01_3",
+    "speakerName": "저질 용병A 1",
+    "text": "뭐야, 보스한테 얘기 못들었어? [click]",
+    "nextIds": ["Scene_01_4"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_01_4",
+    "speakerName": "저질 용병A 2",
+    "text": "무슨 얘기? [click]",
+    "nextIds": ["Scene_01_5"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_01_5",
+    "speakerName": "저질 용병A 1",
+    "text": "최근 짭짤한 건수가 생겼다고 도우라던데. [click]",
+    "nextIds": ["Scene_01_6"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_01_6",
+    "speakerName": "저질 용병A 1",
+    "text": "따라와봐. [click]",
+    "nextIds": ["Scene_01_7"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_01_7",
+    "speakerName": "저질 용병A 2",
+    "text": "뭐야, 뭐길래 그래? [click]",
+    "nextIds": ["Scene_01_8"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_01_8",
+    "speakerName": "???",
+    "text": "…. [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

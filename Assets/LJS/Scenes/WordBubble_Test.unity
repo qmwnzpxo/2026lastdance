@@ -2641,7 +2641,7 @@ GameObject:
   - component: {fileID: 106835046}
   - component: {fileID: 106835045}
   m_Layer: 5
-  m_Name: spikiname
+  m_Name: SpikiName
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2762,8 +2762,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -680, y: 285}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: -580, y: 285}
+  m_SizeDelta: {x: 400, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &107544116
 GameObject:
@@ -7622,7 +7622,6 @@ Transform:
   m_LocalScale: {x: 2.7, y: 2.7, z: 2.7}
   m_ConstrainProportionsScale: 1
   m_Children:
-  - {fileID: 987951921}
   - {fileID: 239781245}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -7638,8 +7637,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d6240e07fa5a5f47900bcc0d5b8ff68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dialogueJson: {fileID: 4900000, guid: 48bdaaa607a79994f8ac2e5cd3a8fe1f, type: 3}
-  startingDialogueId: intro_01
+  dialogueJson: {fileID: 4900000, guid: 274b5fac4cf67ba40802b484633812e2, type: 3}
+  startingDialogueId: Scene_01_1
   interactionKey: 102
   _headSpeechBubble: {fileID: 239781241}
 --- !u!1 &370395990
@@ -19756,37 +19755,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!1 &987951920
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 987951921}
-  m_Layer: 0
-  m_Name: TalkPosition
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &987951921
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 987951920}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 362314411}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &990838526
 GameObject:
   m_ObjectHideFlags: 0
@@ -22872,7 +22840,7 @@ GameObject:
   - component: {fileID: 1132059245}
   - component: {fileID: 1132059246}
   m_Layer: 5
-  m_Name: Dialogue
+  m_Name: DisplayText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
