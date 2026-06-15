@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using BossBT;
@@ -552,17 +552,11 @@ public class BossController : MonoBehaviour, IDamageable
 
     /// <summary>
     /// Behavior Tree 전체 Reset
+    /// BTComposite는 override된 Reset()이 자동으로 자식들을 재귀 리셋함
     /// </summary>
-    private void ResetBehaviorTree(BossBT.BTNode node)
+    private void ResetBehaviorTree(BTNode node)
     {
-        if (node is BossBT.BTComposite composite)
-        {
-            composite.Reset();
-        }
-        else
-        {
-            node.Reset();
-        }
+        node?.Reset();
     }
 
     /// <summary>
@@ -632,12 +626,23 @@ public class BossController : MonoBehaviour, IDamageable
         {
             currentPhase = newPhase;
             hasPhaseTransitioned = true;
-            StartCoroutine(PhaseTransitionEffect());
 
-            // 진행 중이던 코루틴 정리 및 BT 교체
-            StopAllCoroutines();
+            // 1) 실행 중인 BT 노드 플래그 선초기화 (코루틴 중단 전에 수행)
+            BossBT.BTNode oldBT = _activeBT;
             _activeBT = GetCurrentPhase() == 1 ? _phase1BT : _phase2BT;
+            ResetBehaviorTree(oldBT);
             ResetBehaviorTree(_activeBT);
+
+            // 2) 모든 코루틴 중단
+            StopAllCoroutines();
+
+            // 3) 페이즈 전환 이펝트 (Instantiate로 직접 생성하여 StopAllCoroutines에 영향 안 받음)
+            if (phaseTransitionEffect != null)
+            {
+                Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
+            }
+
+            // 4) 새 상태 시작
             ChangeState(BossState.Idle);
         }
 

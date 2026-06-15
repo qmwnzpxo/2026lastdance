@@ -102,6 +102,26 @@ public class BossProjectile : MonoBehaviour
     }
 
     /// <summary>
+    /// AirBurst 파편 초기화 — velocity는 호출 측에서 별도로 설정하므로 여기서는 설정 안 함
+    /// </summary>
+    public void InitializeAirBurstPellet(float projectileDamage, BossController controller)
+    {
+        isCannonball = false;
+        isBounceBlastPellet = false;
+        damage = projectileDamage;
+        bossController = controller;
+
+        // 중력 없이 직선 비행
+        if (rb2d != null)
+        {
+            rb2d.gravityScale = 0f;
+            // velocity는 HowitzerCannonball.ExecuteAirBurst()에서 이미 설정함
+        }
+
+        currentLifetime = lifetime;
+    }
+
+    /// <summary>
     /// BounceBlast 파편 초기화 (2차 폭발용)
     /// </summary>
     public void InitializeForBounceBlast(float projectileDamage, float range, BossController controller)
@@ -181,6 +201,11 @@ public class BossProjectile : MonoBehaviour
             if (isCannonball)
             {
                 bossController.ReturnCannonballToPool(gameObject);
+            }
+            else if (isBounceBlastPellet)
+            {
+                // BounceBlast 파편은 bouncePelletPool에 반환 (bulletPool 오염 방지)
+                bossController.ReturnBouncePelletToPool(gameObject);
             }
             else
             {

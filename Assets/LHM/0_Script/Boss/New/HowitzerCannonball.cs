@@ -122,10 +122,9 @@ public class HowitzerCannonball : MonoBehaviour
 
         if (ammoType == HowitzerAmmoType.AirBurst)
         {
-            // AirBurst: 낙하 중 airBurstHeight 고도에서 폭발
-            float startY = transform.position.y;
-            float targetY = fallTarget.y;
-            float burstY = startY - airBurstHeight;
+            // AirBurst: 낙하 중 낙하 목표 Y + airBurstHeight 고도에서 폭발
+            // (burstY = 지면에서 airBurstHeight만큼 위에서 폭발 발동)
+            float burstY = fallTarget.y + airBurstHeight;
 
             while (transform.position.y > burstY && elapsedTime < duration)
             {
@@ -261,13 +260,16 @@ public class HowitzerCannonball : MonoBehaviour
                 {
                     float angle = i * angleStep * Mathf.Deg2Rad;
                     Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+
+                    // velocity 먼저 설정 (초기화보다 앞에 해야 velocity가 덮이지 않음)
+                    pelletRb.gravityScale = 0f;
                     pelletRb.linearVelocity = direction * airBurstPelletSpeed;
 
-                    // 파편에 데미지 정보 전달 (BossProjectile 컴포넌트가 있다면)
+                    // 파편에 데미지 정보 전달 — InitializeAirBurstPellet 사용(velocity 바체 없음)
                     BossProjectile projectile = pellet.GetComponent<BossProjectile>();
                     if (projectile != null)
                     {
-                        projectile.Initialize(direction, airBurstDamage, bossController);
+                        projectile.InitializeAirBurstPellet(airBurstDamage, bossController);
                     }
 
                     // 파편 사거리 제한 (일정 시간 후 파괴)
