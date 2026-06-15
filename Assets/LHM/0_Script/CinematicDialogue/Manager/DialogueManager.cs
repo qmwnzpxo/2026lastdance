@@ -14,6 +14,10 @@ namespace DialogSystem.CinematicDialogue
     /// </summary>
     public class DialogueManager : MonoBehaviour
     {
+        // 싱글톤 설정
+        public static DialogueManager Instance { get; private set; }
+
+        [SerializeField] private GameObject _dialoguePanel; // 하단 대화창
         [SerializeField] private TextAsset _dialogueJsonAsset;  // JSON 리소스
         [SerializeField] private TextMeshProUGUI _displayText;  // 텍스트 표시용 TMP
         [SerializeField] private TextMeshProUGUI _speakerNameText;  // 화자 이름 표시용
@@ -31,9 +35,6 @@ namespace DialogSystem.CinematicDialogue
         private float _currentTypeSpeed = 0.05f;  // 기본 타이핑 속도 (글자당 초)
         private const float DEFAULT_TYPE_SPEED = 0.05f;
 
-        // 싱글톤 설정
-        public static DialogueManager Instance { get; private set; }
-
         private void Awake()
         {
             //싱글톤 패턴(선택사항)
@@ -46,6 +47,9 @@ namespace DialogSystem.CinematicDialogue
 
             _state = new DialoguePlaybackState();
             LoadDatabase();
+
+            // 하단 대화창 끄기
+            if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
         }
 
         /// <summary>
@@ -77,26 +81,30 @@ namespace DialogSystem.CinematicDialogue
         /// 주어진 ID의 대사부터 재생을 시작한다.
         /// </summary>
         public async UniTask PlayDialogueAsync
-            (string dialogueId, Transform spawnPoint = null, CancellationToken externalCt = default)
+            (string dialogueId, /*Transform spawnPoint = null,*/ CancellationToken externalCt = default)
         {
             _playbackCts?.Cancel();
             _playbackCts?.Dispose();
             _playbackCts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
             var ct = _playbackCts.Token;
 
-            // 말풍선 등장 위치
-            if (spawnPoint != null && _displayText != null)
-            {
-                Canvas canvas = _displayText.GetComponentInParent<Canvas>();
-                if (canvas != null) canvas.transform.position = spawnPoint.position;
-            }
-
             DialogueEntry entry = _database.FindDialogue(dialogueId);
+
             if (entry == null)
             {
                 Debug.LogError($"[DialogueManager] 대사 ID '{dialogueId}'를 찾을 수 없음");
                 return;
             }
+
+            // 대화 시작하면 하단 대화창 오픈
+            if (_dialoguePanel != null) _dialoguePanel.SetActive(true);
+
+            // 말풍선 등장 위치
+            //if (spawnPoint != null && _displayText != null)
+            //{
+            //    Canvas canvas = _displayText.GetComponentInParent<Canvas>();
+            //    if (canvas != null) canvas.transform.position = spawnPoint.position;
+            //}
 
             try
             {
@@ -120,16 +128,10 @@ namespace DialogSystem.CinematicDialogue
             _state.isPaused = false;
 
             // UI에 화자 이름 표시
-            if (_speakerNameText != null)
-            {
-                _speakerNameText.text = entry.speakerName ?? "Unknown";
-            }
+            if (_speakerNameText != null) _speakerNameText.text = entry.speakerName ?? "Unknown";
 
             // 텍스트 필드 초기화
-            if (_displayText != null)
-            {
-                _displayText.text = "";
-            }
+            if (_displayText != null)  _displayText.text = "";
 
             // 타이핑 속도 리셋
             _currentTypeSpeed = DEFAULT_TYPE_SPEED;
@@ -197,7 +199,7 @@ namespace DialogSystem.CinematicDialogue
                         // 마우스 클릭 대기
                         _state.isWaitingForInput = true;
                         Debug.Log("[DialogueManager] 클릭 대기 중...");
-                        await UniTask.WaitUntil(() => Input.GetMouseButtonDown(0), cancellationToken: ct);
+                        await UniTask.WaitUntil(() => Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.F), cancellationToken: ct);
                         _state.isWaitingForInput = false;
                         Debug.Log("[DialogueManager] 클릭 감지됨");
                         break;
@@ -233,8 +235,7 @@ namespace DialogSystem.CinematicDialogue
         /// </summary>
         private async UniTask DisplayTextAsync(string text, CancellationToken ct)
         {
-            if (string.IsNullOrEmpty(text) || _displayText == null)
-                return;
+            if (string.IsNullOrEmpty(text) || _displayText == null) return;
 
             // 글자 하나씩 추가하는 루프
             for (int i = 0; i < text.Length; i++)
@@ -268,10 +269,7 @@ namespace DialogSystem.CinematicDialogue
             string jumpTarget = null;
             foreach (var cmd in commands)
             {
-                if (cmd.type == DialogueCommand.CommandType.Jump)
-                {
-                    jumpTarget = cmd.value;
-                }
+                if (cmd.type == DialogueCommand.CommandType.Jump) jumpTarget = cmd.value;
             }
             return jumpTarget;
         }
@@ -294,10 +292,8 @@ namespace DialogSystem.CinematicDialogue
             _playbackCts?.Dispose();
             _playbackCts = null;
             
-            if (_displayText != null)
-            {
-                _displayText.text = "";
-            }
+            if (_displayText != null) _displayText.text = "";
+            if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
 
             _state.Reset();
         }
