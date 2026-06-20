@@ -1,0 +1,16 @@
+[
+  {
+    "id": "Scene_03_1",
+    "speakerName": "저질 용병A",
+    "text": "미친, 저게 뭐야! [click]",
+    "nextIds": ["Scene_03_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_03_2",
+    "speakerName": "저질 용병A",
+    "text": "천장에서 얼굴 없는 괴물이 쫓아온다! [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

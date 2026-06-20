@@ -1,0 +1,177 @@
+[
+  {
+    "id": "Scene_02_1",
+    "speakerName": "저질 용병A 2",
+    "text": "말해줘봐. 뭔데? [click]",
+    "nextIds": ["Scene_02_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_2",
+    "speakerName": "저질 용병A 1",
+    "text": "요즘 보스한테 직통으로 들어오는 의뢰중에… [click]",
+    "nextIds": ["Scene_02_3"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_3",
+    "speakerName": "저질 용병A 1",
+    "text": "보통 보수의 3배에 달하는 건수가 있어. [click]",
+    "nextIds": ["Scene_02_4"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_4",
+    "speakerName": "저질 용병A 2",
+    "text": "3배?! [click]",
+    "nextIds": ["Scene_02_5"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_5",
+    "speakerName": "저질 용병A 1",
+    "text": "시끄러워, 인마! 조용히 해봐. [click]",
+    "nextIds": ["Scene_02_6"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_6",
+    "speakerName": "저질 용병A 2",
+    "text": "빨리 내용부터 설명해봐. 무슨 의뢰길래? [click]",
+    "nextIds": ["Scene_02_7"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_7",
+    "speakerName": "저질 용병A 1",
+    "text": "..별거 없던데? 그냥 사람 몇 납치하는 의뢰야. [click]",
+    "nextIds": ["Scene_02_8"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_8",
+    "speakerName": "저질 용병A 1",
+    "text": "데려오는 사람한테 인당 추가로 보너스 쳐준대. [click]",
+    "nextIds": ["Scene_02_9"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_9",
+    "speakerName": "저질 용병A 2",
+    "text": "뭐야, 그런걸로 그만큼이나 쳐준다고? [click]",
+    "nextIds": ["Scene_02_10"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_10",
+    "speakerName": "저질 용병A 1",
+    "text": "그래. 그러니까 근처에서 둘셋쯤 잡아다가 넘기자고. [click]",
+    "nextIds": ["Scene_02_11"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_11",
+    "speakerName": "저질 용병A 2",
+    "text": "뭐야, 완전 횡재잖아? [click]",
+    "nextIds": ["Scene_02_12"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_12",
+    "speakerName": "저질 용병A 2",
+    "text": "크큭, 좋아. [click]",
+    "nextIds": ["Scene_02_13"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_13",
+    "speakerName": "???",
+    "text": "거기 정지. [click]",
+    "nextIds": ["Scene_02_14"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_14",
+    "speakerName": "저질 용병A 1",
+    "text": "넌 뭐야? [click]",
+    "nextIds": ["Scene_02_15"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_15",
+    "speakerName": "저질 용병A 2",
+    "text": "..얼굴에 왜 음침하게 필터링을 씌우고 다니… [click]",
+    "nextIds": ["Scene_02_16"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_16",
+    "speakerName": "저질 용병A 2",
+    "text": "잠깐만, 저놈 손에 저거… [click]",
+    "nextIds": ["Scene_02_17"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_17",
+    "speakerName": "저질 용병A 2",
+    "text": "그놈이야, 그놈. 네온점퍼잖아. [click]",
+    "nextIds": ["Scene_02_18"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_18",
+    "speakerName": "저질 용병A 1",
+    "text": "뭐? [click]",
+    "nextIds": ["Scene_02_19"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_19",
+    "speakerName": "???",
+    "text": "무슨 의뢰지? [click]",
+    "nextIds": ["Scene_02_20"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_20",
+    "speakerName": "저질 용병A 1",
+    "text": "…네가 알아서 뭐하게? [click]",
+    "nextIds": ["Scene_02_21"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_21",
+    "speakerName": "???",
+    "text": ".... [click]",
+    "nextIds": ["Scene_02_22"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_22",
+    "speakerName": "???",
+    "text": "그냥 불량용병 조직인가. [click]",
+    "nextIds": ["Scene_02_23"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_23",
+    "speakerName": "저질 용병A 2",
+    "text": "(소근)야, 빨리 가자. [click]",
+    "nextIds": ["Scene_02_24"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_24",
+    "speakerName": "저질 용병A 1",
+    "text": "..보스한테 연락 먼저- [click]",
+    "nextIds": ["Scene_02_25"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_02_25",
+    "speakerName": "???",
+    "text": "처리한다. [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

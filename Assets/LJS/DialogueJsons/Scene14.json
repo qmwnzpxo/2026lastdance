@@ -1,0 +1,16 @@
+[
+  {
+    "id": "Scene_14_1",
+    "speakerName": "??",
+    "text": "우와.. [click]",
+    "nextIds": ["Scene_14_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_14_2",
+    "speakerName": "??",
+    "text": "저게 뭐야! [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

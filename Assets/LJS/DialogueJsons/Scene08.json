@@ -1,0 +1,86 @@
+[
+  {
+    "id": "Scene_08_1",
+    "speakerName": "저질 용병B 1",
+    "text": "앗싸, 하나 잡았고! [click]",
+    "nextIds": ["Scene_08_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_2",
+    "speakerName": "주민A",
+    "text": "끄으으… [click]",
+    "nextIds": ["Scene_08_3"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_3",
+    "speakerName": "저질 용병B 2",
+    "text": "야, 이건 좀 아니지 않냐? [click]",
+    "nextIds": ["Scene_08_4"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_4",
+    "speakerName": "저질 용병B 1",
+    "text": "뭔 소리야. 지금에 와서 양심에 찔리냐? [click]",
+    "nextIds": ["Scene_08_5"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_5",
+    "speakerName": "저질 용병B 1",
+    "text": "이상한 소리 할거면 보스한테 나 혼자 갖다주고 보너스 내가 먹는다. [click]",
+    "nextIds": ["Scene_08_6"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_6",
+    "speakerName": "저질 용병B 2",
+    "text": "끄으응.. [click]",
+    "nextIds": ["Scene_08_7"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_7",
+    "speakerName": "저질 용병B 1",
+    "text": "묶기나- [click]",
+    "nextIds": ["Scene_08_8"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_8",
+    "speakerName": "저질 용병들",
+    "text": "끄르르르르륵 [click]",
+    "nextIds": ["Scene_08_9"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_9",
+    "speakerName": "제니스",
+    "text": "똑같은 디자인이군, 보스도 똑같은 놈일거고. [click]",
+    "nextIds": ["Scene_08_10"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_10",
+    "speakerName": "저질 용병 보스",
+    "text": "오늘이야말로 빨리 치고 빠진다! 가져오는 두당 1할씩 챙겨줄테니까 후딱 16단지로 가지고 와! [click]",
+    "nextIds": ["Scene_08_11"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_11",
+    "speakerName": "제니스",
+    "text": "(양동작전.. 경찰이 간 방향과는 다르다.) [click]",
+    "nextIds": ["Scene_08_12"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_08_12",
+    "speakerName": "제니스",
+    "text": "(....어떡한다.) [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

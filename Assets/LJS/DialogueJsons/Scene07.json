@@ -1,0 +1,37 @@
+[
+  {
+    "id": "Scene_07_1",
+    "speakerName": "도폴트",
+    "text": "10단지에서 소란이 발생했다. A조 B조는 지역 피난, C조는 해당 지역 봉쇄하고 cctv 체크해. 나랑 D조는 진입한다. [click]",
+    "nextIds": ["Scene_07_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_07_2",
+    "speakerName": "도폴트",
+    "text": "이전 용병조직과 동일한 조직일 가능성이 높다. 만약 인질이 확인된다면 인질의 안전을 최우선으로 움직여. [click]",
+    "nextIds": ["Scene_07_3"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_07_3",
+    "speakerName": "도폴트",
+    "text": "제니스, 근처에 소란이 일어났어. [click]",
+    "nextIds": ["Scene_07_4"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_07_4",
+    "speakerName": "도폴트",
+    "text": "경찰서에서 대기하거나 자택에서 나오지 않는걸 추천한다! [click]",
+    "nextIds": ["Scene_07_5"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_07_5",
+    "speakerName": "제니스",
+    "text": "..확인했습니다. [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

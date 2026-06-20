@@ -1,0 +1,30 @@
+[
+  {
+    "id": "Scene_09_1",
+    "speakerName": "저질 용병A",
+    "text": "또, 또 그놈이다! [click]",
+    "nextIds": ["Scene_09_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_09_2",
+    "speakerName": "저질 용병B",
+    "text": "뭐야? 뭔데? [click]",
+    "nextIds": ["Scene_09_3"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_09_3",
+    "speakerName": "저질 용병A",
+    "text": "빨리 떨어져서 총질이나 해! [click]",
+    "nextIds": ["Scene_09_4"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_09_4",
+    "speakerName": "저질 용병A",
+    "text": "저놈은 천장을 타고 달려온다고! [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

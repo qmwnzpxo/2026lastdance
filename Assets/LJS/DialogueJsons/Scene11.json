@@ -1,0 +1,30 @@
+[
+  {
+    "id": "Scene_11_1",
+    "speakerName": "저질 용병 보스",
+    "text": "(치직.. 치직..)..야, 야, 들리냐? 방해하는 놈? [click]",
+    "nextIds": ["Scene_11_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_11_2",
+    "speakerName": "저질 용병 보스",
+    "text": "니 용병 아니냐? 왜 우릴 방해하는건데? 응? [click]",
+    "nextIds": ["Scene_11_3"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_11_3",
+    "speakerName": "저질 용병 보스",
+    "text": "계속 헤집고 다니면 꼴 좋게 끝나진 않을거다. 알았냐?! [click]",
+    "nextIds": ["Scene_11_4"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_11_4",
+    "speakerName": "저질 용병 보스",
+    "text": "알아 들었으면 꺼져! [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

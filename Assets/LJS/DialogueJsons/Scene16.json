@@ -1,0 +1,65 @@
+[
+  {
+    "id": "Scene_16_1",
+    "speakerName": "제니스",
+    "text": "…가니쿠다파인가. [click]",
+    "nextIds": ["Scene_16_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_16_2",
+    "speakerName": "제니스",
+    "text": "역시 관계자를 잡는게 답이었군. [click]",
+    "nextIds": ["Scene_16_3"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_16_3",
+    "speakerName": "제니스",
+    "text": "전화 받았습니다. [click]",
+    "nextIds": ["Scene_16_4"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_16_4",
+    "speakerName": "도폴트",
+    "text": "밤 늦게 미안해, 제니스. 집엔 잘 들어갔나? [click]",
+    "nextIds": ["Scene_16_5"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_16_5",
+    "speakerName": "제니스",
+    "text": "네. 무슨 용건이십니까? [click]",
+    "nextIds": ["Scene_16_6"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_16_6",
+    "speakerName": "도폴트",
+    "text": "30분 전에 16단지 사건현장에 도착해서 조사중인데, 규모가 커서 처리하려면 좀 걸릴거야. [click]",
+    "nextIds": ["Scene_16_7"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_16_7",
+    "speakerName": "도폴트",
+    "text": "보고서는 올려놨으니 내일 이 사건 정리좀 부탁해, 출근은 1시간 늦어질거야. [click]",
+    "nextIds": ["Scene_16_8"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_16_8",
+    "speakerName": "제니스",
+    "text": "알겠습니다. [click]",
+    "nextIds": ["Scene_16_9"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_16_9",
+    "speakerName": "도폴트",
+    "text": "잘 자라. [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

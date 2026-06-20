@@ -1,0 +1,240 @@
+[
+  {
+    "id": "Scene_15_1",
+    "speakerName": "도폴트",
+    "text": "조사 결과는? [click]",
+    "nextIds": ["Scene_15_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_2",
+    "speakerName": "조사원",
+    "text": "머리 부분에서 강한 스파크가 발생해서 죽었습니다. [click]",
+    "nextIds": ["Scene_15_3"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_3",
+    "speakerName": "도폴트",
+    "text": "..사람이 혼자 머리가 타서 죽을 수 있나? [click]",
+    "nextIds": ["Scene_15_4"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_4",
+    "speakerName": "조사원",
+    "text": "아무래도 시술같은걸 받아서 머리쪽에 무언가가 있었던 것 같습니다. [click]",
+    "nextIds": ["Scene_15_5"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_5",
+    "speakerName": "조사원",
+    "text": "그런데 과학수사과가 조사해봐도 증거품이 나오지 않아서.. [click]",
+    "nextIds": ["Scene_15_6"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_6",
+    "speakerName": "도폴트",
+    "text": "..머리의 무언가에 스파크가 발생해서 증거가 인멸됐다.. [click]",
+    "nextIds": ["Scene_15_7"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_7",
+    "speakerName": "도폴트",
+    "text": "이상하군. [click]",
+    "nextIds": ["Scene_15_8"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_8",
+    "speakerName": "도폴트",
+    "text": "저 고철에 대한건? [click]",
+    "nextIds": ["Scene_15_9"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_9",
+    "speakerName": "조사원",
+    "text": "에기 PMC에서 수출한 구식 대형병기입니다. [click]",
+    "nextIds": ["Scene_15_10"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_10",
+    "speakerName": "조사원",
+    "text": "주변의 흔적을 보아 건물에서 저걸 사용한 전투가 있었고, 감식 결과 조작자는 이 시체입니다. [click]",
+    "nextIds": ["Scene_15_11"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_11",
+    "speakerName": "도폴트",
+    "text": "혼자서 난리 피웠을리는 없고, 뭐랑 싸웠다는 건데.. [click]",
+    "nextIds": ["Scene_15_12"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_12",
+    "speakerName": "도폴트",
+    "text": "16단지로 이동하면서 발견한 이미 제압되어 있던 용병들은 감전에 의한 기절이었다. [click]",
+    "nextIds": ["Scene_15_13"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_13",
+    "speakerName": "도폴트",
+    "text": "그런데 이 병기는 부품들이 깔끔하게 절단났는데? [click]",
+    "nextIds": ["Scene_15_14"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_14",
+    "speakerName": "조사원",
+    "text": "흔적은 다르지만 경로상 해당 용병들과 이 병기와 싸운 무언가는 동일 개체라고 판단됩니다. [click]",
+    "nextIds": ["Scene_15_15"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_15",
+    "speakerName": "조사원",
+    "text": "그리고.. 과학수사과가 해당 개체의 경로를 분석하던 중 특이한 흔적이 있었습니다. [click]",
+    "nextIds": ["Scene_15_16"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_16",
+    "speakerName": "도폴트",
+    "text": "뭐지? [click]",
+    "nextIds": ["Scene_15_17"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_17",
+    "speakerName": "조사원",
+    "text": "여기까지 이동하던 경로에서 이상한 균열을 몇 군데 발견했습니다만.. [click]",
+    "nextIds": ["Scene_15_18"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_18",
+    "speakerName": "조사원",
+    "text": "발견된 위치가 건물 천장이나 벽면 같은 위치라고 합니다. [click]",
+    "nextIds": ["Scene_15_19"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_19",
+    "speakerName": "도폴트",
+    "text": "…천장? [click]",
+    "nextIds": ["Scene_15_20"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_20",
+    "speakerName": "도폴트",
+    "text": "…감전과 절단, 천장의 흔적… [click]",
+    "nextIds": ["Scene_15_21"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_21",
+    "speakerName": "도폴트",
+    "text": "하아…또 그놈이군. [click]",
+    "nextIds": ["Scene_15_22"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_22",
+    "speakerName": "조사원",
+    "text": "그놈이요? [click]",
+    "nextIds": ["Scene_15_23"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_23",
+    "speakerName": "도폴트",
+    "text": "네온점퍼. [click]",
+    "nextIds": ["Scene_15_24"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_24",
+    "speakerName": "도폴트",
+    "text": "근 반년간 여러 조직이랑 충돌을 일으키고 다니는 골칫덩이다. [click]",
+    "nextIds": ["Scene_15_25"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_25",
+    "speakerName": "도폴트",
+    "text": "현장에 갈때마다 감전된 인원이나 잘린 기계를 여럿 봤지. [click]",
+    "nextIds": ["Scene_15_26"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_26",
+    "speakerName": "조사원",
+    "text": "확실히.. 흔적은 일치하는군요. 그런데 천장의 균열은 뭡니까? [click]",
+    "nextIds": ["Scene_15_27"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_27",
+    "speakerName": "도폴트",
+    "text": "조사중에 체포된 용병들의 공통된 증언이 몇개 있었다. [click]",
+    "nextIds": ["Scene_15_28"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_28",
+    "speakerName": "도폴트",
+    "text": "눈 앞에서 순식간에 사라졌다던가, 천장에 똑바로 서 있었다던가… [click]",
+    "nextIds": ["Scene_15_29"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_29",
+    "speakerName": "도폴트",
+    "text": "정작 목격 증언 외에는 경찰들이 직접 마주친 적이 없어서 정보가 적어. [click]",
+    "nextIds": ["Scene_15_30"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_30",
+    "speakerName": "조사원",
+    "text": "..천장에 똑바로 서 있는건 귀신 그런거 아닙니까? [click]",
+    "nextIds": ["Scene_15_31"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_31",
+    "speakerName": "도폴트",
+    "text": "뭔 귀신이야. 흔적이 남아있는데. [click]",
+    "nextIds": ["Scene_15_32"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_32",
+    "speakerName": "도폴트",
+    "text": "하아.. 요즘은 도시가 조용하더라니. [click]",
+    "nextIds": ["Scene_15_33"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_33",
+    "speakerName": "도폴트",
+    "text": "조사 정리되면 보고서 제출해. [click]",
+    "nextIds": ["Scene_15_34"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_15_34",
+    "speakerName": "조사원",
+    "text": "네, 알겠습니다. [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

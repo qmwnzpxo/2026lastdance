@@ -1,0 +1,79 @@
+[
+  {
+    "id": "Scene_06_1",
+    "speakerName": "???",
+    "text": "좋은 아침. 제니스. [click]",
+    "nextIds": ["Scene_06_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_2",
+    "speakerName": "제니스",
+    "text": "안녕하십니까, 도폴트 선배님. [click]",
+    "nextIds": ["Scene_06_3"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_3",
+    "speakerName": "도폴트",
+    "text": "폴트 선배라고 부르라니까. [click]",
+    "nextIds": ["Scene_06_4"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_4",
+    "speakerName": "도폴트",
+    "text": "어제 새벽에… [click]",
+    "nextIds": ["Scene_06_5"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_5",
+    "speakerName": "제니스",
+    "text": "방금 자료를 확인했습니다. 어제 새벽 2시경, 세이드 거리 25-12번지 근처에서 용병들에 의한 소란이 발생. 출동하여 납치된 인질 3명을 무사히 구출. 하지만 용병조직은 잔당 몇을 남기고 도주하였습니다. [click]",
+    "nextIds": ["Scene_06_6"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_6",
+    "speakerName": "도폴트",
+    "text": "맞아. 그리고.. [click]",
+    "nextIds": ["Scene_06_7"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_7",
+    "speakerName": "제니스",
+    "text": "그리고 잔당들을 심문중 보스의 명령으로 인질을 납치해 팔아넘기려고 했다는 정보를 입수, 현재는 해당 용병조직의 신원에 대해 조사하고 있습니다. [click]",
+    "nextIds": ["Scene_06_8"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_8",
+    "speakerName": "도폴트",
+    "text": "… [click]",
+    "nextIds": ["Scene_06_9"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_9",
+    "speakerName": "제니스",
+    "text": "이외 사건에 대해서 추가 조사가 끝나면 1시간 28분 이내로 정리해 보고서를 제출하겠습니다. 요구 사항은 따로 있으십니까? [click]",
+    "nextIds": ["Scene_06_10"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_10",
+    "speakerName": "도폴트",
+    "text": "..아니, 없어. [click]",
+    "nextIds": ["Scene_06_11"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_06_11",
+    "speakerName": "제니스",
+    "text": "알겠습니다. [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]

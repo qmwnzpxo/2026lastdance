@@ -1,0 +1,16 @@
+[
+  {
+    "id": "Scene_04_1",
+    "speakerName": "저질 용병A",
+    "text": "뭐야, 누구냐! [click]",
+    "nextIds": ["Scene_04_2"],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_04_2",
+    "speakerName": "저질 용병A",
+    "text": "여기서 못 나가게 문 닫아! [click]",
+    "nextIds": [],
+    "jumpId": ""
+  }
+]
