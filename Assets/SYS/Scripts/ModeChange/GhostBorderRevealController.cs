@@ -1,16 +1,24 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 // ============================================================
 //  공격모드 진입 시 GhostBorderReveal 셰이더를 구동하는 컨트롤러
-//  - SpriteRenderer 버전 (MaterialPropertyBlock 사용, 머티리얼 인스턴스 안 늘어남)
+//  - UI RawImage 버전 (머티리얼을 런타임에 인스턴스화해서 구동)
 //  - Animation Event 또는 상태머신 OnStateEnter에서 PlayReveal() 호출
+//
+//  사전 준비:
+//   1) GhostBorderReveal 셰이더로 머티리얼 에셋 하나 만들고
+//      NoiseTex, EdgeColor 등 값 세팅
+//   2) RawImage 컴포넌트의 Material 슬롯에 그 머티리얼 할당
+//   3) RawImage의 Texture 슬롯에 보더 PNG 할당
+//      (Texture는 RawImage가 알아서 _MainTex로 흘려보내줌)
 // ============================================================
-[RequireComponent(typeof(SpriteRenderer))]
+[RequireComponent(typeof(RawImage))]
 public class GhostBorderRevealController : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] private SpriteRenderer targetRenderer;
+    [SerializeField] private RawImage targetImage;
 
     [Header("Timing")]
     [SerializeField] private float duration = 0.35f;
@@ -28,13 +36,32 @@ public class GhostBorderRevealController : MonoBehaviour
     [SerializeField] private bool enableTestKey = true;
 
     private static readonly int ProgressID = Shader.PropertyToID("_Progress");
-    private MaterialPropertyBlock mpb;
+    private Material instancedMat;
     private Coroutine routine;
 
     private void Awake()
     {
-        if (targetRenderer == null) targetRenderer = GetComponent<SpriteRenderer>();
-        mpb = new MaterialPropertyBlock();
+        if (targetImage == null) targetImage = GetComponent<RawImage>();
+
+        if (targetImage.material == null)
+        {
+            Debug.LogError($"[{nameof(GhostBorderRevealController)}] RawImage의 Material 슬롯이 비어있습니다. " +
+                            "GhostBorderReveal 머티리얼을 할당하세요.", this);
+        }
+
+        // 원본 머티리얼 에셋을 직접 건드리지 않도록 런타임 인스턴스 생성
+        // (RawImage의 Material 슬롯에 GhostBorderReveal 머티리얼이 미리 할당돼 있어야 함)
+        instancedMat = Instantiate(targetImage.material);
+        targetImage.material = instancedMat;
+
+        if (!instancedMat.HasProperty(ProgressID))
+        {
+            Debug.LogError($"[{nameof(GhostBorderRevealController)}] 현재 머티리얼 '{instancedMat.shader.name}'에 " +
+                            "_Progress 프로퍼티가 없습니다. GhostBorderReveal 셰이더가 맞는지 확인하세요.", this);
+        }
+
+        Debug.Log($"[{nameof(GhostBorderRevealController)}] Awake 완료. shader={instancedMat.shader.name}", this);
+
         SetProgress(0f);
     }
 
@@ -47,12 +74,14 @@ public class GhostBorderRevealController : MonoBehaviour
         if (UnityEngine.InputSystem.Keyboard.current != null &&
             UnityEngine.InputSystem.Keyboard.current.kKey.wasPressedThisFrame)
         {
+            Debug.Log($"[{nameof(GhostBorderRevealController)}] K key detected (new Input System)", this);
             PlayReveal();
         }
 #else
         // 레거시 Input Manager
         if (Input.GetKeyDown(KeyCode.K))
         {
+            Debug.Log($"[{nameof(GhostBorderRevealController)}] K key detected (legacy Input)", this);
             PlayReveal();
         }
 #endif
@@ -104,27 +133,19 @@ public class GhostBorderRevealController : MonoBehaviour
 
     private float GetCurrentProgress()
     {
-        targetRenderer.GetPropertyBlock(mpb);
-        return mpb.GetFloat(ProgressID);
+        return instancedMat.GetFloat(ProgressID);
     }
 
     private void SetProgress(float value)
     {
-        targetRenderer.GetPropertyBlock(mpb);
-        mpb.SetFloat(ProgressID, value);
-        targetRenderer.SetPropertyBlock(mpb);
+        instancedMat.SetFloat(ProgressID, value);
+    }
+
+    private void OnDestroy()
+    {
+        if (instancedMat != null)
+        {
+            Destroy(instancedMat);
+        }
     }
 }
-
-// ------------------------------------------------------------
-// UI Canvas(Image / RawImage)에 쓰는 경우 SpriteRenderer 대신 아래 패턴 사용:
-//
-//   private Material _instancedMat;
-//   void Awake() {
-//       _instancedMat = Instantiate(image.material); // 머티리얼 공유 깨기
-//       image.material = _instancedMat;
-//   }
-//   void SetProgress(float v) => _instancedMat.SetFloat("_Progress", v);
-//
-// (UI Graphic은 MaterialPropertyBlock을 직접 못 쓰므로 머티리얼 인스턴스를 따로 둬야 함)
-// ------------------------------------------------------------

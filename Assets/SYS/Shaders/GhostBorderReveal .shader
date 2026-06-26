@@ -120,6 +120,9 @@ Shader "Custom/URP2D/GhostBorderReveal"
                 // ---- 3) 노이즈 디졸브 임계값 (코너일수록 더 빨리 통과되도록 낮춤) ----
                 float noise = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, uv * _NoiseScale).r;
                 float threshold = saturate(noise - cornerBoost * 0.5);
+                // threshold가 0이 되면 step(0,0)=1 이라서 _Progress=0인데도 픽셀이 뚫림.
+                // 최소값을 0.001로 보장 → _Progress=0이면 어떤 픽셀도 절대 안 보임.
+                threshold = max(threshold, 0.001);
 
                 float reveal = step(threshold, _Progress);
                 float edge = smoothstep(_Progress - _EdgeWidth, _Progress, threshold) * reveal;

@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: RedMod
-  m_Shader: {fileID: 4800000, guid: 376d9d0c70bbd764985080d60247ed07, type: 3}
+  m_Shader: {fileID: 4800000, guid: 4eb1c11287fb144459c593de9f970db7, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -50,7 +50,7 @@ Material:
     - _EdgeWidth: 0.053
     - _EnableExternalAlpha: 0
     - _FlickerSpeed: 40
-    - _GlitchAmount: 0.0564
+    - _GlitchAmount: 0.0282
     - _GlitchBlocks: 24
     - _NoiseScale: -0.64
     - _Progress: 1
