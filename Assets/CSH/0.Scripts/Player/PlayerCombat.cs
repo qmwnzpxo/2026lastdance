@@ -21,7 +21,7 @@ public class PlayerCombat : MonoBehaviour
     private LayerMask bulletLayer;
     private LayerMask combined;
 
-    public float attackRepeatTime = 2;
+    public int attackRepeatTime = 2;
 
     private HashSet<Collider2D> _hitEnemiesInAttack = new HashSet<Collider2D>();
     public event Action<Quaternion> OnAttackInput;
@@ -132,7 +132,7 @@ public class PlayerCombat : MonoBehaviour
                     float elapsed = 0f;
                     while (elapsed < attackSecondHitDelay/attackRepeatTime)
                     {
-                        ExecuteAttackBox(attackPos);
+                        ExecuteAttackBox(attackPos, i);
 
                         await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
                         elapsed += timeManager.PlayerFixedDeltaTime * AttackSpeed;
@@ -162,7 +162,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    void ExecuteAttackBox(Vector2 attackPos)
+    void ExecuteAttackBox(Vector2 attackPos, int type = 0)
     {
 
         Collider2D[] hits = Physics2D.OverlapBoxAll(
@@ -182,8 +182,13 @@ public class PlayerCombat : MonoBehaviour
             HitstopManager.Instance.TriggerHitstop();
         }
 
-        Debug.DrawRay(attackTransform.position,
-            attackTransform.right * attackBoxDistance, Color.magenta, attackActiveDuration);
+        if (type != 0)
+            Debug.DrawRay(attackTransform.position,
+                attackTransform.right * attackBoxDistance, Color.cyan, attackActiveDuration);
+        else
+            Debug.DrawRay(attackTransform.position,
+                attackTransform.right * attackBoxDistance, Color.magenta, attackActiveDuration);
+
     }
 
     /// <summary>대상 컴포넌트에 맞게 데미지를 전달한다.</summary>
