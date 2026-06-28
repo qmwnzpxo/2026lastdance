@@ -1285,9 +1285,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: -1.0112045
+    y: 0
     width: 1
-    height: 3.0252101
+    height: 1
   near clip plane: 0.1
   far clip plane: 5000
   field of view: 40
@@ -19708,6 +19708,7 @@ GameObject:
   - component: {fileID: 1766646315}
   - component: {fileID: 1766646314}
   - component: {fileID: 1766646313}
+  - component: {fileID: 1766646320}
   m_Layer: 7
   m_Name: Boss
   m_TagString: Untagged
@@ -19998,6 +19999,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1766646320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1766646312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f93b5b26aacedd7438a9ea3baca1e0dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maxHP: 500
+  _dealTimeDuration: 5
+  _currentHP: 0
 --- !u!1 &1791977011
 GameObject:
   m_ObjectHideFlags: 0
@@ -20256,13 +20272,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0de131c94db3d64489f9534edf9ad286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damageHandler: {fileID: 0}
+  damageHandler: {fileID: 1766646320}
   healthBar: {fileID: 1815892882}
   enableGhostFill: 1
   enableGlow: 0
   enableInnerGlow: 0
   enableShimmer: 0
-  enableShake: 1
+  enableShake: 0
   enableDealTimeGlow: 1
   dealTimeShakeStrength: {x: 30, y: 14}
   dealTimeShakeDuration: 0.8

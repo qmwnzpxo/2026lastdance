@@ -196,7 +196,7 @@ public class PlayerCombat : MonoBehaviour
     {
         try
         {
-            target.GetComponent<IDamageable>()?.TakeDamage(damage);
+            target.gameObject.GetComponent<IDamageable>()?.TakeDamage(damage);
         }
         catch (SystemException ex)
         {

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using BossBT;
+using BossSystem;
 
 /// <summary>
 /// 보스 상태 열거형
@@ -108,9 +109,12 @@ public class BossController : MonoBehaviour, IDamageable
     // 런타임 콘텍스트 (SO 기반 패턴 공유 참조 및 AnimationEventBridge)
     private BossContext _bossContext;
 
+    private DamageHandler damageHandler;
+
     private void Awake()
     {
         currentHP = maxHP;
+        damageHandler = gameObject.GetComponent<DamageHandler>();
         InitializeObjectPools();
     }
 
@@ -766,6 +770,7 @@ public class BossController : MonoBehaviour, IDamageable
             return;
 
         currentHP -= damage;
+        damageHandler?.TakeDamage(damage);
 
         // 체력 바 업데이트
         if (healthBar != null)

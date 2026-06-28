@@ -380,7 +380,7 @@ public partial class PlayerDash : MonoBehaviour
         if (target == null) return;
         try
         {
-            target.GetComponent<IDamageable>()?.TakeDamage(damage);
+            target.gameObject.GetComponent<IDamageable>()?.TakeDamage(damage);
         }
         catch (System.NullReferenceException ex)
         {
