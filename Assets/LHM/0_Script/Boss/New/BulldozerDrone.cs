@@ -36,6 +36,17 @@ public class BulldozerDrone : MonoBehaviour
         rb2d = GetComponent<Rigidbody2D>();
         droneCollider = GetComponent<Collider2D>();
         currentHP = droneHP;
+
+        // 자동으로 Player 및 BossController 연결
+        if (player == null)
+        {
+            GameObject pObj = GameObject.FindGameObjectWithTag("Player");
+            if (pObj != null) player = pObj.transform;
+        }
+        if (bossController == null)
+        {
+            bossController = Object.FindAnyObjectByType<BossController>();
+        }
     }
 
     /// <summary>
@@ -43,8 +54,8 @@ public class BulldozerDrone : MonoBehaviour
     /// </summary>
     public void Initialize(Transform playerTransform, BossController controller)
     {
-        player = playerTransform;
-        bossController = controller;
+        if (playerTransform != null) player = playerTransform;
+        if (controller != null) bossController = controller;
         currentHP = droneHP;
         isDead = false;
         isAttacking = false;
@@ -152,7 +163,7 @@ public class BulldozerDrone : MonoBehaviour
         Vector3 approachDirection = (targetPosition - transform.position).normalized;
         Vector3 approachTarget = transform.position + approachDirection * slamApproachRange;
 
-        while (Vector3.Distance(transform.position, approachTarget) > 0.5f && !isDead)
+        while (Vector2.Distance(transform.position, approachTarget) > 0.5f && !isDead)
         {
             if (rb2d != null)
             {
@@ -206,14 +217,16 @@ public class BulldozerDrone : MonoBehaviour
         isDead = true;
         isAttacking = false;
 
-        // 보스 컨트롤러에서 드론 제거
+        // 보스 컨트롤러에서 드론 제거 + 풀로 반환
         if (bossController != null)
         {
             bossController.UnregisterDrone(gameObject);
+            bossController.ReturnBulldozerDroneToPool(gameObject);
         }
-
-        // 사망 이펙트 (필요시 추가)
-        gameObject.SetActive(false);
+        else
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)

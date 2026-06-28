@@ -15,13 +15,21 @@ public class BossProjectile : MonoBehaviour
     [SerializeField] private GameObject shockwaveEffect;
     [SerializeField] private float shockwaveRange = 3f;
 
+    [Header("스케일 성장 설정 (드론 총알)")]
+    [SerializeField] private float initialScale = 0.3f;
+    [SerializeField] private float maxScale = 1.5f;
+    [SerializeField] private float growthRate = 0.4f;
+
     private Rigidbody2D rb2d;
     private BossController bossController;
     private float damage;
     private float explosionRange;
     private bool isCannonball = false;
     private bool isBounceBlastPellet = false;
+    private bool isGrowing = false;
+    private float currentScale;
     private float currentLifetime;
+    private Vector3 moveDirection = Vector3.zero; // 이동 방향 저장 (rb2d 폴백용)
 
     private void Awake()
     {
@@ -40,6 +48,25 @@ public class BossProjectile : MonoBehaviour
         if (currentLifetime <= 0f)
         {
             ReturnToPool();
+            return;
+        }
+
+        // rb2d가 없거나 Kinematic인 경우 transform으로 직접 이동 (폴백)
+        // 포물선 탄도/파편은 각자의 물리 처리를 사용하므로 제외
+        if (moveDirection != Vector3.zero && !isCannonball && !isBounceBlastPellet)
+        {
+            if (rb2d == null || rb2d.isKinematic)
+            {
+                transform.position += moveDirection * bulletSpeed * Time.deltaTime;
+            }
+        }
+
+        // 스케일 성장 (드론 총알 전용)
+        if (isGrowing && currentScale < maxScale)
+        {
+            currentScale += growthRate * Time.deltaTime;
+            currentScale = Mathf.Min(currentScale, maxScale);
+            transform.localScale = Vector3.one * currentScale;
         }
     }
 
@@ -49,14 +76,45 @@ public class BossProjectile : MonoBehaviour
     public void Initialize(Vector3 direction, float projectileDamage, BossController controller)
     {
         isCannonball = false;
+        isBounceBlastPellet = false;
+        isGrowing = false;
         damage = projectileDamage;
         bossController = controller;
+        moveDirection = direction; // 이동 방향 저장 (폴백 이동용)
+
+        // 스케일 초기화 (일반 총알은 성장 없음)
+        transform.localScale = Vector3.one;
 
         if (rb2d != null)
         {
             // 총알은 중력 영향을 받지 않음
             rb2d.gravityScale = 0f;
             rb2d.linearVelocity = direction * bulletSpeed;
+        }
+
+        currentLifetime = lifetime;
+    }
+
+    /// <summary>
+    /// 드론 총알 초기화 (플레이어 방향 + 스케일 성장)
+    /// </summary>
+    public void InitializeGrowing(Vector3 direction, float projectileDamage, BossController controller)
+    {
+        isCannonball = false;
+        isBounceBlastPellet = false;
+        isGrowing = true;
+        damage = projectileDamage;
+        bossController = controller;
+        moveDirection = direction.normalized; // 플레이어 방향 저장
+
+        // 작은 스케일로 시작
+        currentScale = initialScale;
+        transform.localScale = Vector3.one * currentScale;
+
+        if (rb2d != null)
+        {
+            rb2d.gravityScale = 0f;
+            rb2d.linearVelocity = direction.normalized * bulletSpeed;
         }
 
         currentLifetime = lifetime;
@@ -110,6 +168,7 @@ public class BossProjectile : MonoBehaviour
         isBounceBlastPellet = false;
         damage = projectileDamage;
         bossController = controller;
+        moveDirection = Vector3.zero; // AirBurst는 HowitzerCannonball에서 velocity 설정하므로 폴백 비활성
 
         // 중력 없이 직선 비행
         if (rb2d != null)
@@ -130,6 +189,7 @@ public class BossProjectile : MonoBehaviour
         damage = projectileDamage;
         explosionRange = range;
         bossController = controller;
+        moveDirection = Vector3.zero; // BounceBlast는 HowitzerCannonball에서 velocity 설정하므로 폴백 비활성
 
         // 중력은 이미 HowitzerCannonball에서 설정됨
         // 수명은 기본값 사용
@@ -226,5 +286,8 @@ public class BossProjectile : MonoBehaviour
             rb2d.linearVelocity = Vector2.zero;
             rb2d.gravityScale = 0f;
         }
+        moveDirection = Vector3.zero; // 이동 방향 리셋
+        isGrowing = false;
+        transform.localScale = Vector3.one; // 스케일 초기화
     }
 }

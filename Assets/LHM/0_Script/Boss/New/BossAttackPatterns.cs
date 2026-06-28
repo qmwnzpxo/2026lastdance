@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -524,29 +524,34 @@ public class BossAttackPatterns : MonoBehaviour
     }
 
     /// <summary>
-    /// 대포탄 발사
+    /// 대포탄 발사 - bulletPool 사용 (BossProjectile 기반 포물선 탄도)
     /// </summary>
     private void FireCannonball(Vector3 firePosition, float damage, float range)
     {
         if (bossController == null || player == null)
             return;
 
-        // 대포탄 오브젝트 풀에서 가져오기
-        GameObject cannonball = bossController.GetCannonballFromPool();
+        // 총알 풀에서 꺼내기 (BossProjectile 컴포넌트 보장)
+        GameObject cannonball = bossController.GetBulletFromPool();
         if (cannonball == null)
             return;
 
         cannonball.transform.position = firePosition;
 
-        // 플레이어 방향으로 포물선 탄도 계산
-        Vector3 targetPosition = player.position;
-        Vector3 direction = (targetPosition - firePosition).normalized;
+        // 플레이어 방향 계산
+        Vector3 direction = (player.position - firePosition).normalized;
 
-        // 대포탄 스크립트 설정
+        // BossProjectile로 포물선 탄도 발사
         BossProjectile projectile = cannonball.GetComponent<BossProjectile>();
         if (projectile != null)
         {
             projectile.InitializeCannonball(direction, damage, range, bossController);
+        }
+        else
+        {
+            // BossProjectile 없으면 즉시 반환
+            bossController.ReturnBulletToPool(cannonball);
+            Debug.LogWarning("[Boss] Cannon: BossProjectile 컴포넌트 없음 - 발사 실패");
         }
     }
 
@@ -685,26 +690,48 @@ public class BossAttackPatterns : MonoBehaviour
 
         yield return new WaitForSeconds(droneSpawnAnticipationTime);
 
-        // 드론 패턴 결정
-        DronePattern selectedPattern = SelectRandomDronePattern();
-
-        // 드론 소환
-        GameObject dronePrefab = bossController.GetDronePrefab();
         Transform spawnOrigin = bossController.GetDroneSpawnOrigin();
 
-        if (dronePrefab != null && spawnOrigin != null)
+        if (spawnOrigin != null)
         {
-            GameObject drone = Instantiate(dronePrefab, spawnOrigin.position, Quaternion.identity);
+            // 50% 확률로 불도저 드론 또는 지렁이 드론 선택
+            bool spawnBulldozer = (Random.value < 0.5f) && (bossController.GetBulldozerDronePrefab() != null);
 
-            // 드론 등록
-            bossController.RegisterDrone(drone);
-
-            // BossDrone 컴포넌트가 있는지 확인
-            BossDrone droneScript = drone.GetComponent<BossDrone>();
-            if (droneScript != null)
+            if (spawnBulldozer)
             {
-                // 드론 패턴 및 파라미터 전달
-                droneScript.Initialize(bossController.GetPlayer(), bossController, selectedPattern, GetDronePatternParameters(selectedPattern));
+                // 불도저 드론 소환
+                GameObject drone = bossController.GetBulldozerDroneFromPool();
+                if (drone != null)
+                {
+                    drone.transform.position = spawnOrigin.position;
+                    bossController.RegisterDrone(drone);
+
+                    BulldozerDrone bulldozer = drone.GetComponent<BulldozerDrone>();
+                    if (bulldozer != null)
+                    {
+                        bulldozer.Initialize(bossController.GetPlayer(), bossController);
+                        Debug.Log("[Boss] 불도저 드론 소환 완료");
+                    }
+                }
+            }
+            else
+            {
+                // 지렁이 드론 소환 (기존 BossDrone)
+                DronePattern selectedPattern = SelectRandomDronePattern();
+
+                GameObject drone = bossController.GetDroneFromPool();
+                if (drone != null)
+                {
+                    drone.transform.position = spawnOrigin.position;
+                    bossController.RegisterDrone(drone);
+
+                    BossDrone droneScript = drone.GetComponent<BossDrone>();
+                    if (droneScript != null)
+                    {
+                        droneScript.Initialize(bossController.GetPlayer(), bossController, selectedPattern, GetDronePatternParameters(selectedPattern));
+                        Debug.Log($"[Boss] 지렁이 드론 소환 완료: 패턴={selectedPattern}");
+                    }
+                }
             }
         }
 

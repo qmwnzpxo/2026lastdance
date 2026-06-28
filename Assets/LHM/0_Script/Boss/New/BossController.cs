@@ -72,6 +72,8 @@ public class BossController : MonoBehaviour, IDamageable
     [SerializeField] private float droneRiseSpeed = 5f;
     [SerializeField] private float droneSpawnAnticipationTime = 0.4f;
     [SerializeField] private int maxDroneCount = 2;
+    [SerializeField] private GameObject bulldozerDronePrefab;
+    [SerializeField] private int maxBulldozerCount = 2;
 
     // 현재 상태
     private BossState currentState = BossState.Appearing;
@@ -84,6 +86,13 @@ public class BossController : MonoBehaviour, IDamageable
     private Queue<GameObject> warningMarkerPool = new Queue<GameObject>();
     private Queue<GameObject> airBurstPelletPool = new Queue<GameObject>();
     private Queue<GameObject> bouncePelletPool = new Queue<GameObject>();
+    private Queue<GameObject> dronePool = new Queue<GameObject>();
+    private Queue<GameObject> bulldozerDronePool = new Queue<GameObject>();
+
+    // 씬에 활성화된 발사체 추적 (페이즈 전환 시 일괄 회수용)
+    private List<GameObject> activeCannonballs = new List<GameObject>();
+    private List<GameObject> activeBullets = new List<GameObject>();
+    private List<GameObject> activeWarningMarkers = new List<GameObject>();
 
     // Behavior Tree
     private BossBT.BTNode _phase1BT;
@@ -170,6 +179,28 @@ public class BossController : MonoBehaviour, IDamageable
                 bouncePelletPool.Enqueue(pellet);
             }
         }
+
+        // 드론 풀 초기화
+        if (dronePrefab != null)
+        {
+            for (int i = 0; i < maxDroneCount + 2; i++)
+            {
+                GameObject drone = Instantiate(dronePrefab);
+                drone.SetActive(false);
+                dronePool.Enqueue(drone);
+            }
+        }
+
+        // 불도저 드론 풀 초기화
+        if (bulldozerDronePrefab != null)
+        {
+            for (int i = 0; i < maxBulldozerCount + 1; i++)
+            {
+                GameObject drone = Instantiate(bulldozerDronePrefab);
+                drone.SetActive(false);
+                bulldozerDronePool.Enqueue(drone);
+            }
+        }
     }
 
     /// <summary>
@@ -177,17 +208,18 @@ public class BossController : MonoBehaviour, IDamageable
     /// </summary>
     public GameObject GetBulletFromPool()
     {
+        GameObject bullet = null;
         if (bulletPool.Count > 0)
         {
-            GameObject bullet = bulletPool.Dequeue();
+            bullet = bulletPool.Dequeue();
             bullet.SetActive(true);
-            return bullet;
         }
         else if (bulletPrefab != null)
         {
-            return Instantiate(bulletPrefab);
+            bullet = Instantiate(bulletPrefab);
         }
-        return null;
+        if (bullet != null) activeBullets.Add(bullet);
+        return bullet;
     }
 
     /// <summary>
@@ -199,6 +231,7 @@ public class BossController : MonoBehaviour, IDamageable
         {
             bullet.SetActive(false);
             bulletPool.Enqueue(bullet);
+            activeBullets.Remove(bullet);
         }
     }
 
@@ -207,17 +240,22 @@ public class BossController : MonoBehaviour, IDamageable
     /// </summary>
     public GameObject GetCannonballFromPool()
     {
+        GameObject cannonball = null;
         if (cannonballPool.Count > 0)
         {
-            GameObject cannonball = cannonballPool.Dequeue();
+            cannonball = cannonballPool.Dequeue();
             cannonball.SetActive(true);
-            return cannonball;
+
+            // 이전 상태 완전 초기화 (Waiting/Falling 상태로 남아있으면 머리 위에 고정되는 문제 방지)
+            HowitzerCannonball hw = cannonball.GetComponent<HowitzerCannonball>();
+            if (hw != null) hw.ResetForPool();
         }
         else if (cannonballPrefab != null)
         {
-            return Instantiate(cannonballPrefab);
+            cannonball = Instantiate(cannonballPrefab);
         }
-        return null;
+        if (cannonball != null) activeCannonballs.Add(cannonball);
+        return cannonball;
     }
 
     /// <summary>
@@ -229,6 +267,7 @@ public class BossController : MonoBehaviour, IDamageable
         {
             cannonball.SetActive(false);
             cannonballPool.Enqueue(cannonball);
+            activeCannonballs.Remove(cannonball);
         }
     }
 
@@ -237,17 +276,18 @@ public class BossController : MonoBehaviour, IDamageable
     /// </summary>
     public GameObject GetWarningMarkerFromPool()
     {
+        GameObject marker = null;
         if (warningMarkerPool.Count > 0)
         {
-            GameObject marker = warningMarkerPool.Dequeue();
+            marker = warningMarkerPool.Dequeue();
             marker.SetActive(true);
-            return marker;
         }
         else if (warningMarkerPrefab != null)
         {
-            return Instantiate(warningMarkerPrefab);
+            marker = Instantiate(warningMarkerPrefab);
         }
-        return null;
+        if (marker != null) activeWarningMarkers.Add(marker);
+        return marker;
     }
 
     /// <summary>
@@ -259,6 +299,7 @@ public class BossController : MonoBehaviour, IDamageable
         {
             marker.SetActive(false);
             warningMarkerPool.Enqueue(marker);
+            activeWarningMarkers.Remove(marker);
         }
     }
 
@@ -320,6 +361,120 @@ public class BossController : MonoBehaviour, IDamageable
             pellet.SetActive(false);
             bouncePelletPool.Enqueue(pellet);
         }
+    }
+
+    /// <summary>
+    /// 드론 오브젝트 풀에서 가져오기
+    /// </summary>
+    public GameObject GetDroneFromPool()
+    {
+        if (dronePool.Count > 0)
+        {
+            GameObject drone = dronePool.Dequeue();
+            drone.SetActive(true);
+            return drone;
+        }
+        else if (dronePrefab != null)
+        {
+            return Instantiate(dronePrefab);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 드론 오브젝트 풀에 반환하기
+    /// </summary>
+    public void ReturnDroneToPool(GameObject drone)
+    {
+        if (drone != null)
+        {
+            drone.SetActive(false);
+            dronePool.Enqueue(drone);
+        }
+    }
+
+    /// <summary>
+    /// 불도저 드론 오브젝트 풀에서 가져오기
+    /// </summary>
+    public GameObject GetBulldozerDroneFromPool()
+    {
+        if (bulldozerDronePool.Count > 0)
+        {
+            GameObject drone = bulldozerDronePool.Dequeue();
+            drone.SetActive(true);
+            return drone;
+        }
+        else if (bulldozerDronePrefab != null)
+        {
+            return Instantiate(bulldozerDronePrefab);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 불도저 드론 오브젝트 풀에 반환하기
+    /// </summary>
+    public void ReturnBulldozerDroneToPool(GameObject drone)
+    {
+        if (drone != null)
+        {
+            drone.SetActive(false);
+            bulldozerDronePool.Enqueue(drone);
+        }
+    }
+
+    /// <summary>
+    /// 불도저 드론 프리팹 getter
+    /// </summary>
+    public GameObject GetBulldozerDronePrefab()
+    {
+        return bulldozerDronePrefab;
+    }
+
+    /// <summary>
+    /// 씬에 남아있는 모든 활성 발사체를 풀로 회수 (페이즈 전환 시 호출)
+    /// 캐논볼/총알/경고마커가 보스 이동을 막는 문제 방지
+    /// FindObjectsByType 대신 직접 추적 리스트를 사용 (Unity 버전 호환)
+    /// </summary>
+    public void ClearAllActiveProjectiles()
+    {
+        // 활성 캐논볼 전체 회수 (추적 리스트 기반)
+        for (int i = activeCannonballs.Count - 1; i >= 0; i--)
+        {
+            GameObject cb = activeCannonballs[i];
+            if (cb != null && cb.activeSelf)
+            {
+                cb.SetActive(false);
+                cannonballPool.Enqueue(cb);
+            }
+        }
+        activeCannonballs.Clear();
+
+        // 활성 총알 전체 회수 (추적 리스트 기반)
+        for (int i = activeBullets.Count - 1; i >= 0; i--)
+        {
+            GameObject bullet = activeBullets[i];
+            if (bullet != null && bullet.activeSelf)
+            {
+                bullet.SetActive(false);
+                bulletPool.Enqueue(bullet);
+            }
+        }
+        activeBullets.Clear();
+
+        // 경고 마커 전체 회수 (추적 리스트 기반)
+        for (int i = activeWarningMarkers.Count - 1; i >= 0; i--)
+        {
+            GameObject marker = activeWarningMarkers[i];
+            if (marker != null && marker.activeSelf)
+            {
+                marker.SetActive(false);
+                warningMarkerPool.Enqueue(marker);
+            }
+        }
+        activeWarningMarkers.Clear();
+
+        Debug.Log("[Boss] 페이즈 전환: 씬의 모든 발사체 회수 완료");
     }
 
     /// <summary>
@@ -396,137 +551,58 @@ public class BossController : MonoBehaviour, IDamageable
         // 1페이즈 BT
         _phase1BT = new BossBT.Selector(new List<BossBT.BTNode>
         {
-            // 콤보 A - 근거리
+            // 콤보 A - 근거리 (5m 미만): 밟기 → 0.2초 정지 → 기관총 3연발
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 0f, 5f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
+                new BossBT.WaitNode(0.2f, this),
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this)
             }),
-            // 콤보 B - 근거리
-            new BossBT.Sequence(new List<BossBT.BTNode>
-            {
-                new BossBT.CheckDistance(transform, player, 0f, 5f),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Charge, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
-                ,new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
-                ,new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
-            }),
-            // 콤보 E - 중거리
-            new BossBT.Sequence(new List<BossBT.BTNode>
-            {
-                new BossBT.CheckDistance(transform, player, 5f, 30f),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Charge, this, this),
-                new BossBT.WaitNode(3f, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Charge, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
-            }),
-            // 콤보 F - 중거리
+            // 콤보 B - 중거리 (5m~30m): 기관총 3연발 → 0.2초 정지 → 기관총 연사
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 5f, 30f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Charge, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
+                new BossBT.WaitNode(0.2f, this),
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this)
             }),
-            // 콤보 C - 원거리
+            // 콤보 C - 원거리 (30m 이상): 곡사포 → 0.2초 정지 → 돌진
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 30f, 9999f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
-            }),
-            // 콤보 D - 원거리
-            new BossBT.Sequence(new List<BossBT.BTNode>
-            {
-                new BossBT.CheckDistance(transform, player, 30f, 9999f),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Charge, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
+                new BossBT.WaitNode(0.2f, this),
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Charge, this, this)
             })
         });
 
         // 2페이즈 BT
         _phase2BT = new BossBT.Selector(new List<BossBT.BTNode>
         {
-            // 콤보 G - 근거리
+            // 콤보 D - 근거리 (5m 미만): 밟기 → 0.2초 정지 → 밟기
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 0f, 5f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Cannon, this, this)
+                new BossBT.WaitNode(0.2f, this),
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this)
             }),
-            // 콤보 H - 근거리
-            new BossBT.Sequence(new List<BossBT.BTNode>
-            {
-                new BossBT.CheckDistance(transform, player, 0f, 5f),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Charge, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Cannon, this, this)
-            }),
-            // 콤보 K - 중거리
-            new BossBT.Sequence(new List<BossBT.BTNode>
-            {
-                new BossBT.CheckDistance(transform, player, 5f, 30f),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Cannon, this, this)
-            }),
-            // 콤보 L - 중거리
+            // 콤보 E - 중거리 (5m~30m): 기관총 연사 → 0.2초 정지 → 곡사포
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 5f, 30f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Cannon, this, this)
-            }),
-            // 콤보 M - 중거리 (드론 소환)
-            new BossBT.Sequence(new List<BossBT.BTNode>
-            {
-                new BossBT.CheckDistance(transform, player, 5f, 30f),
-                new BossBT.CheckMaxDroneCount(() => activeDrones.Count, maxDroneCount),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.DroneSpawn, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this)
-            }),
-            // 콤보 I - 원거리
-            new BossBT.Sequence(new List<BossBT.BTNode>
-            {
-                new BossBT.CheckDistance(transform, player, 30f, 9999f),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Cannon, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Cannon, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Cannon, this, this)
-            }),
-            // 콤보 J - 원거리
-            new BossBT.Sequence(new List<BossBT.BTNode>
-            {
-                new BossBT.CheckDistance(transform, player, 30f, 9999f),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Cannon, this, this)
-            }),
-            // 콤보 N - 원거리 (드론 소환)
-            new BossBT.Sequence(new List<BossBT.BTNode>
-            {
-                new BossBT.CheckDistance(transform, player, 30f, 9999f),
-                new BossBT.CheckMaxDroneCount(() => activeDrones.Count, maxDroneCount),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.DroneSpawn, this, this),
+                new BossBT.WaitNode(0.2f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
+            }),
+            // 콤보 F - 원거리 (30m 이상): 곡사포 → 0.2초 정지 → 드론 소환
+            new BossBT.Sequence(new List<BossBT.BTNode>
+            {
+                new BossBT.CheckDistance(transform, player, 30f, 9999f),
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
+                new BossBT.WaitNode(0.2f, this),
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.DroneSpawn, this, this)
             })
         });
     }
@@ -581,11 +657,32 @@ public class BossController : MonoBehaviour, IDamageable
     }
 
     /// <summary>
-    /// Resting 상태 - 2초 휴식
+    /// Resting 상태 - 2초 휴식 + 플레이어 방향으로 이동 (1·2페이즈 공통)
     /// </summary>
     private IEnumerator RestingState()
     {
-        yield return new WaitForSeconds(2f);
+        float restDuration = 2f;
+        float elapsed = 0f;
+
+        while (elapsed < restDuration && currentState == BossState.Resting)
+        {
+            // 플레이어 방향으로 걷기
+            if (player != null && rb2d != null)
+            {
+                float dirX = Mathf.Sign(player.position.x - transform.position.x);
+                rb2d.linearVelocity = new Vector2(dirX * walkSpeed, rb2d.linearVelocity.y);
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // 이동 정지
+        if (rb2d != null)
+        {
+            rb2d.linearVelocity = new Vector2(0f, rb2d.linearVelocity.y);
+        }
+
         ChangeState(BossState.Idle);
     }
 
@@ -596,6 +693,46 @@ public class BossController : MonoBehaviour, IDamageable
     {
         return (currentHP / maxHP > 0.5f) ? 1 : 2;
     }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// [디버그 전용] F1 키 → 보스 HP를 49%로 강제 조정 (2페이즈 드론 패턴 테스트)
+    /// </summary>
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            float targetHP = maxHP * 0.49f;
+            currentHP = targetHP;
+
+            if (healthBar != null)
+                healthBar.UpdateHealth(currentHP);
+
+            Debug.Log($"[Debug] F1: 보스 HP를 {targetHP:F0} (49%)로 강제 설정 → 2페이즈 전환 유도");
+
+            // 페이즈 전환 트리거 (이미 Attacking 중이라면 즉시 전환)
+            int newPhase = GetCurrentPhase();
+            if (newPhase != currentPhase && !hasPhaseTransitioned)
+            {
+                currentPhase = newPhase;
+                hasPhaseTransitioned = true;
+
+                BossBT.BTNode oldBT = _activeBT;
+                _activeBT = _phase2BT;
+                ResetBehaviorTree(oldBT);
+                ResetBehaviorTree(_activeBT);
+
+                StopAllCoroutines();
+
+                if (phaseTransitionEffect != null)
+                    Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
+
+                ChangeState(BossState.Idle);
+                Debug.Log("[Debug] F1: 2페이즈 전환 완료 → 드론 패턴 활성화됨");
+            }
+        }
+    }
+#endif
 
     /// <summary>
     /// 피격 처리
@@ -636,13 +773,16 @@ public class BossController : MonoBehaviour, IDamageable
             // 2) 모든 코루틴 중단
             StopAllCoroutines();
 
-            // 3) 페이즈 전환 이펝트 (Instantiate로 직접 생성하여 StopAllCoroutines에 영향 안 받음)
+            // 3) 씬에 남은 발사체 전부 회수 → 보스 이동 막힘 방지
+            ClearAllActiveProjectiles();
+
+            // 4) 페이즈 전환 이펙트
             if (phaseTransitionEffect != null)
             {
                 Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
             }
 
-            // 4) 새 상태 시작
+            // 5) 새 상태 시작
             ChangeState(BossState.Idle);
         }
 

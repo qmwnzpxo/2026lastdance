@@ -81,7 +81,7 @@ public class HowitzerCannonball : MonoBehaviour
     /// </summary>
     private IEnumerator RisingCoroutine()
     {
-        while (Vector3.Distance(transform.position, targetHeight) > 0.1f)
+        while (Vector2.Distance(transform.position, targetHeight) > 0.1f)
         {
             transform.position = Vector3.MoveTowards(transform.position, targetHeight, riseSpeed * Time.deltaTime);
             yield return null;
@@ -89,6 +89,21 @@ public class HowitzerCannonball : MonoBehaviour
 
         transform.position = targetHeight;
         currentState = HowitzerState.Waiting;
+
+        // 안전장치: Waiting 상태에서 5초 이상 대기하면 자동 풀 반환
+        // (페이즈 전환/코루틴 중단 등으로 StartFalling이 호출되지 않는 경우 대비)
+        float waitedTime = 0f;
+        while (currentState == HowitzerState.Waiting)
+        {
+            waitedTime += Time.deltaTime;
+            if (waitedTime > 5f)
+            {
+                Debug.LogWarning("[HowitzerCannonball] Waiting 타임아웃 - 풀로 자동 반환");
+                ReturnToPool();
+                yield break;
+            }
+            yield return null;
+        }
     }
 
     /// <summary>
@@ -116,7 +131,7 @@ public class HowitzerCannonball : MonoBehaviour
     {
         Vector3 startPos = transform.position;
         Vector3 endPos = fallTarget;
-        float distance = Vector3.Distance(startPos, endPos);
+        float distance = Vector2.Distance(startPos, endPos);
         float duration = distance / fallSpeed;
         float elapsedTime = 0f;
 
@@ -148,7 +163,7 @@ public class HowitzerCannonball : MonoBehaviour
         else if (ammoType == HowitzerAmmoType.BounceBlast)
         {
             // BounceBlast: 지면 충돌까지 낙하
-            while (Vector3.Distance(transform.position, fallTarget) > 0.1f && elapsedTime < duration)
+            while (Vector2.Distance(transform.position, fallTarget) > 0.1f && elapsedTime < duration)
             {
                 elapsedTime += Time.deltaTime;
                 float t = elapsedTime / duration;
@@ -172,7 +187,7 @@ public class HowitzerCannonball : MonoBehaviour
         else
         {
             // Normal: 기존 로직
-            while (Vector3.Distance(transform.position, fallTarget) > 0.1f && elapsedTime < duration)
+            while (Vector2.Distance(transform.position, fallTarget) > 0.1f && elapsedTime < duration)
             {
                 elapsedTime += Time.deltaTime;
                 float t = elapsedTime / duration;
@@ -382,15 +397,41 @@ public class HowitzerCannonball : MonoBehaviour
         bouncePelletPrefab = pelletPrefab;
     }
 
+    /// <summary>
+    /// 풀 재사용 전 상태 완전 초기화 (풀에서 껪낼 때 호출)
+    /// </summary>
+    public void ResetForPool()
+    {
+        currentState = HowitzerState.Idle;
+        ammoType = HowitzerAmmoType.Normal;
+        targetHeight = Vector3.zero;
+        fallTarget = Vector3.zero;
+        riseSpeed = 0f;
+        fallSpeed = 0f;
+        damage = 0f;
+
+        if (currentCoroutine != null)
+        {
+            StopCoroutine(currentCoroutine);
+            currentCoroutine = null;
+        }
+
+        if (rb2d != null)
+        {
+            rb2d.linearVelocity = Vector2.zero;
+        }
+    }
+
     private void OnDisable()
     {
-        // 상태 초기화
+        // 상태 초기화 (풀 반환 시)
         currentState = HowitzerState.Idle;
-        
+
         // 코루틴 중지
         if (currentCoroutine != null)
         {
             StopCoroutine(currentCoroutine);
+            currentCoroutine = null;
         }
 
         // 속도 정지

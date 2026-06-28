@@ -50,6 +50,24 @@ public class BossDrone : MonoBehaviour
         rb2d = GetComponent<Rigidbody2D>();
         droneCollider = GetComponent<Collider2D>();
         currentHP = droneHP;
+
+        // 드론은 비행하므로 물리 중력의 영향을 받지 않도록 0으로 설정
+        if (rb2d != null)
+        {
+            rb2d.gravityScale = 0f;
+            rb2d.linearVelocity = Vector2.zero;
+        }
+
+        // 자동으로 Player 및 BossController 연결
+        if (player == null)
+        {
+            GameObject pObj = GameObject.FindGameObjectWithTag("Player");
+            if (pObj != null) player = pObj.transform;
+        }
+        if (bossController == null)
+        {
+            bossController = Object.FindAnyObjectByType<BossController>();
+        }
     }
 
     /// <summary>
@@ -65,8 +83,8 @@ public class BossDrone : MonoBehaviour
     /// </summary>
     public void Initialize(Transform playerTransform, BossController controller, DronePattern pattern, DronePatternParameters parameters)
     {
-        player = playerTransform;
-        bossController = controller;
+        if (playerTransform != null) player = playerTransform;
+        if (controller != null) bossController = controller;
         assignedPattern = pattern;
 
         // 파라미터 설정
@@ -110,17 +128,32 @@ public class BossDrone : MonoBehaviour
     /// </summary>
     private IEnumerator RiseSequence()
     {
+        // 상승 시작 시 기존 물리 속도 제거
+        if (rb2d != null)
+        {
+            rb2d.linearVelocity = Vector2.zero;
+        }
+
         Vector3 targetPosition = bossController.GetDroneRiseTarget();
         float riseSpeed = bossController.GetDroneRiseSpeed();
 
         // 상승 중
-        while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
+        while (Vector2.Distance(transform.position, targetPosition) > 0.1f)
         {
+            // 물리 움직임과 충돌 방지를 위해 매 프레임 속도 리셋 후 이동
+            if (rb2d != null)
+            {
+                rb2d.linearVelocity = Vector2.zero;
+            }
             transform.position = Vector3.MoveTowards(transform.position, targetPosition, riseSpeed * Time.deltaTime);
             yield return null;
         }
 
         transform.position = targetPosition;
+        if (rb2d != null)
+        {
+            rb2d.linearVelocity = Vector2.zero;
+        }
 
         // 등장 완료, Active 상태로 전환
         currentState = DroneState.Active;
@@ -151,10 +184,19 @@ public class BossDrone : MonoBehaviour
     /// </summary>
     private IEnumerator LaserBomberPattern()
     {
+        if (rb2d != null)
+        {
+            rb2d.linearVelocity = Vector2.zero;
+        }
+
         // 랜덤 좌표로 이동
         Vector3 randomPosition = GetRandomMapPosition();
-        while (Vector3.Distance(transform.position, randomPosition) > 0.1f)
+        while (Vector2.Distance(transform.position, randomPosition) > 0.1f)
         {
+            if (rb2d != null)
+            {
+                rb2d.linearVelocity = Vector2.zero;
+            }
             transform.position = Vector3.MoveTowards(transform.position, randomPosition, droneMoveSpeed * Time.deltaTime);
             yield return null;
         }
@@ -353,16 +395,8 @@ public class BossDrone : MonoBehaviour
 
     private void Update()
     {
-        if (currentState == DroneState.Active && player != null)
-        {
-            // 플레이어 방향으로 이동
-            Vector3 direction = (player.position - transform.position).normalized;
-            
-            if (rb2d != null)
-            {
-                rb2d.linearVelocity = direction * droneMoveSpeed;
-            }
-        }
+        // Update()에서 일률적으로 플레이어를 추적하면 패턴 동작과 충돌하므로 제거합니다.
+        // 추적이 필요한 GroundTracker 패턴은 해당 코루틴 내에서 직접 추적을 수행합니다.
     }
 
     /// <summary>
@@ -394,15 +428,17 @@ public class BossDrone : MonoBehaviour
             StopCoroutine(attackCoroutine);
         }
 
-        // 보스 컨트롤러에서 드론 제거
+        // 보스 컨트롤러에서 드론 제거 + 풀로 반환
         if (bossController != null)
         {
             bossController.UnregisterDrone(gameObject);
+            bossController.ReturnDroneToPool(gameObject); // 풀로 반환 (SetActive(false) 포함)
         }
-
-        // 사망 이펙트 (필요시 추가)
-        // 오브젝트 비활성화
-        gameObject.SetActive(false);
+        else
+        {
+            // 보스 컨트롤러 없으면 직접 비활성화
+            gameObject.SetActive(false);
+        }
     }
 
     private void OnDisable()

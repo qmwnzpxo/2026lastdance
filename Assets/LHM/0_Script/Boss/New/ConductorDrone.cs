@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 /// <summary>
 /// 지휘자 드론 - 지렁이 드론의 머리 부분
@@ -33,12 +34,36 @@ public class ConductorDrone : MonoBehaviour
     private float pathTime = 0f;
     private Vector3 centerPosition;
     private Coroutine attackCoroutine;
+    private bool isInitialized = false;
+
+    // 위치 기록 관련 (지렁이 기차 움직임용)
+    private List<Vector3> pathHistory = new List<Vector3>();
+    private const float minDistanceBetweenPoints = 0.15f;
 
     private void Awake()
     {
         rb2d = GetComponent<Rigidbody2D>();
         droneCollider = GetComponent<Collider2D>();
         currentHP = droneHP;
+
+        // 자동으로 Player 및 BossController 연결
+        if (player == null)
+        {
+            GameObject pObj = GameObject.FindGameObjectWithTag("Player");
+            if (pObj != null) player = pObj.transform;
+        }
+        if (bossController == null)
+        {
+            bossController = Object.FindAnyObjectByType<BossController>();
+        }
+    }
+
+    private void Start()
+    {
+        if (!isInitialized)
+        {
+            Initialize(player, bossController, transform.position);
+        }
     }
 
     /// <summary>
@@ -46,8 +71,11 @@ public class ConductorDrone : MonoBehaviour
     /// </summary>
     public void Initialize(Transform playerTransform, BossController controller, Vector3 spawnPosition)
     {
-        player = playerTransform;
-        bossController = controller;
+        if (isInitialized) return;
+        isInitialized = true;
+
+        if (playerTransform != null) player = playerTransform;
+        if (controller != null) bossController = controller;
         centerPosition = spawnPosition;
         currentHP = droneHP;
         isDead = false;
@@ -79,7 +107,7 @@ public class ConductorDrone : MonoBehaviour
         {
             if (bodyDrones[i] != null)
             {
-                bodyDrones[i].Initialize(player, bossController, this, i + 1);
+                bodyDrones[i].Initialize(player, bossController, this, i + 1, bodyDrones.Length);
             }
         }
     }
@@ -101,6 +129,9 @@ public class ConductorDrone : MonoBehaviour
 
             // 부드러운 이동
             transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+
+            // 위치 기록 갱신
+            UpdatePathHistory();
 
             yield return null;
         }
@@ -150,6 +181,40 @@ public class ConductorDrone : MonoBehaviour
     public Vector3 GetCurrentPosition()
     {
         return transform.position;
+    }
+
+    /// <summary>
+    /// 위치 기록 Getter
+    /// </summary>
+    public List<Vector3> GetPathHistory()
+    {
+        return pathHistory;
+    }
+
+    /// <summary>
+    /// 속도 Getter
+    /// </summary>
+    public float GetMoveSpeed()
+    {
+        return moveSpeed;
+    }
+
+    /// <summary>
+    /// 위치 기록 갱신 (지정된 최소 거리만큼 이동 시 좌표 추가)
+    /// </summary>
+    private void UpdatePathHistory()
+    {
+        if (pathHistory.Count == 0 || Vector2.Distance(transform.position, pathHistory[0]) > minDistanceBetweenPoints)
+        {
+            pathHistory.Insert(0, transform.position);
+
+            // 메모리 절약을 위해 필요한 개수만큼만 기록 유지
+            int maxHistory = (bodyDrones != null ? bodyDrones.Length : 8) * 10 + 10;
+            if (pathHistory.Count > maxHistory)
+            {
+                pathHistory.RemoveAt(pathHistory.Count - 1);
+            }
+        }
     }
 
     /// <summary>

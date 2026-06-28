@@ -1,17 +1,20 @@
 using UnityEngine;
 
 /// <summary>
-/// 에너지탄 - 지휘자 드론이 발사하는 특수 투사체
-/// 매우 느린 속도로 이동하며 시간이 지날수록 크기가 점점 커짐
+/// 에너지탄 - 드론이 발사하는 투사체
+/// 플레이어 방향으로 직선 이동하며 시간이 지날수록 크기가 점점 커짐
+/// rb2d 유무와 관계없이 항상 이동 (transform 폴백 지원)
 /// </summary>
 public class EnergyBullet : MonoBehaviour
 {
     [Header("투사체 설정")]
-    [SerializeField] private float bulletSpeed = 2f;
-    [SerializeField] private float initialSize = 0.5f;
-    [SerializeField] private float maxSize = 3f;
-    [SerializeField] private float growthRate = 0.5f;
+    [SerializeField] private float bulletSpeed = 8f;
     [SerializeField] private float lifetime = 10f;
+
+    [Header("스케일 성장 설정")]
+    [SerializeField] private float initialSize = 0.3f;
+    [SerializeField] private float maxSize = 2.5f;
+    [SerializeField] private float growthRate = 0.4f;
 
     [Header("데미지 설정")]
     [SerializeField] private float baseDamage = 10f;
@@ -38,7 +41,7 @@ public class EnergyBullet : MonoBehaviour
     }
 
     /// <summary>
-    /// 에너지탄 초기화
+    /// 에너지탄 초기화 - 발사 방향과 데미지 설정
     /// </summary>
     public void Initialize(Vector3 direction, float damage)
     {
@@ -46,10 +49,13 @@ public class EnergyBullet : MonoBehaviour
         currentDamage = damage;
         baseDamage = damage;
         currentSize = initialSize;
+        currentLifetime = lifetime;
         isInitialized = true;
 
+        // 초기 스케일 설정
         transform.localScale = Vector3.one * currentSize;
 
+        // rb2d가 있으면 velocity로 이동
         if (rb2d != null)
         {
             rb2d.gravityScale = 0f;
@@ -70,7 +76,13 @@ public class EnergyBullet : MonoBehaviour
             return;
         }
 
-        // 크기 증가
+        // rb2d가 없거나 Kinematic인 경우 transform으로 직접 이동 (폴백)
+        if (rb2d == null || rb2d.isKinematic)
+        {
+            transform.position += moveDirection * bulletSpeed * Time.deltaTime;
+        }
+
+        // 스케일 성장
         if (currentSize < maxSize)
         {
             currentSize += growthRate * Time.deltaTime;
@@ -84,6 +96,9 @@ public class EnergyBullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (!isInitialized)
+            return;
+
         // 플레이어 충돌 시
         if (other.CompareTag("Player"))
         {
@@ -98,7 +113,6 @@ public class EnergyBullet : MonoBehaviour
     /// </summary>
     private void DestroyBullet()
     {
-        // 파괴 이펙트 (필요시 추가)
         gameObject.SetActive(false);
     }
 
@@ -108,8 +122,10 @@ public class EnergyBullet : MonoBehaviour
         if (rb2d != null)
         {
             rb2d.linearVelocity = Vector2.zero;
+            rb2d.gravityScale = 0f;
         }
         transform.localScale = Vector3.one * initialSize;
+        moveDirection = Vector3.zero;
         isInitialized = false;
     }
 }
