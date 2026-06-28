@@ -16,7 +16,7 @@ public enum DroneState
 /// 보스 드론 AI 스크립트
 /// 보스로부터 소환되어 독립적으로 플레이어를 추적·공격
 /// </summary>
-public class BossDrone : MonoBehaviour
+public class BossDrone : MonoBehaviour, IDamageable
 {
     [Header("드론 스탯")]
     [SerializeField] private float droneHP = 50f;

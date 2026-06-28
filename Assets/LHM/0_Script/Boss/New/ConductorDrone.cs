@@ -7,7 +7,7 @@ using System.Collections.Generic;
 /// ∞ 루트로 움직이며 3초마다 에너지탄 발사
 /// 몸체 드론들의 이동 방향을 결정
 /// </summary>
-public class ConductorDrone : MonoBehaviour
+public class ConductorDrone : MonoBehaviour, IDamageable
 {
     [Header("드론 스탯")]
     [SerializeField] private float droneHP = 100f;

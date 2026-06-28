@@ -6,7 +6,7 @@ using System.Collections;
 /// 지휘자 드론을 따라가며 일정 거리를 유지
 /// 지휘자 드론 파괴 시 흩어지며 랜덤 이동 후 총알 발사
 /// </summary>
-public class BodyDrone : MonoBehaviour
+public class BodyDrone : MonoBehaviour, IDamageable
 {
     [Header("드론 스탯")]
     [SerializeField] private float droneHP = 30f;

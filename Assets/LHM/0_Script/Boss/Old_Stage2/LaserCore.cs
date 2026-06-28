@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using BossSystem;
 
 namespace Boss.Phase1

@@ -1,4 +1,4 @@
-﻿using BossSystem;
+using BossSystem;
 using System.Collections.Generic;
 using UnityEngine;
 

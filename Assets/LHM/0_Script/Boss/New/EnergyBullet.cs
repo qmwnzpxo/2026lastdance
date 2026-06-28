@@ -12,8 +12,8 @@ public class EnergyBullet : MonoBehaviour
     [SerializeField] private float lifetime = 10f;
 
     [Header("스케일 성장 설정")]
-    [SerializeField] private float initialSize = 0.3f;
-    [SerializeField] private float maxSize = 2.5f;
+    [SerializeField] private float initialSize = 5f;
+    [SerializeField] private float maxSize = 10f;
     [SerializeField] private float growthRate = 0.4f;
 
     [Header("데미지 설정")]

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 8183068606805417805}
   - component: {fileID: 1076440744327597738}
   - component: {fileID: 3083364878098629094}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: D3_0 (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -175,7 +175,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41419057852f672458676d46359f74d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  droneHP: 30
+  droneHP: 15
   followSpeed: 5
   scatterSpeed: 3
   followDistance: 1.5
@@ -200,7 +200,7 @@ GameObject:
   - component: {fileID: 3039874283832277789}
   - component: {fileID: 1325162745363041694}
   - component: {fileID: 2766879175370442801}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: D3_0 (7)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -362,7 +362,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41419057852f672458676d46359f74d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  droneHP: 30
+  droneHP: 15
   followSpeed: 5
   scatterSpeed: 3
   followDistance: 1.5
@@ -387,7 +387,7 @@ GameObject:
   - component: {fileID: 4334909498778140886}
   - component: {fileID: 6387002879601825248}
   - component: {fileID: 272620522888454068}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: D3_0 (6)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -549,7 +549,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41419057852f672458676d46359f74d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  droneHP: 30
+  droneHP: 15
   followSpeed: 5
   scatterSpeed: 3
   followDistance: 1.5
@@ -574,7 +574,7 @@ GameObject:
   - component: {fileID: 8212491707011402104}
   - component: {fileID: 3200105027897377164}
   - component: {fileID: 6017383012786852022}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: D3_0 (5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -736,7 +736,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41419057852f672458676d46359f74d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  droneHP: 30
+  droneHP: 15
   followSpeed: 5
   scatterSpeed: 3
   followDistance: 1.5
@@ -761,7 +761,7 @@ GameObject:
   - component: {fileID: 9199055221819274992}
   - component: {fileID: 5390151882552408175}
   - component: {fileID: 519448283238211478}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: D3_0 (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -923,7 +923,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41419057852f672458676d46359f74d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  droneHP: 30
+  droneHP: 15
   followSpeed: 5
   scatterSpeed: 3
   followDistance: 1.5
@@ -948,7 +948,7 @@ GameObject:
   - component: {fileID: 5544602781792488005}
   - component: {fileID: 2561673956684598758}
   - component: {fileID: 8445760988517106270}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: D2_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1110,13 +1110,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a50ea5a06b8f7ac4faf2593d8c9cbfc0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  droneHP: 100
+  droneHP: 25
   moveSpeed: 8
   infinityPathScale: 60
   infinityPathSpeed: 0.3
   energyBulletInterval: 3
   energyBulletDamage: 10
-  energyBulletPrefab: {fileID: 3896615220737456150, guid: e8bfe2d70af21884aa00f3d991d4f510, type: 3}
+  energyBulletPrefab: {fileID: 449766889565757355, guid: a74b0eb28089d764e9e26603d90563bb, type: 3}
   player: {fileID: 0}
   bossController: {fileID: 0}
   rb2d: {fileID: 5544602781792488005}
@@ -1143,7 +1143,7 @@ GameObject:
   - component: {fileID: 807568202940244359}
   - component: {fileID: 8781998310819741173}
   - component: {fileID: 7283436829972334921}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: D3_0 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1305,7 +1305,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41419057852f672458676d46359f74d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  droneHP: 30
+  droneHP: 15
   followSpeed: 5
   scatterSpeed: 3
   followDistance: 1.5
@@ -1330,7 +1330,7 @@ GameObject:
   - component: {fileID: 6385652588346715026}
   - component: {fileID: 2441454024782784665}
   - component: {fileID: 2394906795902729604}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: D3_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1492,7 +1492,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41419057852f672458676d46359f74d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  droneHP: 30
+  droneHP: 15
   followSpeed: 5
   scatterSpeed: 3
   followDistance: 1.5
@@ -1517,7 +1517,7 @@ GameObject:
   - component: {fileID: 7867540631828974085}
   - component: {fileID: 5395493636106869869}
   - component: {fileID: 3839659385173118736}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: D3_0 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1679,7 +1679,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41419057852f672458676d46359f74d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  droneHP: 30
+  droneHP: 15
   followSpeed: 5
   scatterSpeed: 3
   followDistance: 1.5

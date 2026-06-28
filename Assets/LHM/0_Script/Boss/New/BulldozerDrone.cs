@@ -5,7 +5,7 @@ using System.Collections;
 /// 불도저 드론 - 돌진 및 내리찍기 공격
 /// 플레이어와의 X 거리에 따라 공격 패턴 변경
 /// </summary>
-public class BulldozerDrone : MonoBehaviour
+public class BulldozerDrone : MonoBehaviour, IDamageable
 {
     [Header("드론 스탯")]
     [SerializeField] private float droneHP = 80f;
@@ -36,6 +36,7 @@ public class BulldozerDrone : MonoBehaviour
         rb2d = GetComponent<Rigidbody2D>();
         droneCollider = GetComponent<Collider2D>();
         currentHP = droneHP;
+        transform.localScale = Vector3.one * 5f; // 스케일 5로 고정
 
         // 자동으로 Player 및 BossController 연결
         if (player == null)
@@ -49,9 +50,6 @@ public class BulldozerDrone : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 드론 초기화
-    /// </summary>
     public void Initialize(Transform playerTransform, BossController controller)
     {
         if (playerTransform != null) player = playerTransform;
@@ -59,6 +57,7 @@ public class BulldozerDrone : MonoBehaviour
         currentHP = droneHP;
         isDead = false;
         isAttacking = false;
+        transform.localScale = Vector3.one * 5f; // 스케일 5로 고정
 
         // 콜라이더 활성화
         if (droneCollider != null)
@@ -68,6 +67,12 @@ public class BulldozerDrone : MonoBehaviour
 
         // 공격 패턴 시작
         StartCoroutine(AttackPatternLoop());
+    }
+
+    private void LateUpdate()
+    {
+        // 애니메이터나 부모 스케일의 영향을 강제로 무시하고 5로 고정
+        transform.localScale = Vector3.one * 5f;
     }
 
     /// <summary>

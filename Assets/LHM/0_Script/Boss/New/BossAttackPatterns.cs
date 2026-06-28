@@ -116,6 +116,10 @@ public class BossAttackPatterns : MonoBehaviour
     [SerializeField] private GameObject airBurstPelletPrefab;   // AirBurst 파편 프리팹
     [SerializeField] private GameObject bouncePelletPrefab;     // BounceBlast 파편 프리팹
 
+    // ── Animation Event 콜백 플래그 (중복 호출 방지) ──
+    private bool _stompImpactCalled = false;
+    private bool _howitzerLaunchPending = false;
+
     private void Awake()
     {
         if (bossController == null)
@@ -197,6 +201,15 @@ public class BossAttackPatterns : MonoBehaviour
         bossController = controller;
         Debug.Log($"[Boss] 패턴 실행 시작: {pattern}");
 
+        // ── 공통 Animator 파라미터 설정 ──
+        // AttackType: AttackPattern 열거형을 정수로 캐스팅 (Animator Controller에서 int 파라미터로 수신)
+        // AttackStart: 패턴 진입 공통 트리거 (Base Layer 전환 또는 서브스테이트 머신 진입에 사용)
+        if (animator != null)
+        {
+            animator.SetInteger("AttackType", (int)pattern);
+            animator.SetTrigger("AttackStart");
+        }
+
         switch (pattern)
         {
             case AttackPattern.Stomp:
@@ -231,12 +244,18 @@ public class BossAttackPatterns : MonoBehaviour
     private IEnumerator Stomp()
     {
         Debug.Log("[Boss] 밟기 패턴 시작");
+        _stompImpactCalled = false;
+
         // 전조 애니메이션 재생
         if (animator != null)
         {
             animator.SetTrigger("StompAnticipation");
         }
-        yield return new WaitForSeconds(stompAnticipationTime);
+
+        // 클립 길이 자동 조회 (폴백: 인스펙터 stompAnticipationTime)
+        float anticipationDur = GetClipLength(animator, "Boss_Stomp_Anticipation");
+        if (anticipationDur <= 0f) anticipationDur = stompAnticipationTime;
+        yield return new WaitForSeconds(anticipationDur);
 
         // 수직 내리찍기 공격
         if (animator != null)
@@ -244,26 +263,14 @@ public class BossAttackPatterns : MonoBehaviour
             animator.SetTrigger("StompAttack");
         }
 
-        // 판정 박스 활성화
-        if (stompHitBox != null)
-        {
-            Collider2D[] hitTargets = Physics2D.OverlapBoxAll(
-                stompHitBox.position,
-                stompHitBox.localScale,
-                0f, playerLayer
-            );
+        // 클립 길이 자동 조회 (폴백: 인스펙터 잔여 시간)
+        float attackDur = GetClipLength(animator, "Boss_Stomp_Attack");
+        if (attackDur <= 0f) attackDur = Mathf.Max(0f, stompCastTime - stompAnticipationTime);
+        yield return new WaitForSeconds(attackDur);
 
-            foreach (Collider2D target in hitTargets)
-            {
-                if (target.CompareTag("Player"))
-                {
-                    // 플레이어에게 데미지 적용
-                    target.GetComponent<IDamageable>()?.TakeDamage(stompDamage);
-                }
-            }
-        }
-
-        yield return new WaitForSeconds(stompCastTime - stompAnticipationTime);
+        // 폴백: Animation Event(OnStompImpact)가 발동하지 않은 경우 직접 호출
+        if (!_stompImpactCalled)
+            OnStompImpact();
     }
 
     /// <summary>
@@ -605,24 +612,8 @@ public class BossAttackPatterns : MonoBehaviour
                 rb2d.linearVelocity = new Vector2(direction.x * chargeSpeed, rb2d.linearVelocity.y);
             }
 
-            // 판정 박스 활성화
-            if (chargeHitBox != null)
-            {
-                Collider2D[] hitTargets = Physics2D.OverlapBoxAll(
-                    chargeHitBox.position,
-                    chargeHitBox.localScale,
-                    0f
-                );
-
-                foreach (Collider2D target in hitTargets)
-                {
-                    if (target.CompareTag("Player"))
-                    {
-                        // 플레이어에게 데미지 적용
-                        target.GetComponent<PlayerHealth>()?.TakeDamage(chargeDamage);
-                    }
-                }
-            }
+            // 판정 박스 활성화 (OnChargeImpactCheck로 위임)
+            OnChargeImpactCheck();
 
             // 벽 충돌 감지 (Raycast)
             Vector2 rayOrigin = transform.position;
@@ -771,5 +762,111 @@ public class BossAttackPatterns : MonoBehaviour
         }
 
         return parameters;
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // Animation Event 공개 콜백 메서드
+    // 애니메이션 클립의 이벤트 트랙(Animation Event)에서 함수명으로 직접 호출
+    // 또는 코루틴 내부 폴백으로도 호출됨
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    /// <summary>
+    /// [Animation Event] 밟기 충돌 판정
+    /// Boss_Stomp_Attack 클립에서 내리찍는 프레임에 Animation Event로 연결
+    /// _stompImpactCalled 플래그로 코루틴 폴백과 중복 호출 방지
+    /// </summary>
+    public void OnStompImpact()
+    {
+        _stompImpactCalled = true;
+        if (stompHitBox == null) return;
+
+        Collider2D[] hitTargets = Physics2D.OverlapBoxAll(
+            stompHitBox.position,
+            stompHitBox.localScale,
+            0f, playerLayer
+        );
+
+        foreach (Collider2D target in hitTargets)
+        {
+            if (target.CompareTag("Player"))
+            {
+                target.GetComponent<IDamageable>()?.TakeDamage(stompDamage);
+            }
+        }
+        Debug.Log("[Boss] OnStompImpact: 밟기 판정 실행");
+    }
+
+    /// <summary>
+    /// [Animation Event] 기관총 단발 발사
+    /// MachinegunBurst/Rapid 클립의 발사 프레임에 Animation Event로 연결 (선택)
+    /// 코루틴의 for/while 루프 대신 이벤트 주도 발사가 필요할 때 사용
+    /// </summary>
+    public void OnMachinegunFire()
+    {
+        FireBullet();
+    }
+
+    /// <summary>
+    /// [Animation Event] 곡사포 발사 훅
+    /// Boss_Howitzer 클립의 발사 프레임에 Animation Event로 연결 (선택)
+    /// 기존 Howitzer() 코루틴 타이밍은 유지되며, 추가 이펙트/사운드 트리거 용도
+    /// _howitzerLaunchPending 을 true로 설정 → Howitzer 코루틴에서 폴링 가능
+    /// </summary>
+    public void OnHowitzerLaunch()
+    {
+        _howitzerLaunchPending = true;
+        Debug.Log("[Boss] OnHowitzerLaunch: 곡사포 발사 이벤트 수신");
+    }
+
+    /// <summary>
+    /// [Animation Event / 코루틴 내부] 돌진 충돌 판정
+    /// Charge() 코루틴 내 while 루프에서 매 프레임 호출
+    /// 또는 Boss_Charge_Anticipation 클립에 Animation Event로 연결 가능
+    /// </summary>
+    public void OnChargeImpactCheck()
+    {
+        if (chargeHitBox == null) return;
+
+        Collider2D[] hitTargets = Physics2D.OverlapBoxAll(
+            chargeHitBox.position,
+            chargeHitBox.localScale,
+            0f
+        );
+
+        foreach (Collider2D target in hitTargets)
+        {
+            if (target.CompareTag("Player"))
+            {
+                target.GetComponent<PlayerHealth>()?.TakeDamage(chargeDamage);
+            }
+        }
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 클립 길이 자동 조회 유틸리티
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    /// <summary>
+    /// Animator Controller에서 clipName과 일치하는 AnimationClip의 길이(초)를 반환
+    /// 클립을 찾지 못하면 0f 반환 + Debug.LogWarning → 인스펙터 폴백 값 사용 권장
+    /// </summary>
+    /// <param name="anim">대상 Animator</param>
+    /// <param name="clipName">조회할 클립 이름 (확장자 제외)</param>
+    private float GetClipLength(Animator anim, string clipName)
+    {
+        if (anim == null || anim.runtimeAnimatorController == null)
+        {
+            Debug.LogWarning($"[Boss] GetClipLength: Animator 또는 Controller가 null. clipName={clipName}");
+            return 0f;
+        }
+
+        foreach (AnimationClip clip in anim.runtimeAnimatorController.animationClips)
+        {
+            if (clip.name == clipName)
+                return clip.length;
+        }
+
+        Debug.LogWarning($"[Boss] GetClipLength: '{clipName}' 클립을 찾지 못했습니다. 인스펙터 폴백 값을 사용합니다.");
+        return 0f;
     }
 }

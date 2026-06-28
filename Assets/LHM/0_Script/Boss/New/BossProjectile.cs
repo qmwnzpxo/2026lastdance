@@ -16,8 +16,8 @@ public class BossProjectile : MonoBehaviour
     [SerializeField] private float shockwaveRange = 3f;
 
     [Header("스케일 성장 설정 (드론 총알)")]
-    [SerializeField] private float initialScale = 0.3f;
-    [SerializeField] private float maxScale = 1.5f;
+    [SerializeField] private float initialScale = 5f;
+    [SerializeField] private float maxScale = 10f;
     [SerializeField] private float growthRate = 0.4f;
 
     private Rigidbody2D rb2d;
@@ -82,8 +82,8 @@ public class BossProjectile : MonoBehaviour
         bossController = controller;
         moveDirection = direction; // 이동 방향 저장 (폴백 이동용)
 
-        // 스케일 초기화 (일반 총알은 성장 없음)
-        transform.localScale = Vector3.one;
+        // 스케일 초기화 (일반 총알은 성장 없음 - 5f로 고정)
+        transform.localScale = Vector3.one * 5f;
 
         if (rb2d != null)
         {
@@ -288,6 +288,6 @@ public class BossProjectile : MonoBehaviour
         }
         moveDirection = Vector3.zero; // 이동 방향 리셋
         isGrowing = false;
-        transform.localScale = Vector3.one; // 스케일 초기화
+        transform.localScale = Vector3.one * 5f; // 스케일 초기화 (5f 고정)
     }
 }

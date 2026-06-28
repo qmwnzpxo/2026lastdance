@@ -105,10 +105,23 @@ public class BossController : MonoBehaviour, IDamageable
     // 페이즈 전환 추적
     private bool hasPhaseTransitioned = false;
 
+    // 런타임 콘텍스트 (SO 기반 패턴 공유 참조 및 AnimationEventBridge)
+    private BossContext _bossContext;
+
     private void Awake()
     {
         currentHP = maxHP;
         InitializeObjectPools();
+    }
+
+    /// <summary>
+    /// 씰 주입 - SO 패턴 및 AnimationEventBridge 연동 전용
+    /// BossContext를 생성하고 현재사 Animator/Player를 주입
+    /// </summary>
+    private void InjectSceneDependencies()
+    {
+        _bossContext = BossContext.Create(this, animator, player);
+        Debug.Log("[Boss] BossContext 주입 완료");
     }
 
     private void Start()
@@ -117,6 +130,9 @@ public class BossController : MonoBehaviour, IDamageable
         {
             healthBar.Initialize(maxHP);
         }
+
+        // 런타임 콘텍스트 주입 (SO 패턴 및 AnimationEventBridge 주입)
+        InjectSceneDependencies();
 
         // Behavior Tree 빌드
         BuildBehaviorTrees();
@@ -551,26 +567,26 @@ public class BossController : MonoBehaviour, IDamageable
         // 1페이즈 BT
         _phase1BT = new BossBT.Selector(new List<BossBT.BTNode>
         {
-            // 콤보 A - 근거리 (5m 미만): 밟기 → 0.2초 정지 → 기관총 3연발
+            // 콤보 A - 근거리 (2m 미만): 밟기 → 0.2초 정지 → 기관총 3연발
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
-                new BossBT.CheckDistance(transform, player, 0f, 5f),
+                new BossBT.CheckDistance(transform, player, 0f, 2f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
                 new BossBT.WaitNode(0.2f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this)
             }),
-            // 콤보 B - 중거리 (5m~30m): 기관총 3연발 → 0.2초 정지 → 기관총 연사
+            // 콤보 B - 중거리 (2m~8m): 기관총 3연발 → 0.2초 정지 → 기관총 연사
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
-                new BossBT.CheckDistance(transform, player, 5f, 30f),
+                new BossBT.CheckDistance(transform, player, 2f, 8f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunBurst, this, this),
                 new BossBT.WaitNode(0.2f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this)
             }),
-            // 콤보 C - 원거리 (30m 이상): 곡사포 → 0.2초 정지 → 돌진
+            // 콤보 C - 원거리 (9m 이상): 곡사포 → 0.2초 정지 → 돌진
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
-                new BossBT.CheckDistance(transform, player, 30f, 9999f),
+                new BossBT.CheckDistance(transform, player, 9f, 9999f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
                 new BossBT.WaitNode(0.2f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Charge, this, this)
@@ -580,26 +596,26 @@ public class BossController : MonoBehaviour, IDamageable
         // 2페이즈 BT
         _phase2BT = new BossBT.Selector(new List<BossBT.BTNode>
         {
-            // 콤보 D - 근거리 (5m 미만): 밟기 → 0.2초 정지 → 밟기
+            // 콤보 D - 근거리 (2m 미만): 밟기 → 0.2초 정지 → 밟기
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
-                new BossBT.CheckDistance(transform, player, 0f, 5f),
+                new BossBT.CheckDistance(transform, player, 0f, 2f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
                 new BossBT.WaitNode(0.2f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this)
             }),
-            // 콤보 E - 중거리 (5m~30m): 기관총 연사 → 0.2초 정지 → 곡사포
+            // 콤보 E - 중거리 (2m~8m): 기관총 연사 → 0.2초 정지 → 곡사포
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
-                new BossBT.CheckDistance(transform, player, 5f, 30f),
+                new BossBT.CheckDistance(transform, player, 2f, 8f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this),
                 new BossBT.WaitNode(0.2f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
             }),
-            // 콤보 F - 원거리 (30m 이상): 곡사포 → 0.2초 정지 → 드론 소환
+            // 콤보 F - 원거리 (9m 이상): 곡사포 → 0.2초 정지 → 드론 소환
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
-                new BossBT.CheckDistance(transform, player, 30f, 9999f),
+                new BossBT.CheckDistance(transform, player, 9f, 9999f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
                 new BossBT.WaitNode(0.2f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.DroneSpawn, this, this)
