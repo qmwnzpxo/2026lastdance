@@ -22,7 +22,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 7285a12f07bf7e34681e51f78ada0348, type: 2}
+  m_Motion: {fileID: 7400000, guid: 53eb5559ebd5901429e9ffeb7e26f9c7, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -196,7 +196,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: ce5d28993e14a5e488887fd536dcf274, type: 2}
+  m_Motion: {fileID: 7400000, guid: 3aec54987c25ed047bb8a05309672e72, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -301,7 +301,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: a7fb839e9c5e6ee479052d6c20e2be85, type: 2}
+  m_Motion: {fileID: 7400000, guid: baf8939bc5a5dd44c89391f07275f51d, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -401,7 +401,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Attack
-  m_Speed: 1
+  m_Speed: 1.7
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: -2166983711861401250}
@@ -415,7 +415,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 975b7cb8b74366746981715b98eb919e, type: 2}
+  m_Motion: {fileID: 7400000, guid: 53eb5559ebd5901429e9ffeb7e26f9c7, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -472,7 +472,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: fb22e61151daf2d4a9e6045c63a9a529, type: 2}
+  m_Motion: {fileID: 7400000, guid: 6e61644bfea55ad479ab53e5e1bd5af3, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -508,7 +508,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Powerful_Run
-  m_Speed: 1
+  m_Speed: 1.5
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: 962077672140640074}
@@ -522,7 +522,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: e57213bbee3c2704599ab571350b9f4d, type: 2}
+  m_Motion: {fileID: 7400000, guid: 553c502763481fc4993a84143b1266eb, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
