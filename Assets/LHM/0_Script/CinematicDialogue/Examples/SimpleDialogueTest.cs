@@ -73,7 +73,7 @@ namespace DialogSystem.CinematicDialogue
         {
             if (_dialogueJson == null) return;
             Debug.Log($"[SimpleDialogueTest] 재생 시작: {dialogueId}");
-            _dialogueManager.PlayDialogueAsync(_dialogueJson, dialogueId).Forget();
+            //_dialogueManager.PlayDialogueAsync(_dialogueJson, dialogueId).Forget();
         }
 
         /// <summary>

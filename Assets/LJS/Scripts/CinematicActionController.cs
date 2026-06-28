@@ -1,0 +1,132 @@
+using System.Collections.Generic;
+using UnityEngine;
+using Cysharp.Threading.Tasks;
+using DialogSystem.CinematicDialogue;
+
+[System.Serializable]
+public struct CinematicActor
+{
+    public string actorId;
+    public Transform actorTransform;
+}
+
+[System.Serializable]
+public struct CinematicMoveAction
+{
+    public string eventName;
+    public string targetActorId;
+
+    [Header("현재 위치 기준 이동량 (X: 좌/우, Y: 상/하)")]
+    public Vector2 moveOffset;
+    public float duration;
+}
+
+// ----------------------------------------------------
+// [추가됨] 애니메이션 연출을 위한 데이터 구조체
+// ----------------------------------------------------
+[System.Serializable]
+public struct CinematicAnimAction
+{
+    public string eventName;        // JSON에서 호출할 이벤트 이름 (예: "용병A_놀람")
+    public string targetActorId;    // 애니메이션을 실행할 배우의 ID
+    public string triggerName;      // Animator에 설정해둔 Trigger 파라미터 이름 (예: "Surprise")
+}
+
+public class CinematicActionController : MonoBehaviour
+{
+    [Header("1. 씬에 등장하는 배우(NPC) 목록")]
+    public List<CinematicActor> actors = new List<CinematicActor>();
+
+    [Header("2. 실행할 연출(상대적 이동) 목록")]
+    public List<CinematicMoveAction> moveActions = new List<CinematicMoveAction>();
+
+    [Header("3. 실행할 연출(애니메이션) 목록")]
+    public List<CinematicAnimAction> animActions = new List<CinematicAnimAction>(); // [추가됨]
+
+    private void Start()
+    {
+        DialogueManager.Instance.onEventTriggered += OnDialogueEvent;
+    }
+
+    private void OnDestroy()
+    {
+        if (DialogueManager.Instance != null)
+        {
+            DialogueManager.Instance.onEventTriggered -= OnDialogueEvent;
+        }
+    }
+
+    private void OnDialogueEvent(string eventName)
+    {
+        Debug.Log($"[CinematicActionController] 이벤트 감지: {eventName}");
+
+        // 1. 이동 액션 검사
+        foreach (var action in moveActions)
+        {
+            if (action.eventName == eventName)
+            {
+                Transform actor = GetActor(action.targetActorId);
+
+                if (actor != null)
+                {
+                    Vector3 targetPos = actor.position + (Vector3)action.moveOffset;
+                    MoveNpcAsync(actor, targetPos, action.duration).Forget();
+                }
+            }
+        }
+
+        // 2. [추가됨] 애니메이션 액션 검사
+        foreach (var action in animActions)
+        {
+            if (action.eventName == eventName)
+            {
+                Transform actor = GetActor(action.targetActorId);
+
+                if (actor != null)
+                {
+                    // 배우 오브젝트(또는 그 자식)에 있는 Animator 컴포넌트를 찾습니다.
+                    Animator anim = actor.GetComponentInChildren<Animator>();
+                    if (anim != null)
+                    {
+                        // 지정된 Trigger를 발동시켜 애니메이션을 재생합니다.
+                        anim.SetTrigger(action.triggerName);
+                        Debug.Log($"[CinematicActionController] {action.targetActorId}의 '{action.triggerName}' 애니메이션 실행!");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[CinematicActionController] {action.targetActorId}에게 Animator 컴포넌트가 없습니다!");
+                    }
+                }
+            }
+        }
+    }
+
+    private Transform GetActor(string actorId)
+    {
+        foreach (var actor in actors)
+        {
+            if (actor.actorId == actorId)
+            {
+                return actor.actorTransform;
+            }
+        }
+        return null;
+    }
+
+    private async UniTask MoveNpcAsync(Transform npc, Vector3 targetPos, float duration)
+    {
+        if (npc == null) return;
+
+        Vector3 startPos = npc.position;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            npc.position = Vector3.Lerp(startPos, targetPos, elapsed / duration);
+            await UniTask.Yield();
+        }
+
+        npc.position = targetPos;
+    }
+}

@@ -49,7 +49,7 @@ namespace DialogSystem.CinematicDialogue
             try
             {
                 // "intro_01" 부터 재생 시작
-                await _dialogueManager.PlayDialogueAsync(_dialogueJson, "intro_01", externalCt: _exampleCts.Token);
+                //await _dialogueManager.PlayDialogueAsync(_dialogueJson, "intro_01", externalCt: _exampleCts.Token);
             }
             finally
             {
