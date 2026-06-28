@@ -71,6 +71,11 @@ public class LockdownRoom : MonoBehaviour
         SetGatesActive(true);
 
         _lockdownOrthoSize = CalculateOrtho();
+        if (_lockdownOrthoSize == 0)
+        {
+            ActivateEnemies();
+            return;
+        }
         _cameraFollow.StartLockdown(_roomCenter,_lockdownOrthoSize, zoomDuration);
 
         ActivateEnemies();
@@ -192,7 +197,8 @@ public class LockdownRoom : MonoBehaviour
     {
         float maxY = float.MinValue;
         float maxX = float.MinValue;
-
+        if (_gates == null)
+            return 0;
         foreach (var gate in _gates)
         {
             if (gate == null) continue;

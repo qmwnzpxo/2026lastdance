@@ -72,8 +72,11 @@ namespace EnemyVersion3
 
                 bb.lastAttackTime = Time.time;
                 // 공격 직후 거리 확인 → 후퇴 필요 여부 설정
-                if (bb.DistanceToPlayer <= (float)bb.moveable?.retreatTriggerRange)
-                    bb.moveable.needsRetreat = true;
+                if (bb.moveable != null)
+                {
+                    if (bb.DistanceToPlayer <= (float)bb.moveable?.retreatTriggerRange)
+                        bb.moveable.needsRetreat = true;
+                }
 
                 bb.actionCompleted = true;
                 bb.lastActionResult = NodeState.Success;
