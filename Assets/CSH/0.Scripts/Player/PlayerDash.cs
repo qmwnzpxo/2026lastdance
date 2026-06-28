@@ -141,16 +141,16 @@ public partial class PlayerDash : MonoBehaviour
     
     void CtsFree()
     {
-        _pinkDashCts?.Cancel();
         _pinkDashCts?.Dispose();
-        _redDashCts?.Cancel();
+        _pinkDashCts?.Cancel();
         _redDashCts?.Dispose();
-        _greenDashCts?.Cancel();
+        _redDashCts?.Cancel();
         _greenDashCts?.Dispose();
-        _blueQTECts?.Cancel();
+        _greenDashCts?.Cancel();
         _blueQTECts?.Dispose();
-        _blueFallCts?.Cancel();
+        _blueQTECts?.Cancel();
         _blueFallCts?.Dispose();
+        _blueFallCts?.Cancel();
         if (CustomTimeManager.Instance != null)
         {
             CustomTimeManager.Instance.ResetAll();
