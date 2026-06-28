@@ -47,7 +47,7 @@ MonoBehaviour:
   bulletEntries:
   - key: default
     prefab: {fileID: 4465465900096264504, guid: 70492ea0ad2893b4595fc53b2b11ed18, type: 3}
-    minPoolSize: 1
+    minPoolSize: 10
     maxPoolSize: 100
     currentTotal: 0
     parent: {fileID: 0}
