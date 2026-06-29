@@ -770,7 +770,6 @@ public class BossController : MonoBehaviour, IDamageable
             return;
 
         currentHP -= damage;
-        damageHandler?.TakeDamage(damage);
 
         // 체력 바 업데이트
         if (healthBar != null)

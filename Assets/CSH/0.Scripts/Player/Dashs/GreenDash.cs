@@ -110,7 +110,8 @@ public partial class PlayerDash : MonoBehaviour
                     if (h.collider != null && !hitThisDash.Contains(h.collider))
                     {
                         hitThisDash.Add(h.collider);
-                        ApplyDamage(h.collider, state.damage * dashDamage);
+                        //ApplyDamage(h.collider, state.damage * dashDamage);
+                        OnDashHitEnemy(h.collider);
                         HitstopManager.Instance.TriggerHitstop(0.04f);
                     }
                 }

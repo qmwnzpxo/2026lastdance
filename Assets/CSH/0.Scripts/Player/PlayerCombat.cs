@@ -93,6 +93,7 @@ public class PlayerCombat : MonoBehaviour
         if (state.isRedDashRecording)
         {
             OnAttackInput?.Invoke(attackTransform.rotation);
+            ani.Attack();
             return;
         }
 
@@ -196,7 +197,16 @@ public class PlayerCombat : MonoBehaviour
     {
         try
         {
-            target.gameObject.GetComponent<IDamageable>()?.TakeDamage(damage);
+            //target.gameObject.GetComponent<IDamageable>()?.TakeDamage(damage);
+            var damaged = target.GetComponents<IDamageable>();
+            if (damaged == null) return;
+            else
+            {
+                foreach (IDamageable damageable in damaged)
+                {
+                    damageable.TakeDamage(damage);
+                }
+            }
         }
         catch (SystemException ex)
         {

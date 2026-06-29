@@ -157,7 +157,9 @@ public partial class PlayerDash : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(
             transform.position, blueSlamRadius, enemyLayer);
         foreach (var hit in hits)
-            ApplyDamage(hit, state.damage * blueSlamDamage);
+            //    ApplyDamage(hit, state.damage * blueSlamDamage);
+            OnDashHitEnemy(hit);
+
 
         // 상태 복구
         state.NotifyDashStopped();
