@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2998882672471537992}
   - component: {fileID: 8934271168398255576}
   m_Layer: 0
-  m_Name: ChipItem
+  m_Name: ChipItem(blue)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -72,7 +72,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.45, y: 0.3}
+    oldSize: {x: 1, y: 1}
     newSize: {x: 0.16, y: 0.16}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -92,8 +92,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 632bd5ed0077899409772d68c3213875, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _chip: 1
-  _initialized: 1
+  _chip: 3
+  _initialized: 0
 --- !u!212 &8934271168398255576
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -138,7 +138,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -45977228, guid: 96441429f5e873a4d8ac1f22225a096d, type: 3}
+  m_Sprite: {fileID: -741313835, guid: 86019d15820dbda488dd71e74cc0a4ea, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

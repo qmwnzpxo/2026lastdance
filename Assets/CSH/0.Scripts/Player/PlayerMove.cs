@@ -40,30 +40,6 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float wallJumpForceX = 6f;
     [SerializeField] private float wallJumpForceY = 12f;
 
-    /*
-    // ── 몸체 리사이즈 (90도 회전 대체) ──────────
-    [Header("몸체 리사이즈 (땅/벽 흡착)")]
-    [SerializeField] private float blendSpeed = 8f;      // 초당 0→1 변화 속도
-    [SerializeField] private float groundStretchY = 2f;  // 땅/천장 흡착 시 세로 늘어나는 비율
-    [SerializeField] private float groundSquashX = 0.5f; // 같이 적용되는 가로 줄어듦 비율
-    [SerializeField] private float wallStretchX = 2f;    // 벽 흡착 시 가로 늘어나는 비율
-    [SerializeField] private float wallSquashY = 0.5f;   // 같이 적용되는 세로 줄어듦 비율
-
-    private PolygonCollider2D col;
-    [SerializeField]private Vector2[] basePoints;
-    private bool[] _isGroundAxis;
-    private Vector2[] _onPoints;
-    private Vector2 colMin;
-    private Vector2 colMax;
-
-    private float groundBlend;
-    private float wallBlend;
-    
-    // ── 감지용 가상 박스 ──────────────────────
-    [Header("감지용 가상 박스 (외부 노출, 항상 최대 기준)")]
-    [SerializeField] private Vector2 detectionBoxStage1 = new Vector2(1f, 1f);
-    [SerializeField] private Vector2 detectionBoxStage2 = new Vector2(2f, 2f);
-    */
     // ── 벽 끝 자동 등반 ──────────────────────
     [Header("벽 끝 자동 등반")]
     [SerializeField] private float _climbEdgeCheckDist = 0.6f; // 벽 상단 모서리 감지 레이 길이
@@ -141,14 +117,6 @@ public class PlayerMove : MonoBehaviour
         }
         groundOnlyLayer = LayerMask.GetMask("groundOnly");
         walkableLayer = groundLayer | groundOnlyLayer;
-        /*
-        col = GetComponent<PolygonCollider2D>();
-        if (col != null && col.pathCount > 0)
-        {
-            basePoints = col.points;
-            ClassifyAxisAndComputeTargets();
-        }
-        */
         state.OnDashStopped += OnDashStopped;
     }
 
@@ -184,8 +152,6 @@ public class PlayerMove : MonoBehaviour
             _lastFacingRight = facingRight;
             FlipXSprite(facingRight);
         }
-        // 대시 중에도 즉시 베이스 모양으로 반영되어야 해서 리턴 앞으로
-        //ApplyColliderBlend();
 
         // Dash / Tackle 중에는 PlayerDash가 물리를 전담
         if (state.isDashing || state.isRedDashPlaying)
@@ -442,88 +408,6 @@ public class PlayerMove : MonoBehaviour
     }
 
     #endregion
-    /*
-    // ────────────────────────────────────────
-    #region 몸체 리사이즈 블렌드
-
-    /// <summary>
-    /// 베이스 점들을 기준으로 각 점이 위/아래 변에 가까운지(ground축), 좌/우 변에 가까운지(wall축)
-    /// 자동 분류하고, 해당 점의 흡착 완료 시 목표 위치를 미리 계산해둔다.
-    /// </summary>
-    private void ClassifyAxisAndComputeTargets()
-    {
-        if (col == null) return;
-        float halfWidth = 0f, halfHeight = 0f;
-        foreach (var p in basePoints)
-        {
-            halfWidth = Mathf.Max(halfWidth, Mathf.Abs(p.x));
-            halfHeight = Mathf.Max(halfHeight, Mathf.Abs(p.y));
-        }
-
-        _isGroundAxis = new bool[basePoints.Length];
-        _onPoints = new Vector2[basePoints.Length];
-
-        for (int i = 0; i < basePoints.Length; i++)
-        {
-            Vector2 p = basePoints[i];
-            float yRatio = halfHeight > 0f ? Mathf.Abs(p.y) / halfHeight : 0f;
-            float xRatio = halfWidth > 0f ? Mathf.Abs(p.x) / halfWidth : 0f;
-
-            bool isGroundAxis = yRatio >= xRatio; // 위/아래 변에 더 가까운 점
-            _isGroundAxis[i] = isGroundAxis;
-
-            _onPoints[i] = isGroundAxis
-                ? new Vector2(p.x * groundSquashX, p.y * groundStretchY)
-                : new Vector2(p.x * wallStretchX, p.y * wallSquashY);
-        }
-    }
-
-    /// <summary>매 프레임 groundBlend/wallBlend 값에 따라 콜라이더 점들을 보간 적용.</summary>
-    private void ApplyColliderBlend()
-    {
-        if (col == null) return;
-        Vector2[] result = new Vector2[basePoints.Length];
-        Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
-        Vector2 max = new Vector2(float.MinValue, float.MinValue);
-
-        for (int i = 0; i < basePoints.Length; i++)
-        {
-            float t = _isGroundAxis[i] ? groundBlend : wallBlend;
-            result[i] = Vector2.Lerp(basePoints[i], _onPoints[i], t);
-
-            min = Vector2.Min(min, result[i]);
-            max = Vector2.Max(max, result[i]);
-        }
-
-        col.SetPath(0, result);
-        colMin = min;
-        colMax = max;
-    }
-
-    /// <summary>raw 감지 결과를 바탕으로 블렌드 값을 천천히 목표로 이동시킨다.</summary>
-    private void UpdateBlend()
-    {
-        if(col == null) return;
-        bool dashLock = state.isDashing || state.isRedDashPlaying;
-
-        if (dashLock)
-        {
-            // 대시/리플레이 중엔 즉시 베이스 형태로 — 충돌 안전 + 시각적 끼임 방지
-            groundBlend = 0f;
-            wallBlend = 0f;
-            return;
-        }
-
-        // 천장 흡착(state.isOnCeiling)도 ground 축을 재활용
-        float groundTarget = (state.isGrounded || state.isOnCeiling) ? 1f : 0f;
-        float wallTarget = (state.isTouchingLWall || state.isTouchingRWall) ? 1f : 0f;
-
-        groundBlend = Mathf.MoveTowards(groundBlend, groundTarget, blendSpeed * Time.deltaTime);
-        wallBlend = Mathf.MoveTowards(wallBlend, wallTarget, blendSpeed * Time.deltaTime);
-    }
-
-    #endregion
-    */
 
     // ────────────────────────────────────────
     #region 천장 붙기

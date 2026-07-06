@@ -93,5 +93,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _maxHP: 3
   _dropEntries: []
-  _chipPrefabs: []
+  _chipPrefabs:
+  - chip: 1
+    prefab: {fileID: 5185132864317028418, guid: a8f1396e9e20e6f48a367fc384cf52da, type: 3}
+  - chip: 2
+    prefab: {fileID: 5185132864317028418, guid: c53af96c73dc7e247a29f6c63c0eb3c1, type: 3}
+  - chip: 3
+    prefab: {fileID: 5185132864317028418, guid: eefcbb02dbef1cf43a950aaf80d294ac, type: 3}
   _dropOffset: {x: 0, y: 0}
