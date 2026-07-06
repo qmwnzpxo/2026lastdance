@@ -141,20 +141,33 @@ public partial class PlayerDash : MonoBehaviour
     
     void CtsFree()
     {
-        _pinkDashCts?.Dispose();
-        _pinkDashCts?.Cancel();
-        _redDashCts?.Dispose();
-        _redDashCts?.Cancel();
-        _greenDashCts?.Dispose();
-        _greenDashCts?.Cancel();
-        _blueQTECts?.Dispose();
-        _blueQTECts?.Cancel();
-        _blueFallCts?.Dispose();
-        _blueFallCts?.Cancel();
-        if (CustomTimeManager.Instance != null)
+        try
         {
-            CustomTimeManager.Instance.ResetAll();
-            CustomTimeManager.Instance.ResetHitstopMultiplier();
+            _pinkDashCts?.Cancel();
+            _redDashCts?.Cancel();
+            _greenDashCts?.Cancel();
+            _blueQTECts?.Cancel();
+            _blueFallCts?.Cancel();
+
+            _pinkDashCts?.Dispose();
+            _redDashCts?.Dispose();
+            _greenDashCts?.Dispose();
+            _blueQTECts?.Dispose();
+            _blueFallCts?.Dispose();
+
+            if (CustomTimeManager.Instance != null)
+            {
+                CustomTimeManager.Instance.ResetAll();
+                CustomTimeManager.Instance.ResetHitstopMultiplier();
+            }
+        }
+        finally
+        {
+            _pinkDashCts = null;
+            _redDashCts = null;
+            _greenDashCts = null;
+            _blueQTECts = null;
+            _blueFallCts = null;
         }
     }
     void OnDestroy()

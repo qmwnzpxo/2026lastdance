@@ -36,6 +36,11 @@ public class PlayerState : MonoBehaviour, IDamageable
     [RuntimeOnly, SerializeField] private float maxDashGauge = 100f;
     private float dashCost = 1f;
     public float dashGaugePerAttack = 10f;
+    
+    // ── 소모품(섬광탄) 설정 ───────────────────
+    [Header("소모품")]
+    public int flashCount;
+    private int flashMaxCount = 3;
 
     public float DashGauge => dashGauge;
     public float MaxDashGauge { get => maxDashGauge; set => maxDashGauge = value; }
@@ -213,6 +218,13 @@ public class PlayerState : MonoBehaviour, IDamageable
     public float GetMaxHP()
     {
         return maxHP;
+    }
+
+    public bool TryAddFlashbang()
+    {
+        if (flashCount >= flashMaxCount) return false;
+        flashCount++;
+        return true;
     }
 
     public bool IsDead()

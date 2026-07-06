@@ -54,6 +54,22 @@ public partial class PlayerDash : MonoBehaviour
         float recordInterval = 1f / redRecordFPS;
         float nextRecordTime = 0f;
 
+        if (combat == null)
+            combat = GetComponent<PlayerCombat>();
+
+        // ── 공격 입력 기록용 로컬 함수 (클로저로 recordTimer 직접 참조) ──
+        void RecordAttack(Quaternion rot)
+        {
+            eventRecords.Add(new GhostEventData
+            {
+                timestamp = recordTimer,
+                eventType = GhostEventType.Attack,
+                rotation = rot
+            });
+            Debug.Log($"[RedDash] 공격 기록됨: t={recordTimer:F2}");
+        }
+
+        combat.OnAttackInput += RecordAttack;
         try
         {
             while (recordTimer < redRecordDuration && !ct.IsCancellationRequested)
@@ -101,6 +117,7 @@ public partial class PlayerDash : MonoBehaviour
         finally
         {
             // CTS 취소든 정상 완료든 반드시 구독 해제
+            combat.OnAttackInput -= RecordAttack;
             state.isRedDashRecording = false;
             playerSprite.color = originalColor;
             Ghost.SetActive(false);
