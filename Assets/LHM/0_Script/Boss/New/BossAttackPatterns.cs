@@ -112,13 +112,50 @@ public class BossAttackPatterns : MonoBehaviour
     [SerializeField] private Transform chargeHitBox;
     [SerializeField] private LayerMask playerLayer;
 
+    [Header("발사 위치 설정")]
+    [Tooltip("기관총 총알 발사 위치 목록 (비어있으면 폴백 사용)")]
+    [SerializeField] private Transform[] bulletFirePoints;
+    [Tooltip("곡사포/대포 포탄 발사 위치 목록 (비어있으면 폴백 사용)")]
+    [SerializeField] private Transform[] cannonballFirePoints;
+    [Tooltip("기관총, 곡사포, 대포 발사 시 포구 위치에 생성할 발사/폭발 이펙트")]
+    [SerializeField] private GameObject launchExplosionEffect;
+
     [Header("곡사포 파편 프리팹")]
     [SerializeField] private GameObject airBurstPelletPrefab;   // AirBurst 파편 프리팹
     [SerializeField] private GameObject bouncePelletPrefab;     // BounceBlast 파편 프리팹
 
+    [Header("돌진/짓밟기 이펙트 설정")]
+    [Tooltip("돌진 시 생성할 이펙트 프리팹 (부스터 화염 등)")]
+    [SerializeField] private GameObject chargeEffectPrefab;
+    [Tooltip("돌진 이펙트 생성 및 부착 위치 (Transform)")]
+    [SerializeField] private Transform chargeEffectSpawnPoint;
+    [Tooltip("짓밟기(Stomp) 충격 시 생성할 폭발/충격 이펙트")]
+    [SerializeField] private GameObject stompEffectPrefab;
+
+
+    [Header("사운드 설정")]
+    [Tooltip("발사 음향을 출력할 AudioSource (지정 안하면 자생 자동 검색)")]
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("기관총 발사 사운드")]
+    [SerializeField] private AudioClip machinegunFireSound;
+    [Tooltip("곡사포 / 대포 발사 사운드")]
+    [SerializeField] private AudioClip howitzerFireSound;
+    [Tooltip("돌진 부스터 사운드")]
+    [SerializeField] private AudioClip chargeSound;
+    [Tooltip("짓밟기 충격 사운드")]
+    [SerializeField] private AudioClip stompSound;
+
+
+
+
+
+
     // ── Animation Event 콜백 플래그 (중복 호출 방지) ──
     private bool _stompImpactCalled = false;
     private bool _howitzerLaunchPending = false;
+
+    // ── 돌진 벽 충돌 감지 플래그 (OnTriggerEnter2D → Charge 코루틴 통신용) ──
+    private bool _chargeHitWall = false;
 
     private void Awake()
     {
@@ -131,8 +168,29 @@ public class BossAttackPatterns : MonoBehaviour
         if (rb2d == null)
             rb2d = GetComponent<Rigidbody2D>();
 
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+
         if(playerLayer == 0)
             playerLayer = LayerMask.GetMask("player");
+    }
+
+
+    /// <summary>
+    /// 발사 위치 배열에서 랜덤으로 하나 선택.
+    /// 배열이 비어있거나 null이면 fallback 반환
+    /// </summary>
+    private Vector3 GetRandomFirePoint(Transform[] points, Vector3 fallback)
+    {
+        if (points == null || points.Length == 0)
+            return fallback;
+
+        // null 아닌 항목만 추려서 랜덤 선택
+        var valid = System.Array.FindAll(points, p => p != null);
+        if (valid.Length == 0)
+            return fallback;
+
+        return valid[Random.Range(0, valid.Length)].position;
     }
 
     /// <summary>
@@ -327,14 +385,32 @@ public class BossAttackPatterns : MonoBehaviour
         if (bossController == null || player == null)
             return;
 
+        // 배열에서 랜덤 발사 위치 선택
+        Vector3 firePosition = GetRandomFirePoint(
+            bulletFirePoints,
+            transform.position + Vector3.right * 1.5f
+        );
+
         // 총알 오브젝트 풀에서 가져오기
         GameObject bullet = bossController.GetBulletFromPool();
         if (bullet == null)
             return;
-
-        // 발사 위치 설정 (오른팔)
-        Vector3 firePosition = transform.position + Vector3.right * 1.5f;
         bullet.transform.position = firePosition;
+
+        // 발사 폭발 이펙트 생성
+        if (launchExplosionEffect != null)
+        {
+            GameObject fx = Instantiate(launchExplosionEffect, firePosition, Quaternion.identity);
+            fx.SetActive(true);
+            Destroy(fx, 1f);
+        }
+
+        // 발사 사운드 재생
+        if (audioSource != null && machinegunFireSound != null)
+        {
+            audioSource.PlayOneShot(machinegunFireSound);
+        }
+
 
         // 플레이어 방향 계산
         Vector3 direction = (player.position - firePosition).normalized;
@@ -343,9 +419,15 @@ public class BossAttackPatterns : MonoBehaviour
         BossProjectile projectile = bullet.GetComponent<BossProjectile>();
         if (projectile != null)
         {
+            // Initialize() 먼저 (내부에서 localScale을 5f로 초기화함)
             projectile.Initialize(direction, machinegunDamage, bossController);
+            // Initialize() 이후에 방향 flip (스케일 초기화에 덮이지 않도록)
+            projectile.SetFacingToPlayer(player);
         }
     }
+
+
+
 
     /// <summary>
     /// 4. 곡사포 (Howitzer) [1페이즈] - 5단계 사양
@@ -368,11 +450,16 @@ public class BossAttackPatterns : MonoBehaviour
         // Step 1: 발사 전조 및 발사 (0.3초 간격 3연발)
         List<GameObject> cannonballs = new List<GameObject>();
         List<HowitzerAmmoType> ammoTypes = new List<HowitzerAmmoType>();
-        Vector3 firePosition = transform.position - Vector3.right * 1f;
 
         for (int i = 0; i < howitzerShotCount; i++)
         {
             yield return new WaitForSeconds(howitzerBurstInterval);
+
+            // 발사 위치: 각 포탄마다 cannonballFirePoints 배열에서 랜덤 선택
+            Vector3 firePosition = GetRandomFirePoint(
+                cannonballFirePoints,
+                transform.position - Vector3.right * 1f
+            );
 
             // 탄종 결정 (각 포탄마다 독립적으로 결정)
             HowitzerAmmoType ammoType = SelectRandomAmmoType();
@@ -383,6 +470,22 @@ public class BossAttackPatterns : MonoBehaviour
             {
                 cannonball.transform.position = firePosition;
                 cannonballs.Add(cannonball);
+
+                // 발사 폭발 이펙트 생성
+                if (launchExplosionEffect != null)
+                {
+                    GameObject fx = Instantiate(launchExplosionEffect, firePosition, Quaternion.identity);
+                    fx.SetActive(true);
+                    Destroy(fx, 1f);
+                }
+
+                // 발사 사운드 재생
+                if (audioSource != null && howitzerFireSound != null)
+                {
+                    audioSource.PlayOneShot(howitzerFireSound);
+                }
+
+
 
                 // HowitzerCannonball 컴포넌트 확인
                 HowitzerCannonball howitzerCannonball = cannonball.GetComponent<HowitzerCannonball>();
@@ -422,6 +525,9 @@ public class BossAttackPatterns : MonoBehaviour
                     // 수직 상승 시작
                     Vector3 targetHeight = transform.position + Vector3.up * howitzerRiseHeight;
                     howitzerCannonball.StartRising(targetHeight, howitzerRiseSpeed);
+
+                    // 발사 시 1회 플레이어 방향으로 좌우 전환 (이후 고정)
+                    howitzerCannonball.SetFacingToPlayer(player);
                 }
                 else
                 {
@@ -523,8 +629,11 @@ public class BossAttackPatterns : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f);
 
-        // 머리에서 발사
-        Vector3 firePosition = transform.position + Vector3.up * 2f;
+        // 배열에서 랜덤 발사 위치 선택
+        Vector3 firePosition = GetRandomFirePoint(
+            cannonballFirePoints,
+            transform.position + Vector3.up * 2f
+        );
         FireCannonball(firePosition, cannonDamage, cannonRange);
 
         yield return new WaitForSeconds(cannonCastTime - 0.5f);
@@ -544,6 +653,22 @@ public class BossAttackPatterns : MonoBehaviour
             return;
 
         cannonball.transform.position = firePosition;
+
+        // 발사 폭발 이펙트 생성
+        if (launchExplosionEffect != null)
+        {
+            GameObject fx = Instantiate(launchExplosionEffect, firePosition, Quaternion.identity);
+            fx.SetActive(true);
+            Destroy(fx, 1f);
+        }
+
+        // 발사 사운드 재생
+        if (audioSource != null && howitzerFireSound != null)
+        {
+            audioSource.PlayOneShot(howitzerFireSound);
+        }
+
+
 
         // 플레이어 방향 계산
         Vector3 direction = (player.position - firePosition).normalized;
@@ -586,9 +711,28 @@ public class BossAttackPatterns : MonoBehaviour
         // 돌진 시작 (최대 3초 또는 벽 충돌까지)
         bool isCharging = true;
         bool hasHitWall = false;
+        _chargeHitWall = false;  // 돌진 시작 시 플래그 초기화
         float chargeStartTime = Time.time;
         const float MAX_CHARGE_TIME = 3f;
         Vector3 startPosition = transform.position;
+
+        // 돌진 이펙트 생성 및 부착 (보스를 따라가도록 부모 지정)
+        GameObject chargeFX = null;
+        if (chargeEffectPrefab != null && chargeEffectSpawnPoint != null)
+        {
+            chargeFX = Instantiate(chargeEffectPrefab, chargeEffectSpawnPoint.position, Quaternion.identity, chargeEffectSpawnPoint);
+            chargeFX.SetActive(true);
+        }
+
+        // 돌진 부스터 루프 사운드 재생
+        if (audioSource != null && chargeSound != null)
+        {
+            audioSource.clip = chargeSound;
+            audioSource.loop = true;
+            audioSource.Play();
+        }
+
+
 
         while (isCharging && !hasHitWall)
         {
@@ -615,17 +759,28 @@ public class BossAttackPatterns : MonoBehaviour
             // 판정 박스 활성화 (OnChargeImpactCheck로 위임)
             OnChargeImpactCheck();
 
-            // 벽 충돌 감지 (Raycast)
-            Vector2 rayOrigin = transform.position;
-            Vector2 rayDirection = new Vector2(direction.x, 0f);
-            float rayDistance = 1f;
-
-            RaycastHit2D wallHit = Physics2D.Raycast(rayOrigin, rayDirection, rayDistance, LayerMask.GetMask("Wall"));
-            if (wallHit.collider != null)
+            // 벽 충돌 감지 방법 1: OnTriggerEnter2D 플래그 (isTrigger 환경)
+            if (_chargeHitWall)
             {
                 hasHitWall = true;
                 break;
             }
+
+            // 벽 충돌 감지 방법 2: Raycast (레이어 무관, tag 기준)
+            Vector2 rayOrigin = (Vector2)transform.position + new Vector2(direction.x * 0.5f, 0f);
+            Vector2 rayDirection = new Vector2(direction.x, 0f);
+            float rayDistance = 1.5f;
+
+            RaycastHit2D[] wallHits = Physics2D.RaycastAll(rayOrigin, rayDirection, rayDistance);
+            foreach (RaycastHit2D hit in wallHits)
+            {
+                if (hit.collider != null && hit.collider.CompareTag("Wall"))
+                {
+                    hasHitWall = true;
+                    break;
+                }
+            }
+            if (hasHitWall) break;
 
             yield return null;
         }
@@ -636,7 +791,23 @@ public class BossAttackPatterns : MonoBehaviour
             rb2d.linearVelocity = Vector2.zero;
         }
 
+        // 돌진 사운드 정지
+        if (audioSource != null && audioSource.clip == chargeSound)
+        {
+            audioSource.Stop();
+            audioSource.loop = false;
+            audioSource.clip = null;
+        }
+
+
+        // 돌진 이펙트 소멸 처리
+        if (chargeFX != null)
+        {
+            Destroy(chargeFX, 0.5f); // 스턴 상태나 정지 시 자연스럽게 사라지도록 0.5초 딜레이 소멸
+        }
+
         // 벽 충돌 시 스턴 처리
+
         if (hasHitWall)
         {
             Debug.Log("[Boss] 돌진 벽 충돌 - 스턴 시작");
@@ -652,6 +823,17 @@ public class BossAttackPatterns : MonoBehaviour
             yield return new WaitForSeconds(chargeStunDuration);
 
             Debug.Log("[Boss] 돌진 스턴 해제");
+        }
+    }
+
+    /// <summary>
+    /// isTrigger 환경에서 "Wall" 태그 오브젝트 충돌 시 돌진 중단 플래그 세팅
+    /// </summary>
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Wall"))
+        {
+            _chargeHitWall = true;
         }
     }
 
@@ -685,42 +867,32 @@ public class BossAttackPatterns : MonoBehaviour
 
         if (spawnOrigin != null)
         {
-            // 50% 확률로 불도저 드론 또는 지렁이 드론 선택
-            bool spawnBulldozer = (Random.value < 0.5f) && (bossController.GetBulldozerDronePrefab() != null);
+            // 지렁이 드론 소환 (기존 BossDrone)
+            DronePattern selectedPattern = SelectRandomDronePattern();
 
-            if (spawnBulldozer)
+            GameObject drone = bossController.GetDroneFromPool();
+            if (drone != null)
             {
-                // 불도저 드론 소환
-                GameObject drone = bossController.GetBulldozerDroneFromPool();
-                if (drone != null)
-                {
-                    drone.transform.position = spawnOrigin.position;
-                    bossController.RegisterDrone(drone);
+                // 보스의 현재 위치에서 드론 생성 (보스에게서 출발)
+                drone.transform.position = transform.position;
+                bossController.RegisterDrone(drone);
 
-                    BulldozerDrone bulldozer = drone.GetComponent<BulldozerDrone>();
-                    if (bulldozer != null)
-                    {
-                        bulldozer.Initialize(bossController.GetPlayer(), bossController);
-                        Debug.Log("[Boss] 불도저 드론 소환 완료");
-                    }
+                // 지렁이 드론의 머리(ConductorDrone) 컴포넌트가 있는지 확인
+                ConductorDrone conductor = drone.GetComponent<ConductorDrone>();
+                if (conductor != null)
+                {
+                    // 빈 오브젝트(spawnOrigin)의 위치값을 중심으로 무한대를 도는 centerPosition 설정
+                    conductor.Initialize(bossController.GetPlayer(), bossController, spawnOrigin.position);
+                    Debug.Log("[Boss] 지렁이 지휘자 드론 소환 완료 (보스 위치에서 생성, 빈 오브젝트 기준 무한대 궤도)");
                 }
-            }
-            else
-            {
-                // 지렁이 드론 소환 (기존 BossDrone)
-                DronePattern selectedPattern = SelectRandomDronePattern();
-
-                GameObject drone = bossController.GetDroneFromPool();
-                if (drone != null)
+                else
                 {
-                    drone.transform.position = spawnOrigin.position;
-                    bossController.RegisterDrone(drone);
-
+                    // 일반 드론(BossDrone)인 경우 기존과 동일하게 초기화
                     BossDrone droneScript = drone.GetComponent<BossDrone>();
                     if (droneScript != null)
                     {
                         droneScript.Initialize(bossController.GetPlayer(), bossController, selectedPattern, GetDronePatternParameters(selectedPattern));
-                        Debug.Log($"[Boss] 지렁이 드론 소환 완료: 패턴={selectedPattern}");
+                        Debug.Log($"[Boss] 일반 드론 소환 완료: 패턴={selectedPattern}");
                     }
                 }
             }
@@ -778,6 +950,30 @@ public class BossAttackPatterns : MonoBehaviour
     public void OnStompImpact()
     {
         _stompImpactCalled = true;
+
+        // 짓밟기 사운드 재생
+        if (audioSource != null && stompSound != null)
+        {
+            audioSource.PlayOneShot(stompSound);
+        }
+
+        // 카메라 흔들기 (지진 효과)
+        CameraFollow cameraFollow = Object.FindAnyObjectByType<CameraFollow>();
+        if (cameraFollow != null)
+        {
+            cameraFollow.ShakeCamera(0.4f, 0.3f);
+        }
+
+
+        // 짓밟기 충격 이펙트 생성
+        if (stompEffectPrefab != null)
+        {
+            Vector3 spawnPos = stompHitBox != null ? stompHitBox.position : transform.position;
+            GameObject stompFX = Instantiate(stompEffectPrefab, spawnPos, Quaternion.identity);
+            stompFX.SetActive(true);
+            Destroy(stompFX, 2f);
+        }
+
         if (stompHitBox == null) return;
 
         Collider2D[] hitTargets = Physics2D.OverlapBoxAll(
@@ -793,8 +989,9 @@ public class BossAttackPatterns : MonoBehaviour
                 target.GetComponent<IDamageable>()?.TakeDamage(stompDamage);
             }
         }
-        Debug.Log("[Boss] OnStompImpact: 밟기 판정 실행");
+        Debug.Log("[Boss] OnStompImpact: 밟기 판정 실행 (사운드 및 이펙트 생성 완료)");
     }
+
 
     /// <summary>
     /// [Animation Event] 기관총 단발 발사

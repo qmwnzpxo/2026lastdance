@@ -30,11 +30,16 @@ public class BossProjectile : MonoBehaviour
     private float currentScale;
     private float currentLifetime;
     private Vector3 moveDirection = Vector3.zero; // 이동 방향 저장 (rb2d 폴백용)
+    private float facingDirectionX = 1f;          // 이미지 좌우 반전 상태 캐싱용 (-1 또는 1)
+    private float instanceMaxScale;               // 배율이 적용된 개별 최대 크기
+    private float instanceGrowthRate;             // 배율이 적용된 개별 성장 속도
 
     private void Awake()
     {
         rb2d = GetComponent<Rigidbody2D>();
     }
+
+
 
     private void OnEnable()
     {
@@ -62,13 +67,33 @@ public class BossProjectile : MonoBehaviour
         }
 
         // 스케일 성장 (드론 총알 전용)
-        if (isGrowing && currentScale < maxScale)
+        if (isGrowing && currentScale < instanceMaxScale)
         {
-            currentScale += growthRate * Time.deltaTime;
-            currentScale = Mathf.Min(currentScale, maxScale);
-            transform.localScale = Vector3.one * currentScale;
+            currentScale += instanceGrowthRate * Time.deltaTime;
+            currentScale = Mathf.Min(currentScale, instanceMaxScale);
+            transform.localScale = new Vector3(facingDirectionX * currentScale, currentScale, currentScale);
         }
+
+
     }
+
+    /// <summary>
+    /// 발사 시 1회 플레이어 방향으로 좌우 방향 전환 (HowitzerCannonball과 동일 방식)
+    /// Initialize() 이후에 호출해야 localScale 덮어쓰기 방지 가능
+    /// </summary>
+    public void SetFacingToPlayer(Transform player)
+    {
+        if (player == null) return;
+
+        float dirX = player.position.x - transform.position.x;
+        facingDirectionX = dirX >= 0f ? -1f : 1f;
+
+        Vector3 scale = transform.localScale;
+        float absX = Mathf.Abs(scale.x);
+        scale.x = facingDirectionX * absX;
+        transform.localScale = scale;
+    }
+
 
     /// <summary>
     /// 일반 총알 초기화
@@ -82,8 +107,9 @@ public class BossProjectile : MonoBehaviour
         bossController = controller;
         moveDirection = direction; // 이동 방향 저장 (폴백 이동용)
 
-        // 스케일 초기화 (일반 총알은 성장 없음 - 5f로 고정)
-        transform.localScale = Vector3.one * 5f;
+        // 방향 저장 및 스케일 초기화
+        facingDirectionX = direction.x >= 0f ? -1f : 1f;
+        transform.localScale = new Vector3(facingDirectionX * 5f, 5f, 5f);
 
         if (rb2d != null)
         {
@@ -95,10 +121,12 @@ public class BossProjectile : MonoBehaviour
         currentLifetime = lifetime;
     }
 
+
+
     /// <summary>
     /// 드론 총알 초기화 (플레이어 방향 + 스케일 성장)
     /// </summary>
-    public void InitializeGrowing(Vector3 direction, float projectileDamage, BossController controller)
+    public void InitializeGrowing(Vector3 direction, float projectileDamage, BossController controller, float scaleMultiplier = 1f)
     {
         isCannonball = false;
         isBounceBlastPellet = false;
@@ -107,9 +135,12 @@ public class BossProjectile : MonoBehaviour
         bossController = controller;
         moveDirection = direction.normalized; // 플레이어 방향 저장
 
-        // 작은 스케일로 시작
-        currentScale = initialScale;
-        transform.localScale = Vector3.one * currentScale;
+        // 방향 저장 및 스케일 초기화 (배율 반영)
+        facingDirectionX = direction.x >= 0f ? -1f : 1f;
+        currentScale = initialScale * scaleMultiplier;
+        instanceMaxScale = maxScale * scaleMultiplier;
+        instanceGrowthRate = growthRate * scaleMultiplier;
+        transform.localScale = new Vector3(facingDirectionX * currentScale, currentScale, currentScale);
 
         if (rb2d != null)
         {
@@ -119,6 +150,8 @@ public class BossProjectile : MonoBehaviour
 
         currentLifetime = lifetime;
     }
+
+
 
     /// <summary>
     /// 대포탄 초기화 (포물선 탄도)
@@ -288,6 +321,11 @@ public class BossProjectile : MonoBehaviour
         }
         moveDirection = Vector3.zero; // 이동 방향 리셋
         isGrowing = false;
+        facingDirectionX = 1f;
         transform.localScale = Vector3.one * 5f; // 스케일 초기화 (5f 고정)
+        instanceMaxScale = maxScale;
+        instanceGrowthRate = growthRate;
     }
+
+
 }

@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using System.Threading;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -30,6 +30,10 @@ public class CameraFollow : MonoBehaviour
     private CancellationTokenSource _lockdownCts;
     private float _savedOrthoSize;
     private bool _isLockdown = false;
+
+    // 카메라 흔들림(지진) 기능용 CancellationTokenSource
+    private CancellationTokenSource shakeCts;
+
 
 
     // ────────────────────────────────────────
@@ -255,11 +259,61 @@ public class CameraFollow : MonoBehaviour
     }
 
     #endregion
+
+    // ────────────────────────────────────
+    #region 카메라 흔들림 (지진 효과)
+    /// <summary>
+    /// 지정된 강도와 시간동안 카메라를 흔듭니다.
+    /// </summary>
+    public void ShakeCamera(float duration, float magnitude)
+    {
+        shakeCts?.Cancel();
+        shakeCts?.Dispose();
+        shakeCts = new CancellationTokenSource();
+        ShakeAsync(duration, magnitude, shakeCts.Token).Forget();
+    }
+
+    private async UniTaskVoid ShakeAsync(float duration, float magnitude, CancellationToken ct)
+    {
+        float elapsed = 0f;
+        
+        var followZoom = cmZoom.GetComponent<CinemachineFollow>();
+        var followGame = cmGamePlay.GetComponent<CinemachineFollow>();
+
+        Vector3 originalOffsetZoom = followZoom != null ? followZoom.FollowOffset : Vector3.zero;
+        Vector3 originalOffsetGame = followGame != null ? followGame.FollowOffset : Vector3.zero;
+
+        while (elapsed < duration && !ct.IsCancellationRequested)
+        {
+            float xOffset = Random.Range(-1f, 1f) * magnitude;
+            float yOffset = Random.Range(-1f, 1f) * magnitude;
+
+            if (followZoom != null)
+            {
+                followZoom.FollowOffset = new Vector3(originalOffsetZoom.x + xOffset, originalOffsetZoom.y + yOffset, originalOffsetZoom.z);
+            }
+            if (followGame != null)
+            {
+                followGame.FollowOffset = new Vector3(originalOffsetGame.x + xOffset, originalOffsetGame.y + yOffset, originalOffsetGame.z);
+            }
+
+            elapsed += Time.deltaTime;
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
+        }
+
+        // 오프셋 원상 복구
+        if (followZoom != null) followZoom.FollowOffset = originalOffsetZoom;
+        if (followGame != null) followGame.FollowOffset = originalOffsetGame;
+    }
+    #endregion
+
     private void OnDestroy()
     {
         zoom_cts?.Cancel();
         zoom_cts?.Dispose();
         _lockdownCts?.Cancel();
         _lockdownCts?.Dispose();
+        shakeCts?.Cancel();
+        shakeCts?.Dispose();
     }
-}
+}

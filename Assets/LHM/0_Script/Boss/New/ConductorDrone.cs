@@ -91,9 +91,34 @@ public class ConductorDrone : MonoBehaviour, IDamageable
         InitializeBodyDrones();
 
         // 이동 및 공격 시작
-        StartCoroutine(MovementLoop());
+        StartCoroutine(SpawnAndRiseSequence());
         attackCoroutine = StartCoroutine(EnergyBulletAttack());
     }
+
+    /// <summary>
+    /// 1단계: 보스 소환 위치에서 빈 오브젝트 중심 좌표(centerPosition)까지 직선 상승 비행
+    /// 2단계: 도착한 지점(centerPosition)을 기준으로 무한대(∞) 이동 루프 시작
+    /// </summary>
+    private IEnumerator SpawnAndRiseSequence()
+    {
+        // 빈 오브젝트 중심 좌표 부근에 닿을 때까지 이동
+        while (Vector3.Distance(transform.position, centerPosition) > 0.2f && !isDead)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, centerPosition, moveSpeed * Time.deltaTime);
+            UpdatePathHistory();
+            yield return null;
+        }
+
+        if (!isDead)
+        {
+            transform.position = centerPosition;
+            // 무한대 곡선의 정중앙(0, 0) 좌표 오프셋에서 시작하도록 pathTime을 90도(PI/2)로 설정하여 튀는 현상 방지
+            pathTime = Mathf.PI / 2f;
+            // 궤도 도착 후 무한대 이동 루프 개시
+            StartCoroutine(MovementLoop());
+        }
+    }
+
 
     /// <summary>
     /// 몸체 드론 초기화
@@ -119,6 +144,16 @@ public class ConductorDrone : MonoBehaviour, IDamageable
     {
         while (!isDead)
         {
+            // 실시간 궤도 중심점 업데이트 (보스가 움직이거나 빈 오브젝트 좌표가 바뀌어도 동적 추적)
+            if (bossController != null)
+            {
+                Transform origin = bossController.GetDroneSpawnOrigin();
+                if (origin != null)
+                {
+                    centerPosition = origin.position;
+                }
+            }
+
             pathTime += Time.deltaTime * infinityPathSpeed;
 
             // ∞ 루트 (Lemniscate) 경로 계산
@@ -136,6 +171,7 @@ public class ConductorDrone : MonoBehaviour, IDamageable
             yield return null;
         }
     }
+
 
     /// <summary>
     /// 에너지탄 발사 공격
@@ -285,5 +321,6 @@ public class ConductorDrone : MonoBehaviour, IDamageable
         }
 
         StopAllCoroutines();
+        isInitialized = false; // 풀 재사용을 위해 초기화 상태 리셋
     }
 }

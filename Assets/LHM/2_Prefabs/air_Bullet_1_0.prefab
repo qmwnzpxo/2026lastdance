@@ -180,6 +180,6 @@ MonoBehaviour:
   lifetime: 5
   shockwaveEffect: {fileID: 0}
   shockwaveRange: 3
-  initialScale: 0.3
-  maxScale: 1.5
+  initialScale: 4
+  maxScale: 7
   growthRate: 0.4

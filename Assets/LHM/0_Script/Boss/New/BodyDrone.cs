@@ -80,7 +80,14 @@ public class BodyDrone : MonoBehaviour, IDamageable
         isDead = false;
         isScattered = false;
 
+        // 시작 시 머리 드론(Conductor)의 위치(보스 좌표)로 순간이동하여 같은 자리에서 출발하게 함
+        if (conductorDrone != null)
+        {
+            transform.position = conductorDrone.transform.position;
+        }
+
         // 콜라이더 활성화
+
         if (droneCollider != null)
         {
             droneCollider.enabled = true;
@@ -165,6 +172,10 @@ public class BodyDrone : MonoBehaviour, IDamageable
                 0f
             );
             Vector3 scatterTarget = player.position + randomOffset;
+            // Y축 최소 -3f ~ 최대 9f 범위 Clamp 제한
+            scatterTarget.y = Mathf.Clamp(scatterTarget.y, -3f, 9f);
+
+
 
             // 랜덤 위치로 이동
             while (Vector2.Distance(transform.position, scatterTarget) > 0.5f && !isDead)
@@ -211,6 +222,10 @@ public class BodyDrone : MonoBehaviour, IDamageable
                     0f
                 );
                 Vector3 newTarget = player.position + randomOffset;
+                // Y축 최소 -3f ~ 최대 9f 범위 Clamp 제한
+                newTarget.y = Mathf.Clamp(newTarget.y, -3f, 9f);
+
+
 
                 while (Vector2.Distance(transform.position, newTarget) > 0.5f && !isDead)
                 {
@@ -292,12 +307,14 @@ public class BodyDrone : MonoBehaviour, IDamageable
         // 플레이어 방향 계산
         Vector3 direction = (player.position - transform.position).normalized;
 
-        // 총알 스크립트 설정 (플레이어 방향 + 스케일 성장)
+        // 총알 스크립트 설정 (플레이어 방향 + 스케일 성장, 기본 배율 적용)
         BossProjectile projectile = bullet.GetComponent<BossProjectile>();
         if (projectile != null)
         {
             projectile.InitializeGrowing(direction, bulletDamage, bossController);
         }
+
+
     }
 
     /// <summary>
@@ -352,5 +369,82 @@ public class BodyDrone : MonoBehaviour, IDamageable
         }
 
         StopAllCoroutines();
+        isInitialized = false; // 풀 재사용을 위해 초기화 플래그 리셋
+    }
+
+    private void Update()
+    {
+        if (isScattered)
+        {
+            // 플레이어를 바라보게 만듦 (좌우 스케일 반전)
+            if (player != null)
+            {
+                float dirX = player.position.x - transform.position.x;
+                if (Mathf.Abs(dirX) > 0.1f)
+                {
+                    Vector3 scale = transform.localScale;
+                    float absX = Mathf.Abs(scale.x);
+                    scale.x = dirX > 0f ? absX : -absX;
+                    transform.localScale = scale;
+                }
+            }
+
+            // Y축 최소값 -3f 및 최대값 9f 한계 설정 (관성 뚫고 나감 방지)
+            float clampedY = Mathf.Clamp(transform.position.y, -3f, 9f);
+            if (transform.position.y != clampedY)
+            {
+                transform.position = new Vector3(transform.position.x, clampedY, transform.position.z);
+                if (rb2d != null)
+                {
+                    if (transform.position.y <= -3f && rb2d.linearVelocity.y < 0f)
+                    {
+                        rb2d.linearVelocity = new Vector2(rb2d.linearVelocity.x, 0f);
+                    }
+                    else if (transform.position.y >= 9f && rb2d.linearVelocity.y > 0f)
+                    {
+                        rb2d.linearVelocity = new Vector2(rb2d.linearVelocity.x, 0f);
+                    }
+                }
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// 흩어진 상태에서 "Wall" 또는 "Ground" 태그 오브젝트를 관통하지 못하도록 제어
+    /// </summary>
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        if (isScattered && !isDead && (other.CompareTag("Wall") || other.CompareTag("Ground")))
+        {
+            // 가장 가까운 콜라이더 경계선 좌표 계산
+            Vector2 closestPoint = other.ClosestPoint(transform.position);
+            Vector2 pushDir = ((Vector2)transform.position - closestPoint);
+
+            // 완전히 겹쳐서 방향을 잡기 힘든 경우 위로 밀어냄
+            if (pushDir.sqrMagnitude < 0.001f)
+            {
+                pushDir = Vector2.up;
+            }
+            else
+            {
+                pushDir.Normalize();
+            }
+
+            // 콜라이더 바깥 방향으로 약간 밀어내기 (관통 방지)
+            transform.position += (Vector3)(pushDir * 0.1f);
+
+            // 벽/바닥을 뚫고 들어가려는 속도 성분 상쇄 (슬라이딩 이동 구현)
+            if (rb2d != null)
+            {
+                float dot = Vector2.Dot(rb2d.linearVelocity, pushDir);
+                if (dot < 0f)
+                {
+                    rb2d.linearVelocity -= dot * pushDir;
+                }
+            }
+        }
     }
 }
+
+

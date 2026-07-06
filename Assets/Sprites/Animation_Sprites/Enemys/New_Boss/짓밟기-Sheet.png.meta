@@ -100,12 +100,12 @@ TextureImporter:
       name: "\uC9D3\uBC1F\uAE30-Sheet_0"
       rect:
         serializedVersion: 2
-        x: 0
+        x: 36
         y: 0
-        width: 178
-        height: 161
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 104
+        height: 144
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -122,12 +122,12 @@ TextureImporter:
       name: "\uC9D3\uBC1F\uAE30-Sheet_1"
       rect:
         serializedVersion: 2
-        x: 178
+        x: 214
         y: 0
-        width: 178
-        height: 161
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 108
+        height: 146
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -144,12 +144,12 @@ TextureImporter:
       name: "\uC9D3\uBC1F\uAE30-Sheet_2"
       rect:
         serializedVersion: 2
-        x: 356
+        x: 389
         y: 0
-        width: 178
-        height: 161
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 107
+        height: 146
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -166,12 +166,12 @@ TextureImporter:
       name: "\uC9D3\uBC1F\uAE30-Sheet_3"
       rect:
         serializedVersion: 2
-        x: 534
+        x: 566
         y: 0
-        width: 178
-        height: 161
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 115
+        height: 145
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -188,12 +188,12 @@ TextureImporter:
       name: "\uC9D3\uBC1F\uAE30-Sheet_4"
       rect:
         serializedVersion: 2
-        x: 712
+        x: 743
         y: 0
-        width: 178
-        height: 161
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 129
+        height: 144
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -210,12 +210,12 @@ TextureImporter:
       name: "\uC9D3\uBC1F\uAE30-Sheet_5"
       rect:
         serializedVersion: 2
-        x: 890
-        y: 0
-        width: 178
-        height: 161
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 918
+        y: 1
+        width: 120
+        height: 141
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -232,12 +232,12 @@ TextureImporter:
       name: "\uC9D3\uBC1F\uAE30-Sheet_6"
       rect:
         serializedVersion: 2
-        x: 1068
+        x: 1084
         y: 0
-        width: 178
-        height: 161
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 136
+        height: 138
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -254,12 +254,12 @@ TextureImporter:
       name: "\uC9D3\uBC1F\uAE30-Sheet_7"
       rect:
         serializedVersion: 2
-        x: 1246
+        x: 1267
         y: 0
-        width: 178
-        height: 161
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 136
+        height: 139
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -273,23 +273,23 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: "\uC9D3\uBC1F\uAE30-Sheet_8"
+      name: "\uC9D3\uBC1F\uAE30-Sheet_9"
       rect:
         serializedVersion: 2
-        x: 1424
+        x: 1450
         y: 0
-        width: 178
-        height: 161
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 122
+        height: 142
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 5d805e9d038f81249bd91cdde6eba14d
-      internalID: -260540502
+      spriteID: cf569cdfe80e41342aba9ec49f8eae44
+      internalID: -1274754463
       vertices: []
       indices: 
       edges: []
@@ -310,6 +310,7 @@ TextureImporter:
     nameFileIdTable:
       "\uC9D3\uBC1F\uAE30-Sheet_0": 1911252163
       "\uC9D3\uBC1F\uAE30-Sheet_1": 2098618253
+      "\uC9D3\uBC1F\uAE30-Sheet_10": -1231415670
       "\uC9D3\uBC1F\uAE30-Sheet_2": -959741844
       "\uC9D3\uBC1F\uAE30-Sheet_3": -1988097527
       "\uC9D3\uBC1F\uAE30-Sheet_4": 975652412
@@ -317,6 +318,7 @@ TextureImporter:
       "\uC9D3\uBC1F\uAE30-Sheet_6": 1253719295
       "\uC9D3\uBC1F\uAE30-Sheet_7": -1156360699
       "\uC9D3\uBC1F\uAE30-Sheet_8": -260540502
+      "\uC9D3\uBC1F\uAE30-Sheet_9": -1274754463
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

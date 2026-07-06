@@ -23,6 +23,9 @@ public class HowitzerCannonball : MonoBehaviour
     [Header("폭발 설정")]
     [SerializeField] private GameObject explosionEffect;
     [SerializeField] private float explosionRange = 3f;
+    [Tooltip("착탄 폭발 시 재생할 사운드")]
+    [SerializeField] private AudioClip explosionSound;
+
 
     private HowitzerState currentState = HowitzerState.Idle;
     private Rigidbody2D rb2d;
@@ -219,8 +222,16 @@ public class HowitzerCannonball : MonoBehaviour
         if (explosionEffect != null)
         {
             GameObject explosion = Instantiate(explosionEffect, transform.position, Quaternion.identity);
+            explosion.SetActive(true);
             Destroy(explosion, 1f);
         }
+
+        // 폭발 사운드 재생
+        if (explosionSound != null)
+        {
+            AudioSource.PlayClipAtPoint(explosionSound, transform.position);
+        }
+
 
         // 범위 내 플레이어 데미지 적용
         Collider2D[] hitTargets = Physics2D.OverlapCircleAll(transform.position, explosionRange);
@@ -260,8 +271,16 @@ public class HowitzerCannonball : MonoBehaviour
         if (explosionEffect != null)
         {
             GameObject explosion = Instantiate(explosionEffect, transform.position, Quaternion.identity);
+            explosion.SetActive(true);
             Destroy(explosion, 1f);
         }
+
+        // 폭발 사운드 재생
+        if (explosionSound != null)
+        {
+            AudioSource.PlayClipAtPoint(explosionSound, transform.position);
+        }
+
 
         // 파편 생성 및 발사
         if (airBurstPelletPrefab != null)
@@ -306,8 +325,16 @@ public class HowitzerCannonball : MonoBehaviour
         if (explosionEffect != null)
         {
             GameObject explosion = Instantiate(explosionEffect, transform.position, Quaternion.identity);
+            explosion.SetActive(true);
             Destroy(explosion, 1f);
         }
+
+        // 폭발 사운드 재생
+        if (explosionSound != null)
+        {
+            AudioSource.PlayClipAtPoint(explosionSound, transform.position);
+        }
+
 
         // 바운스 파편 생성
         if (bouncePelletPrefab != null)
@@ -361,6 +388,22 @@ public class HowitzerCannonball : MonoBehaviour
     {
         bossController = controller;
     }
+
+    /// <summary>
+    /// 생성 시 1회만 플레이어 방향으로 좌우 방향 전환 (이후 고정)
+    /// localScale.x의 부호를 flip해 스프라이트 방향 결정
+    /// </summary>
+    public void SetFacingToPlayer(Transform player)
+    {
+        if (player == null) return;
+
+        float dirX = player.position.x - transform.position.x;
+        Vector3 scale = transform.localScale;
+        float absX = Mathf.Abs(scale.x);
+        scale.x = dirX >= 0f ? -absX : absX;
+        transform.localScale = scale;
+    }
+
 
     /// <summary>
     /// 탄종 설정

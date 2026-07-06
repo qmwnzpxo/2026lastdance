@@ -66,6 +66,15 @@ public class BossController : MonoBehaviour, IDamageable
     [SerializeField] private GameObject phaseTransitionEffect;
     [SerializeField] private GameObject deathEffect;
 
+    [Header("오디오 설정")]
+    [Tooltip("배틀 BGM 재생용 AudioSource (지정 안할 시 자동 검색)")]
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("보스 전투용 루프형 배경음악(BGM)")]
+    [SerializeField] private AudioClip battleBGM;
+
+
+
+
     [Header("드론 설정")]
     [SerializeField] private GameObject dronePrefab;
     [SerializeField] private Transform droneSpawnOrigin;
@@ -73,8 +82,7 @@ public class BossController : MonoBehaviour, IDamageable
     [SerializeField] private float droneRiseSpeed = 5f;
     [SerializeField] private float droneSpawnAnticipationTime = 0.4f;
     [SerializeField] private int maxDroneCount = 2;
-    [SerializeField] private GameObject bulldozerDronePrefab;
-    [SerializeField] private int maxBulldozerCount = 2;
+
 
     // 현재 상태
     private BossState currentState = BossState.Appearing;
@@ -88,7 +96,7 @@ public class BossController : MonoBehaviour, IDamageable
     private Queue<GameObject> airBurstPelletPool = new Queue<GameObject>();
     private Queue<GameObject> bouncePelletPool = new Queue<GameObject>();
     private Queue<GameObject> dronePool = new Queue<GameObject>();
-    private Queue<GameObject> bulldozerDronePool = new Queue<GameObject>();
+
 
     // 씬에 활성화된 발사체 추적 (페이즈 전환 시 일괄 회수용)
     private List<GameObject> activeCannonballs = new List<GameObject>();
@@ -116,7 +124,11 @@ public class BossController : MonoBehaviour, IDamageable
         currentHP = maxHP;
         damageHandler = gameObject.GetComponent<DamageHandler>();
         InitializeObjectPools();
+
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
     }
+
 
     /// <summary>
     /// 씰 주입 - SO 패턴 및 AnimationEventBridge 연동 전용
@@ -210,18 +222,8 @@ public class BossController : MonoBehaviour, IDamageable
                 dronePool.Enqueue(drone);
             }
         }
-
-        // 불도저 드론 풀 초기화
-        if (bulldozerDronePrefab != null)
-        {
-            for (int i = 0; i < maxBulldozerCount + 1; i++)
-            {
-                GameObject drone = Instantiate(bulldozerDronePrefab);
-                drone.SetActive(false);
-                bulldozerDronePool.Enqueue(drone);
-            }
-        }
     }
+
 
     /// <summary>
     /// 총알 오브젝트 풀에서 가져오기
@@ -237,10 +239,12 @@ public class BossController : MonoBehaviour, IDamageable
         else if (bulletPrefab != null)
         {
             bullet = Instantiate(bulletPrefab);
+            bullet.SetActive(true);
         }
         if (bullet != null) activeBullets.Add(bullet);
         return bullet;
     }
+
 
     /// <summary>
     /// 총알 오브젝트 풀에 반환하기
@@ -273,10 +277,12 @@ public class BossController : MonoBehaviour, IDamageable
         else if (cannonballPrefab != null)
         {
             cannonball = Instantiate(cannonballPrefab);
+            cannonball.SetActive(true);
         }
         if (cannonball != null) activeCannonballs.Add(cannonball);
         return cannonball;
     }
+
 
     /// <summary>
     /// 대포탄 오브젝트 풀에 반환하기
@@ -305,10 +311,12 @@ public class BossController : MonoBehaviour, IDamageable
         else if (warningMarkerPrefab != null)
         {
             marker = Instantiate(warningMarkerPrefab);
+            marker.SetActive(true);
         }
         if (marker != null) activeWarningMarkers.Add(marker);
         return marker;
     }
+
 
     /// <summary>
     /// 경고 마커 오브젝트 풀에 반환하기
@@ -336,10 +344,13 @@ public class BossController : MonoBehaviour, IDamageable
         }
         else if (airBurstPelletPrefab != null)
         {
-            return Instantiate(airBurstPelletPrefab);
+            GameObject pellet = Instantiate(airBurstPelletPrefab);
+            pellet.SetActive(true);
+            return pellet;
         }
         return null;
     }
+
 
     /// <summary>
     /// AirBurst 파편 오브젝트 풀에 반환하기
@@ -366,10 +377,13 @@ public class BossController : MonoBehaviour, IDamageable
         }
         else if (bouncePelletPrefab != null)
         {
-            return Instantiate(bouncePelletPrefab);
+            GameObject pellet = Instantiate(bouncePelletPrefab);
+            pellet.SetActive(true);
+            return pellet;
         }
         return null;
     }
+
 
     /// <summary>
     /// BounceBlast 파편 오브젝트 풀에 반환하기
@@ -396,10 +410,13 @@ public class BossController : MonoBehaviour, IDamageable
         }
         else if (dronePrefab != null)
         {
-            return Instantiate(dronePrefab);
+            GameObject drone = Instantiate(dronePrefab);
+            drone.SetActive(true);
+            return drone;
         }
         return null;
     }
+
 
     /// <summary>
     /// 드론 오브젝트 풀에 반환하기
@@ -413,43 +430,7 @@ public class BossController : MonoBehaviour, IDamageable
         }
     }
 
-    /// <summary>
-    /// 불도저 드론 오브젝트 풀에서 가져오기
-    /// </summary>
-    public GameObject GetBulldozerDroneFromPool()
-    {
-        if (bulldozerDronePool.Count > 0)
-        {
-            GameObject drone = bulldozerDronePool.Dequeue();
-            drone.SetActive(true);
-            return drone;
-        }
-        else if (bulldozerDronePrefab != null)
-        {
-            return Instantiate(bulldozerDronePrefab);
-        }
-        return null;
-    }
 
-    /// <summary>
-    /// 불도저 드론 오브젝트 풀에 반환하기
-    /// </summary>
-    public void ReturnBulldozerDroneToPool(GameObject drone)
-    {
-        if (drone != null)
-        {
-            drone.SetActive(false);
-            bulldozerDronePool.Enqueue(drone);
-        }
-    }
-
-    /// <summary>
-    /// 불도저 드론 프리팹 getter
-    /// </summary>
-    public GameObject GetBulldozerDronePrefab()
-    {
-        return bulldozerDronePrefab;
-    }
 
     /// <summary>
     /// 씬에 남아있는 모든 활성 발사체를 풀로 회수 (페이즈 전환 시 호출)
@@ -525,9 +506,18 @@ public class BossController : MonoBehaviour, IDamageable
         // 착지 모션 대기
         yield return new WaitForSeconds(1f);
 
+        // 배틀 BGM 루프 재생
+        if (audioSource != null && battleBGM != null)
+        {
+            audioSource.clip = battleBGM;
+            audioSource.loop = true;
+            audioSource.Play();
+        }
+
         // Appearing 상태 해제 후 Idle로 전이
         ChangeState(BossState.Idle);
     }
+
 
     /// <summary>
     /// 상태 변경
@@ -600,31 +590,32 @@ public class BossController : MonoBehaviour, IDamageable
         // 2페이즈 BT
         _phase2BT = new BossBT.Selector(new List<BossBT.BTNode>
         {
-            // 콤보 D - 근거리 (2m 미만): 밟기 → 0.2초 정지 → 밟기
+            // 콤보 D - 근거리 (2m 미만): 밟기 → 0.1초 정지 → 밟기
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 0f, 2f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this),
-                new BossBT.WaitNode(0.2f, this),
+                new BossBT.WaitNode(0.1f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this)
             }),
-            // 콤보 E - 중거리 (2m~8m): 기관총 연사 → 0.2초 정지 → 곡사포
+            // 콤보 E - 중거리 (2m~8m): 기관총 연사 → 0.1초 정지 → 곡사포
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 2f, 8f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this),
-                new BossBT.WaitNode(0.2f, this),
+                new BossBT.WaitNode(0.1f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
             }),
-            // 콤보 F - 원거리 (9m 이상): 곡사포 → 0.2초 정지 → 드론 소환
+            // 콤보 F - 원거리 (9m 이상): 곡사포 → 0.1초 정지 → 드론 소환
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 9f, 9999f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.WaitNode(0.2f, this),
+                new BossBT.WaitNode(0.1f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.DroneSpawn, this, this)
             })
         });
+
     }
 
     /// <summary>
@@ -681,21 +672,33 @@ public class BossController : MonoBehaviour, IDamageable
     /// </summary>
     private IEnumerator RestingState()
     {
-        float restDuration = 2f;
+        // 2페이즈는 휴식 시간을 1초로 단축하여 보스를 더 공격적으로 만듦 (1페이즈는 2초 유지)
+        float restDuration = GetCurrentPhase() == 1 ? 2f : 1f;
         float elapsed = 0f;
+
 
         while (elapsed < restDuration && currentState == BossState.Resting)
         {
             // 플레이어 방향으로 걷기
             if (player != null && rb2d != null)
             {
-                float dirX = Mathf.Sign(player.position.x - transform.position.x);
-                rb2d.linearVelocity = new Vector2(dirX * walkSpeed, rb2d.linearVelocity.y);
+                float diffX = player.position.x - transform.position.x;
+                // 플레이어와의 거리가 1.5f 이하로 가까우면 더 쫓아가지 않고 제자리 정지 (달달달 떠는 현상 방지)
+                if (Mathf.Abs(diffX) <= 1.5f)
+                {
+                    rb2d.linearVelocity = new Vector2(0f, rb2d.linearVelocity.y);
+                }
+                else
+                {
+                    float dirX = Mathf.Sign(diffX);
+                    rb2d.linearVelocity = new Vector2(dirX * walkSpeed, rb2d.linearVelocity.y);
+                }
             }
 
             elapsed += Time.deltaTime;
             yield return null;
         }
+
 
         // 이동 정지
         if (rb2d != null)
@@ -714,12 +717,31 @@ public class BossController : MonoBehaviour, IDamageable
         return (currentHP / maxHP > 0.5f) ? 1 : 2;
     }
 
-#if UNITY_EDITOR
     /// <summary>
-    /// [디버그 전용] F1 키 → 보스 HP를 49%로 강제 조정 (2페이즈 드론 패턴 테스트)
+    /// 플레이어 방향으로 보스 좌우 방향 전환 (localScale.x flip)
+    /// Dead/Appearing 상태에서는 동작하지 않음
     /// </summary>
+    private void FacePlayer()
+    {
+        if (player == null || currentState == BossState.Dead || currentState == BossState.Appearing)
+            return;
+
+        float dirX = player.position.x - transform.position.x;
+        if (Mathf.Abs(dirX) > 0.1f)
+        {
+            Vector3 scale = transform.localScale;
+            float absX = Mathf.Abs(scale.x);
+            scale.x = dirX > 0 ? absX : -absX;
+            transform.localScale = scale;
+        }
+    }
+
     private void Update()
     {
+        // 매 프레임 플레이어 방향으로 보스 회전
+        FacePlayer();
+
+#if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F1))
         {
             float targetHP = maxHP * 0.49f;
@@ -745,14 +767,37 @@ public class BossController : MonoBehaviour, IDamageable
                 StopAllCoroutines();
 
                 if (phaseTransitionEffect != null)
-                    Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
+                {
+                    GameObject fx = Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
+                    
+                    // 카메라 자식으로 들어가되 월드 Z가 0.16f로 유지되도록 카메라 Z 기반 fallbackDistance 동적 계산
+                    Hovl.HS_ScreenEffect hsEffect = fx.GetComponent<Hovl.HS_ScreenEffect>();
+                    if (hsEffect != null)
+                    {
+                        Camera cam = Camera.main;
+                        float camZ = cam != null ? cam.transform.position.z : -10f;
+                        hsEffect.snapOnStart = true;
+                        hsEffect.parentToCameraOnStart = true;
+                        hsEffect.fallbackDistance = 0.16f - camZ;
+                    }
+
+                    Vector3 pos = fx.transform.position;
+                    pos.z = 0.16f;
+                    fx.transform.position = pos;
+                }
+
+
+
+
 
                 ChangeState(BossState.Idle);
                 Debug.Log("[Debug] F1: 2페이즈 전환 완료 → 드론 패턴 활성화됨");
             }
         }
-    }
 #endif
+    }
+
+
 
     /// <summary>
     /// 피격 처리
@@ -799,8 +844,27 @@ public class BossController : MonoBehaviour, IDamageable
             // 4) 페이즈 전환 이펙트
             if (phaseTransitionEffect != null)
             {
-                Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
+                GameObject fx = Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
+                
+                // 카메라 자식으로 들어가되 월드 Z가 0.16f로 유지되도록 카메라 Z 기반 fallbackDistance 동적 계산
+                Hovl.HS_ScreenEffect hsEffect = fx.GetComponent<Hovl.HS_ScreenEffect>();
+                if (hsEffect != null)
+                {
+                    Camera cam = Camera.main;
+                    float camZ = cam != null ? cam.transform.position.z : -10f;
+                    hsEffect.snapOnStart = true;
+                    hsEffect.parentToCameraOnStart = true;
+                    hsEffect.fallbackDistance = 0.16f - camZ;
+                }
+
+                Vector3 pos = fx.transform.position;
+                pos.z = 0.16f;
+                fx.transform.position = pos;
             }
+
+
+
+
 
             // 5) 새 상태 시작
             ChangeState(BossState.Idle);
@@ -820,12 +884,36 @@ public class BossController : MonoBehaviour, IDamageable
     {
         if (phaseTransitionEffect != null)
         {
-            Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
+            GameObject fx = Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
+            
+            // 카메라 자식으로 들어가되 월드 Z가 0.16f로 유지되도록 카메라 Z 기반 fallbackDistance 동적 계산
+            Hovl.HS_ScreenEffect hsEffect = fx.GetComponent<Hovl.HS_ScreenEffect>();
+            if (hsEffect != null)
+            {
+                Camera cam = Camera.main;
+                float camZ = cam != null ? cam.transform.position.z : -10f;
+                hsEffect.snapOnStart = true;
+                hsEffect.parentToCameraOnStart = true;
+                hsEffect.fallbackDistance = 0.16f - camZ;
+            }
+
+            Vector3 pos = fx.transform.position;
+            pos.z = 0.16f;
+            fx.transform.position = pos;
         }
+
+
+
+
 
         // 카메라 쉐이크 등 추가 연출 가능
         yield return new WaitForSeconds(0.5f);
     }
+
+
+
+
+
 
     /// <summary>
     /// Dead 상태 - 사망 처리
@@ -838,7 +926,14 @@ public class BossController : MonoBehaviour, IDamageable
             animator.SetTrigger("Dead");
         }
 
+        // 배틀 BGM 정지
+        if (audioSource != null && audioSource.clip == battleBGM)
+        {
+            audioSource.Stop();
+        }
+
         yield return new WaitForSeconds(2f);
+
 
         // 사망 이펙트
         if (deathEffect != null)
