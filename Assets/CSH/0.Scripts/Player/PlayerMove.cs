@@ -312,6 +312,10 @@ public class PlayerMove : MonoBehaviour
         {
             rb.gravityScale = 0f;
         }
+        else
+        {
+            RestoreGravity();
+        }
     }
 
     #endregion
