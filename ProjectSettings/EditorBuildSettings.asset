@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/LJS/Scenes/WordBubble_Test.unity
     guid: 190e0b42a3aaaba44b9545cae6357fea
   - enabled: 1
+    path: Assets/Scenes/0630_Basecamp.unity
+    guid: caf2ae6d254d286469c43a541469a3cf
+  - enabled: 1
     path: Assets/Scenes/0630_Chapter_1.unity
     guid: 6edee252658dd964f99135b4ec959c4a
   - enabled: 1
