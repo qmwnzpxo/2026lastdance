@@ -399,7 +399,7 @@ namespace DialogSystem.CinematicDialogue
 
         [Header("카메라 연출 설정")]
         [SerializeField] private Camera _mainCamera;               // 메인 카메라
-        [SerializeField] private GameObject _cinemachineCameraObject; // [추가] 시네머신 가상 카메라 오브젝트 (CM_GamePlay)
+        [SerializeField] private GameObject _cinemachineCameraObject; // 시네머신 가상 카메라 오브젝트 (CM_GamePlay)
 
         private DialogueDatabase _database;
         private DialoguePlaybackState _state;
@@ -430,15 +430,24 @@ namespace DialogSystem.CinematicDialogue
 
             if (_mainCamera == null) _mainCamera = Camera.main;
 
-            // 게임 시작 시 초기 UI 상태 리셋
             if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
             SetCinematicBars(false);
             if (_playerHUDPanel != null) _playerHUDPanel.SetActive(true);
         }
 
-        /// <summary>
-        /// 주어진 ID의 대사부터 재생을 시작하며, 카메라를 지정된 대화 위치로 즉시 순간이동 시킵니다.
-        /// </summary>
+        // ----------------------------------------------------
+        // [추가] 매 프레임 ESC 키 입력을 감지하여 스킵 기능 발동
+        // ----------------------------------------------------
+        private void Update()
+        {
+            // _playbackCts가 null이 아니라는 것은 현재 대화가 진행 중임을 의미합니다.
+            if (_playbackCts != null && Input.GetKeyDown(KeyCode.Escape))
+            {
+                Debug.Log("[DialogueManager] ESC 입력 감지: 대화 스킵 발동!");
+                Stop(); // 대화를 즉시 중단합니다.
+            }
+        }
+
         public async UniTask PlayDialogueAsync(
             TextAsset jsonAsset,
             string startDialogueId,
@@ -452,21 +461,27 @@ namespace DialogSystem.CinematicDialogue
             var ct = _playbackCts.Token;
 
             LoadDatabase(jsonAsset);
-
             _playerTransform = playerTransform;
 
-            // 1. [시네머신 방해 방지] 대화 시작 시 시네머신 가상 카메라 오브젝트를 꺼서 제어권을 가져옵니다.
+            // 시네머신 가상 카메라 끄기
             if (_cinemachineCameraObject != null)
             {
                 _cinemachineCameraObject.SetActive(false);
             }
 
-            // UI 제어 단계 처리
+            // 시네머신 브레인 제어권 탈환 (강제 종료)
+            if (_mainCamera != null)
+            {
+                Behaviour cineBrain = _mainCamera.GetComponent("CinemachineBrain") as Behaviour;
+                if (cineBrain != null) cineBrain.enabled = false;
+            }
+
+            // UI 제어
             if (_dialoguePanel != null) _dialoguePanel.SetActive(true);
             SetCinematicBars(true);
             if (_playerHUDPanel != null) _playerHUDPanel.SetActive(false);
 
-            // 지정한 빈 오브젝트 위치로 메인 카메라 즉시 순간이동 (이제 시네머신이 방해하지 않으므로 작동합니다)
+            // 지정한 빈 오브젝트 위치로 메인 카메라 즉시 순간이동
             if (_mainCamera != null && cameraDialoguePoint != null)
             {
                 Vector3 targetPos = cameraDialoguePoint.position;
@@ -486,24 +501,23 @@ namespace DialogSystem.CinematicDialogue
                     string textCommandJump = await PlayDialogueInternalAsync(entry, ct);
 
                     if (!string.IsNullOrEmpty(textCommandJump))
-                    {
                         currentId = textCommandJump;
-                    }
                     else if (!string.IsNullOrEmpty(entry.jumpId))
-                    {
                         currentId = entry.jumpId;
-                    }
                     else if (entry.nextIds != null && entry.nextIds.Count > 0)
-                    {
                         currentId = entry.nextIds[0];
-                    }
                     else
-                    {
                         currentId = null;
-                    }
 
                     await UniTask.Yield(PlayerLoopTiming.Update, ct);
                 }
+            }
+            // ----------------------------------------------------
+            // [추가] ESC(Stop)로 인해 취소되었을 때 발생하는 예외를 안전하게 삼킵니다.
+            // ----------------------------------------------------
+            catch (OperationCanceledException)
+            {
+                Debug.Log("[DialogueManager] 대화가 성공적으로 스킵 처리되었습니다.");
             }
             finally
             {
@@ -598,13 +612,15 @@ namespace DialogSystem.CinematicDialogue
             _playbackCts?.Cancel();
         }
 
-        /// <summary>
-        /// 대화가 끝나면 UI를 복구하고 카메라를 되돌린 후 시네머신을 재가동합니다.
-        /// </summary>
         public void Stop()
         {
-            _playbackCts?.Cancel();
-            _playbackCts?.Dispose();
+            // ----------------------------------------------------
+            // [수정] 이미 취소/정리된 상태라면 중복 실행되지 않도록 방어
+            // ----------------------------------------------------
+            if (_playbackCts == null) return;
+
+            _playbackCts.Cancel();
+            _playbackCts.Dispose();
             _playbackCts = null;
 
             if (_displayText != null) _displayText.text = "";
@@ -613,15 +629,19 @@ namespace DialogSystem.CinematicDialogue
             SetCinematicBars(false);
             if (_playerHUDPanel != null) _playerHUDPanel.SetActive(true);
 
-            // 플레이어 본래 위치로 메인 카메라 순간이동 복귀
+            // 카메라 복귀
             if (_mainCamera != null && _playerTransform != null)
             {
                 Vector3 targetPos = _playerTransform.position;
                 targetPos.z = _mainCamera.transform.position.z;
                 _mainCamera.transform.position = targetPos;
+
+                // 시네머신 브레인 복구
+                Behaviour cineBrain = _mainCamera.GetComponent("CinemachineBrain") as Behaviour;
+                if (cineBrain != null) cineBrain.enabled = true;
             }
 
-            // 2. [시네머신 원상복구] 대화가 끝났으므로 가상 카메라 오브젝트를 다시 켜서 플레이어를 추적하게 만듭니다.
+            // 가상 카메라 복구
             if (_cinemachineCameraObject != null)
             {
                 _cinemachineCameraObject.SetActive(true);
