@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 5515305960613711534}
   - component: {fileID: 8666941810540424932}
   - component: {fileID: 1690636021949884914}
+  - component: {fileID: 2158960094925752489}
   m_Layer: 7
   m_Name: Enemy0-1-B
   m_TagString: Untagged
@@ -120,8 +121,6 @@ MonoBehaviour:
   _currentgauge: 0
   _attackRange: 9
   _attackCooldown: 1
-  _attackWindupTime: 0.2
-  _attackRecoveryTime: 0.3
   _stunDuration: 1
   requireInit: 1
   _moveSpeed: 2
@@ -301,6 +300,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &2158960094925752489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837660261499592793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e427895f056d474dafec2d935fe0566, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  walkSpeedThreshold: 0.1
+  runSpeedThreshold: 3
 --- !u!1 &5957513746892658133
 GameObject:
   m_ObjectHideFlags: 0
