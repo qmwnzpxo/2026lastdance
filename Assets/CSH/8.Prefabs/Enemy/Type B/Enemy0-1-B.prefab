@@ -163,6 +163,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 10
   currentHp: 0
+  deathDelay: 2
 --- !u!114 &5456282834720918663
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -178,7 +179,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 4367670121139156226}
   armPivot: {fileID: 1192606328707000536}
   bodyRenderer: {fileID: 7404335318752127255}
-  armRenderer: {fileID: 5238811481184654161}
+  <armRenderer>k__BackingField: {fileID: 5238811481184654161}
   firePivot: {fileID: 1411284378757828562}
   detectionRange: 8
   rotationSpeed: 10

@@ -3,12 +3,14 @@
 public class RangerEnemyState : EnemyState
 {
     private RangerEnemyAnimation _animController;
+    private EnemyArmAim _armAim;
 
     protected override void Awake()
     {
         base.Awake();
         // 애니메이션 컨트롤러 연결
         _animController = GetComponentInChildren<RangerEnemyAnimation>();
+        _armAim = GetComponent<EnemyArmAim>();
     }
 
     // (예시) 부모 클래스에 피격 함수가 있다면 오버라이드하여 연결
@@ -25,6 +27,14 @@ public class RangerEnemyState : EnemyState
 
     public override void Die()
     {
+        if (_armAim != null)
+        {
+            if (_armAim.armRenderer != null)
+            {
+                _armAim.armRenderer.enabled = false;
+            }
+            _armAim.enabled = false; // 죽은 상태에서 팔이 플레이어를 추적하지 않도록 끔
+        }
         // 1. 사망 애니메이션 실행
         if (_animController != null)
         {

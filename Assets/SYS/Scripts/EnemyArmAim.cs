@@ -6,7 +6,7 @@ public class EnemyArmAim : MonoBehaviour
     [SerializeField] private Transform bodyTransform;
     [SerializeField] private Transform armPivot;
     [SerializeField] private SpriteRenderer bodyRenderer;
-    [SerializeField] private SpriteRenderer armRenderer;
+    [field: SerializeField] public SpriteRenderer armRenderer { get; private set; } // 죽을때 팔 숨기기용 프로퍼티
     [SerializeField] private Transform firePivot;
 
     [Header("Range")]
