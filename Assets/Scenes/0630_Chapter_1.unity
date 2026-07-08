@@ -480766,6 +480766,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy0-1-B (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 1192606328707000536, guid: 11c43099ffa88384bbd009107b3dc617, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.65803266
+      objectReference: {fileID: 0}
+    - target: {fileID: 1192606328707000536, guid: 11c43099ffa88384bbd009107b3dc617, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1192606328707000536, guid: 11c43099ffa88384bbd009107b3dc617, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1192606328707000536, guid: 11c43099ffa88384bbd009107b3dc617, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.7529895
+      objectReference: {fileID: 0}
+    - target: {fileID: 1192606328707000536, guid: 11c43099ffa88384bbd009107b3dc617, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -97.7
+      objectReference: {fileID: 0}
     - target: {fileID: 4367670121139156226, guid: 11c43099ffa88384bbd009107b3dc617, type: 3}
       propertyPath: m_LocalPosition.x
       value: 69.5

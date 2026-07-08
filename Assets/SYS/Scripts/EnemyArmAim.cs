@@ -79,7 +79,41 @@ public class EnemyArmAim : MonoBehaviour
 
         // ── 각도 반동 + aim ──
         float dist = Vector2.Distance(bodyTransform.position, _player.position);
-        Vector2 dir;
+
+        float targetWorldAngle = -99f; // 기본 각도. 이 밑으로 0707추가코드
+
+        // [핵심 수정] 거리 안이면서 동시에 시야(LOS)가 확보되었을 때만! 플레이어를 조준합니다.
+        if (dist <= detectionRange && _enemyBB != null && _enemyBB.hasLOS)
+        {
+            Vector2 dir = _player.position - armPivot.position;
+            float rawAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+            TryFlip(rawAngle); // 시야가 있을 때만 플레이어 쪽으로 몸을 돌림
+            targetWorldAngle = GetTargetWorldAngle(rawAngle);
+        }
+        else
+        {
+            // 플레이어를 안 볼 때 (순찰 중이거나, 벽 뒤에 있을 때)
+            // 기괴한 -99도 대신, 현재 몸이 바라보는 방향(정면)을 바라보게 합니다.
+            targetWorldAngle = _isFacingRight ? -99f : 99f;
+        }
+
+        // 4. 각도 반동 적용 및 최종 회전
+        float recoilSign = _isFacingRight ? 1f : -1f;
+        float finalAngle = targetWorldAngle + _recoilAngleOffset * recoilSign;
+
+        armPivot.rotation = Quaternion.Lerp(
+            armPivot.rotation,
+            Quaternion.Euler(0f, 0f, finalAngle),
+            Time.deltaTime * rotationSpeed);
+
+        if (Mathf.Abs(NormalizeAngle(finalAngle)) -
+            Mathf.Abs(NormalizeAngle(armPivot.rotation.z)) <= 0.05f)
+        {
+            isRecoil = false;
+        }
+
+        /*Vector2 dir;
         if (_enemyBB.hasLOS)
             dir = _player.position - armPivot.position;
         else
@@ -109,7 +143,7 @@ public class EnemyArmAim : MonoBehaviour
             Mathf.Abs(NormalizeAngle(armPivot.rotation.z)) <= 0.05f)
         {
             isRecoil = false;
-        }
+        }*/
 
     }
 
