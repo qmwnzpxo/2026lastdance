@@ -68,7 +68,7 @@ public class EnemyArmAim : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (_player == null || armPivot == null || isRecoil) return;
+        if (_player == null || armPivot == null) return;
 
         // ── 위치 반동 적용 ──
         // 현재 aim 방향 반대(뒤)로 밀기
