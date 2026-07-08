@@ -13,17 +13,16 @@ public class RangerEnemyState : EnemyState
         _armAim = GetComponent<EnemyArmAim>();
     }
 
-    // (예시) 부모 클래스에 피격 함수가 있다면 오버라이드하여 연결
-    /*
     public override void TakeDamage(float damage)
     {
-        base.TakeDamage(damage);
-        if (_animController != null)
+        base.TakeDamage(damage); // 부모 클래스에서 데미지 계산 및 체력 차감
+
+        // 체력이 남아있을 때만(죽지 않았을 때만) 피격 모션을 재생합니다.
+        if (currentHp > 0 && _animController != null)
         {
             _animController.TriggerHit();
         }
     }
-    */
 
     public override void Die()
     {
