@@ -105,6 +105,7 @@ public partial class PlayerDash : MonoBehaviour
         rb.gravityScale = 0f;
         rb.linearVelocity = Vector2.zero;
         cameraFollow.SetCameraDumping(cameraDumpingScale);
+        ani.BlueDash(); // 낙섬 모션
 
         BlueFallRoutine(_blueFallCts.Token).Forget();
     }

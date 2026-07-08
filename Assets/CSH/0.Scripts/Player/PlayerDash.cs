@@ -209,7 +209,7 @@ public partial class PlayerDash : MonoBehaviour
             if (state.isRedDashRecording || state.isRedDashPlaying) return;
 
             playerMove.ResetWallState();
-            ani.Attack_flash();
+            ani.Dash();
 
             // 대시 중 입력 → 버퍼
             if (state.isDashing)

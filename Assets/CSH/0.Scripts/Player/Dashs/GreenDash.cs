@@ -68,7 +68,7 @@ public partial class PlayerDash : MonoBehaviour
     {
         _greenDashing = true;
         _greenDashBuffered = false; // 이번 대쉬를 트리거한 입력 소모
-        ani.Attack_flash();
+        ani.Dash(_greenComboStep + 1); // 0707 애니메이션용으로 추가
 
         Vector2 dir = GetMouseDirection();
         cameraFollow.SetCameraDumping(cameraDumpingScale);
@@ -140,6 +140,8 @@ public partial class PlayerDash : MonoBehaviour
         _greenComboStep = 0;
         _greenDashBuffered = false;
         _greenDashing = false;
+
+        if (ani != null) ani.ResetCombo();
 
         state.isDashing = false;
         state.NotifyDashStopped();

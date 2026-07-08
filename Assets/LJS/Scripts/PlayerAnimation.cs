@@ -37,8 +37,33 @@ public class PlayerAnimation : MonoBehaviour
     public void Jump_off() { ani.SetBool("isJump", false); }
     public void Attack(float amount=1f) { ani.SetTrigger("isAttack"); ani.speed *= amount; }
     public void Attack_flash() { ani.SetTrigger("isAttackFlash"); }
-    //public void Attack_on() { ani.SetBool("isAttack", true); }
-    //public void Attack_off() { ani.SetBool("isAttack", false); }
-    //public void Attack_flash_on() { ani.SetBool("isAttackFlash", true); Jump_off(); }
-    //public void Attack_flash_off() { ani.SetBool("isAttackFlash", false); }
+    public void Dash(int greenCombo = 1)
+    {
+        switch (state.currentChip)
+        {
+            case PlayerChip.pink:
+                ani.SetTrigger("isDash_Pink");
+                break;
+            case PlayerChip.red:
+                ani.SetTrigger("isDash_Red");
+                break;
+            case PlayerChip.green:
+                ani.SetInteger("GreenCombo", greenCombo);
+                ani.SetTrigger("isDash_Green");
+                break;
+            case PlayerChip.blue:
+                ani.SetTrigger("isDash_Pink");
+                break;
+        }
+    }
+    public void ResetCombo()
+    {
+        ani.SetInteger("GreenCombo", 0);
+    }
+
+
+    public void BlueDash()
+    {
+        ani.SetTrigger("isDash_Blue");
+    }
 }
