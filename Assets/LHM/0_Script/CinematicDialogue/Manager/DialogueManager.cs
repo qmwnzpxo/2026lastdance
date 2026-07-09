@@ -1,4 +1,322 @@
-﻿//using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using TMPro;
+using UnityEngine;
+
+namespace DialogSystem.CinematicDialogue
+{
+    /// <summary>
+    /// 시네마틱 대화 시스템의 핵심 매니저.
+    /// </summary>
+    public class DialogueManager : MonoBehaviour
+    {
+        // 싱글톤 설정
+        public static DialogueManager Instance { get; private set; }
+
+        [Header("UI 연결 (기본)")]
+        [SerializeField] private GameObject _dialoguePanel;       // 하단 대화창 패널
+        [SerializeField] private TextMeshProUGUI _displayText;    // 텍스트 표시용 TMP
+        [SerializeField] private TextMeshProUGUI _speakerNameText; // 화자 이름 표시용
+
+        [Header("시네마틱 연출 설정")]
+        [SerializeField] private GameObject _cinematicTopBar;      // 화면 위 검은 바
+        [SerializeField] private GameObject _cinematicBottomBar;   // 화면 아래 검은 바
+        [SerializeField] private GameObject _playerHUDPanel;       // 플레이어 HUD 체력창 패널
+
+        [Header("카메라 연출 설정")]
+        [SerializeField] private Camera _mainCamera;               // 메인 카메라
+        [SerializeField] private GameObject _cinemachineCameraObject; // 시네머신 가상 카메라 오브젝트 (CM_GamePlay)
+
+        private DialogueDatabase _database;
+        private DialoguePlaybackState _state;
+        private CancellationTokenSource _playbackCts;
+
+        public CancellationTokenSource PlaybackCts => _playbackCts ?? null;
+
+        // 본래 플레이어 위치로 복귀하기 위해 저장해둘 변수
+        private Transform _playerTransform;
+
+        // 콜백 및 이벤트 핸들
+        public System.Action<string> onEventTriggered;
+        public System.Action<string> onJumpRequested;
+        public System.Action onDialogueCompleted;
+
+        // 타이핑 설정
+        private float _currentTypeSpeed = 0.05f;
+        private const float DEFAULT_TYPE_SPEED = 0.05f;
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
+            _state = new DialoguePlaybackState();
+
+            if (_mainCamera == null) _mainCamera = Camera.main;
+
+            if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
+            SetCinematicBars(false);
+            if (_playerHUDPanel != null) _playerHUDPanel.SetActive(true);
+        }
+
+        // ----------------------------------------------------
+        // [추가] 매 프레임 ESC 키 입력을 감지하여 스킵 기능 발동
+        // ----------------------------------------------------
+        private void Update()
+        {
+            // _playbackCts가 null이 아니라는 것은 현재 대화가 진행 중임을 의미합니다.
+            if (_playbackCts != null && Input.GetKeyDown(KeyCode.Escape))
+            {
+                Debug.Log("[DialogueManager] ESC 입력 감지: 대화 스킵 발동!");
+                Stop(); // 대화를 즉시 중단합니다.
+            }
+        }
+
+        public async UniTask PlayDialogueAsync(
+            TextAsset jsonAsset,
+            string startDialogueId,
+            Transform cameraDialoguePoint,
+            Transform playerTransform,
+            CancellationToken externalCt = default)
+        {
+            _playbackCts?.Cancel();
+            _playbackCts?.Dispose();
+            _playbackCts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
+            var ct = _playbackCts.Token;
+
+            LoadDatabase(jsonAsset);
+            _playerTransform = playerTransform;
+
+            // 시네머신 가상 카메라 끄기
+            if (_cinemachineCameraObject != null)
+            {
+                _cinemachineCameraObject.SetActive(false);
+            }
+
+            // 시네머신 브레인 제어권 탈환 (강제 종료)
+            if (_mainCamera != null)
+            {
+                Behaviour cineBrain = _mainCamera.GetComponent("CinemachineBrain") as Behaviour;
+                if (cineBrain != null) cineBrain.enabled = false;
+            }
+
+            // UI 제어
+            if (_dialoguePanel != null) _dialoguePanel.SetActive(true);
+            SetCinematicBars(true);
+            if (_playerHUDPanel != null) _playerHUDPanel.SetActive(false);
+
+            // 지정한 빈 오브젝트 위치로 메인 카메라 즉시 순간이동
+            if (_mainCamera != null && cameraDialoguePoint != null)
+            {
+                Vector3 targetPos = cameraDialoguePoint.position;
+                targetPos.z = _mainCamera.transform.position.z;
+                _mainCamera.transform.position = targetPos;
+            }
+
+            string currentId = startDialogueId;
+
+            try
+            {
+                while (!string.IsNullOrEmpty(currentId))
+                {
+                    DialogueEntry entry = _database.FindDialogue(currentId);
+                    if (entry == null) break;
+
+                    string textCommandJump = await PlayDialogueInternalAsync(entry, ct);
+
+                    if (!string.IsNullOrEmpty(textCommandJump))
+                        currentId = textCommandJump;
+                    else if (!string.IsNullOrEmpty(entry.jumpId))
+                        currentId = entry.jumpId;
+                    else if (entry.nextIds != null && entry.nextIds.Count > 0)
+                        currentId = entry.nextIds[0];
+                    else
+                        currentId = null;
+
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                }
+            }
+            // ----------------------------------------------------
+            // [추가] ESC(Stop)로 인해 취소되었을 때 발생하는 예외를 안전하게 삼킵니다.
+            // ----------------------------------------------------
+            catch (OperationCanceledException)
+            {
+                Debug.Log("[DialogueManager] 대화가 성공적으로 스킵 처리되었습니다.");
+            }
+            finally
+            {
+                Stop();
+            }
+        }
+
+        private async UniTask<string> PlayDialogueInternalAsync(DialogueEntry entry, CancellationToken ct)
+        {
+            _state.currentEntry = entry;
+            _state.isWaitingForInput = false;
+            _state.isPaused = false;
+
+            if (_speakerNameText != null) _speakerNameText.text = entry.speakerName ?? "Unknown";
+            if (_displayText != null) _displayText.text = "";
+            _currentTypeSpeed = DEFAULT_TYPE_SPEED;
+
+            List<DialogueCommand> commands = DialogueParser.Parse(entry.text);
+            await ExecuteCommandsAsync(commands, ct);
+
+            onDialogueCompleted?.Invoke();
+
+            string jumpTarget = FindJumpTarget(commands);
+            if (!string.IsNullOrEmpty(jumpTarget))
+            {
+                onJumpRequested?.Invoke(jumpTarget);
+            }
+
+            return jumpTarget;
+        }
+
+        private async UniTask ExecuteCommandsAsync(List<DialogueCommand> commands, CancellationToken ct)
+        {
+            foreach (var command in commands)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                switch (command.type)
+                {
+                    case DialogueCommand.CommandType.Text:
+                        await DisplayTextAsync(command.value, ct);
+                        break;
+                    case DialogueCommand.CommandType.Speed:
+                        if (float.TryParse(command.value, out float newSpeed)) _currentTypeSpeed = newSpeed;
+                        break;
+                    case DialogueCommand.CommandType.Wait:
+                        await UniTask.Delay(TimeSpan.FromSeconds(command.duration), cancellationToken: ct);
+                        break;
+                    case DialogueCommand.CommandType.Click:
+                        _state.isWaitingForInput = true;
+                        await UniTask.WaitUntil(() => Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.F), cancellationToken: ct);
+                        _state.isWaitingForInput = false;
+                        break;
+                    case DialogueCommand.CommandType.Event:
+                        onEventTriggered?.Invoke(command.value);
+                        break;
+                }
+            }
+        }
+
+        private async UniTask DisplayTextAsync(string text, CancellationToken ct)
+        {
+            if (string.IsNullOrEmpty(text) || _displayText == null) return;
+            for (int i = 0; i < text.Length; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                _displayText.text += text[i];
+                _state.displayedCharacters++;
+                if (_state.isWaitingForInput)
+                {
+                    _displayText.text += text.Substring(i + 1);
+                    _state.displayedCharacters = text.Length;
+                    return;
+                }
+                await UniTask.Delay(TimeSpan.FromSeconds(_currentTypeSpeed), cancellationToken: ct);
+            }
+        }
+
+        private string FindJumpTarget(List<DialogueCommand> commands)
+        {
+            string jumpTarget = null;
+            foreach (var cmd in commands)
+            {
+                if (cmd.type == DialogueCommand.CommandType.Jump) jumpTarget = cmd.value;
+            }
+            return jumpTarget;
+        }
+
+        public void Pause()
+        {
+            _state.isPaused = true;
+            _playbackCts?.Cancel();
+        }
+
+        public void Stop()
+        {
+            // ----------------------------------------------------
+            // [수정] 이미 취소/정리된 상태라면 중복 실행되지 않도록 방어
+            // ----------------------------------------------------
+            if (_playbackCts == null) return;
+
+            _playbackCts.Cancel();
+            _playbackCts.Dispose();
+            _playbackCts = null;
+
+            if (_displayText != null) _displayText.text = "";
+
+            if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
+            SetCinematicBars(false);
+            if (_playerHUDPanel != null) _playerHUDPanel.SetActive(true);
+
+            // 카메라 복귀
+            if (_mainCamera != null && _playerTransform != null)
+            {
+                Vector3 targetPos = _playerTransform.position;
+                targetPos.z = _mainCamera.transform.position.z;
+                _mainCamera.transform.position = targetPos;
+
+                // 시네머신 브레인 복구
+                Behaviour cineBrain = _mainCamera.GetComponent("CinemachineBrain") as Behaviour;
+                if (cineBrain != null) cineBrain.enabled = true;
+            }
+
+            // 가상 카메라 복구
+            if (_cinemachineCameraObject != null)
+            {
+                _cinemachineCameraObject.SetActive(true);
+            }
+
+            _playerTransform = null;
+            _state.Reset();
+        }
+
+        private void SetCinematicBars(bool isActive)
+        {
+            if (_cinematicTopBar != null) _cinematicTopBar.SetActive(isActive);
+            if (_cinematicBottomBar != null) _cinematicBottomBar.SetActive(isActive);
+        }
+
+        private void LoadDatabase(TextAsset jsonAsset)
+        {
+            if (jsonAsset == null) return;
+            try
+            {
+                string json = jsonAsset.text;
+                string wrappedJson = $"{{\"dialogues\":{json}}}";
+                _database = JsonUtility.FromJson<DialogueDatabase>(wrappedJson);
+            }
+            catch (Exception e) { Debug.LogError($"[DialogueManager] 파싱 오류: {e.Message}"); }
+        }
+    }
+
+    public static class DialoguePlaybackStateExtensions
+    {
+        public static void Reset(this DialoguePlaybackState state)
+        {
+            if (state == null) return;
+            state.currentEntry = null;
+            state.totalCharacters = 0;
+            state.displayedCharacters = 0;
+            state.elapsedTime = 0f;
+            state.isWaitingForInput = false;
+            state.isPaused = false;
+        }
+    }
+}
+
+#region regecy
+//using System;
 //using System.Collections.Generic;
 //using System.Threading;
 //using Cysharp.Threading.Tasks;
@@ -369,318 +687,4 @@
 //        }
 //    }
 //}
-
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using Cysharp.Threading.Tasks;
-using TMPro;
-using UnityEngine;
-
-namespace DialogSystem.CinematicDialogue
-{
-    /// <summary>
-    /// 시네마틱 대화 시스템의 핵심 매니저.
-    /// </summary>
-    public class DialogueManager : MonoBehaviour
-    {
-        // 싱글톤 설정
-        public static DialogueManager Instance { get; private set; }
-
-        [Header("UI 연결 (기본)")]
-        [SerializeField] private GameObject _dialoguePanel;       // 하단 대화창 패널
-        [SerializeField] private TextMeshProUGUI _displayText;    // 텍스트 표시용 TMP
-        [SerializeField] private TextMeshProUGUI _speakerNameText; // 화자 이름 표시용
-
-        [Header("시네마틱 연출 설정")]
-        [SerializeField] private GameObject _cinematicTopBar;      // 화면 위 검은 바
-        [SerializeField] private GameObject _cinematicBottomBar;   // 화면 아래 검은 바
-        [SerializeField] private GameObject _playerHUDPanel;       // 플레이어 HUD 체력창 패널
-
-        [Header("카메라 연출 설정")]
-        [SerializeField] private Camera _mainCamera;               // 메인 카메라
-        [SerializeField] private GameObject _cinemachineCameraObject; // 시네머신 가상 카메라 오브젝트 (CM_GamePlay)
-
-        private DialogueDatabase _database;
-        private DialoguePlaybackState _state;
-        private CancellationTokenSource _playbackCts;
-
-        // 본래 플레이어 위치로 복귀하기 위해 저장해둘 변수
-        private Transform _playerTransform;
-
-        // 콜백 및 이벤트 핸들
-        public System.Action<string> onEventTriggered;
-        public System.Action<string> onJumpRequested;
-        public System.Action onDialogueCompleted;
-
-        // 타이핑 설정
-        private float _currentTypeSpeed = 0.05f;
-        private const float DEFAULT_TYPE_SPEED = 0.05f;
-
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-
-            _state = new DialoguePlaybackState();
-
-            if (_mainCamera == null) _mainCamera = Camera.main;
-
-            if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
-            SetCinematicBars(false);
-            if (_playerHUDPanel != null) _playerHUDPanel.SetActive(true);
-        }
-
-        // ----------------------------------------------------
-        // [추가] 매 프레임 ESC 키 입력을 감지하여 스킵 기능 발동
-        // ----------------------------------------------------
-        private void Update()
-        {
-            // _playbackCts가 null이 아니라는 것은 현재 대화가 진행 중임을 의미합니다.
-            if (_playbackCts != null && Input.GetKeyDown(KeyCode.Escape))
-            {
-                Debug.Log("[DialogueManager] ESC 입력 감지: 대화 스킵 발동!");
-                Stop(); // 대화를 즉시 중단합니다.
-            }
-        }
-
-        public async UniTask PlayDialogueAsync(
-            TextAsset jsonAsset,
-            string startDialogueId,
-            Transform cameraDialoguePoint,
-            Transform playerTransform,
-            CancellationToken externalCt = default)
-        {
-            _playbackCts?.Cancel();
-            _playbackCts?.Dispose();
-            _playbackCts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
-            var ct = _playbackCts.Token;
-
-            LoadDatabase(jsonAsset);
-            _playerTransform = playerTransform;
-
-            // 시네머신 가상 카메라 끄기
-            if (_cinemachineCameraObject != null)
-            {
-                _cinemachineCameraObject.SetActive(false);
-            }
-
-            // 시네머신 브레인 제어권 탈환 (강제 종료)
-            if (_mainCamera != null)
-            {
-                Behaviour cineBrain = _mainCamera.GetComponent("CinemachineBrain") as Behaviour;
-                if (cineBrain != null) cineBrain.enabled = false;
-            }
-
-            // UI 제어
-            if (_dialoguePanel != null) _dialoguePanel.SetActive(true);
-            SetCinematicBars(true);
-            if (_playerHUDPanel != null) _playerHUDPanel.SetActive(false);
-
-            // 지정한 빈 오브젝트 위치로 메인 카메라 즉시 순간이동
-            if (_mainCamera != null && cameraDialoguePoint != null)
-            {
-                Vector3 targetPos = cameraDialoguePoint.position;
-                targetPos.z = _mainCamera.transform.position.z;
-                _mainCamera.transform.position = targetPos;
-            }
-
-            string currentId = startDialogueId;
-
-            try
-            {
-                while (!string.IsNullOrEmpty(currentId))
-                {
-                    DialogueEntry entry = _database.FindDialogue(currentId);
-                    if (entry == null) break;
-
-                    string textCommandJump = await PlayDialogueInternalAsync(entry, ct);
-
-                    if (!string.IsNullOrEmpty(textCommandJump))
-                        currentId = textCommandJump;
-                    else if (!string.IsNullOrEmpty(entry.jumpId))
-                        currentId = entry.jumpId;
-                    else if (entry.nextIds != null && entry.nextIds.Count > 0)
-                        currentId = entry.nextIds[0];
-                    else
-                        currentId = null;
-
-                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
-                }
-            }
-            // ----------------------------------------------------
-            // [추가] ESC(Stop)로 인해 취소되었을 때 발생하는 예외를 안전하게 삼킵니다.
-            // ----------------------------------------------------
-            catch (OperationCanceledException)
-            {
-                Debug.Log("[DialogueManager] 대화가 성공적으로 스킵 처리되었습니다.");
-            }
-            finally
-            {
-                Stop();
-            }
-        }
-
-        private async UniTask<string> PlayDialogueInternalAsync(DialogueEntry entry, CancellationToken ct)
-        {
-            _state.currentEntry = entry;
-            _state.isWaitingForInput = false;
-            _state.isPaused = false;
-
-            if (_speakerNameText != null) _speakerNameText.text = entry.speakerName ?? "Unknown";
-            if (_displayText != null) _displayText.text = "";
-            _currentTypeSpeed = DEFAULT_TYPE_SPEED;
-
-            List<DialogueCommand> commands = DialogueParser.Parse(entry.text);
-            await ExecuteCommandsAsync(commands, ct);
-
-            onDialogueCompleted?.Invoke();
-
-            string jumpTarget = FindJumpTarget(commands);
-            if (!string.IsNullOrEmpty(jumpTarget))
-            {
-                onJumpRequested?.Invoke(jumpTarget);
-            }
-
-            return jumpTarget;
-        }
-
-        private async UniTask ExecuteCommandsAsync(List<DialogueCommand> commands, CancellationToken ct)
-        {
-            foreach (var command in commands)
-            {
-                ct.ThrowIfCancellationRequested();
-
-                switch (command.type)
-                {
-                    case DialogueCommand.CommandType.Text:
-                        await DisplayTextAsync(command.value, ct);
-                        break;
-                    case DialogueCommand.CommandType.Speed:
-                        if (float.TryParse(command.value, out float newSpeed)) _currentTypeSpeed = newSpeed;
-                        break;
-                    case DialogueCommand.CommandType.Wait:
-                        await UniTask.Delay(TimeSpan.FromSeconds(command.duration), cancellationToken: ct);
-                        break;
-                    case DialogueCommand.CommandType.Click:
-                        _state.isWaitingForInput = true;
-                        await UniTask.WaitUntil(() => Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.F), cancellationToken: ct);
-                        _state.isWaitingForInput = false;
-                        break;
-                    case DialogueCommand.CommandType.Event:
-                        onEventTriggered?.Invoke(command.value);
-                        break;
-                }
-            }
-        }
-
-        private async UniTask DisplayTextAsync(string text, CancellationToken ct)
-        {
-            if (string.IsNullOrEmpty(text) || _displayText == null) return;
-            for (int i = 0; i < text.Length; i++)
-            {
-                ct.ThrowIfCancellationRequested();
-                _displayText.text += text[i];
-                _state.displayedCharacters++;
-                if (_state.isWaitingForInput)
-                {
-                    _displayText.text += text.Substring(i + 1);
-                    _state.displayedCharacters = text.Length;
-                    return;
-                }
-                await UniTask.Delay(TimeSpan.FromSeconds(_currentTypeSpeed), cancellationToken: ct);
-            }
-        }
-
-        private string FindJumpTarget(List<DialogueCommand> commands)
-        {
-            string jumpTarget = null;
-            foreach (var cmd in commands)
-            {
-                if (cmd.type == DialogueCommand.CommandType.Jump) jumpTarget = cmd.value;
-            }
-            return jumpTarget;
-        }
-
-        public void Pause()
-        {
-            _state.isPaused = true;
-            _playbackCts?.Cancel();
-        }
-
-        public void Stop()
-        {
-            // ----------------------------------------------------
-            // [수정] 이미 취소/정리된 상태라면 중복 실행되지 않도록 방어
-            // ----------------------------------------------------
-            if (_playbackCts == null) return;
-
-            _playbackCts.Cancel();
-            _playbackCts.Dispose();
-            _playbackCts = null;
-
-            if (_displayText != null) _displayText.text = "";
-
-            if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
-            SetCinematicBars(false);
-            if (_playerHUDPanel != null) _playerHUDPanel.SetActive(true);
-
-            // 카메라 복귀
-            if (_mainCamera != null && _playerTransform != null)
-            {
-                Vector3 targetPos = _playerTransform.position;
-                targetPos.z = _mainCamera.transform.position.z;
-                _mainCamera.transform.position = targetPos;
-
-                // 시네머신 브레인 복구
-                Behaviour cineBrain = _mainCamera.GetComponent("CinemachineBrain") as Behaviour;
-                if (cineBrain != null) cineBrain.enabled = true;
-            }
-
-            // 가상 카메라 복구
-            if (_cinemachineCameraObject != null)
-            {
-                _cinemachineCameraObject.SetActive(true);
-            }
-
-            _playerTransform = null;
-            _state.Reset();
-        }
-
-        private void SetCinematicBars(bool isActive)
-        {
-            if (_cinematicTopBar != null) _cinematicTopBar.SetActive(isActive);
-            if (_cinematicBottomBar != null) _cinematicBottomBar.SetActive(isActive);
-        }
-
-        private void LoadDatabase(TextAsset jsonAsset)
-        {
-            if (jsonAsset == null) return;
-            try
-            {
-                string json = jsonAsset.text;
-                string wrappedJson = $"{{\"dialogues\":{json}}}";
-                _database = JsonUtility.FromJson<DialogueDatabase>(wrappedJson);
-            }
-            catch (Exception e) { Debug.LogError($"[DialogueManager] 파싱 오류: {e.Message}"); }
-        }
-    }
-
-    public static class DialoguePlaybackStateExtensions
-    {
-        public static void Reset(this DialoguePlaybackState state)
-        {
-            if (state == null) return;
-            state.currentEntry = null;
-            state.totalCharacters = 0;
-            state.displayedCharacters = 0;
-            state.elapsedTime = 0f;
-            state.isWaitingForInput = false;
-            state.isPaused = false;
-        }
-    }
-}
+#endregion

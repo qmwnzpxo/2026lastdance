@@ -135,7 +135,7 @@ public partial class PlayerDash : MonoBehaviour
                 if (hit.collider != null)
                 {
                     // 착지 지점에 딱 맞춰 이동 후 강타
-                    rb.MovePosition(new Vector2(cur.x, hit.point.y * 0.5f));
+                    rb.MovePosition(new Vector2(cur.x, hit.point.y * 0.05f));
                     await UniTask.WaitForFixedUpdate(cancellationToken: ct);
                     BlueSlamLand();
                     return;

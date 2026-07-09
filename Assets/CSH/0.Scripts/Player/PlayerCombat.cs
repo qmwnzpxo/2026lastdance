@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using DialogSystem.CinematicDialogue;
 
 public class PlayerCombat : MonoBehaviour
 {
@@ -52,6 +53,10 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
+        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts == null)
+        {
+            return;
+        }
         if (!state.isAttacking)
         {
             RotateAttackPivot();

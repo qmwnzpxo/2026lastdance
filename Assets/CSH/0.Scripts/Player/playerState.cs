@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
-using CSHPlayer;
 
 public enum PlayerChip
 {
@@ -78,8 +76,8 @@ public class PlayerState : MonoBehaviour, IDamageable
     // ── 시간 설정 ─────────────────────────────
     public TimeCategory category = TimeCategory.Player;
 
-    public Light2D hitLight;
-    public Light2D hitWorldLight;
+    //public Light2D hitLight;
+    //public Light2D hitWorldLight;
     CancellationTokenSource hitCts;
     //TrailRenderer moveTrail;
 
@@ -89,6 +87,8 @@ public class PlayerState : MonoBehaviour, IDamageable
     public event System.Action OnDashStopped;
     public void NotifyDashStopped() => OnDashStopped?.Invoke();
 
+    
+
 
     public void Awake()
     {
@@ -97,6 +97,7 @@ public class PlayerState : MonoBehaviour, IDamageable
         //if (hitWorldLight == null)
         //    hitWorldLight = transform.Find("Hit World Light").GetComponent<Light2D>();
         InitState();
+
     }
 
     public void Update()

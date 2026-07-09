@@ -61,6 +61,7 @@ namespace ItemSystem
         protected override void OnBroken()
         {
             SpawnDrop();
+            gameObject.SetActive(false);
         }
 
         private void SpawnDrop()

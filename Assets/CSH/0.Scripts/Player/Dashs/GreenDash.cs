@@ -112,7 +112,6 @@ public partial class PlayerDash : MonoBehaviour
                         hitThisDash.Add(h.collider);
                         //ApplyDamage(h.collider, state.damage * dashDamage);
                         OnDashHitEnemy(h.collider);
-                        HitstopManager.Instance.TriggerHitstop(0.04f);
                     }
                 }
             }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using CSHPlayer;
+using DialogSystem.CinematicDialogue;
 
 // ※ Script Execution Order: PlayerDash = -1 로 설정할 것
 //   (Project Settings > Script Execution Order)
@@ -50,6 +51,7 @@ public partial class PlayerDash : MonoBehaviour
     private LayerMask combined;
     private float cameraDumpingScale = 0.2f;
     private float originalCameraDumping = 1f;
+    public bool dashhitEnemy { get => dashHitEnemy; set => dashHitEnemy = value; }
 
     // ── 대쉬 내부 상태 ───────────────────────
     private Vector2 dashDirection;
@@ -78,7 +80,8 @@ public partial class PlayerDash : MonoBehaviour
     private PlayerState state;
     private PlayerMove playerMove;
     private Rigidbody2D rb;
-    private PolygonCollider2D col;
+    private Collider2D col;
+    private CircleCollider2D circleCol;
     private LineRenderer line;
     private PlayerAnimation ani;
     private Camera mainCamera;
@@ -95,7 +98,7 @@ public partial class PlayerDash : MonoBehaviour
         playerMove = GetComponent<PlayerMove>();
         line = GetComponent<LineRenderer>();
         ani = GetComponent<PlayerAnimation>();
-        col = GetComponent<PolygonCollider2D>();
+        col = GetComponent<Collider2D>();
 
         if (enemyLayer == 0)
             enemyLayer = LayerMask.GetMask("enemy");
@@ -110,6 +113,9 @@ public partial class PlayerDash : MonoBehaviour
         if(ghostSprite == null)
             ghostSprite = Ghost.GetComponent<SpriteRenderer>();
         playerSprite = playerMove.SpriteRenderer;
+
+        if (col is CircleCollider2D)
+            circleCol = (CircleCollider2D)col;
     }
 
     void Start()
@@ -121,6 +127,10 @@ public partial class PlayerDash : MonoBehaviour
 
     void Update()
     {
+        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts == null)
+        {
+            return;
+        }
         HandleDash();
     }
 
@@ -186,6 +196,8 @@ public partial class PlayerDash : MonoBehaviour
 
     void HandleDash()
     {
+
+
         if (_blueDashSecondInput) return;
 
         if (Input.GetMouseButtonDown(1))
@@ -348,8 +360,20 @@ public partial class PlayerDash : MonoBehaviour
         if (distance <= 0f) return;
 
         dir /= distance;
-        RaycastHit2D[] hits = Physics2D.BoxCastAll(
-            from, attackBoxSize, 0f, dir, distance, combined);
+        RaycastHit2D[] hits = null;
+
+        if (col is BoxCollider2D boxCol)
+        {
+            Vector2 size = boxCol.size;
+            hits = Physics2D.BoxCastAll(
+               from, attackBoxSize, 0f, dir, distance, combined);
+        }
+        else if (col is CircleCollider2D circleCol)
+        {
+            float radius = circleCol.radius;
+            hits = Physics2D.CircleCastAll(
+                from, radius, dir, distance, combined);
+        }
 
         foreach (RaycastHit2D hit in hits)
         {

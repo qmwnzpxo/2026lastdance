@@ -42,7 +42,6 @@ public class EnemyArmAim : MonoBehaviour
     private float _recoilPosOffset = 0f;      // 뒤로 밀린 거리 (스칼라)
     private float _recoilPosTarget = 0f;
     private bool _recoilPosRising = false;
-
     private Vector3 _fireBaseLocalPos;
 
     // 외부 API
@@ -230,9 +229,9 @@ public class EnemyArmAim : MonoBehaviour
         armPivot.localPosition = _armBaseLocalPos;
 
         // 발사 위치도 flip
-        _fireBaseLocalPos = armPivot.localPosition;
+        _fireBaseLocalPos = firePivot.localPosition;
         _fireBaseLocalPos.x = -_fireBaseLocalPos.x;
-        firePivot.localPosition = _armBaseLocalPos;
+        firePivot.localPosition = _fireBaseLocalPos;
     }
 
     private float NormalizeAngle(float angle)

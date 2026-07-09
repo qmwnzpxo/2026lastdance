@@ -1,6 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
+using DialogSystem.CinematicDialogue;
 
 // Script Execution Order 설정 필요
 // PlayerDash: -1  /  PlayerMove: 0
@@ -127,6 +128,10 @@ public class PlayerMove : MonoBehaviour
 
     private void Update()
     {
+        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts == null)
+        {
+            return;
+        }
         moveInput = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
@@ -250,14 +255,17 @@ public class PlayerMove : MonoBehaviour
         }
         else
         {
-            targetSlideSpeed = -wallSlideSpeed * (state.isPowerRun ? RunSpeed : 1f);
+            targetSlideSpeed = 0f;
             isWallSlideDown = state.isTouchingRWall;
         }
+        /*
         float limitVelocity = rb.linearVelocityY;
         limitVelocity = Mathf.Clamp(limitVelocity,wallSlideSpeedUp,wallSlideSpeedDown);
         float smoothedY = Mathf.Lerp(limitVelocity
             , targetSlideSpeed, CustomTime.ScaledFixedDeltaTime(state.category) * 10f);
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, smoothedY);
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, smoothedY);*/
+
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, targetSlideSpeed);
     }
 
 
@@ -277,6 +285,10 @@ public class PlayerMove : MonoBehaviour
         if(state.isWallSliding)
         {
             rb.gravityScale = 0f;
+            if (verticalInput == 0 && moveInput == 0)
+            {
+                rb.linearVelocityY = 0f;
+            }
         }
         else
         {
