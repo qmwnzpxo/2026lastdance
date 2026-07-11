@@ -37,15 +37,15 @@
   {
     "id": "Scene_01_6",
     "speakerName": "저질 용병A 1",
-    "text": "따라와봐. [click]",
-    "nextIds": ["Scene_01_7"],
+    "text": "따라와봐. [click][event: 01-1_Walk][action: 01-1_가기][event: 01-1_Idle]",
+    "nextIds": [ "Scene_01_7" ],
     "jumpId": ""
   },
   {
     "id": "Scene_01_7",
     "speakerName": "저질 용병A 2",
-    "text": "뭐야, 뭐길래 그래? [click]",
-    "nextIds": ["Scene_01_8"],
+    "text": "[event: 01-2_Flip_Right]뭐야, 뭐길래 그래? [click][event: 01-2_Walk][action: 01-2_따라가기][event: 01-2_Idle]",
+    "nextIds": [ "Scene_01_8" ],
     "jumpId": ""
   },
   {

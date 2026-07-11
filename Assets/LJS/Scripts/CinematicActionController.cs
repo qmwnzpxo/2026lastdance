@@ -6,14 +6,14 @@ using System.Threading;
 using System;
 
 [System.Serializable]
-public struct CinematicActor
+public struct CinematicActor // 배우
 {
     public string actorId;
     public Transform actorTransform;
 }
 
 [System.Serializable]
-public struct CinematicMoveAction
+public struct CinematicMoveAction // 좌표 이동
 {
     public string eventName;
     public string targetActorId;
@@ -23,11 +23,16 @@ public struct CinematicMoveAction
     public float duration;
 }
 
-// ----------------------------------------------------
-// [추가됨] 애니메이션 연출을 위한 데이터 구조체
-// ----------------------------------------------------
 [System.Serializable]
-public struct CinematicAnimAction
+public struct CinematicFlipAction // 좌우 반전
+{
+    public string eventName;
+    public string targetActorId;
+    public bool isFaceFlip;         // 체크하면 반전, 해제하면 그대로
+}
+
+[System.Serializable]
+public struct CinematicAnimAction // 애니메이션
 {
     public string eventName;        // JSON에서 호출할 이벤트 이름 (예: "용병A_놀람")
     public string targetActorId;    // 애니메이션을 실행할 배우의 ID
@@ -44,7 +49,10 @@ public class CinematicActionController : MonoBehaviour
     public List<CinematicMoveAction> moveActions = new List<CinematicMoveAction>();
 
     [Header("3. 실행할 연출(애니메이션) 목록")]
-    public List<CinematicAnimAction> animActions = new List<CinematicAnimAction>(); // [추가됨]
+    public List<CinematicAnimAction> animActions = new List<CinematicAnimAction>(); 
+
+    [Header("4. 실행할 연출(좌우 반전) 목록")]
+    public List<CinematicFlipAction> flipActions = new List<CinematicFlipAction>();
 
     private void Start()
     {
@@ -83,6 +91,23 @@ public class CinematicActionController : MonoBehaviour
                 {
                     Vector3 targetPos = actor.position + (Vector3)action.moveOffset;
                     MoveNpcAsync(actor, targetPos, action.duration, ct).Forget();
+                }
+            }
+        }
+
+        foreach (var action in flipActions)
+        {
+            if (action.eventName == eventName)
+            {
+                Transform actor = GetActor(action.targetActorId);
+                if (actor != null)
+                {
+                    SpriteRenderer spriteRenderer = actor.GetComponentInChildren<SpriteRenderer>();
+                    if (spriteRenderer != null)
+                    {
+                        spriteRenderer.flipX = action.isFaceFlip;
+                        Debug.Log($"[CinematicAction] {action.targetActorId}의 시선이 {(action.isFaceFlip ? "왼쪽" : "오른쪽")}으로 변경됨");
+                    }
                 }
             }
         }
@@ -127,6 +152,23 @@ public class CinematicActionController : MonoBehaviour
                     // 이동이 끝날 때까지 대기
                     await MoveNpcAsync(actor, targetPos, action.duration, ct);
                     return;
+                }
+            }
+        }
+
+        foreach (var action in flipActions)
+        {
+            if (action.eventName == actionName)
+            {
+                Transform actor = GetActor(action.targetActorId);
+                if (actor != null)
+                {
+                    SpriteRenderer spriteRenderer = actor.GetComponentInChildren<SpriteRenderer>();
+                    if (spriteRenderer != null)
+                    {
+                        spriteRenderer.flipX = action.isFaceFlip;
+                        Debug.Log($"[CinematicAction] {action.targetActorId}의 시선이 {(action.isFaceFlip ? "왼쪽" : "오른쪽")}으로 변경됨");
+                    }
                 }
             }
         }

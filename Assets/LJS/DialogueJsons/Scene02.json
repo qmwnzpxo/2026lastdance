@@ -2,7 +2,7 @@
   {
     "id": "Scene_02_1",
     "speakerName": "저질 용병A 2",
-    "text": "말해줘봐. 뭔데? [click]",
+    "text": "[event: 02-1_Walk][event: 02-2_Walk][event: 02-1_걷기][action: 02-2_걷기][event: 02-1_Flip_Left][event: 02-1_Idle][event: 02-2_Idle]말해줘봐. 뭔데? [click]",
     "nextIds": ["Scene_02_2"],
     "jumpId": ""
   },
@@ -23,7 +23,7 @@
   {
     "id": "Scene_02_4",
     "speakerName": "저질 용병A 2",
-    "text": "3배?! [click]",
+    "text": "[event: 02-2_Hit]3배?! [click]",
     "nextIds": ["Scene_02_5"],
     "jumpId": ""
   },
@@ -37,7 +37,7 @@
   {
     "id": "Scene_02_6",
     "speakerName": "저질 용병A 2",
-    "text": "빨리 내용부터 설명해봐. 무슨 의뢰길래? [click]",
+    "text": "[event: 02-2_Idle]빨리 내용부터 설명해봐. 무슨 의뢰길래? [click]",
     "nextIds": ["Scene_02_7"],
     "jumpId": ""
   },
@@ -93,7 +93,7 @@
   {
     "id": "Scene_02_14",
     "speakerName": "저질 용병A 1",
-    "text": "넌 뭐야? [click]",
+    "text": "[event: 02-2_Flip_Left][wait: 1]넌 뭐야? [click]",
     "nextIds": ["Scene_02_15"],
     "jumpId": ""
   },
@@ -114,7 +114,7 @@
   {
     "id": "Scene_02_17",
     "speakerName": "저질 용병A 2",
-    "text": "그놈이야, 그놈. 네온점퍼잖아. [click]",
+    "text": "[event: 02-2_Flip_Right]그놈이야, 그놈. 네온점퍼잖아. [click]",
     "nextIds": ["Scene_02_18"],
     "jumpId": ""
   },
@@ -128,7 +128,7 @@
   {
     "id": "Scene_02_19",
     "speakerName": "???",
-    "text": "무슨 의뢰지? [click]",
+    "text": "[event: 02-2_Flip_Left]무슨 의뢰지? [click]",
     "nextIds": ["Scene_02_20"],
     "jumpId": ""
   },
@@ -156,7 +156,7 @@
   {
     "id": "Scene_02_23",
     "speakerName": "저질 용병A 2",
-    "text": "(소근)야, 빨리 가자. [click]",
+    "text": "[event: 02-2_Flip_Right](소근)야, 빨리 가자. [click]",
     "nextIds": ["Scene_02_24"],
     "jumpId": ""
   },

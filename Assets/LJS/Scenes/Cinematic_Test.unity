@@ -2159,6 +2159,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -7788,6 +7789,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -27268,6 +27270,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -27896,7 +27899,7 @@ Transform:
   m_GameObject: {fileID: 700193753}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 14.15, y: 118.84, z: 0}
+  m_LocalPosition: {x: 14.15, y: 120.58, z: 0}
   m_LocalScale: {x: 3.5, y: 3.5, z: 3.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -32800,7 +32803,7 @@ Transform:
   m_GameObject: {fileID: 822719818}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 9.04, y: 112.19, z: 0}
+  m_LocalPosition: {x: 9, y: 112.19001, z: 0}
   m_LocalScale: {x: 3.5, y: 3.5, z: 3.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -36104,7 +36107,7 @@ Transform:
   m_GameObject: {fileID: 928009380}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 14.4, y: 112.19, z: 0}
+  m_LocalPosition: {x: 15, y: 112.19001, z: 0}
   m_LocalScale: {x: 3.5, y: 3.5, z: 3.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -38895,6 +38898,7 @@ GameObject:
   m_Component:
   - component: {fileID: 974865407}
   - component: {fileID: 974865408}
+  - component: {fileID: 974865409}
   m_Layer: 0
   m_Name: Enemy_1
   m_TagString: Untagged
@@ -38911,7 +38915,7 @@ Transform:
   m_GameObject: {fileID: 974865406}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 19.87, y: 109.6, z: 0}
+  m_LocalPosition: {x: 17.28, y: 111.37, z: 0}
   m_LocalScale: {x: 3.5, y: 3.5, z: 3.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -38961,9 +38965,9 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -1549015626, guid: 27485af49f8f22842a2f8321e028b3a4, type: 3}
+  m_Sprite: {fileID: 478241134, guid: 27485af49f8f22842a2f8321e028b3a4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 1
+  m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 1, y: 1}
@@ -38972,6 +38976,28 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &974865409
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 974865406}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 74ebe3af85c3ea14d9e54882d0323809, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &976130585
 GameObject:
   m_ObjectHideFlags: 0
@@ -40513,6 +40539,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -45623,6 +45650,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -54402,6 +54430,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -55345,6 +55374,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -58462,6 +58492,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -65534,7 +65565,7 @@ Transform:
   m_GameObject: {fileID: 1675427666}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 12.12, y: 110.24, z: 0}
+  m_LocalPosition: {x: 12.12, y: 111.98, z: 0}
   m_LocalScale: {x: 3.5, y: 3.5, z: 3.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -71095,6 +71126,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -71359,6 +71391,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1811925678}
   - component: {fileID: 1811925679}
+  - component: {fileID: 1811925680}
   m_Layer: 0
   m_Name: Enemy_2
   m_TagString: Untagged
@@ -71375,7 +71408,7 @@ Transform:
   m_GameObject: {fileID: 1811925677}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 17.34, y: 109.6, z: 0}
+  m_LocalPosition: {x: 14.83, y: 111.369995, z: 0}
   m_LocalScale: {x: 3.5, y: 3.5, z: 3.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -71425,7 +71458,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -1549015626, guid: 27485af49f8f22842a2f8321e028b3a4, type: 3}
+  m_Sprite: {fileID: 478241134, guid: 27485af49f8f22842a2f8321e028b3a4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -71436,6 +71469,28 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &1811925680
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1811925677}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 74ebe3af85c3ea14d9e54882d0323809, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1812182109
 GameObject:
   m_ObjectHideFlags: 0
@@ -79640,6 +79695,7 @@ MonoBehaviour:
   _attackCooldown: 2
   _stunDuration: 0
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -80412,15 +80468,35 @@ MonoBehaviour:
     actorTransform: {fileID: 822719819}
   - actorId: 01-2
     actorTransform: {fileID: 928009381}
+  - actorId: 02-1
+    actorTransform: {fileID: 974865407}
+  - actorId: 02-2
+    actorTransform: {fileID: 1811925678}
   moveActions:
   - eventName: "01-1_\uB2E4\uAC00\uC624\uAE30"
     targetActorId: 01-1
     moveOffset: {x: 3, y: 0}
     duration: 2
-  - eventName: 
-    targetActorId: 
-    moveOffset: {x: 0, y: 0}
-    duration: 0
+  - eventName: "01-1_\uAC00\uAE30"
+    targetActorId: 01-1
+    moveOffset: {x: 8, y: 0}
+    duration: 4
+  - eventName: "01-2_\uB530\uB77C\uAC00\uAE30"
+    targetActorId: 01-2
+    moveOffset: {x: 6, y: 0}
+    duration: 3
+  - eventName: "01-2_\uB530\uB77C\uAC00\uAE30"
+    targetActorId: 01-2
+    moveOffset: {x: 6, y: 0}
+    duration: 3
+  - eventName: "02-1_\uAC77\uAE30"
+    targetActorId: 02-1
+    moveOffset: {x: 4, y: 0}
+    duration: 2
+  - eventName: "02-2_\uAC77\uAE30"
+    targetActorId: 02-2
+    moveOffset: {x: 4, y: 0}
+    duration: 2
   animActions:
   - eventName: 01-1_Walk
     targetActorId: 01-1
@@ -80430,6 +80506,50 @@ MonoBehaviour:
     targetActorId: 01-1
     triggerName: isIdle
     waitDuration: 0
+  - eventName: 01-2_Walk
+    targetActorId: 01-2
+    triggerName: isWalk
+    waitDuration: 0
+  - eventName: 01-2_Idle
+    targetActorId: 01-2
+    triggerName: isIdle
+    waitDuration: 0
+  - eventName: 02-1_Walk
+    targetActorId: 02-1
+    triggerName: isWalk
+    waitDuration: 0
+  - eventName: 02-1_Idle
+    targetActorId: 02-1
+    triggerName: isIdle
+    waitDuration: 0
+  - eventName: 02-2_Walk
+    targetActorId: 02-2
+    triggerName: isWalk
+    waitDuration: 0
+  - eventName: 02-2_Idle
+    targetActorId: 02-2
+    triggerName: isIdle
+    waitDuration: 0
+  - eventName: 02-2_Hit
+    targetActorId: 02-2
+    triggerName: isHit
+    waitDuration: 0
+  flipActions:
+  - eventName: 01-2_Flip_Right
+    targetActorId: 01-2
+    isFaceFlip: 0
+  - eventName: 02-1_Flip_Left
+    targetActorId: 02-1
+    isFaceFlip: 1
+  - eventName: 02-1_Flip_Right
+    targetActorId: 02-1
+    isFaceFlip: 0
+  - eventName: 02-2_Flip_Left
+    targetActorId: 02-2
+    isFaceFlip: 1
+  - eventName: 02-2_Flip_Right
+    targetActorId: 02-2
+    isFaceFlip: 0
 --- !u!4 &2008655547
 Transform:
   m_ObjectHideFlags: 0
