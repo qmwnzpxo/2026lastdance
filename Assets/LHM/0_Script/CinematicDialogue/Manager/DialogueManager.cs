@@ -41,6 +41,7 @@ namespace DialogSystem.CinematicDialogue
         // 콜백 및 이벤트 핸들
         public System.Action<string> onEventTriggered;
         public System.Action<string> onJumpRequested;
+        public System.Func<string, CancellationToken, UniTask> onActionTriggered;
         public System.Action onDialogueCompleted;
 
         // 타이핑 설정
@@ -203,6 +204,17 @@ namespace DialogSystem.CinematicDialogue
                         break;
                     case DialogueCommand.CommandType.Event:
                         onEventTriggered?.Invoke(command.value);
+                        break;
+                    case DialogueCommand.CommandType.Action:
+                        if (onActionTriggered != null)
+                        {
+                            // ActionController 쪽 작업이 완전히 끝날 때까지 여기서 대화 루프가 정지합니다.
+                            await onActionTriggered.Invoke(command.value, ct);
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"[DialogueManager] Action '{command.value}'을(를) 처리할 구독자가 없습니다.");
+                        }
                         break;
                 }
             }

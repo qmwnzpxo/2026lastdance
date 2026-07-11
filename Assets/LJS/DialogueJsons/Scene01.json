@@ -2,8 +2,8 @@
   {
     "id": "Scene_01_1",
     "speakerName": "저질 용병A 1",
-    "text": "야, 너 여기서 뭐해? [click]",
-    "nextIds": ["Scene_01_2"],
+    "text": "[event: 01-1_Walk][action: 01-1_다가오기][event: 01-1_Idle] 야, 너 여기서 뭐해? [click]",
+    "nextIds": [ "Scene_01_2" ],
     "jumpId": ""
   },
   {

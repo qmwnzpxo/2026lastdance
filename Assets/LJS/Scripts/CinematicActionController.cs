@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using DialogSystem.CinematicDialogue;
+using System.Threading;
+using System;
 
 [System.Serializable]
 public struct CinematicActor
@@ -30,6 +32,7 @@ public struct CinematicAnimAction
     public string eventName;        // JSON에서 호출할 이벤트 이름 (예: "용병A_놀람")
     public string targetActorId;    // 애니메이션을 실행할 배우의 ID
     public string triggerName;      // Animator에 설정해둔 Trigger 파라미터 이름 (예: "Surprise")
+    public float waitDuration;      // [추가] 이 애니메이션 연출을 위해 대화를 멈출 시간 (초)
 }
 
 public class CinematicActionController : MonoBehaviour
@@ -46,6 +49,7 @@ public class CinematicActionController : MonoBehaviour
     private void Start()
     {
         DialogueManager.Instance.onEventTriggered += OnDialogueEvent;
+        DialogueManager.Instance.onActionTriggered += OnDialogueActionAsync;
     }
 
     private void OnDestroy()
@@ -53,12 +57,20 @@ public class CinematicActionController : MonoBehaviour
         if (DialogueManager.Instance != null)
         {
             DialogueManager.Instance.onEventTriggered -= OnDialogueEvent;
+            DialogueManager.Instance.onActionTriggered -= OnDialogueActionAsync;
         }
     }
 
     private void OnDialogueEvent(string eventName)
     {
         Debug.Log($"[CinematicActionController] 이벤트 감지: {eventName}");
+
+        // 취소 토큰 가져오기
+        CancellationToken ct = default;
+        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null)
+        {
+            ct = DialogueManager.Instance.PlaybackCts.Token;
+        }
 
         // 1. 이동 액션 검사
         foreach (var action in moveActions)
@@ -70,7 +82,7 @@ public class CinematicActionController : MonoBehaviour
                 if (actor != null)
                 {
                     Vector3 targetPos = actor.position + (Vector3)action.moveOffset;
-                    MoveNpcAsync(actor, targetPos, action.duration).Forget();
+                    MoveNpcAsync(actor, targetPos, action.duration, ct).Forget();
                 }
             }
         }
@@ -101,19 +113,44 @@ public class CinematicActionController : MonoBehaviour
         }
     }
 
-    private Transform GetActor(string actorId)
+    private async UniTask OnDialogueActionAsync(string actionName, CancellationToken ct)
     {
-        foreach (var actor in actors)
+        // 1. 이동 액션
+        foreach (var action in moveActions)
         {
-            if (actor.actorId == actorId)
+            if (action.eventName == actionName)
             {
-                return actor.actorTransform;
+                Transform actor = GetActor(action.targetActorId);
+                if (actor != null)
+                {
+                    Vector3 targetPos = actor.position + (Vector3)action.moveOffset;
+                    // 이동이 끝날 때까지 대기
+                    await MoveNpcAsync(actor, targetPos, action.duration, ct);
+                    return;
+                }
             }
         }
-        return null;
+
+        // 2. 애니메이션 액션
+        foreach (var action in animActions)
+        {
+            if (action.eventName == actionName)
+            {
+                Transform actor = GetActor(action.targetActorId);
+                if (actor != null)
+                {
+                    Animator anim = actor.GetComponentInChildren<Animator>();
+                    if (anim != null) anim.SetTrigger(action.triggerName);
+
+                    // 연출을 보여주기 위해 설정한 시간만큼 대기
+                    await UniTask.Delay(TimeSpan.FromSeconds(action.waitDuration), cancellationToken: ct);
+                    return;
+                }
+            }
+        }
     }
 
-    private async UniTask MoveNpcAsync(Transform npc, Vector3 targetPos, float duration)
+    private async UniTask MoveNpcAsync(Transform npc, Vector3 targetPos, float duration, CancellationToken ct)
     {
         if (npc == null) return;
 
@@ -129,4 +166,17 @@ public class CinematicActionController : MonoBehaviour
 
         npc.position = targetPos;
     }
+
+    private Transform GetActor(string actorId)
+    {
+        foreach (var actor in actors)
+        {
+            if (actor.actorId == actorId)
+            {
+                return actor.actorTransform;
+            }
+        }
+        return null;
+    }
+
 }

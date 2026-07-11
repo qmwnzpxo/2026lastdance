@@ -21,6 +21,7 @@ namespace DialogSystem.CinematicDialogue
             Click,          // 클릭 대기: [click]
             Jump,           // 특정 ID로 점프: [jump:scene_1_05]
             Effect,         // 텍스트 이펙트: <shake>, <pulse> 등
+            Action        // 대화 진행을 멈추고 완료를 대기하는 연출
         }
 
         public CommandType type;
@@ -131,7 +132,7 @@ namespace DialogSystem.CinematicDialogue
         private static void ParseBracketTag(Match match, List<DialogueCommand> commands)
         {
             string tagName = match.Groups[1].Value.ToLower();  // 태그 이름
-            string tagValue = match.Groups[2].Value;  // 태그 값 (콜론 이후)
+            string tagValue = match.Groups[2].Value.Trim();  // 태그 값 (콜론 이후)
 
             switch (tagName)
             {
@@ -158,6 +159,10 @@ namespace DialogSystem.CinematicDialogue
                     commands.Add(new DialogueCommand(DialogueCommand.CommandType.Jump, tagValue));
                     break;
 
+                case "action": // [추가] [action:MoveForward] 형태 파싱
+                    commands.Add(new DialogueCommand(DialogueCommand.CommandType.Action, tagValue));
+                    break;
+
                 default:
                     Debug.LogWarning($"[DialogueParser] 알 수 없는 대괄호 태그: {tagName}");
                     break;
@@ -171,7 +176,7 @@ namespace DialogSystem.CinematicDialogue
         private static void ParseAngleBracketTag(Match match, List<DialogueCommand> commands)
         {
             string tagName = match.Groups[1].Value.ToLower();  // 태그 이름
-            string tagValue = match.Groups[2].Value;  // 태그 값 (= 이후)
+            string tagValue = match.Groups[2].Value.Trim();  // 태그 값 (= 이후)
 
             switch (tagName)
             {
