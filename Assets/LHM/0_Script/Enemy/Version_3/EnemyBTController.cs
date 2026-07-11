@@ -29,6 +29,8 @@ public class EnemyBTController : MonoBehaviour
     [HideInInspector] public bool requireInit = true;
     // ─── 외부 API ───────────────────────────────
     public EnemyBlackboard _BB { get => _bb; }
+    public BTNode _Root { get => _root; }
+    public NodeState NodeState;
 
 
     // ────────────────────────────────────────────
@@ -49,7 +51,7 @@ public class EnemyBTController : MonoBehaviour
         if (_bb != null&&_bb.enemyState.enabled)
         {
             UpdateBlackboard();
-            _root.Evaluate(_bb);
+            NodeState =_root.Evaluate(_bb);
             _currentgauge = _bb.detectGauge; // 디버그용
         }
     }

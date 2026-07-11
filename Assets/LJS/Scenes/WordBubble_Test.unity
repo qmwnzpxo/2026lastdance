@@ -2088,7 +2088,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 1256815466}
   armPivot: {fileID: 2124158315}
   bodyRenderer: {fileID: 1256815467}
-  armRenderer: {fileID: 2124158316}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 590353338}
   detectionRange: 8
   rotationSpeed: 10
@@ -2133,6 +2133,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &55344586
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7716,7 +7717,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 1865836371}
   armPivot: {fileID: 1603965710}
   bodyRenderer: {fileID: 1865836372}
-  armRenderer: {fileID: 1603965711}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 1071151984}
   detectionRange: 8
   rotationSpeed: 10
@@ -7761,6 +7762,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &173523831
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10745,6 +10747,65 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1001 &267330692
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671462689552052092, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5980821916616651942, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+      propertyPath: m_Name
+      value: essential object
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: 79288237049494383, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+    - {fileID: 1551935966034065360, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fb336433ee00006409d5f3343ec162f9, type: 3}
 --- !u!1 &267647121
 GameObject:
   m_ObjectHideFlags: 0
@@ -27195,7 +27256,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 672001945}
   armPivot: {fileID: 1170186443}
   bodyRenderer: {fileID: 672001946}
-  armRenderer: {fileID: 1170186444}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 529034436}
   detectionRange: 8
   rotationSpeed: 10
@@ -27240,6 +27301,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &692594010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -40393,7 +40455,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 2005367774}
   armPivot: {fileID: 457343599}
   bodyRenderer: {fileID: 2005367775}
-  armRenderer: {fileID: 457343600}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 1979202763}
   detectionRange: 8
   rotationSpeed: 10
@@ -40438,6 +40500,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &1011864780
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45502,7 +45565,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 1035030594}
   armPivot: {fileID: 1211219097}
   bodyRenderer: {fileID: 1035030595}
-  armRenderer: {fileID: 1211219098}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 1588770189}
   detectionRange: 8
   rotationSpeed: 10
@@ -45547,6 +45610,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &1140011340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54280,7 +54344,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 1112245944}
   armPivot: {fileID: 1657232608}
   bodyRenderer: {fileID: 1112245945}
-  armRenderer: {fileID: 1657232609}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 172862024}
   detectionRange: 8
   rotationSpeed: 10
@@ -54325,6 +54389,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &1346935482
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55222,7 +55287,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 620957950}
   armPivot: {fileID: 352965218}
   bodyRenderer: {fileID: 620957951}
-  armRenderer: {fileID: 352965219}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 561103222}
   detectionRange: 8
   rotationSpeed: 10
@@ -55267,6 +55332,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &1367149362
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58338,7 +58404,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 1282091628}
   armPivot: {fileID: 1355453779}
   bodyRenderer: {fileID: 1282091629}
-  armRenderer: {fileID: 1355453780}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 1933058433}
   detectionRange: 8
   rotationSpeed: 10
@@ -58383,6 +58449,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &1454836853
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -70970,7 +71037,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 1808983781}
   armPivot: {fileID: 405409606}
   bodyRenderer: {fileID: 1808983782}
-  armRenderer: {fileID: 405409607}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 291637217}
   detectionRange: 8
   rotationSpeed: 10
@@ -71015,6 +71082,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &1810870091
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79514,7 +79582,7 @@ MonoBehaviour:
   bodyTransform: {fileID: 91418195}
   armPivot: {fileID: 791329836}
   bodyRenderer: {fileID: 91418196}
-  armRenderer: {fileID: 791329837}
+  <armRenderer>k__BackingField: {fileID: 0}
   firePivot: {fileID: 36805689}
   detectionRange: 8
   rotationSpeed: 10
@@ -79559,6 +79627,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHp: 3
   currentHp: 3
+  deathDelay: 2
 --- !u!114 &1998572504
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -86215,3 +86284,4 @@ SceneRoots:
   - {fileID: 999209474}
   - {fileID: 2135918073}
   - {fileID: 1561939307}
+  - {fileID: 267330692}
