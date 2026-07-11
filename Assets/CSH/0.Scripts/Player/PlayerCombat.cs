@@ -53,7 +53,7 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
-        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts == null)
+        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null)
         {
             return;
         }

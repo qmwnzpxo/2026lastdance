@@ -128,8 +128,9 @@ public class PlayerMove : MonoBehaviour
 
     private void Update()
     {
-        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts == null)
+        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null)
         {
+            Debug.LogWarning($"[PlayerMove] DialogueManager is active but PlaybackCts is null. Skipping Update.");
             return;
         }
         moveInput = Input.GetAxis("Horizontal");
