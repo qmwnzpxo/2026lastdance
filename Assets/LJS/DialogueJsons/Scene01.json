@@ -51,7 +51,7 @@
   {
     "id": "Scene_01_8",
     "speakerName": "???",
-    "text": "…. [click]",
+    "text": "[event: 01-p_Jump][event: 01-p_Flip_Left][action: 01-p_착지][event: 01-p_Flip_Right][event: 01-p_Landing][wait: 1][event: 01-p_Standup][wait: 1][event: 01-p_Flip_Left][event: 01-p_Idle]…. [click]",
     "nextIds": [],
     "jumpId": ""
   }

@@ -73,6 +73,22 @@ public class CinematicActionController : MonoBehaviour
     {
         Debug.Log($"[CinematicActionController] 이벤트 감지: {eventName}");
 
+        if (eventName.StartsWith("Show_"))
+        {
+            // "Show_" 부분을 잘라내고 뒤에 있는 배우 ID만 추출합니다. (예: "Show_01-1" -> "01-1")
+            string actorId = eventName.Replace("Show_", "").Trim();
+            Transform actor = GetActor(actorId);
+            if (actor != null) actor.gameObject.SetActive(true);
+            return; // 처리가 끝났으니 아래 로직은 건너뜁니다.
+        }
+        else if (eventName.StartsWith("Hide_"))
+        {
+            string actorId = eventName.Replace("Hide_", "").Trim();
+            Transform actor = GetActor(actorId);
+            if (actor != null) actor.gameObject.SetActive(false);
+            return;
+        }
+
         // 취소 토큰 가져오기
         CancellationToken ct = default;
         if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null)
