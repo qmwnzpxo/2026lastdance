@@ -1,29 +1,36 @@
 [
   {
     "id": "Scene_09_1",
-    "speakerName": "저질 용병A",
-    "text": "또, 또 그놈이다! [click]",
-    "nextIds": ["Scene_09_2"],
+    "speakerName": "저질 용병A 1",
+    "text": "[event: 09-1_Hit]또, 또 그놈이다! 으아악![event: 09-1_Flip_Left][event: 09-1_Run][event: 09-1_달리기] [click]",
+    "nextIds": [ "Scene_09_2" ],
     "jumpId": ""
   },
   {
     "id": "Scene_09_2",
-    "speakerName": "저질 용병B",
+    "speakerName": "저질 용병A 2",
     "text": "뭐야? 뭔데? [click]",
-    "nextIds": ["Scene_09_3"],
+    "nextIds": [ "Scene_09_5" ],
     "jumpId": ""
   },
   {
     "id": "Scene_09_3",
-    "speakerName": "저질 용병A",
+    "speakerName": "저질 용병A 1",
     "text": "빨리 떨어져서 총질이나 해! [click]",
-    "nextIds": ["Scene_09_4"],
+    "nextIds": [ "Scene_09_4" ],
     "jumpId": ""
   },
   {
     "id": "Scene_09_4",
-    "speakerName": "저질 용병A",
+    "speakerName": "저질 용병A 1",
     "text": "저놈은 천장을 타고 달려온다고! [click]",
+    "nextIds": [],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_09_5",
+    "speakerName": "저질 용병A 2",
+    "text": "[event: 09-p_Run][action: 09-p_달리기][event: 09-p_Jump][action: 09-p_점프][event: 09-p_Rensen2][event: 09-p_일섬]크아악! [event: 09-2_Flip_Right][event: 09-2_Die][wait: 1][event: 09-p_Run][action: 09-p_달리기][click]",
     "nextIds": [],
     "jumpId": ""
   }

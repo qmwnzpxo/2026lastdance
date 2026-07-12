@@ -2,14 +2,14 @@
   {
     "id": "Scene_11_1",
     "speakerName": "저질 용병 보스",
-    "text": "(치직.. 치직..)..야, 야, 들리냐? 방해하는 놈? [click]",
+    "text": "[event: 11-p_FlashReady](치직.. 치직..)..야, 야, 들리냐? [event: 11-p_Idle]방해하는 놈?[event: 11-p_Flip_Left] [click]",
     "nextIds": ["Scene_11_2"],
     "jumpId": ""
   },
   {
     "id": "Scene_11_2",
     "speakerName": "저질 용병 보스",
-    "text": "니 용병 아니냐? 왜 우릴 방해하는건데? 응? [click]",
+    "text": "[event: Show_11-screen]니 용병 아니냐? 왜 우릴 방해하는건데? 응? [click]",
     "nextIds": ["Scene_11_3"],
     "jumpId": ""
   },
@@ -23,7 +23,7 @@
   {
     "id": "Scene_11_4",
     "speakerName": "저질 용병 보스",
-    "text": "알아 들었으면 꺼져! [click]",
+    "text": "알아 들었으면 꺼져![event: Hide_11-screen] [click]",
     "nextIds": [],
     "jumpId": ""
   }

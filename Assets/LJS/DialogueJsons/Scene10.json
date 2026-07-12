@@ -3,27 +3,34 @@
     "id": "Scene_10_1",
     "speakerName": "저질 용병C",
     "text": "으, 으어. 보스! [click]",
-    "nextIds": ["Scene_10_2"],
+    "nextIds": [ "Scene_10_2" ],
     "jumpId": ""
   },
   {
     "id": "Scene_10_2",
     "speakerName": "저질 용병C",
-    "text": "어떤 놈 하나가 저희를 쫓아오면서 계속 방해하고 있습니다! [click]",
-    "nextIds": ["Scene_10_3"],
+    "text": "어떤 놈 하나가 저희를 쫓아오면서[event: 10-1_Flip_Left] 계속 방해하고 있습니다![event: 10-1_Run][action: 10-1_달리기][event: 10-1_Idle] [click]",
+    "nextIds": [ "Scene_10_3" ],
     "jumpId": ""
   },
   {
     "id": "Scene_10_3",
-    "speakerName": "저질 용병 보스",
-    "text": "뭐 인마?! 그거 한명도 어떻게 못해? [click]",
-    "nextIds": ["Scene_10_4"],
+    "speakerName": "저질 용병C",
+    "text": "[event: 10-p_DownFlash][event: 10-p_낙섬]으아악![event: 10-1_Flip_Right][action: 10-1_Die][event: Show_10-telephone][wait: 0.5][action: 10-p_Standup][event: 10-p_Idle] [click]",
+    "nextIds": [ "Scene_10_4" ],
     "jumpId": ""
   },
   {
     "id": "Scene_10_4",
     "speakerName": "저질 용병 보스",
-    "text": "처리 한 다음에 보고해! [click]",
+    "text": "[event: Show_10-screen][event: 10-p_Flip_Left]뭐 인마?! 그거 한명도 어떻게 못해? [click]",
+    "nextIds": [ "Scene_10_5" ],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_10_5",
+    "speakerName": "저질 용병 보스",
+    "text": "처리 한 다음에 보고해! [event: Hide_10-screen] [click]",
     "nextIds": [],
     "jumpId": ""
   }
