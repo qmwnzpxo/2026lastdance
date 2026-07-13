@@ -227,7 +227,7 @@ MonoBehaviour:
   attackSecondHitDelay: 0.3
   attackActiveDuration: 0.1
   AttackSpeed: 1
-  attackRepeatTime: 2
+  attackRepeatTime: 1
 --- !u!114 &1014071891606882278
 MonoBehaviour:
   m_ObjectHideFlags: 0
