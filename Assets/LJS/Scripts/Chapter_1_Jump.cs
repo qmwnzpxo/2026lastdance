@@ -7,7 +7,7 @@ public class Chapter_1_Jump : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
-            SceneManager.LoadScene("0630_Basecamp");
+            SceneManager.LoadScene("0712_Basecamp");
         }
     }
 
