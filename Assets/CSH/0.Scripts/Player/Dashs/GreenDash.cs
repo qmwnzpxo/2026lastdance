@@ -28,9 +28,9 @@ public partial class PlayerDash : MonoBehaviour
         {
             while (_greenComboStep < greenDashCount && !ct.IsCancellationRequested)
             {
+                _greenComboStep++;
                 // 1회 대쉬 수행
                 await GreenDashSegment(ct);
-                _greenComboStep++;
 
                 if (_greenComboStep >= greenDashCount) break; // 마지막 대쉬 완료 → 종료
 
@@ -68,7 +68,7 @@ public partial class PlayerDash : MonoBehaviour
     {
         _greenDashing = true;
         _greenDashBuffered = false; // 이번 대쉬를 트리거한 입력 소모
-        ani.Dash(_greenComboStep + 1); // 0707 애니메이션용으로 추가
+        ani.Dash(_greenComboStep); // 0707 애니메이션용으로 추가
 
         Vector2 dir = GetMouseDirection();
         cameraFollow.SetCameraDumping(cameraDumpingScale);
@@ -88,6 +88,7 @@ public partial class PlayerDash : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
 
         HashSet<Collider2D> hitThisDash = new HashSet<Collider2D>();
+        HashSet<Collider2D> getDashGauge = new HashSet<Collider2D>();
         var timeManager = CustomTimeManager.Instance;
         float traveled = 0f;
         float dist = Vector2.Distance(start, target);
@@ -103,13 +104,18 @@ public partial class PlayerDash : MonoBehaviour
             if (sweepDist > 0f)
             {
                 var hits = Physics2D.BoxCastAll(
-                    cur, attackBoxSize + Vector2.one * 0.1f, 0f,
+                    cur, attackBoxSize + Vector2.one * 0.1f * _greenComboStep, 0f,
                     sweepDir.normalized, sweepDist, enemyLayer);
                 foreach (var h in hits)
                 {
                     if (h.collider != null && !hitThisDash.Contains(h.collider))
                     {
                         hitThisDash.Add(h.collider);
+                        if(!getDashGauge.Contains(h.collider))
+                        {
+                            getDashGauge.Add(h.collider);
+                            state.AddDashGauge(state.DashCost); // 대쉬 게이지 회복
+                        }
                         //ApplyDamage(h.collider, state.damage * dashDamage);
                         OnDashHitEnemy(h.collider);
                     }

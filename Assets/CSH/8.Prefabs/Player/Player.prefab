@@ -175,8 +175,6 @@ MonoBehaviour:
   currentChip: 0
   ownedChips: 00000000
   category: 0
-  hitLight: {fileID: 7763769427215422248}
-  hitWorldLight: {fileID: 8288715132913159236}
 --- !u!114 &4673611001169730460
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -550,7 +548,7 @@ CircleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0

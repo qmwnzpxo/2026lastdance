@@ -330,7 +330,7 @@ public class PlayerMove : MonoBehaviour
         Vector2 origin = rb.position;
 
         // 허리 높이(현재 위치)에서 벽 방향으로 쏴서 벽이 있는지 확인
-        Vector2 midOrigin = origin + Vector2.up * 0.0f;
+        Vector2 midOrigin = origin + Vector2.up * (-_climbEdgeCheckDist/2f);
         RaycastHit2D midHit = Physics2D.Raycast(
             midOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
 
@@ -582,8 +582,11 @@ public class PlayerMove : MonoBehaviour
         {
             Gizmos.color = Color.red;
             Gizmos.DrawRay(wallCheck.position, Vector2.right * wallCheckDistance);
-            Gizmos.color = Color.blue;
             Gizmos.DrawRay(wallCheck.position, Vector2.left * wallCheckDistance);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawRay(wallCheck.position + Vector3.up * (-_climbEdgeCheckDist / 0.8f), Vector2.right * wallCheckDistance);
+            Gizmos.color = Color.green;
+            Gizmos.DrawRay(wallCheck.position + Vector3.up * (-_climbEdgeCheckDist / 0.8f), Vector2.left * wallCheckDistance);
 
             Gizmos.color = Color.cyan;
             Gizmos.DrawRay(

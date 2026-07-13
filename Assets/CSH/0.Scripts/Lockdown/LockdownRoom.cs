@@ -70,6 +70,8 @@ public class LockdownRoom : MonoBehaviour
         _isLocked = true;
         SetGatesActive(true);
 
+        GetComponent<Collider2D>().enabled = false; // 재입장 방지
+
         _lockdownOrthoSize = CalculateOrtho();
         if (_lockdownOrthoSize == 0)
         {

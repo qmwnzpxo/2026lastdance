@@ -22,7 +22,7 @@ public class PlayerCombat : MonoBehaviour
     private LayerMask bulletLayer;
     private LayerMask combined;
 
-    public int attackRepeatTime = 2;
+    public int attackRepeatTime = 1;
 
     private HashSet<Collider2D> _hitEnemiesInAttack = new HashSet<Collider2D>();
     public event Action<Quaternion> OnAttackInput;

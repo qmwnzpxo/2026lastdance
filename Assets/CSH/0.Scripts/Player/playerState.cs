@@ -21,7 +21,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     // ── 스탯 ──────────────────────────────────
     [Header("스탯")]
     public float damage = 1f;
-    public float currentHP = 10;
+    public float currentHP = 100;
     public float maxHP = 100f;
     public float stamina = 100f;
     public float maxStamina = 100f;
@@ -32,8 +32,8 @@ public class PlayerState : MonoBehaviour, IDamageable
     [Header("대쉬 게이지")]
     [RuntimeOnly, SerializeField] private float dashGauge = 50f;
     [RuntimeOnly, SerializeField] private float maxDashGauge = 100f;
-    private float dashCost = 1f;
-    public float dashGaugePerAttack = 10f;
+    private float dashCost = 20f;
+    public float dashGaugePerAttack = 5f;
     
     // ── 소모품(섬광탄) 설정 ───────────────────
     [Header("소모품")]
@@ -147,6 +147,10 @@ public class PlayerState : MonoBehaviour, IDamageable
         currentHP = maxHP;
         dashGauge = maxDashGauge;
         stamina = maxStamina;
+#if UNITY_EDITOR
+        dashCost = 1f;
+        dashGaugePerAttack = 10f;
+#endif
         GetChips(PlayerChip.pink);
     }
 
