@@ -67554,6 +67554,7 @@ MonoBehaviour:
   _cinematicBottomBar: {fileID: 1459642954}
   _playerHUDPanel: {fileID: 1619958793}
   _mainCamera: {fileID: 335726874}
+  _dialogueCamera: {fileID: 0}
   _cinemachineCameraObject: {fileID: 1527788514}
 --- !u!4 &215006007
 Transform:

@@ -84,6 +84,19 @@ public class NpcDialogueTrigger : MonoBehaviour
         
     }
 
+    // UI 버튼 등으로 강제 대화호출 함수
+    public void ForceStartDialogue(Transform player)
+    {
+        // 1. 대화에 필요한 플레이어 정보를 세팅합니다.
+        _playerTransform = player;
+
+        // 2. 플레이어가 범위 안에 있다고 강제 인식시킵니다.
+        _isPlayerInRange = true;
+
+        // 3. 비동기 대화 시작 코드를 실행합니다.
+        StartDialogueAsync().Forget();
+    }
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))

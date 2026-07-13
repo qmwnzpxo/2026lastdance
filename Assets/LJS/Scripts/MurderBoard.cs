@@ -1,3 +1,4 @@
+using DialogSystem.CinematicDialogue;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -6,7 +7,13 @@ public class MurderBoard : MonoBehaviour
     [Header("띄워줄 챕터 시작 UI 패널")]
     public GameObject chapterUIPanel;
 
+    [Header("Yes 버튼 시 실행할 대화 트리거")]
+    public NpcDialogueTrigger targetDialogue;
+
     private bool isPlayerInRange = false;
+    private Transform cachedPlayerTransform;
+
+    DialogueManager dialogueManager;
 
     void Start()
     {
@@ -19,14 +26,19 @@ public class MurderBoard : MonoBehaviour
 
     void Update()
     {
+        // 안전장치
+        bool isDialoguePlaying = DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null;
+
         // 1. 플레이어가 근처에 있고
         // 2. F키를 눌렀으며
         // 3. UI가 현재 꺼져있는 상태라면 (중복 실행 방지)
-        if (isPlayerInRange && Input.GetKeyDown(KeyCode.F) && !chapterUIPanel.activeSelf)
+        if (isPlayerInRange && Input.GetKeyDown(KeyCode.F) && !chapterUIPanel.activeSelf && !isDialoguePlaying)
         {
             // UI를 화면에 나타나게 합니다.
             chapterUIPanel.SetActive(true);
         }
+
+        // 현재 대화가 진행 중인지 확인
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -34,6 +46,7 @@ public class MurderBoard : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
+            cachedPlayerTransform = other.transform; // 플레이어 접근 기억
         }
     }
 
@@ -42,7 +55,7 @@ public class MurderBoard : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = false;
-
+            cachedPlayerTransform = null; // 플레이어 비접근시 기억 삭제
             // 플레이어가 머더보드에서 멀어지면 열려있던 UI도 자동으로 닫아줍니다.
             if (chapterUIPanel != null)
             {
@@ -63,7 +76,16 @@ public class MurderBoard : MonoBehaviour
         chapterUIPanel.SetActive(false);
 
         // TODO: 여기에 씬 이동, 몬스터 소환, 문 열림 등의 코드를 작성하시면 됩니다.
-        SceneManager.LoadScene("0630_Chapter_1");
+        //SceneManager.LoadScene("0630_Chapter_1");
+
+        if (targetDialogue != null && cachedPlayerTransform != null)
+        {
+            targetDialogue.ForceStartDialogue(cachedPlayerTransform);
+        }
+        else
+        {
+            Debug.LogWarning("연결된 대화 트리거가 없거나 플레이어를 찾을 수 없습니다!");
+        }
     }
 
     public void OnClickNo()

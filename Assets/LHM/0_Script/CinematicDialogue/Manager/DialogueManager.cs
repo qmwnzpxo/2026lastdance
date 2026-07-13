@@ -27,6 +27,7 @@ namespace DialogSystem.CinematicDialogue
 
         [Header("카메라 연출 설정")]
         [SerializeField] private Camera _mainCamera;               // 메인 카메라
+        [SerializeField] private Camera _dialogueCamera;           // 거점씬용 서브 카메라
         [SerializeField] private GameObject _cinemachineCameraObject; // 시네머신 가상 카메라 오브젝트 (CM_GamePlay)
 
         private DialogueDatabase _database;
@@ -94,7 +95,12 @@ namespace DialogSystem.CinematicDialogue
             LoadDatabase(jsonAsset);
             _playerTransform = playerTransform;
 
-            // 시네머신 가상 카메라 끄기
+            // UI 제어
+            if (_dialoguePanel != null) _dialoguePanel.SetActive(true);
+            SetCinematicBars(true);
+            if (_playerHUDPanel != null) _playerHUDPanel.SetActive(false);
+
+            /*// 시네머신 가상 카메라 끄기
             if (_cinemachineCameraObject != null)
             {
                 _cinemachineCameraObject.SetActive(false);
@@ -107,10 +113,6 @@ namespace DialogSystem.CinematicDialogue
                 if (cineBrain != null) cineBrain.enabled = false;
             }
 
-            // UI 제어
-            if (_dialoguePanel != null) _dialoguePanel.SetActive(true);
-            SetCinematicBars(true);
-            if (_playerHUDPanel != null) _playerHUDPanel.SetActive(false);
 
             // 지정한 빈 오브젝트 위치로 메인 카메라 즉시 순간이동
             if (_mainCamera != null && cameraDialoguePoint != null)
@@ -118,6 +120,41 @@ namespace DialogSystem.CinematicDialogue
                 Vector3 targetPos = cameraDialoguePoint.position;
                 targetPos.z = _mainCamera.transform.position.z;
                 _mainCamera.transform.position = targetPos;
+            }*/
+
+            if (_dialogueCamera != null)
+            {
+                // [거점씬 방식] 서브 카메라가 할당되어 있다면 카메라를 통째로 교체
+                if (_mainCamera != null) _mainCamera.gameObject.SetActive(false);
+                _dialogueCamera.gameObject.SetActive(true);
+
+                if (cameraDialoguePoint != null)
+                {
+                    Vector3 targetPos = cameraDialoguePoint.position;
+                    targetPos.z = _dialogueCamera.transform.position.z;
+                    _dialogueCamera.transform.position = targetPos;
+                }
+            }
+            else
+            {
+                // [전투씬 방식] 서브 카메라가 없다면, 기존처럼 시네머신을 끄고 메인 카메라를 강제 이동
+                if (_cinemachineCameraObject != null)
+                {
+                    _cinemachineCameraObject.SetActive(false);
+                }
+
+                if (_mainCamera != null)
+                {
+                    Behaviour cineBrain = _mainCamera.GetComponent("CinemachineBrain") as Behaviour;
+                    if (cineBrain != null) cineBrain.enabled = false;
+
+                    if (cameraDialoguePoint != null)
+                    {
+                        Vector3 targetPos = cameraDialoguePoint.position;
+                        targetPos.z = _mainCamera.transform.position.z;
+                        _mainCamera.transform.position = targetPos;
+                    }
+                }
             }
 
             string currentId = startDialogueId;
@@ -271,7 +308,7 @@ namespace DialogSystem.CinematicDialogue
             SetCinematicBars(false);
             if (_playerHUDPanel != null) _playerHUDPanel.SetActive(true);
 
-            // 카메라 복귀
+            /*// 카메라 복귀
             if (_mainCamera != null && _playerTransform != null)
             {
                 Vector3 targetPos = _playerTransform.position;
@@ -287,6 +324,31 @@ namespace DialogSystem.CinematicDialogue
             if (_cinemachineCameraObject != null)
             {
                 _cinemachineCameraObject.SetActive(true);
+            }*/
+
+            if (_dialogueCamera != null)
+            {
+                // [거점씬 방식 복구]
+                _dialogueCamera.gameObject.SetActive(false);
+                if (_mainCamera != null) _mainCamera.gameObject.SetActive(true);
+            }
+            else
+            {
+                // [전투씬 방식 복구] 
+                if (_mainCamera != null && _playerTransform != null)
+                {
+                    Vector3 targetPos = _playerTransform.position;
+                    targetPos.z = _mainCamera.transform.position.z;
+                    _mainCamera.transform.position = targetPos;
+
+                    Behaviour cineBrain = _mainCamera.GetComponent("CinemachineBrain") as Behaviour;
+                    if (cineBrain != null) cineBrain.enabled = true;
+                }
+
+                if (_cinemachineCameraObject != null)
+                {
+                    _cinemachineCameraObject.SetActive(true);
+                }
             }
 
             _playerTransform = null;
