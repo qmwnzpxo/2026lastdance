@@ -33,6 +33,10 @@ public class BossAttackPatterns : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private Rigidbody2D rb2d;
 
+    [Header("Phase 2 미사일 패턴")]
+    [Tooltip("Phase2BossMissilePattern 컴포넌트가 연결된 GameObject 참조.")]
+    [SerializeField] private Phase2BossMissilePattern missilePattern;
+
     [Header("공격 패턴 설정")]
     [SerializeField] private float stompDamage = 3f;
     [SerializeField] private float stompRange = 2f;
@@ -290,6 +294,13 @@ public class BossAttackPatterns : MonoBehaviour
                 break;
             case AttackPattern.DroneSpawn:
                 yield return StartCoroutine(DroneSpawn());
+                break;
+            case AttackPattern.Phase2MissileBarrage:
+                // Phase2BossMissilePattern이 연결되어 있으면 UniTask 래퍼 코루훴으로 실행
+                if (missilePattern != null)
+                    yield return StartCoroutine(missilePattern.ExecuteAsCoroutine());
+                else
+                    Debug.LogError("[BossAttackPatterns] missilePattern이 연결되지 않았습니다!");
                 break;
         }
 

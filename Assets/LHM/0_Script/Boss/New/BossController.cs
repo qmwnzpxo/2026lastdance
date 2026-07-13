@@ -15,8 +15,10 @@ public enum BossState
     Resting,     // 콤보 후 2초 휴식
     BoosterJump, // 부스터 점프 이동 중
     Hit,         // 피격
-    Dead         // 사망
+    Dead,        // 사망
+    Walk         // 걷기 이동 상태 추가
 }
+
 
 /// <summary>
 /// 공격 패턴 열거형
@@ -29,8 +31,9 @@ public enum AttackPattern
     Howitzer,
     Cannon,
     Charge,
-    DroneSpawn,    // 드론 소환 (보스 내부 → 머리 위 상승 등장)
-    Wait3Sec       // 돌진-대기-돌진 콤보 내 3초 대기 전용
+    DroneSpawn,          // 드론 소환 (보스 내부 → 머리 위 상승 등장)
+    Wait3Sec,            // 돌진-대기-돌진 콤보 내 3초 대기 전용
+    Phase2MissileBarrage // [Phase 2] 투명화 → 텔레포트 → 미사일 난사 (×3)
 }
 
 
@@ -71,6 +74,29 @@ public class BossController : MonoBehaviour, IDamageable
     [SerializeField] private AudioSource audioSource;
     [Tooltip("보스 전투용 루프형 배경음악(BGM)")]
     [SerializeField] private AudioClip battleBGM;
+
+    [Header("부스터 설정 (비행 이동)")]
+    [Tooltip("보스 부스터용 이펙트 GameObject (활성화/비활성화로 제어)")]
+    [SerializeField] private GameObject boosterEffect;
+    [Tooltip("부스터 이펙트가 위치할 기준점 (보스 뒤편 등에 배치한 빈 GameObject의 Transform)")]
+    [SerializeField] private Transform boosterEffectPoint;
+    [Tooltip("부스터 이펙트의 크기(Scale) 조절 변수")]
+    [SerializeField] private Vector3 boosterEffectScale = Vector3.one;
+    [Tooltip("부스터 이펙트의 회전(Euler Angles) 조절 변수 (X축 등 회전 각도 제어용)")]
+    [SerializeField] private Vector3 boosterEffectRotation = Vector3.zero;
+
+
+
+
+    [Tooltip("보스 이동 시 출력할 부스터 사운드")]
+    [SerializeField] private AudioClip boosterSound;
+    [Tooltip("부스터 사운드 전용 AudioSource (지정 안할 시 자동 생성하여 루핑 재생)")]
+    [SerializeField] private AudioSource boosterAudioSource;
+
+    private bool isBoosterActive = false;
+    private GameObject instantiatedBoosterEffect;
+
+
 
 
 
@@ -532,10 +558,17 @@ public class BossController : MonoBehaviour, IDamageable
         // 애니메이터 파라미터 설정
         if (animator != null)
         {
-            animator.SetInteger("State", (int)newState);
+            // Idle 및 Attacking 대기 상태로 바뀔 때 애니메이션을 강제로 롤백하지 않고 
+            // 실제 공격 패턴이나 구체적인 비행이 작동할 때만 애니메이션 상태를 명시적으로 제어하도록 변경
+            if (newState != BossState.Idle && newState != BossState.Attacking)
+            {
+                animator.SetInteger("State", (int)newState);
+            }
         }
 
+
         // 상태별 초기화 로직
+
         switch (newState)
         {
             case BossState.Idle:
@@ -598,21 +631,26 @@ public class BossController : MonoBehaviour, IDamageable
                 new BossBT.WaitNode(0.1f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Stomp, this, this)
             }),
-            // 콤보 E - 중거리 (2m~8m): 기관총 연사 → 0.1초 정지 → 곡사포
+            // 콤보 E - 중거리 (2m~8m): 기관총 연사 → 0.1초 정지 → 드론 소환
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 2f, 8f),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.MachinegunRapid, this, this),
                 new BossBT.WaitNode(0.1f, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.DroneSpawn, this, this)
             }),
-            // 콤보 F - 원거리 (9m 이상): 곡사포 → 0.1초 정지 → 드론 소환
+            // 콤보 F - 원거리 (9m 이상): 미사일 난사 (투명화 → 텔레포트 → 3연속)
+            // ※ missilePattern 인스펙터 미연결 시 Debug.LogError 출력 후 Failure 반환
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 9f, 9999f),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
-                new BossBT.WaitNode(0.1f, this),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.DroneSpawn, this, this)
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Phase2MissileBarrage, this, this)
+            }),
+            // 콤보 G - 폴백: 거리 무관 곡사포 (D/E/F 모두 거리 조건 불일치 시)
+            // 8m~9m 데드존 방지 역할
+            new BossBT.Sequence(new List<BossBT.BTNode>
+            {
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this)
             })
         });
 
@@ -676,10 +714,13 @@ public class BossController : MonoBehaviour, IDamageable
         float restDuration = GetCurrentPhase() == 1 ? 2f : 1f;
         float elapsed = 0f;
 
+        // 현재 이동 상태 캐싱 (0: 정지, 1: 걷기, 2: 비행)
+        // 매 프레임 애니메이션 트리거가 재발동되어 리셋되는 현상 방지
+        int currentMoveMode = -1;
 
         while (elapsed < restDuration && currentState == BossState.Resting)
         {
-            // 플레이어 방향으로 걷기
+            // 플레이어 방향으로 이동
             if (player != null && rb2d != null)
             {
                 float diffX = player.position.x - transform.position.x;
@@ -687,12 +728,33 @@ public class BossController : MonoBehaviour, IDamageable
                 if (Mathf.Abs(diffX) <= 1.5f)
                 {
                     rb2d.linearVelocity = new Vector2(0f, rb2d.linearVelocity.y);
+                    
+                    if (currentMoveMode != 0)
+                    {
+                        currentMoveMode = 0;
+                        SetBoosterActive(false);
+                        if (animator != null)
+                        {
+                            // 걷기 정지 시 애니메이터 State를 강제로 3(대기)으로 되돌리지 않고 Walk 포즈로 고정
+                            animator.SetTrigger("StopWalk"); // 걷기 중지 트리거만 발동
+                            animator.SetTrigger("Idle");     // 대기 전환 트리거만 발동 (사용 시)
+                        }
+                    }
+
                 }
                 else
                 {
                     float dirX = Mathf.Sign(diffX);
                     rb2d.linearVelocity = new Vector2(dirX * walkSpeed, rb2d.linearVelocity.y);
+                    
+                    if (currentMoveMode != 1)
+                    {
+                        currentMoveMode = 1;
+                        // 이동 모드로 전환 (이펙트 활성화 및 내부 애니메이션 자동 분기)
+                        SetBoosterActive(true);
+                    }
                 }
+
             }
 
             elapsed += Time.deltaTime;
@@ -700,14 +762,148 @@ public class BossController : MonoBehaviour, IDamageable
         }
 
 
+
         // 이동 정지
         if (rb2d != null)
         {
             rb2d.linearVelocity = new Vector2(0f, rb2d.linearVelocity.y);
         }
+        SetBoosterActive(false);
 
         ChangeState(BossState.Idle);
     }
+
+
+    /// <summary>
+    /// 보스의 부스터 불꽃 이펙트, 사운드, 비행 애니메이션(BoosterJump) 상태를 켜고 끕니다.
+    /// </summary>
+    public void SetBoosterActive(bool active)
+    {
+        if (isBoosterActive == active) return;
+        isBoosterActive = active;
+
+        // 1. 이펙트 오브젝트 제어 및 위치 동기화 (프리팹 대응 포함)
+        if (boosterEffect != null)
+        {
+            if (instantiatedBoosterEffect == null)
+            {
+                // boosterEffect가 씬 상에 배치된 것이 아닌 프리팹 에셋인 경우 동적 생성
+                if (boosterEffect.scene.name == null)
+                {
+                    instantiatedBoosterEffect = Instantiate(boosterEffect);
+                }
+                else
+                {
+                    instantiatedBoosterEffect = boosterEffect;
+                }
+            }
+
+            if (active && boosterEffectPoint != null && instantiatedBoosterEffect != null)
+            {
+                // 기준점을 부모로 설정하여 보스 이동 시 항상 따라다니도록 세팅
+                instantiatedBoosterEffect.transform.SetParent(boosterEffectPoint, false);
+                instantiatedBoosterEffect.transform.localPosition = Vector3.zero;
+                instantiatedBoosterEffect.transform.localRotation = Quaternion.Euler(boosterEffectRotation); // 설정한 회전 오일러 각도 적용
+                instantiatedBoosterEffect.transform.localScale = boosterEffectScale; // 설정한 스케일 적용 (부모 크기 영향 방지)
+
+
+            }
+
+            if (instantiatedBoosterEffect != null)
+            {
+                instantiatedBoosterEffect.SetActive(active);
+
+                // 하위 파티클 시스템 재출력 보장
+                var particles = instantiatedBoosterEffect.GetComponentsInChildren<ParticleSystem>();
+                foreach (var ps in particles)
+                {
+                    if (active)
+                    {
+                        ps.Clear();
+                        ps.Play(true);
+                    }
+                    else
+                    {
+                        ps.Stop(true);
+                    }
+                }
+
+                // 하위 트레일 렌더러의 잔상 꼬임 방지 및 방출 제어
+                var trails = instantiatedBoosterEffect.GetComponentsInChildren<TrailRenderer>();
+                foreach (var tr in trails)
+                {
+                    if (active)
+                    {
+                        tr.Clear();
+                        tr.emitting = true;
+                    }
+                    else
+                    {
+                        tr.emitting = false;
+                        tr.Clear();
+                    }
+                }
+            }
+        }
+
+
+
+
+
+        // 2. 오디오 소스 초기화 및 제어
+        if (boosterSound != null)
+        {
+            if (boosterAudioSource == null)
+            {
+                // BGM 오디오 소스와 분리하기 위해 런타임에 동적으로 AudioSource 추가
+                boosterAudioSource = gameObject.AddComponent<AudioSource>();
+                boosterAudioSource.playOnAwake = false;
+                boosterAudioSource.spatialBlend = 1f; // 3D 사운드
+                boosterAudioSource.loop = true;
+            }
+
+            if (active)
+            {
+                boosterAudioSource.clip = boosterSound;
+                boosterAudioSource.Play();
+            }
+            else
+            {
+                boosterAudioSource.Stop();
+            }
+        }
+
+        // 3. 애니메이터 상태 업데이트 (이동 중일 때 1페이즈=Walk(8), 2페이즈=BoosterJump(4) 자동 분기)
+        if (animator != null)
+        {
+            if (active)
+            {
+                if (GetCurrentPhase() == 1)
+                {
+                    // 1페이즈: 걷기 애니메이션
+                    animator.SetInteger("State", 8);
+                    animator.SetTrigger("Walk");
+                }
+                else
+                {
+                    // 2페이즈: 비행(점프) 애니메이션
+                    animator.SetInteger("State", 4); 
+                    animator.SetTrigger("BoosterJump");
+                }
+            }
+            else
+            {
+                // 이동 정지 트리거 발동
+                animator.SetTrigger("StopBooster");
+                animator.SetTrigger("StopWalk");
+
+                // 이동 완료 후 강제로 대기(3 또는 0)로 리셋하지 않고 직전의 자세를 고정 유지함
+            }
+        }
+
+
+    }
+
 
     /// <summary>
     /// 현재 페이즈 계산
