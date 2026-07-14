@@ -8,9 +8,11 @@ using UnityEngine;
 public partial class PlayerDash : MonoBehaviour
 {
     void ExecuteBlueDash()
+  {
+    if (state.TryUseDashGauge(state.DashCost))
     {
-        // 마우스 방향을 대각선 2방향 중 하나로 스냅
-        Vector2 rawDir = GetMouseDirection();
+      // 마우스 방향을 대각선 2방향 중 하나로 스냅
+      Vector2 rawDir = GetMouseDirection();
         Vector2 snappedDir = SnapToDiagonal(rawDir);
 
         dashDirection = snappedDir;
@@ -26,8 +28,6 @@ public partial class PlayerDash : MonoBehaviour
 
         _blueDashSecondInput = false;
 
-        if (state.TryUseDashGauge(state.DashCost))
-        {
             state.isGrounded = false;
             state.isOnCeiling = false;
             state.isTouchingLWall = false;
@@ -110,46 +110,47 @@ public partial class PlayerDash : MonoBehaviour
         BlueFallRoutine(_blueFallCts.Token).Forget();
     }
 
-    private async UniTaskVoid BlueFallRoutine(CancellationToken ct)
+  private async UniTaskVoid BlueFallRoutine(CancellationToken ct)
+  {
+    var tmg = CustomTimeManager.Instance;
+    try
     {
-        var tmg = CustomTimeManager.Instance;
-        try
-        {
-            while (!ct.IsCancellationRequested && _blueFalling)
-            {
-                float step = blueFallSpeed * tmg.PlayerFixedDeltaTime;
-                Vector2 cur = rb.position;
-                Vector2 next = cur + Vector2.down * step;
-                /*
-                // 고속 낙하 시 지형 관통 방지: BoxCast로 착지 감지
-                RaycastHit2D hit = Physics2D.BoxCast(
-                    cur,
-                    playerMove.GroundCheck,
-                    0f,
-                    Vector2.down,
-                    step + 0.1f,
-                    playerMove.GroundLayer);
-                */
-                RaycastHit2D hit = Physics2D.CircleCast(cur, GetComponent<CircleCollider2D>().radius, Vector2.down, step + 0.1f, playerMove.GroundLayer);
+      while (!ct.IsCancellationRequested && _blueFalling)
+      {
+        float step = blueFallSpeed * tmg.PlayerFixedDeltaTime;
+        Vector2 cur = rb.position;
+        Vector2 next = cur + Vector2.down * step;
+        RaycastHit2D hit;
+        /*
+        // 고속 낙하 시 지형 관통 방지: BoxCast로 착지 감지
+        RaycastHit2D hit = Physics2D.BoxCast(
+            cur,
+            playerMove.GroundCheck,
+            0f,
+            Vector2.down,
+            step + 0.1f,
+            playerMove.GroundLayer);
+        */
+        hit = Physics2D.CircleCast(cur, GetComponent<CircleCollider2D>().radius, Vector2.down, step + 0.1f, playerMove.GroundLayer);
 
-                if (hit.collider != null)
-                {
-                    // 착지 지점에 딱 맞춰 이동 후 강타
-                    rb.MovePosition(new Vector2(cur.x, hit.point.y * 0.05f));
-                    await UniTask.WaitForFixedUpdate(cancellationToken: ct);
-                    BlueSlamLand();
-                    return;
-                }
-
-                rb.MovePosition(next);
-                await UniTask.WaitForFixedUpdate(cancellationToken: ct);
-            }
-        }
-        finally
+        if (hit.collider != null)
         {
-            _blueFalling = false;
+          // 착지 지점에 딱 맞춰 이동 후 강타
+          rb.MovePosition(new Vector2(cur.x, hit.point.y * 0.05f));
+          await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+          BlueSlamLand();
+          return;
         }
+
+        rb.MovePosition(next);
+        await UniTask.WaitForFixedUpdate(cancellationToken: ct);
+      }
     }
+    finally
+    {
+      _blueFalling = false;
+    }
+  }
 
     void BlueSlamLand()
     {

@@ -33,7 +33,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     [RuntimeOnly, SerializeField] private float dashGauge = 50f;
     [RuntimeOnly, SerializeField] private float maxDashGauge = 100f;
     private float dashCost = 20f;
-    public float dashGaugePerAttack = 5f;
+    public float dashGaugePerAttack = 20f;
     
     // ── 소모품(섬광탄) 설정 ───────────────────
     [Header("소모품")]

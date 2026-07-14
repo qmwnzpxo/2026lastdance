@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using System.Threading;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -80,9 +80,11 @@ public class CameraFollow : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.R)&&!isZooming)
+#if UNITY_EDITOR
+    if (Input.GetKeyDown(KeyCode.R)&&!isZooming)
             ZoomCamera(fromOrtho, toOrtho, duration);
-    }
+#endif
+  }
     #endregion
 
     // ────────────────────────────────────
