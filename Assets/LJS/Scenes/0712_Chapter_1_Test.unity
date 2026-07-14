@@ -231890,6 +231890,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5750463736664614879, guid: cd95672ce5b449d44ac80a0c1ee081c9, type: 3}
+      propertyPath: <armRenderer>k__BackingField
+      value: 
+      objectReference: {fileID: 645807107}
     - target: {fileID: 6538775501739944221, guid: cd95672ce5b449d44ac80a0c1ee081c9, type: 3}
       propertyPath: m_Color.b
       value: 0.5283019
@@ -231926,6 +231930,11 @@ PrefabInstance:
 --- !u!4 &645807106 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2936205507694078341, guid: cd95672ce5b449d44ac80a0c1ee081c9, type: 3}
+  m_PrefabInstance: {fileID: 645807105}
+  m_PrefabAsset: {fileID: 0}
+--- !u!212 &645807107 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 7365183671650177244, guid: cd95672ce5b449d44ac80a0c1ee081c9, type: 3}
   m_PrefabInstance: {fileID: 645807105}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &676354769

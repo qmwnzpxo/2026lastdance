@@ -393,7 +393,7 @@ public partial class PlayerDash : MonoBehaviour
         if (!dashHitEnemy)
         {
             dashHitEnemy = true;
-            state.AddDashGauge(state.dashGaugePerAttack);
+            state.AddDashGauge(state.dashGaugePerDash);
             HitstopManager.Instance.TriggerHitstop();
         }
     }

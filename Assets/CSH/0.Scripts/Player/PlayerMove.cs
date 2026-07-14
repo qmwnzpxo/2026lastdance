@@ -480,6 +480,7 @@ public class PlayerMove : MonoBehaviour
     void RotateSprite()
     {
         if (spriteRenderer == null) return;
+    if (state.isOnCeiling) return;
 
         if (state.isTouchingLWall && !state.isGrounded)
         {

@@ -23,6 +23,7 @@ public class PlayerCombat : MonoBehaviour
     private LayerMask combined;
 
     public int attackRepeatTime = 1;
+  public float dashGaugePerAttack = 5;
 
     private HashSet<Collider2D> _hitEnemiesInAttack = new HashSet<Collider2D>();
     public event Action<Quaternion> OnAttackInput;
@@ -67,7 +68,7 @@ public class PlayerCombat : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.H))
         {
             Debug.Log($"[PlayerCombat] called HItstop");
-            HitstopManager.Instance.TriggerHitstop(duration:1f,timeScale:0.5f);
+            HitstopManager.Instance.TriggerHitstop(duration:0.8f,timeScale:0.5f);
         }
     }
 
@@ -184,7 +185,7 @@ public class PlayerCombat : MonoBehaviour
 
             Debug.Log($"공격 적중: {hit.name}");
             ApplyDamage(hit, state.damage);
-            state.AddDashGauge(state.dashGaugePerAttack);
+            state.AddDashGauge(dashGaugePerAttack);
             HitstopManager.Instance.TriggerHitstop();
         }
 

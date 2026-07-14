@@ -118,7 +118,7 @@ public class PlayerUpgrader : MonoBehaviour
                 playerState.MaxDashGauge = data.baseMaxDashGauge + total;
                 break;
             case UpgradeStat.DashGaugeGain:
-                playerState.dashGaugePerAttack = data.baseDashGaugeGain + total;
+                playerState.dashGaugePerDash = data.baseDashGaugeGain + total;
                 break;
             case UpgradeStat.MoveSpeed:
                     playerMove.MoveSpeed = data.baseMoveSpeed + total;
