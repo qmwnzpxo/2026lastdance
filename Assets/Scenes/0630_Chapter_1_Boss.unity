@@ -710,6 +710,7 @@ MonoBehaviour:
   _cinematicBottomBar: {fileID: 1710060737}
   _playerHUDPanel: {fileID: 202987112}
   _mainCamera: {fileID: 815775041}
+  _dialogueCamera: {fileID: 0}
   _cinemachineCameraObject: {fileID: 2018734652}
 --- !u!4 &236494635
 Transform:
@@ -20637,6 +20638,9 @@ MonoBehaviour:
   poolSize: 30
   phaseTransitionEffect: {fileID: 3942825033974895155, guid: cbda04bade8e3fb489814df5f29a05d6, type: 3}
   deathEffect: {fileID: 7374832012837942830, guid: a3651e7f8f8b6e840bf91eaea35c0410, type: 3}
+  hitFlashSprites: []
+  hitInvincibilityDuration: 0.2
+  hitFlashCount: 3
   audioSource: {fileID: 1743448831}
   battleBGM: {fileID: 8300000, guid: 4c05510edd17872478a2d850fbba528a, type: 3}
   boosterEffect: {fileID: 5180149191341092112, guid: b11b56e5c9cac2248a904757b9fea551, type: 3}
@@ -20743,7 +20747,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f93b5b26aacedd7438a9ea3baca1e0dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxHP: 500
+  _maxHP: 150
   _dealTimeDuration: 5
   _currentHP: 0
 --- !u!1 &1773033282

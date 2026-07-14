@@ -69,6 +69,14 @@ public class BossController : MonoBehaviour, IDamageable
     [SerializeField] private GameObject phaseTransitionEffect;
     [SerializeField] private GameObject deathEffect;
 
+    [Header("피격 무적 설정")]
+    [Tooltip("피격 시 깜빡일 SpriteRenderer 목록 (비워두면 자신 및 자식 자동 검색)")]
+    [SerializeField] private SpriteRenderer[] hitFlashSprites;
+    [Tooltip("피격 후 무적 지속 시간 (초)")]
+    [SerializeField] private float hitInvincibilityDuration = 0.2f;
+    [Tooltip("무적 중 깜빡임 횟수")]
+    [SerializeField] private int hitFlashCount = 3;
+
     [Header("오디오 설정")]
     [Tooltip("배틀 BGM 재생용 AudioSource (지정 안할 시 자동 검색)")]
     [SerializeField] private AudioSource audioSource;
@@ -140,16 +148,34 @@ public class BossController : MonoBehaviour, IDamageable
     // 페이즈 전환 추적
     private bool hasPhaseTransitioned = false;
 
+    // 피격 무적
+    private bool _isInvincible = false;
+    private Coroutine _hitInvincibilityCoroutine;
+
     // 런타임 콘텍스트 (SO 기반 패턴 공유 참조 및 AnimationEventBridge)
     private BossContext _bossContext;
 
+    /// <summary>
+    /// HP UI 이벤트(온HpChanged) 연동용.
+    /// 구시스템 DamageHandler와 HP UI가 연결되어 있으므로 제거 안 함.
+    /// GetComponents<IDamageable>()의 중복 사굴를 막기 위해
+    /// Awake에서 AcquireInvincibility().하여 영구 무적으로 설정함.
+    /// </summary>
     private DamageHandler damageHandler;
+
 
     private void Awake()
     {
         currentHP = maxHP;
-        damageHandler = gameObject.GetComponent<DamageHandler>();
         InitializeObjectPools();
+
+        // DamageHandler를 영구 무적으로 설정 —
+        // PlayerCombat/PlayerDash의 GetComponents<IDamageable>()에서
+        // 중복으로 호출될 때 DamageHandler.TakeDamage()는 즉시 return.
+        // HP 실질 변경은 BossController.TakeDamage()에서만 수행.
+        damageHandler = gameObject.GetComponent<DamageHandler>();
+        if (damageHandler != null)
+            damageHandler.AcquireInvincibility();
 
         if (audioSource == null)
             audioSource = GetComponent<AudioSource>();
@@ -960,6 +986,7 @@ public class BossController : MonoBehaviour, IDamageable
                 ResetBehaviorTree(oldBT);
                 ResetBehaviorTree(_activeBT);
 
+                CancelHitInvincibility();
                 StopAllCoroutines();
 
                 if (phaseTransitionEffect != null)
@@ -1004,13 +1031,26 @@ public class BossController : MonoBehaviour, IDamageable
         if (currentState == BossState.Appearing)
             return;
 
+        // 피격 무적 프레임 중이면 무시
+        if (_isInvincible)
+            return;
+
         // Attacking, Resting, Idle 상태에서만 피격 판정
         if (currentState != BossState.Attacking && 
             currentState != BossState.Resting && 
             currentState != BossState.Idle)
             return;
 
+        // 피격 무적 + 깜빡임 시작 (이전 코루틴 중복 방지)
+        if (_hitInvincibilityCoroutine != null)
+            StopCoroutine(_hitInvincibilityCoroutine);
+        _hitInvincibilityCoroutine = StartCoroutine(HitInvincibilityCoroutine());
+
         currentHP -= damage;
+
+        // DamageHandler HP 동기화 — OnHPChanged 이벤트를 통해 HP UI 갱신
+        if (damageHandler != null)
+            damageHandler.SetHP(currentHP / maxHP);
 
         // 체력 바 업데이트
         if (healthBar != null)
@@ -1031,7 +1071,8 @@ public class BossController : MonoBehaviour, IDamageable
             ResetBehaviorTree(oldBT);
             ResetBehaviorTree(_activeBT);
 
-            // 2) 모든 코루틴 중단
+            // 2) 무적/깜빡임 즉시 해제 후 모든 코루틴 중단 (스프라이트 사라짐 방지)
+            CancelHitInvincibility();
             StopAllCoroutines();
 
             // 3) 씬에 남은 발사체 전부 회수 → 보스 이동 막힘 방지
@@ -1076,6 +1117,57 @@ public class BossController : MonoBehaviour, IDamageable
     /// <summary>
     /// 페이즈 전환 연출
     /// </summary>
+    /// <summary>
+    /// 피격 무적 코루틴 — hitInvincibilityDuration 동안 깜빡임 + 무적 처리
+    /// </summary>
+    private IEnumerator HitInvincibilityCoroutine()
+    {
+        _isInvincible = true;
+
+        // SpriteRenderer 자동 검색 (인스펙터 미지정 시 한 번만 수행)
+        if (hitFlashSprites == null || hitFlashSprites.Length == 0)
+            hitFlashSprites = GetComponentsInChildren<SpriteRenderer>();
+
+        // 깜빡임 간격: 무적 시간을 (횟수 × 2)로 나눠 켜고/끄기 반복
+        float flashInterval = hitInvincibilityDuration / (hitFlashCount * 2);
+
+        for (int i = 0; i < hitFlashCount; i++)
+        {
+            SetSpritesVisible(false);
+            yield return new WaitForSeconds(flashInterval);
+            SetSpritesVisible(true);
+            yield return new WaitForSeconds(flashInterval);
+        }
+
+        _isInvincible = false;
+        _hitInvincibilityCoroutine = null;
+    }
+
+    /// <summary>
+    /// 피격 무적 즉시 취소 — StopAllCoroutines() 전에 반드시 호출하여
+    /// 스프라이트 가시성과 무적 플래그를 안전하게 복원
+    /// </summary>
+    private void CancelHitInvincibility()
+    {
+        if (_hitInvincibilityCoroutine != null)
+        {
+            StopCoroutine(_hitInvincibilityCoroutine);
+            _hitInvincibilityCoroutine = null;
+        }
+        _isInvincible = false;
+        SetSpritesVisible(true);
+    }
+
+    /// <summary>
+    /// 지정된 SpriteRenderer 배열의 활성/비활성 일괄 전환
+    /// </summary>
+    private void SetSpritesVisible(bool visible)
+    {
+        if (hitFlashSprites == null) return;
+        foreach (var sr in hitFlashSprites)
+            if (sr != null) sr.enabled = visible;
+    }
+
     private IEnumerator PhaseTransitionEffect()
     {
         if (phaseTransitionEffect != null)
