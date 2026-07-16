@@ -32,8 +32,7 @@ public enum AttackPattern
     Cannon,
     Charge,
     DroneSpawn,          // 드론 소환 (보스 내부 → 머리 위 상승 등장)
-    Wait3Sec,            // 돌진-대기-돌진 콤보 내 3초 대기 전용
-    Phase2MissileBarrage // [Phase 2] 투명화 → 텔레포트 → 미사일 난사 (×3)
+    Wait3Sec             // 돌진-대기-돌진 콤보 내 3초 대기 전용
 }
 
 
@@ -154,6 +153,9 @@ public class BossController : MonoBehaviour, IDamageable
 
     // 런타임 콘텍스트 (SO 기반 패턴 공유 참조 및 AnimationEventBridge)
     private BossContext _bossContext;
+
+    // 돌진 등 패턴 중 FacePlayer() 억제 플래그
+    private bool _facingLocked = false;
 
     /// <summary>
     /// HP UI 이벤트(온HpChanged) 연동용.
@@ -665,12 +667,13 @@ public class BossController : MonoBehaviour, IDamageable
                 new BossBT.WaitNode(0.1f, this),
                 new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.DroneSpawn, this, this)
             }),
-            // 콤보 F - 원거리 (9m 이상): 미사일 난사 (투명화 → 텔레포트 → 3연속)
-            // ※ missilePattern 인스펙터 미연결 시 Debug.LogError 출력 후 Failure 반환
+            // 콤보 F - 원거리 (9m 이상): 곡사포 → 0.2초 정지 → 돌진
             new BossBT.Sequence(new List<BossBT.BTNode>
             {
                 new BossBT.CheckDistance(transform, player, 9f, 9999f),
-                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Phase2MissileBarrage, this, this)
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Howitzer, this, this),
+                new BossBT.WaitNode(0.2f, this),
+                new BossBT.ExecuteAttackNode(attackPatterns, AttackPattern.Charge, this, this)
             }),
             // 콤보 G - 폴백: 거리 무관 곡사포 (D/E/F 모두 거리 조건 불일치 시)
             // 8m~9m 데드존 방지 역할
@@ -941,10 +944,11 @@ public class BossController : MonoBehaviour, IDamageable
 
     /// <summary>
     /// 플레이어 방향으로 보스 좌우 방향 전환 (localScale.x flip)
-    /// Dead/Appearing 상태에서는 동작하지 않음
+    /// Dead/Appearing 상태 또는 _facingLocked 중에는 동작하지 않음
     /// </summary>
     private void FacePlayer()
     {
+        if (_facingLocked) return;
         if (player == null || currentState == BossState.Dead || currentState == BossState.Appearing)
             return;
 
@@ -956,6 +960,29 @@ public class BossController : MonoBehaviour, IDamageable
             scale.x = dirX > 0 ? absX : -absX;
             transform.localScale = scale;
         }
+    }
+
+    /// <summary>
+    /// 돌진 등 패턴 진행 중 facing 잠금 — dirX > 0이면 오른쪽, < 0이면 왼쪽으로 고정
+    /// </summary>
+    public void LockFacing(float dirX)
+    {
+        _facingLocked = true;
+        if (Mathf.Abs(dirX) > 0.01f)
+        {
+            Vector3 scale = transform.localScale;
+            float absX = Mathf.Abs(scale.x);
+            scale.x = dirX > 0 ? absX : -absX;
+            transform.localScale = scale;
+        }
+    }
+
+    /// <summary>
+    /// facing 잠금 해제 — 이후 FacePlayer()가 다시 동작함
+    /// </summary>
+    public void UnlockFacing()
+    {
+        _facingLocked = false;
     }
 
     private void Update()
@@ -985,6 +1012,12 @@ public class BossController : MonoBehaviour, IDamageable
                 _activeBT = _phase2BT;
                 ResetBehaviorTree(oldBT);
                 ResetBehaviorTree(_activeBT);
+
+                // BossAttackPatterns 코루틴 강제 종료
+                if (attackPatterns != null)
+                    attackPatterns.ForceStopAllPatterns();
+
+                SetBoosterActive(false);
 
                 CancelHitInvincibility();
                 StopAllCoroutines();
@@ -1071,7 +1104,16 @@ public class BossController : MonoBehaviour, IDamageable
             ResetBehaviorTree(oldBT);
             ResetBehaviorTree(_activeBT);
 
-            // 2) 무적/깜빡임 즉시 해제 후 모든 코루틴 중단 (스프라이트 사라짐 방지)
+            // 2) BossAttackPatterns 코루틴 강제 종료
+            //    StopAllCoroutines()는 BossController 코루틴만 멈추므로
+            //    BossAttackPatterns(별개 MonoBehaviour)는 반드시 별도 정리해야 함
+            if (attackPatterns != null)
+                attackPatterns.ForceStopAllPatterns();  // Charge 관성/facing lock/플래그 포함 정리
+
+            // 3) 부스터 이펙트 비활성화 (RestingState 도중 중단 시 이펙트가 남는 현상 방지)
+            SetBoosterActive(false);
+
+            // 4) 무적/깜빡임 즉시 해제 후 BossController 코루틴 전체 중단
             CancelHitInvincibility();
             StopAllCoroutines();
 
@@ -1285,6 +1327,14 @@ public class BossController : MonoBehaviour, IDamageable
         {
             activeDrones.Remove(drone);
         }
+    }
+
+    /// <summary>
+    /// 현재 활성 드론 수 getter
+    /// </summary>
+    public int GetActiveDroneCount()
+    {
+        return activeDrones.Count;
     }
 
     /// <summary>

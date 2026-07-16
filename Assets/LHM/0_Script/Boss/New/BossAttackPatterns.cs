@@ -33,10 +33,6 @@ public class BossAttackPatterns : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private Rigidbody2D rb2d;
 
-    [Header("Phase 2 미사일 패턴")]
-    [Tooltip("Phase2BossMissilePattern 컴포넌트가 연결된 GameObject 참조.")]
-    [SerializeField] private Phase2BossMissilePattern missilePattern;
-
     [Header("공격 패턴 설정")]
     [SerializeField] private float stompDamage = 3f;
     [SerializeField] private float stompRange = 2f;
@@ -56,7 +52,7 @@ public class BossAttackPatterns : MonoBehaviour
     [SerializeField] private float howitzerWarningDuration = 1f;  // 경고 표시 지속 시간
     [SerializeField] private float howitzerExplosionRange = 3f;   // 착탄 폭발 범위
     [SerializeField] private float howitzerBurstInterval = 0.3f; // 포탄 발사 간격
-    [SerializeField] private int howitzerShotCount = 3;          // 발사 포탄 수
+    [SerializeField] private int howitzerShotCount = 6;          // 발사 포탄 수
 
     // AirBurst 전용
     [SerializeField] private float airBurstHeight = 4f;         // 폭발 발동 고도
@@ -131,10 +127,21 @@ public class BossAttackPatterns : MonoBehaviour
     [Header("돌진/짓밟기 이펙트 설정")]
     [Tooltip("돌진 시 생성할 이펙트 프리팹 (부스터 화염 등)")]
     [SerializeField] private GameObject chargeEffectPrefab;
+    [Tooltip("돌진 시 보스 주변을 감싸는 추가 이펙트 프리팹 (배리어, 바람막 등)")]
+    [SerializeField] private GameObject chargeSurroundEffectPrefab;
     [Tooltip("돌진 이펙트 생성 및 부착 위치 (Transform)")]
     [SerializeField] private Transform chargeEffectSpawnPoint;
+    [Tooltip("돌진 주변 이펙트의 생성 위치 및 각도를 조절할 빈 오브젝트 위치 (Transform)")]
+    [SerializeField] private Transform chargeSurroundEffectSpawnPoint;
     [Tooltip("짓밟기(Stomp) 충격 시 생성할 폭발/충격 이펙트")]
     [SerializeField] private GameObject stompEffectPrefab;
+
+    [Header("공격 패턴 연속 제어 설정")]
+    [Tooltip("동일 패턴을 연속해서 사용할 수 있는 최대 횟수 (지정 횟수 이상 도달 시 랜덤 대체 패턴 실행)")]
+    [SerializeField] private int maxConsecutiveSamePattern = 2;
+
+    private AttackPattern lastExecutedPattern = AttackPattern.Wait3Sec; // 보조용 값으로 초기화
+    private int consecutivePatternCount = 0;
 
 
     [Header("사운드 설정")]
@@ -161,6 +168,9 @@ public class BossAttackPatterns : MonoBehaviour
     // ── 돌진 벽 충돌 감지 플래그 (OnTriggerEnter2D → Charge 코루틴 통신용) ──
     private bool _chargeHitWall = false;
 
+    // ── Howitzer 포격 자세 유지 플래그 (TriggerStopHowitzer() 호출 시 해제) ──
+    private bool _howitzerStopped = false;
+
     private void Awake()
     {
         if (bossController == null)
@@ -177,6 +187,46 @@ public class BossAttackPatterns : MonoBehaviour
 
         if(playerLayer == 0)
             playerLayer = LayerMask.GetMask("player");
+    }
+
+
+    /// <summary>
+    /// 페이즈 전환 등 외부 강제 중단 시 호출 —
+    /// BossController.StopAllCoroutines()는 BossController에서 시작된 코루틴만 멈추고
+    /// BossAttackPatterns 에서 시작된 Charge/Howitzer/DroneSpawn 등은 그대로 살아있으므로
+    /// 이 메서드를 반드시 별도로 호출해야 함.
+    /// </summary>
+    public void ForceStopAllPatterns()
+    {
+        StopAllCoroutines();
+
+        // 내부 플래그 전부 초기화 (다음 패턴 시작 시 오염 방지)
+        _chargeHitWall       = false;
+        _stompImpactCalled   = false;
+        _howitzerLaunchPending = false;
+        _howitzerStopped     = false;
+
+        // 고착 방지: 모든 애니메이터 트리거 리셋
+        if (animator != null)
+        {
+            animator.ResetTrigger("StompAnticipation");
+            animator.ResetTrigger("MachinegunAnticipation");
+            animator.ResetTrigger("HowitzerAnticipation");
+            animator.ResetTrigger("CannonAnticipation");
+            animator.ResetTrigger("ChargeAnticipation");
+            animator.ResetTrigger("DroneSpawnAnticipation");
+            animator.ResetTrigger("stopHowitzer");
+            animator.ResetTrigger("StopHowitzer");
+            animator.ResetTrigger("AttackStart");
+        }
+
+        // 물리 속도 강제 정지 (Charge 도중 중단 시 관성 남음 방지)
+        if (rb2d != null)
+            rb2d.linearVelocity = Vector2.zero;
+
+        // Facing 잠금 해제 (Charge 도중 중단 시 _facingLocked 고착 방지)
+        if (bossController != null)
+            bossController.UnlockFacing();
     }
 
 
@@ -261,13 +311,45 @@ public class BossAttackPatterns : MonoBehaviour
     public IEnumerator ExecutePattern(AttackPattern pattern, BossController controller)
     {
         bossController = controller;
+
+        // 보조 대기 패턴(Wait3Sec)이 아닐 때만 동일 패턴 연속 실행 검사 실행
+        if (pattern != AttackPattern.Wait3Sec && bossController != null)
+        {
+            if (pattern == lastExecutedPattern)
+            {
+                consecutivePatternCount++;
+                if (consecutivePatternCount >= maxConsecutiveSamePattern)
+                {
+                    AttackPattern replacementPattern = GetRandomPatternForPhase(bossController.GetCurrentPhase(), pattern);
+                    Debug.Log($"[Boss] 패턴 '{pattern}'이 {consecutivePatternCount}회 연속 도달하여 랜덤 대체 패턴 '{replacementPattern}'(으)로 전환 실행합니다.");
+                    pattern = replacementPattern;
+                    
+                    lastExecutedPattern = pattern;
+                    consecutivePatternCount = 1;
+                }
+            }
+            else
+            {
+                lastExecutedPattern = pattern;
+                consecutivePatternCount = 1;
+            }
+        }
+
         Debug.Log($"[Boss] 패턴 실행 시작: {pattern}");
 
-        // ── 공통 Animator 파라미터 설정 ──
-        // AttackType: AttackPattern 열거형을 정수로 캐스팅 (Animator Controller에서 int 파라미터로 수신)
-        // AttackStart: 패턴 진입 공통 트리거 (Base Layer 전환 또는 서브스테이트 머신 진입에 사용)
+        // ── 공통 Animator 파라미터 설정 및 고착 트리거 리셋 ──
         if (animator != null)
         {
+            // 이전 패턴들의 잔여 트리거가 오작동을 유발하지 않도록 일괄 리셋
+            animator.ResetTrigger("StompAnticipation");
+            animator.ResetTrigger("MachinegunAnticipation");
+            animator.ResetTrigger("HowitzerAnticipation");
+            animator.ResetTrigger("CannonAnticipation");
+            animator.ResetTrigger("ChargeAnticipation");
+            animator.ResetTrigger("DroneSpawnAnticipation");
+            animator.ResetTrigger("stopHowitzer");
+            animator.ResetTrigger("StopHowitzer");
+
             animator.SetInteger("AttackType", (int)pattern);
             animator.SetTrigger("AttackStart");
         }
@@ -295,16 +377,43 @@ public class BossAttackPatterns : MonoBehaviour
             case AttackPattern.DroneSpawn:
                 yield return StartCoroutine(DroneSpawn());
                 break;
-            case AttackPattern.Phase2MissileBarrage:
-                // Phase2BossMissilePattern이 연결되어 있으면 UniTask 래퍼 코루훴으로 실행
-                if (missilePattern != null)
-                    yield return StartCoroutine(missilePattern.ExecuteAsCoroutine());
-                else
-                    Debug.LogError("[BossAttackPatterns] missilePattern이 연결되지 않았습니다!");
-                break;
         }
 
         Debug.Log($"[Boss] 패턴 실행 완료: {pattern}");
+    }
+
+    /// <summary>
+    /// 현재 보스 페이즈에 따라 연속 패턴을 방지할 랜덤 대체 공격 패턴을 반환합니다.
+    /// </summary>
+    private AttackPattern GetRandomPatternForPhase(int phase, AttackPattern excludePattern)
+    {
+        List<AttackPattern> available = new List<AttackPattern>();
+
+        // 1페이즈 기본 패턴 후보군
+        available.Add(AttackPattern.Stomp);
+        available.Add(AttackPattern.MachinegunBurst);
+        available.Add(AttackPattern.MachinegunRapid);
+        available.Add(AttackPattern.Howitzer);
+        available.Add(AttackPattern.Charge);
+
+        // 2페이즈 전용 패턴 후보군 추가
+        if (phase >= 2)
+        {
+            available.Add(AttackPattern.Cannon);
+            available.Add(AttackPattern.DroneSpawn);
+        }
+
+        // 연속 사용된 패턴은 랜덤 후보군에서 차단
+        available.Remove(excludePattern);
+
+        // 만약을 대비한 예외 안전장치
+        if (available.Count == 0)
+        {
+            return AttackPattern.Stomp;
+        }
+
+        int randomIndex = UnityEngine.Random.Range(0, available.Count);
+        return available[randomIndex];
     }
 
     /// <summary>
@@ -430,10 +539,10 @@ public class BossAttackPatterns : MonoBehaviour
         BossProjectile projectile = bullet.GetComponent<BossProjectile>();
         if (projectile != null)
         {
-            // Initialize() 먼저 (내부에서 localScale을 5f로 초기화함)
+            // Initialize()에서 direction.x 기준으로 스케일이 올바르게 설정됨.
+            // SetFacingToPlayer()는 player.position 기준으로 덮어쓰므로,
+            // 플레이어가 천장·벽에 있을 때 direction과 부호가 달라져 역방향 버그가 발생함 → 제거.
             projectile.Initialize(direction, machinegunDamage, bossController);
-            // Initialize() 이후에 방향 flip (스케일 초기화에 덮이지 않도록)
-            projectile.SetFacingToPlayer(player);
         }
     }
 
@@ -451,6 +560,11 @@ public class BossAttackPatterns : MonoBehaviour
     private IEnumerator Howitzer()
     {
         Debug.Log("[Boss] 곡사포 패턴 시작");
+        if (player == null)
+        {
+            Debug.LogError("[Boss] Howitzer: player 참조가 누락되었습니다. 패턴을 시작할 수 없습니다.");
+            yield break;
+        }
         
         // 등뒤 곡사포 장전 전조 애니메이션
         if (animator != null)
@@ -546,7 +660,7 @@ public class BossAttackPatterns : MonoBehaviour
                     BossProjectile projectile = cannonball.GetComponent<BossProjectile>();
                     if (projectile != null)
                     {
-                        Vector3 direction = (player.position - firePosition).normalized;
+                        Vector3 direction = player != null ? (player.position - firePosition).normalized : Vector3.down;
                         projectile.InitializeCannonball(direction, howitzerDamage, howitzerExplosionRange, bossController);
                     }
                 }
@@ -566,18 +680,29 @@ public class BossAttackPatterns : MonoBehaviour
             GameObject nearestPlatform = null;
             float nearestDistance = float.MaxValue;
 
-            foreach (var platform in platforms)
+            if (player != null)
             {
-                float distance = Vector3.Distance(platform.transform.position, player.position);
-                if (distance < nearestDistance && distance < howitzerWarningRadius)
+                foreach (var platform in platforms)
                 {
-                    nearestDistance = distance;
-                    nearestPlatform = platform;
+                    float distance = Vector3.Distance(platform.transform.position, player.position);
+                    if (distance < nearestDistance && distance < howitzerWarningRadius)
+                    {
+                        nearestDistance = distance;
+                        nearestPlatform = platform;
+                    }
                 }
             }
 
-            // 발판이 있으면 발판 위치 기준, 없으면 플레이어 위치 기준
-            Vector3 basePos = nearestPlatform != null ? nearestPlatform.transform.position : player.position;
+            // 플레이어 또는 발판 위치 기준 (Null 방어)
+            Vector3 basePos = transform.position;
+            if (nearestPlatform != null)
+            {
+                basePos = nearestPlatform.transform.position;
+            }
+            else if (player != null)
+            {
+                basePos = player.position;
+            }
 
             // X축 랜덤 좌표 선정
             float randomX = UnityEngine.Random.Range(-howitzerWarningRadius, howitzerWarningRadius);
@@ -597,6 +722,7 @@ public class BossAttackPatterns : MonoBehaviour
         yield return new WaitForSeconds(howitzerWarningDuration);
 
         // Step 4: 포탄 낙하 (순서대로 돌진)
+        Debug.Log($"[Boss] Howitzer 포탄 낙하 시작 (포탄 수: {cannonballs.Count})");
         for (int i = 0; i < cannonballs.Count && i < targetPositions.Count; i++)
         {
             GameObject cannonball = cannonballs[i];
@@ -624,6 +750,16 @@ public class BossAttackPatterns : MonoBehaviour
 
         // 모든 포탄 착탄 대기
         yield return new WaitForSeconds(1f);
+        Debug.Log("[Boss] Howitzer 모든 포탄 낙하 완료, stopHowitzer 트리거 작동");
+
+        // 포격 자세 종료 애니메이션 트리거 (대소문자 둘 다 대비)
+        // 코루틴 내에서 포탄 투하가 다 끝나면 자동으로 트리거를 호출하여 
+        // 애니메이터가 루프 자세를 풀고 Idle로 돌아가게 합니다.
+        if (animator != null)
+        {
+            animator.SetTrigger("stopHowitzer");
+            animator.SetTrigger("StopHowitzer");
+        }
     }
 
     /// <summary>
@@ -712,12 +848,18 @@ public class BossAttackPatterns : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
-        // 플레이어 방향 계산
+        // 플레이어 방향 계산 (X축 부호만 사용)
+        // normalize()를 쓰면 플레이어가 위에 있을 때 direction.x 가 0에 수렴해
+        // 부동소수점 오차로 부호가 뒤집혀 반대 방향으로 돌진하는 버그가 발생함.
         if (player == null)
             yield break;
 
-        Vector3 direction = (player.position - transform.position).normalized;
+        float chargeDirectionX = player.position.x >= transform.position.x ? 1f : -1f;
         float chargeSpeed = bossController != null ? bossController.GetBoosterJumpSpeed() : 10f;
+
+        // 돌진 방향으로 스프라이트 고정 (FacePlayer() 억제)
+        if (bossController != null)
+            bossController.LockFacing(chargeDirectionX);
 
         // 돌진 시작 (최대 3초 또는 벽 충돌까지)
         bool isCharging = true;
@@ -733,6 +875,32 @@ public class BossAttackPatterns : MonoBehaviour
         {
             chargeFX = Instantiate(chargeEffectPrefab, chargeEffectSpawnPoint.position, Quaternion.identity, chargeEffectSpawnPoint);
             chargeFX.SetActive(true);
+        }
+
+        // 보스 주변을 감싸는 추가 이펙트 생성 및 부착
+        GameObject chargeSurroundFX = null;
+        if (chargeSurroundEffectPrefab != null)
+        {
+            // 빈 오브젝트(SpawnPoint)가 지정되어 있으면 그 위치와 각도에 180도 회전을 더하고, 없으면 보스 위치 + 180도 회전 기준
+            if (chargeSurroundEffectSpawnPoint != null)
+            {
+                chargeSurroundFX = Instantiate(
+                    chargeSurroundEffectPrefab, 
+                    chargeSurroundEffectSpawnPoint.position, 
+                    chargeSurroundEffectSpawnPoint.rotation * Quaternion.Euler(0f, 0f, 180f), 
+                    chargeSurroundEffectSpawnPoint
+                );
+            }
+            else
+            {
+                chargeSurroundFX = Instantiate(
+                    chargeSurroundEffectPrefab, 
+                    transform.position, 
+                    Quaternion.Euler(0f, 0f, 180f), 
+                    transform
+                );
+            }
+            chargeSurroundFX.SetActive(true);
         }
 
         // 돌진 부스터 루프 사운드 재생
@@ -764,7 +932,7 @@ public class BossAttackPatterns : MonoBehaviour
             // 이동
             if (rb2d != null)
             {
-                rb2d.linearVelocity = new Vector2(direction.x * chargeSpeed, rb2d.linearVelocity.y);
+                rb2d.linearVelocity = new Vector2(chargeDirectionX * chargeSpeed, rb2d.linearVelocity.y);
             }
 
             // 판정 박스 활성화 (OnChargeImpactCheck로 위임)
@@ -778,8 +946,8 @@ public class BossAttackPatterns : MonoBehaviour
             }
 
             // 벽 충돌 감지 방법 2: Raycast (레이어 무관, tag 기준)
-            Vector2 rayOrigin = (Vector2)transform.position + new Vector2(direction.x * 0.5f, 0f);
-            Vector2 rayDirection = new Vector2(direction.x, 0f);
+            Vector2 rayOrigin    = (Vector2)transform.position + new Vector2(chargeDirectionX * 0.5f, 0f);
+            Vector2 rayDirection = new Vector2(chargeDirectionX, 0f);
             float rayDistance = 1.5f;
 
             RaycastHit2D[] wallHits = Physics2D.RaycastAll(rayOrigin, rayDirection, rayDistance);
@@ -817,6 +985,11 @@ public class BossAttackPatterns : MonoBehaviour
             Destroy(chargeFX, 0.5f); // 스턴 상태나 정지 시 자연스럽게 사라지도록 0.5초 딜레이 소멸
         }
 
+        if (chargeSurroundFX != null)
+        {
+            Destroy(chargeSurroundFX, 0.5f);
+        }
+
         // 벽 충돌 시 스턴 처리
 
         if (hasHitWall)
@@ -835,6 +1008,10 @@ public class BossAttackPatterns : MonoBehaviour
 
             Debug.Log("[Boss] 돌진 스턴 해제");
         }
+
+        // 돌진 종료 — facing 잠금 해제 (이후 FacePlayer()가 플레이어 방향으로 복귀)
+        if (bossController != null)
+            bossController.UnlockFacing();
     }
 
     /// <summary>
@@ -858,6 +1035,7 @@ public class BossAttackPatterns : MonoBehaviour
 
     /// <summary>
     /// 7. 드론 소환 (DroneSpawn) [2페이즈 전용]
+    /// 활성 드론이 1마리 이상 있으면 소환을 건너뛰고 기관총 연사로 대체.
     /// Step 1: 소환 전조
     /// Step 2: 드론 상승
     /// Step 3: 등장 완료 및 패턴 실행
@@ -865,6 +1043,14 @@ public class BossAttackPatterns : MonoBehaviour
     private IEnumerator DroneSpawn()
     {
         Debug.Log("[Boss] 드론 소환 패턴 시작");
+
+        // 드론이 이미 1마리 이상 활성화 중이면 기관총 연사로 대체
+        if (bossController.GetActiveDroneCount() >= 1)
+        {
+            Debug.Log("[Boss] 드론 이미 활성 → 기관총 연사로 대체");
+            yield return StartCoroutine(MachinegunRapid());
+            yield break;
+        }
 
         // Step 1: 소환 전조
         if (animator != null)
@@ -1015,6 +1201,16 @@ public class BossAttackPatterns : MonoBehaviour
     }
 
     /// <summary>
+    /// [Animation Event / 외부 스크립트 호출] 곡사포 포격 자세 종료 신호
+    /// 애니메이션의 특정 지점이나 Behavior Tree 등에서 이 메서드를 호출하면
+    /// 곡사포 포격 후 대기 상태를 풀고 종료 애니메이션 트리거(stopHowitzer)를 발동합니다.
+    /// </summary>
+    public void TriggerStopHowitzer()
+    {
+        _howitzerStopped = true;
+        Debug.Log("[Boss] TriggerStopHowitzer: 곡사포 자세 유지 종료 요청 수신");
+    }
+
     /// [Animation Event] 곡사포 발사 훅
     /// Boss_Howitzer 클립의 발사 프레임에 Animation Event로 연결 (선택)
     /// 기존 Howitzer() 코루틴 타이밍은 유지되며, 추가 이펙트/사운드 트리거 용도

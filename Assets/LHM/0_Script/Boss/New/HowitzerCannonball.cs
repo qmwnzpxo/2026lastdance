@@ -84,6 +84,9 @@ public class HowitzerCannonball : MonoBehaviour
     /// </summary>
     private IEnumerator RisingCoroutine()
     {
+        // 탄두가 위를 향하도록 회전 (Z=-90° → 스프라이트 -X방향(탄두)이 위를 가리탔)
+        transform.rotation = Quaternion.Euler(0f, 0f, -90f);
+
         while (Vector2.Distance(transform.position, targetHeight) > 0.1f)
         {
             transform.position = Vector3.MoveTowards(transform.position, targetHeight, riseSpeed * Time.deltaTime);
@@ -146,6 +149,7 @@ public class HowitzerCannonball : MonoBehaviour
 
             while (transform.position.y > burstY && elapsedTime < duration)
             {
+                Vector3 prevPos = transform.position;
                 elapsedTime += Time.deltaTime;
                 float t = elapsedTime / duration;
 
@@ -156,6 +160,7 @@ public class HowitzerCannonball : MonoBehaviour
                 currentPos.y += arcHeight;
 
                 transform.position = currentPos;
+                UpdateFallingRotation(prevPos);  // 탄두가 warning marker 방향을 향하도록 회전
                 yield return null;
             }
 
@@ -168,6 +173,7 @@ public class HowitzerCannonball : MonoBehaviour
             // BounceBlast: 지면 충돌까지 낙하
             while (Vector2.Distance(transform.position, fallTarget) > 0.1f && elapsedTime < duration)
             {
+                Vector3 prevPos = transform.position;
                 elapsedTime += Time.deltaTime;
                 float t = elapsedTime / duration;
 
@@ -178,6 +184,7 @@ public class HowitzerCannonball : MonoBehaviour
                 currentPos.y += arcHeight;
 
                 transform.position = currentPos;
+                UpdateFallingRotation(prevPos);  // 탄두가 warning marker 방향을 향하도록 회전
                 yield return null;
             }
 
@@ -192,6 +199,7 @@ public class HowitzerCannonball : MonoBehaviour
             // Normal: 기존 로직
             while (Vector2.Distance(transform.position, fallTarget) > 0.1f && elapsedTime < duration)
             {
+                Vector3 prevPos = transform.position;
                 elapsedTime += Time.deltaTime;
                 float t = elapsedTime / duration;
 
@@ -202,6 +210,7 @@ public class HowitzerCannonball : MonoBehaviour
                 currentPos.y += arcHeight;
 
                 transform.position = currentPos;
+                UpdateFallingRotation(prevPos);  // 탄두가 warning marker 방향을 향하도록 회전
                 yield return null;
             }
 
@@ -441,7 +450,7 @@ public class HowitzerCannonball : MonoBehaviour
     }
 
     /// <summary>
-    /// 풀 재사용 전 상태 완전 초기화 (풀에서 껪낼 때 호출)
+    /// 풀 재사용 전 상태 완전 초기화 (풀에서 꺼낼 때 호출)
     /// </summary>
     public void ResetForPool()
     {
@@ -463,6 +472,23 @@ public class HowitzerCannonball : MonoBehaviour
         {
             rb2d.linearVelocity = Vector2.zero;
         }
+
+        // 회전 초기화
+        transform.rotation = Quaternion.identity;
+    }
+
+    /// <summary>
+    /// 낙하 중 매 프레임 이동 방향으로 탄두 회전 갱신 (warning marker를 향하도록)
+    /// 탄두가 스프라이트 -X 방향에 있으므로 Atan2 + 180° 보정.
+    /// </summary>
+    private void UpdateFallingRotation(Vector3 prevPos)
+    {
+        Vector3 moveDelta = transform.position - prevPos;
+        if (moveDelta.sqrMagnitude > 0.0001f)
+        {
+            float angle = Mathf.Atan2(moveDelta.y, moveDelta.x) * Mathf.Rad2Deg + 180f;
+            transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        }
     }
 
     private void OnDisable()
@@ -482,5 +508,8 @@ public class HowitzerCannonball : MonoBehaviour
         {
             rb2d.linearVelocity = Vector2.zero;
         }
+
+        // 회전 초기화
+        transform.rotation = Quaternion.identity;
     }
 }

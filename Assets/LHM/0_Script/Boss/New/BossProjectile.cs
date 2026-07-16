@@ -26,6 +26,7 @@ public class BossProjectile : MonoBehaviour
     private float explosionRange;
     private bool isCannonball = false;
     private bool isBounceBlastPellet = false;
+    private bool isAirBurstPellet = false;
     private bool isGrowing = false;
     private float currentScale;
     private float currentLifetime;
@@ -199,6 +200,7 @@ public class BossProjectile : MonoBehaviour
     {
         isCannonball = false;
         isBounceBlastPellet = false;
+        isAirBurstPellet = true;
         damage = projectileDamage;
         bossController = controller;
         moveDirection = Vector3.zero; // AirBurst는 HowitzerCannonball에서 velocity 설정하므로 폴백 비활성
@@ -300,6 +302,11 @@ public class BossProjectile : MonoBehaviour
                 // BounceBlast 파편은 bouncePelletPool에 반환 (bulletPool 오염 방지)
                 bossController.ReturnBouncePelletToPool(gameObject);
             }
+            else if (isAirBurstPellet)
+            {
+                // AirBurst 파편은 airBurstPelletPool에 반환 (bulletPool 오염 방지)
+                bossController.ReturnAirBurstPelletToPool(gameObject);
+            }
             else
             {
                 bossController.ReturnBulletToPool(gameObject);
@@ -321,6 +328,7 @@ public class BossProjectile : MonoBehaviour
         }
         moveDirection = Vector3.zero; // 이동 방향 리셋
         isGrowing = false;
+        isAirBurstPellet = false;
         facingDirectionX = 1f;
         transform.localScale = Vector3.one * 5f; // 스케일 초기화 (5f 고정)
         instanceMaxScale = maxScale;
