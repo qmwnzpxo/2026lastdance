@@ -668,7 +668,7 @@ Transform:
   m_GameObject: {fileID: 204829187}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.84, y: 1.1, z: 0}
+  m_LocalPosition: {x: -0.322, y: 1.402, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -848,6 +848,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 245135662}
   m_CullTransparentMesh: 1
+--- !u!1 &290293763
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 290293764}
+  m_Layer: 7
+  m_Name: GameObject (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &290293764
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 290293763}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.31, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1766646319}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &299760539
 GameObject:
   m_ObjectHideFlags: 0
@@ -1566,9 +1597,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: -0.7162162
+    y: -1.7763712
     width: 1
-    height: 2.4324324
+    height: 4.556962
   near clip plane: 0.1
   far clip plane: 5000
   field of view: 40
@@ -20451,7 +20482,6 @@ MonoBehaviour:
   player: {fileID: 2115244527}
   animator: {fileID: 1766646313}
   rb2d: {fileID: 1766646316}
-  missilePattern: {fileID: 0}
   stompDamage: 3
   stompRange: 2
   stompAnticipationTime: 0.5
@@ -20461,14 +20491,14 @@ MonoBehaviour:
   machinegunRapidInterval: 0.05
   machinegunRapidDuration: 0.5
   howitzerDamage: 10
-  howitzerRiseHeight: 8
+  howitzerRiseHeight: 12
   howitzerRiseSpeed: 12
   howitzerFallSpeed: 20
   howitzerWarningRadius: 6
   howitzerWarningDuration: 1
   howitzerExplosionRange: 3
   howitzerBurstInterval: 0.3
-  howitzerShotCount: 3
+  howitzerShotCount: 6
   airBurstHeight: 4
   airBurstPelletCount: 8
   airBurstPelletSpeed: 10
@@ -20529,8 +20559,11 @@ MonoBehaviour:
   airBurstPelletPrefab: {fileID: 6951173001543725869, guid: 07f4e514872592c43bbf06d6aa7ac24a, type: 3}
   bouncePelletPrefab: {fileID: 5309555960500485855, guid: 8f1fc0d71fb6b434ea9faa32ccd1d509, type: 3}
   chargeEffectPrefab: {fileID: 5180149191341092112, guid: b11b56e5c9cac2248a904757b9fea551, type: 3}
+  chargeSurroundEffectPrefab: {fileID: 2378015941348119977, guid: 4dcb36f099129b549abc90cfd9541c1a, type: 3}
   chargeEffectSpawnPoint: {fileID: 591957372}
+  chargeSurroundEffectSpawnPoint: {fileID: 290293764}
   stompEffectPrefab: {fileID: 0}
+  maxConsecutiveSamePattern: 2
   audioSource: {fileID: 1429357951}
   machinegunFireSound: {fileID: 8300000, guid: cd0af74aae8cce949af9f8e03093858f, type: 3}
   howitzerFireSound: {fileID: 8300000, guid: 1906b8b5a582f21438955893be4fdca6, type: 3}
@@ -20643,7 +20676,7 @@ MonoBehaviour:
   hitFlashCount: 3
   audioSource: {fileID: 1743448831}
   battleBGM: {fileID: 8300000, guid: 4c05510edd17872478a2d850fbba528a, type: 3}
-  boosterEffect: {fileID: 5180149191341092112, guid: b11b56e5c9cac2248a904757b9fea551, type: 3}
+  boosterEffect: {fileID: 8888138862906918029, guid: 60fdfdd2528c6e146a64401741ed8226, type: 3}
   boosterEffectPoint: {fileID: 204829188}
   boosterEffectScale: {x: 5, y: 5, z: 1}
   boosterEffectRotation: {x: 0, y: 0, z: 60}
@@ -20719,7 +20752,7 @@ Transform:
   m_GameObject: {fileID: 1766646312}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 23.08, y: -3.94, z: 0}
+  m_LocalPosition: {x: 23.01, y: -3.94, z: 0.03}
   m_LocalScale: {x: 3, y: 3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -20733,6 +20766,7 @@ Transform:
   - {fileID: 869347708}
   - {fileID: 591957372}
   - {fileID: 204829188}
+  - {fileID: 290293764}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1766646320
