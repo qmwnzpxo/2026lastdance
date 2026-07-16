@@ -20565,8 +20565,8 @@ MonoBehaviour:
   stompEffectPrefab: {fileID: 0}
   maxConsecutiveSamePattern: 2
   audioSource: {fileID: 1429357951}
-  machinegunFireSound: {fileID: 8300000, guid: cd0af74aae8cce949af9f8e03093858f, type: 3}
-  howitzerFireSound: {fileID: 8300000, guid: 1906b8b5a582f21438955893be4fdca6, type: 3}
+  machinegunFireSound: {fileID: 8300000, guid: a92bdca83938e6c44b49d58bb4aa9111, type: 3}
+  howitzerFireSound: {fileID: 8300000, guid: 0e0c3f231e589e64f8b9c1d819e6e710, type: 3}
   chargeSound: {fileID: 8300000, guid: f37118f5388cf7a4580edd47ff00ca76, type: 3}
   stompSound: {fileID: 8300000, guid: 84bf1ca066e3f3f418f1da401a45c395, type: 3}
 --- !u!61 &1766646315
@@ -20675,7 +20675,7 @@ MonoBehaviour:
   hitInvincibilityDuration: 0.2
   hitFlashCount: 3
   audioSource: {fileID: 1743448831}
-  battleBGM: {fileID: 8300000, guid: 4c05510edd17872478a2d850fbba528a, type: 3}
+  battleBGM: {fileID: 8300000, guid: 46e241aa2dc169f46a6fc2bddf737daf, type: 3}
   boosterEffect: {fileID: 8888138862906918029, guid: 60fdfdd2528c6e146a64401741ed8226, type: 3}
   boosterEffectPoint: {fileID: 204829188}
   boosterEffectScale: {x: 5, y: 5, z: 1}

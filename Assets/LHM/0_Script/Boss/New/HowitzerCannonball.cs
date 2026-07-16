@@ -404,12 +404,11 @@ public class HowitzerCannonball : MonoBehaviour
     /// </summary>
     public void SetFacingToPlayer(Transform player)
     {
-        if (player == null) return;
-
-        float dirX = player.position.x - transform.position.x;
+        // 곡사포탄은 Atan2 물리 회전 각도로 비행 방향을 표현하므로, 
+        // scale.x를 뒤집을 경우 회전 행렬이 꼬여 탄두가 반대로 날아가는 버그가 발생합니다.
+        // 따라서 항상 절대값(양수) 상태를 유지하여 정방향 회전이 적용되도록 처리합니다.
         Vector3 scale = transform.localScale;
-        float absX = Mathf.Abs(scale.x);
-        scale.x = dirX >= 0f ? -absX : absX;
+        scale.x = Mathf.Abs(scale.x);
         transform.localScale = scale;
     }
 

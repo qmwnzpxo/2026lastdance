@@ -48,7 +48,7 @@ public class BossAttackPatterns : MonoBehaviour
     [SerializeField] private float howitzerRiseHeight = 8f;      // 수직 상승 목표 높이
     [SerializeField] private float howitzerRiseSpeed = 12f;      // 상승 속도
     [SerializeField] private float howitzerFallSpeed = 20f;      // 낙하 속도
-    [SerializeField] private float howitzerWarningRadius = 6f;   // 경고 마커 배치 반경
+    [SerializeField] private float howitzerWarningRadius = 9f;   // 경고 마커 배치 반경 (원래 6f -> 9f로 증가)
     [SerializeField] private float howitzerWarningDuration = 1f;  // 경고 표시 지속 시간
     [SerializeField] private float howitzerExplosionRange = 3f;   // 착탄 폭발 범위
     [SerializeField] private float howitzerBurstInterval = 0.3f; // 포탄 발사 간격
@@ -685,7 +685,7 @@ public class BossAttackPatterns : MonoBehaviour
                 foreach (var platform in platforms)
                 {
                     float distance = Vector3.Distance(platform.transform.position, player.position);
-                    if (distance < nearestDistance && distance < howitzerWarningRadius)
+                    if (distance < nearestDistance && distance < (howitzerWarningRadius + 3f))
                     {
                         nearestDistance = distance;
                         nearestPlatform = platform;
@@ -704,9 +704,12 @@ public class BossAttackPatterns : MonoBehaviour
                 basePos = player.position;
             }
 
-            // X축 랜덤 좌표 선정
-            float randomX = UnityEngine.Random.Range(-howitzerWarningRadius, howitzerWarningRadius);
-            Vector3 targetPos = basePos + new Vector3(randomX, 0f, 0f);
+            // X축 랜덤 좌표 선정 (+3 범위 증가 적용)
+            float randomX = UnityEngine.Random.Range(-(howitzerWarningRadius + 3f), howitzerWarningRadius + 3f);
+            
+            // Y 좌표는 발판 높이가 아닌 플레이어 높이 기준으로 강제 고정
+            float targetY = player != null ? player.position.y : basePos.y;
+            Vector3 targetPos = new Vector3(basePos.x + randomX, targetY, 0f);
             targetPositions.Add(targetPos);
             
             // 경고 마커 활성화

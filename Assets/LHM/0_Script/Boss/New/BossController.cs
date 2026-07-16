@@ -1250,6 +1250,28 @@ public class BossController : MonoBehaviour, IDamageable
     /// </summary>
     private IEnumerator DeadState()
     {
+        Debug.Log("[Boss] 보스 사망 상태 진입 - 오브젝트 정리 시작");
+
+        // 1. 모든 공격 코루틴 및 물리 이동/Facing 고정 강제 중단
+        if (attackPatterns != null)
+        {
+            attackPatterns.ForceStopAllPatterns();
+        }
+
+        // 2. 씬에 남아있는 모든 발사체 (총알, 캐논볼, 경고 마커) 비활성화 및 회수
+        ClearAllActiveProjectiles();
+
+        // 3. 씬에 남아있는 모든 드론 비활성화 및 회수
+        for (int i = activeDrones.Count - 1; i >= 0; i--)
+        {
+            GameObject drone = activeDrones[i];
+            if (drone != null)
+            {
+                ReturnDroneToPool(drone);
+            }
+        }
+        activeDrones.Clear();
+
         // 사망 애니메이션 재생
         if (animator != null)
         {
