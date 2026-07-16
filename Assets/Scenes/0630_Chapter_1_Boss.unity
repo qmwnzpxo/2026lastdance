@@ -20665,7 +20665,7 @@ MonoBehaviour:
   attackPatterns: {fileID: 1766646314}
   bulletPrefab: {fileID: 7439053890155024157, guid: 553fbb893d9364e4493d658793fdc821, type: 3}
   cannonballPrefab: {fileID: 6777963788410408313, guid: 3b77999c3fa913945a0372d1d7d1a030, type: 3}
-  warningMarkerPrefab: {fileID: 1609986663082052191, guid: 778ea12ce65b743428bdac7d604531f5, type: 3}
+  warningMarkerPrefab: {fileID: 5106868129505439066, guid: b2d495ad716ddff44a0d5297cc1badc5, type: 3}
   airBurstPelletPrefab: {fileID: 6951173001543725869, guid: 07f4e514872592c43bbf06d6aa7ac24a, type: 3}
   bouncePelletPrefab: {fileID: 5309555960500485855, guid: 8f1fc0d71fb6b434ea9faa32ccd1d509, type: 3}
   poolSize: 30
