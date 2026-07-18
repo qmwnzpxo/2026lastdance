@@ -154,7 +154,7 @@ MonoBehaviour:
   isDead: 0
   dashGauge: 50
   maxDashGauge: 100
-  dashGaugePerAttack: 5
+  dashGaugePerDash: 20
   flashCount: 0
   defaultGravityScale: 1.2
   ceilingGravityScale: -1.2
@@ -204,8 +204,8 @@ MonoBehaviour:
   wallJumpForceX: 6
   wallJumpForceY: 12
   _climbEdgeCheckDist: 0.6
-  _climbSpeed: 8
-  _climbHorizSpeed: 8
+  _climbSpeed: 10
+  _climbHorizSpeed: 10
   _climbHeight: 1
   spriteRenderer: {fileID: 4829895224763142948}
   spriteTransform: {fileID: 6688604917998028013}
@@ -222,12 +222,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackTransform: {fileID: 2558350253558050970}
-  attackBoxSize: {x: 1, y: 1}
-  attackBoxDistance: 1
+  attackBoxSize: {x: 1.3, y: 1.3}
+  attackBoxDistance: 1.3
   attackSecondHitDelay: 0.3
   attackActiveDuration: 0.1
   AttackSpeed: 1
   attackRepeatTime: 1
+  dashGaugePerAttack: 5
 --- !u!114 &1014071891606882278
 MonoBehaviour:
   m_ObjectHideFlags: 0

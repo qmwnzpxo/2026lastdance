@@ -339,8 +339,17 @@ public class PlayerMove : MonoBehaviour
         RaycastHit2D topHit = Physics2D.Raycast(
             topOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
 
+        Vector2 botOrigin = origin + Vector2.up * (-_climbEdgeCheckDist / 0.9f);
+        RaycastHit2D botHit = Physics2D.Raycast(
+            botOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
+
         // 허리는 막혀있고, 머리 위는 뚫려있으면 → 모서리 감지
-        if (midHit.collider != null && topHit.collider == null)
+        if (midHit.collider != null && topHit.collider == null&&(moveInput!=0||verticalInput !=0))
+        {
+            StartClimb(dirX, origin.y);
+        }
+        else if(botHit.collider != null && midHit.collider == null && topHit.collider == null
+            && (moveInput != 0 || verticalInput != 0))
         {
             StartClimb(dirX, origin.y);
         }
@@ -482,12 +491,12 @@ public class PlayerMove : MonoBehaviour
         if (spriteRenderer == null) return;
     if (state.isOnCeiling) return;
 
-        if (state.isTouchingLWall && !state.isGrounded)
+        if (state.isTouchingLWall && (!state.isGrounded || !state.isOnCeiling))
         {
             spriteTransform.rotation = Quaternion.Euler(0, 0, -90);
             spriteRenderer.flipX = isWallSlideDown;
         }
-        else if (state.isTouchingRWall && !state.isGrounded)
+        else if (state.isTouchingRWall && (!state.isGrounded || !state.isOnCeiling))
         {
             spriteTransform.rotation = Quaternion.Euler(0, 0, 90);
             spriteRenderer.flipX = isWallSlideDown;
@@ -585,9 +594,9 @@ public class PlayerMove : MonoBehaviour
             Gizmos.DrawRay(wallCheck.position, Vector2.right * wallCheckDistance);
             Gizmos.DrawRay(wallCheck.position, Vector2.left * wallCheckDistance);
             Gizmos.color = Color.blue;
-            Gizmos.DrawRay(wallCheck.position + Vector3.up * (-_climbEdgeCheckDist / 0.8f), Vector2.right * wallCheckDistance);
+            Gizmos.DrawRay(wallCheck.position + Vector3.up * (-_climbEdgeCheckDist / 0.9f), Vector2.right * wallCheckDistance);
             Gizmos.color = Color.green;
-            Gizmos.DrawRay(wallCheck.position + Vector3.up * (-_climbEdgeCheckDist / 0.8f), Vector2.left * wallCheckDistance);
+            Gizmos.DrawRay(wallCheck.position + Vector3.up * (-_climbEdgeCheckDist / 0.9f), Vector2.left * wallCheckDistance);
 
             Gizmos.color = Color.cyan;
             Gizmos.DrawRay(
