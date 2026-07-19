@@ -86,14 +86,14 @@
   {
     "id": "Scene_12_13",
     "speakerName": "저질 용병 보스",
-    "text": "최근에 구매한 이 신형 병기, [click]",
+    "text": "최근에 구매한 내 신형 병기, [click]",
     "nextIds": ["Scene_12_14"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_14",
     "speakerName": "저질 용병 보스",
-    "text": "FB(Fantastic Baby)로 지옥에 보낸 다음에 말이야!! [click]",
+    "text": "[action: 12-b_착지][event: 12-b_Landing][event: 12-p_FlashReady][wait: 2]FB(Fantastic Baby)로 지옥에 보낸 다음에 말이야!! [click]",
     "nextIds": [],
     "jumpId": ""
   }

@@ -2214,7 +2214,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bossController: {fileID: 1766646317}
-  nextSceneName: 0716_Chapter_1_Boss
+  nextSceneName: Boss_LastCinematic
   delayBeforeFade: 2.5
   fadeDuration: 1
   fadeImage: {fileID: 483693241}
