@@ -1,99 +1,99 @@
 [
   {
     "id": "Scene_12_1",
-    "speakerName": "저질 용병 보스",
-    "text": "하….. [click]",
+    "speakerName": "제니스",
+    "text": "[event: 12-p_Flip_Right][event: 12-p_Run][action: 12-p_달리기][event: 12-p_Idle]음. [click]",
     "nextIds": ["Scene_12_2"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_2",
-    "speakerName": "저질 용병 보스",
-    "text": "너 뭐냐? [click]",
+    "speakerName": "제니스",
+    "text": "슬슬 나올때가 됐는데. [click]",
     "nextIds": ["Scene_12_3"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_3",
-    "speakerName": "제니스",
-    "text": "네가 보스군. [click]",
+    "speakerName": "???",
+    "text": "하아... [click]",
     "nextIds": ["Scene_12_4"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_4",
-    "speakerName": "저질 용병 보스",
-    "text": "허? [click]",
+    "speakerName": "제니스",
+    "text": "(스피커 소리?) [click]",
     "nextIds": ["Scene_12_5"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_5",
-    "speakerName": "제니스",
-    "text": "사람들을 왜 납치하고 있었지? [click]",
+    "speakerName": "저질 용병 보스",
+    "text": "진짜 하나도 안 풀리는 날이군. [click]",
     "nextIds": ["Scene_12_6"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_6",
     "speakerName": "저질 용병 보스",
-    "text": "대뜸 얼굴 보자마자 뭐? 사람을 왜 납치하냐고? [click]",
+    "text": "부하놈들은 일을 못하질 않나, 어떤 놈은 훼방을 놓질 않나.. [click]",
     "nextIds": ["Scene_12_7"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_7",
     "speakerName": "저질 용병 보스",
-    "text": "어이가 없어서….! [click]",
+    "text": "심지어 그 훼방꾼은 내 앞에까지 와 있군. [click]",
     "nextIds": ["Scene_12_8"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_8",
-    "speakerName": "저질 용병 보스",
-    "text": "웬 잔챙이 하나가 감히 나를 계속 방해하고 앉았어!! [click]",
+    "speakerName": "제니스",
+    "text": "거기까지 하지. [click]",
     "nextIds": ["Scene_12_9"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_9",
-    "speakerName": "저질 용병 보스",
-    "text": "계속 방해하고, 방해하고, 방해하고!! [click]",
-    "nextIds": ["Scene_12_10"],
+    "speakerName": "제니스",
+    "text": "왜 부하들에게 사람들을 납치하라고 시켰지? [click]",
+    "nextIds": [ "Scene_12_10" ],
     "jumpId": ""
   },
   {
     "id": "Scene_12_10",
     "speakerName": "저질 용병 보스",
-    "text": "후우, 후우.. [click]",
+    "text": "하하하하하하!! [click]",
     "nextIds": ["Scene_12_11"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_11",
     "speakerName": "저질 용병 보스",
-    "text": "….그래, 마침 잘됐군. [click]",
+    "text": "그래, 궁금하다면 알려주겠다. [click]",
     "nextIds": ["Scene_12_12"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_12",
     "speakerName": "저질 용병 보스",
-    "text": "새로 산 전투 병기 시운전도 안 해봤는데 말이야. [click]",
+    "text": "하지만... [click]",
     "nextIds": ["Scene_12_13"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_13",
     "speakerName": "저질 용병 보스",
-    "text": "영광으로 알아라, 이 병기.. [click]",
+    "text": "최근에 구매한 이 신형 병기, [click]",
     "nextIds": ["Scene_12_14"],
     "jumpId": ""
   },
   {
     "id": "Scene_12_14",
     "speakerName": "저질 용병 보스",
-    "text": "내 FB(Fantastic Baby)로 끝내주겠다!! [click]",
+    "text": "FB(Fantastic Baby)로 지옥에 보낸 다음에 말이야!! [click]",
     "nextIds": [],
     "jumpId": ""
   }

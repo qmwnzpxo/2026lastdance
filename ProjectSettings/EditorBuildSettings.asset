@@ -18,6 +18,9 @@ EditorBuildSettings:
     path: Assets/LJS/Scenes/0712_Chapter_1_Test.unity
     guid: bb907c7dae561654ca888d28abdb0a65
   - enabled: 1
+    path: Assets/LJS/Scenes/Boss_FirstCinematic.unity
+    guid: 1507e61200b5d744eabcbf5b925a6e65
+  - enabled: 1
     path: Assets/Scenes/0630_Chapter_1_Boss.unity
     guid: 306b398f25b9d5a47ba96a4055461e7d
   m_configObjects:
