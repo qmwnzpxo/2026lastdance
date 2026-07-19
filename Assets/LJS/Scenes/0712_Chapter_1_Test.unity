@@ -170970,7 +170970,7 @@ GameObject:
   - component: {fileID: 521921065}
   - component: {fileID: 521921063}
   - component: {fileID: 521921066}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Chapter_1_BossJump
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -171021,7 +171021,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 1, y: 10.65}
   m_EdgeRadius: 0
 --- !u!4 &521921065
 Transform:
