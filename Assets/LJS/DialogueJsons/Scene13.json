@@ -3,209 +3,230 @@
     "id": "Scene_13_1",
     "speakerName": "저질 용병 보스",
     "text": "컥… 쿨럭… 쿨럭… [click]",
-    "nextIds": ["Scene_13_2"],
+    "nextIds": [ "Scene_13_2" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_2",
     "speakerName": "저질 용병 보스",
-    "text": "너.. 요새 유명한 그놈이냐..? [click]",
-    "nextIds": ["Scene_13_3"],
+    "text": "하아, 하아.. [click]",
+    "nextIds": [ "Scene_13_3" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_3",
     "speakerName": "제니스",
     "text": "질문에 답해라. [click]",
-    "nextIds": ["Scene_13_4"],
+    "nextIds": [ "Scene_13_4" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_4",
     "speakerName": "제니스",
     "text": "사람들을 왜 납치하고 있었지? [click]",
-    "nextIds": ["Scene_13_5"],
+    "nextIds": [ "Scene_13_5" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_5",
     "speakerName": "저질 용병 보스",
     "text": "쿨럭.. 그거, 그걸 네가 알아서 뭣하게? [click]",
-    "nextIds": ["Scene_13_6"],
+    "nextIds": [ "Scene_13_6" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_6",
     "speakerName": "저질 용병 보스",
-    "text": "그거 하나 물어보려고 쿨럭.. 내 조직을 전부 쓸어버린거냐? [click]",
-    "nextIds": ["Scene_13_7"],
+    "text": "그거 하나 물어보려고 내 조직을 전부 쓸어버린거냐!? [click]",
+    "nextIds": [ "Scene_13_8" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_7",
     "speakerName": "저질 용병 보스",
     "text": "잠, 잠깐만 기다려봐. [click]",
-    "nextIds": ["Scene_13_8"],
+    "nextIds": [ "Scene_13_8" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_8",
     "speakerName": "제니스",
-    "text": "3초 안에 대답하지 않으면 팔부터 자르겠다. [click]",
-    "nextIds": ["Scene_13_9"],
+    "text": "[event: 12-p_FlashReady]3초 안에 대답하지 않으면 기계에서 꺼내 팔부터 자르겠다. [click]",
+    "nextIds": [ "Scene_13_9" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_9",
     "speakerName": "저질 용병 보스",
     "text": "뭐, 뭐 이런 놈이 다 있어..? [click]",
-    "nextIds": ["Scene_13_10"],
+    "nextIds": [ "Scene_13_10" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_10",
     "speakerName": "제니스",
     "text": "3. [click]",
-    "nextIds": ["Scene_13_11"],
+    "nextIds": [ "Scene_13_11" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_11",
     "speakerName": "저질 용병 보스",
     "text": "알겠어, 말해줄게. 말해줄게!! [click]",
-    "nextIds": ["Scene_13_12"],
+    "nextIds": [ "Scene_13_12" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_12",
     "speakerName": "저질 용병 보스",
     "text": "후우.. 후우.. 납치한건 의뢰 때문이다! [click]",
-    "nextIds": ["Scene_13_13"],
+    "nextIds": [ "Scene_13_13" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_13",
     "speakerName": "제니스",
-    "text": "의뢰? [click]",
-    "nextIds": ["Scene_13_14"],
+    "text": "[event: 12-p_Idle]의뢰? [click]",
+    "nextIds": [ "Scene_13_14" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_14",
     "speakerName": "저질 용병 보스",
     "text": "그래, 의뢰 때문이라고! 보통 보수보다 세 배는 더 주는 의뢰! [click]",
-    "nextIds": ["Scene_13_15"],
+    "nextIds": [ "Scene_13_15" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_15",
     "speakerName": "저질 용병 보스",
     "text": "아무것도 안따지고 사람 몇 넘기는게 내용이었다. [click]",
-    "nextIds": ["Scene_13_16"],
+    "nextIds": [ "Scene_13_16" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_16",
     "speakerName": "제니스",
     "text": "의뢰주는 누구지? [click]",
-    "nextIds": ["Scene_13_17"],
+    "nextIds": [ "Scene_13_17" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_17",
     "speakerName": "저질 용병 보스",
     "text": "몰라, 올린 사람은 익명이었다. [click]",
-    "nextIds": ["Scene_13_18"],
+    "nextIds": [ "Scene_13_18" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_18",
     "speakerName": "저질 용병 보스",
     "text": "익명 서비스까지 받을 정도면 돈이 썩어 넘칠 정도로 많은 놈이겠지. [click]",
-    "nextIds": ["Scene_13_19"],
+    "nextIds": [ "Scene_13_19" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_19",
     "speakerName": "저질 용병 보스",
     "text": "이제 됐냐? 됐냐고! [click]",
-    "nextIds": ["Scene_13_20"],
+    "nextIds": [ "Scene_13_20" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_20",
     "speakerName": "제니스",
     "text": "..마지막 질문이다. [click]",
-    "nextIds": ["Scene_13_21"],
+    "nextIds": [ "Scene_13_21" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_21",
     "speakerName": "제니스",
     "text": "‘칩’에 대해 알고 있나? [click]",
-    "nextIds": ["Scene_13_22"],
+    "nextIds": [ "Scene_13_22" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_22",
     "speakerName": "저질 용병 보스",
     "text": "…뭐? [click]",
-    "nextIds": ["Scene_13_23"],
+    "nextIds": [ "Scene_13_23" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_23",
     "speakerName": "저질 용병 보스",
     "text": "뭐야, 너 가니쿠다파냐? [click]",
-    "nextIds": ["Scene_13_24"],
+    "nextIds": [ "Scene_13_24" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_24",
     "speakerName": "제니스",
     "text": "…가니쿠다? [click]",
-    "nextIds": ["Scene_13_25"],
+    "nextIds": [ "Scene_13_25" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_25",
     "speakerName": "저질 용병 보스",
     "text": "아니, 야 인마! 니.. 니 내가 누군지 알아?! [click]",
-    "nextIds": ["Scene_13_26"],
+    "nextIds": [ "Scene_13_26" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_26",
     "speakerName": "저질 용병 보스",
     "text": "내가 가니쿠다의..! [click]",
-    "nextIds": ["Scene_13_27"],
+    "nextIds": [ "Scene_13_27" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_27",
     "speakerName": "제니스",
     "text": "..? [click]",
-    "nextIds": ["Scene_13_28"],
+    "nextIds": [ "Scene_13_28" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_28",
     "speakerName": "저질 용병 보스",
     "text": "어극으극어러르르르르 [click]",
-    "nextIds": ["Scene_13_29"],
+    "nextIds": [ "Scene_13_29" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_29",
     "speakerName": "제니스",
-    "text": "..죽었다고? [click]",
-    "nextIds": ["Scene_13_30"],
+    "text": "[event: 12-p_FlashReady]!! [click]",
+    "nextIds": [ "Scene_13_30" ],
     "jumpId": ""
   },
   {
     "id": "Scene_13_30",
     "speakerName": "제니스",
-    "text": "머리에 이건… [click]",
+    "text": "이봐, 대체 무슨.. [click]",
+    "nextIds": [ "Scene_13_31" ],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_13_31",
+    "speakerName": "멀리서 들리는 소리",
+    "text": "왜애애애앵--!!!! [click]",
+    "nextIds": [ "Scene_13_32" ],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_13_32",
+    "speakerName": "제니스",
+    "text": "[event: 12-p_Flip_Left](이 소리는.. 경찰차인가..!) [click]",
+    "nextIds": [ "Scene_13_33" ],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_13_33",
+    "speakerName": "제니스",
+    "text": "[event: 12-p_Flip_Right][event: 12-p_Idle](지금 들키면 곤란하다, 빨리 벗어나자.)[event: 12-p_Run][action: 12-p_달리기] [click]",
     "nextIds": [],
     "jumpId": ""
   }
