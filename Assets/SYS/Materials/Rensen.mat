@@ -61,7 +61,7 @@ Material:
     - _HaloStrength: 2
     - _Inset: 0
     - _Inset2: 0
-    - _Intensity: 1.8
+    - _Intensity: 5
     - _Metallic: 0
     - _NoiseScroll: 0.5
     - _NoiseStrength: 0.062
