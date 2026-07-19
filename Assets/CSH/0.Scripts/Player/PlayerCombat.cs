@@ -23,7 +23,7 @@ public class PlayerCombat : MonoBehaviour
     private LayerMask combined;
 
     public int attackRepeatTime = 1;
-  public float dashGaugePerAttack = 5;
+    public float dashGaugePerAttack = 5;
 
     private HashSet<Collider2D> _hitEnemiesInAttack = new HashSet<Collider2D>();
     public event Action<Quaternion> OnAttackInput;
@@ -31,6 +31,7 @@ public class PlayerCombat : MonoBehaviour
     private PlayerState state;
     private PlayerAnimation ani;
     private Camera mainCamera;
+    private PlayerMove playerMove;
 
     // ────────────────────────────────────────
     #region Unity 생명주기
@@ -41,7 +42,9 @@ public class PlayerCombat : MonoBehaviour
             state = GetComponent<PlayerState>();
         if(ani == null)
             ani = GetComponent<PlayerAnimation>();
-        if(attackTransform == null)
+        if (playerMove == null)
+            playerMove = GetComponent<PlayerMove>();
+        if (attackTransform == null)
             attackTransform = transform.Find("attack check");
         if (enemyLayer == 0)
             enemyLayer = LayerMask.GetMask("enemy");
@@ -84,6 +87,7 @@ public class PlayerCombat : MonoBehaviour
 
         Vector2 dir   = (mouseWorldPos - (Vector2)transform.position).normalized;
         float   angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        if (angle <= 90) { }
         attackTransform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 
@@ -109,6 +113,7 @@ public class PlayerCombat : MonoBehaviour
     {
         // 피벗 강제 회전
         attackTransform.rotation = attackRotation;
+        playerMove.SetFacingRight(attackTransform.right.x >= 0f);
         ani.Attack();
 
         Vector2 attackPos = (Vector2)attackTransform.position
@@ -123,6 +128,7 @@ public class PlayerCombat : MonoBehaviour
     private async UniTaskVoid PerformAttack()
     {
         state.isAttacking = true;
+        playerMove.SetFacingRight(attackTransform.right.x >= 0f);
 
         ani.Attack();
 

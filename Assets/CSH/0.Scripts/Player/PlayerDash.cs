@@ -298,6 +298,7 @@ public partial class PlayerDash : MonoBehaviour
     void TriggerDash(Vector2 origin)
     {
         dashOrigin = origin;
+        playerMove.SetFacingRight(dashDirection.x >= 0f);
 
         state.isGrounded = false;
         state.isOnCeiling = false;

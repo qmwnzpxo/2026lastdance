@@ -9,24 +9,24 @@ public partial class PlayerDash : MonoBehaviour
 {
     void ExecuteBlueDash()
   {
-    if (state.TryUseDashGauge(state.DashCost))
-    {
-      // 마우스 방향을 대각선 2방향 중 하나로 스냅
-      Vector2 rawDir = GetMouseDirection();
-        Vector2 snappedDir = SnapToDiagonal(rawDir);
+        if (state.TryUseDashGauge(state.DashCost))
+        {
+            // 마우스 방향을 대각선 2방향 중 하나로 스냅
+            Vector2 rawDir = GetMouseDirection();
+            Vector2 snappedDir = SnapToDiagonal(rawDir);
 
-        dashDirection = snappedDir;
+            dashDirection = snappedDir;
 
-        Vector2 origin = (Vector2)transform.position + dashDirection * 0.05f;
-        RaycastHit2D groundHit = Physics2D.Raycast(
-            origin, dashDirection, dashRange, playerMove.GroundLayer);
-        dashTargetPosition = groundHit.collider != null
-            ? groundHit.point
-            : (Vector2)transform.position + dashDirection * dashRange;
+            Vector2 origin = (Vector2)transform.position + dashDirection * 0.05f;
+            RaycastHit2D groundHit = Physics2D.Raycast(
+                origin, dashDirection, dashRange, playerMove.GroundLayer);
+            dashTargetPosition = groundHit.collider != null
+                ? groundHit.point
+                : (Vector2)transform.position + dashDirection * dashRange;
 
-        SetLineRenderer(transform.position, dashTargetPosition, true);
+            SetLineRenderer(transform.position, dashTargetPosition, true);
 
-        _blueDashSecondInput = false;
+            _blueDashSecondInput = false;
 
             state.isGrounded = false;
             state.isOnCeiling = false;
@@ -39,6 +39,8 @@ public partial class PlayerDash : MonoBehaviour
             hitEnemiesInDash.Clear();
 
             state.isDashing = true;
+            playerMove.SetFacingRight(dashDirection.x >= 0f);
+            ani.BlueDash(); // 낙섬 모션
             rb.linearVelocity = dashDirection * dashSpeed;
         }
     }
@@ -105,7 +107,6 @@ public partial class PlayerDash : MonoBehaviour
         rb.gravityScale = 0f;
         rb.linearVelocity = Vector2.zero;
         cameraFollow.SetCameraDumping(cameraDumpingScale);
-        ani.BlueDash(); // 낙섬 모션
 
         BlueFallRoutine(_blueFallCts.Token).Forget();
     }

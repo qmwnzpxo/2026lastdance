@@ -151,12 +151,17 @@ public class PlayerMove : MonoBehaviour
 
     void FixedUpdate()
     {
-        float velX = rb.linearVelocityX;
-        if (Mathf.Abs(velX) >= 0.01f)
+        bool skipAutoFlip = state.isAttacking || state.isDashing;
+
+        if (!skipAutoFlip)
         {
-            bool facingRight = velX > 0f;
-            _lastFacingRight = facingRight;
-            FlipXSprite(facingRight);
+            float velX = rb.linearVelocityX;
+            if (Mathf.Abs(velX) >= 0.01f)
+            {
+                bool facingRight = velX > 0f;
+                _lastFacingRight = facingRight;
+                FlipXSprite(facingRight);
+            }
         }
 
         // Dash / Tackle 중에는 PlayerDash가 물리를 전담
@@ -533,7 +538,7 @@ public class PlayerMove : MonoBehaviour
             }
             if (Mathf.Abs(rb.linearVelocityX) <= 0.01) ani.Run_off();
         }
-        else if (verticalInput != 0f)
+        else if (verticalInput != 0f && state.isWallSliding)
         {
             ani.Run_on();
         }
@@ -571,6 +576,11 @@ public class PlayerMove : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.P))
             state.TakeDamage(0f);
+    }
+    public void SetFacingRight(bool facingRight)
+    {
+        _lastFacingRight = facingRight;
+        FlipXSprite(facingRight);
     }
     #endregion
 

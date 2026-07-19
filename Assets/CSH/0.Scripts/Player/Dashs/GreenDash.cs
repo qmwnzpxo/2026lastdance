@@ -70,14 +70,15 @@ public partial class PlayerDash : MonoBehaviour
         _greenDashBuffered = false; // 이번 대쉬를 트리거한 입력 소모
         ani.Dash(_greenComboStep); // 0707 애니메이션용으로 추가
 
-        Vector2 dir = GetMouseDirection();
+        dashDirection = GetMouseDirection();
         cameraFollow.SetCameraDumping(cameraDumpingScale);
+        playerMove.SetFacingRight(dashDirection.x >= 0f);
 
         Vector2 start = rb.position;
-        Vector2 target = start + dir * greenDashRange;
+        Vector2 target = start + dashDirection * greenDashRange;
 
         RaycastHit2D groundHit = Physics2D.Raycast(
-            start + dir * 0.05f, dir, greenDashRange, playerMove.GroundLayer);
+            start + dashDirection * 0.05f, dashDirection, greenDashRange, playerMove.GroundLayer);
         if (groundHit.collider != null)
             target = groundHit.point;
 

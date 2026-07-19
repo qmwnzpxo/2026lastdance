@@ -3,52 +3,52 @@
 public class EnemyArmAim : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private Transform bodyTransform;
-    [SerializeField] private Transform armPivot;
-    [SerializeField] private SpriteRenderer bodyRenderer;
+    [SerializeField] protected Transform bodyTransform;
+    [SerializeField] protected Transform armPivot;
+    [SerializeField] protected SpriteRenderer bodyRenderer;
     [field: SerializeField] public SpriteRenderer armRenderer { get; private set; } // 죽을때 팔 숨기기용 프로퍼티
-    [SerializeField] private Transform firePivot;
+    [SerializeField] protected Transform firePivot;
 
     [Header("Range")]
-    [SerializeField] private float detectionRange = 8f;
-    [SerializeField] private float rotationSpeed = 10f;
+    [SerializeField] protected float detectionRange = 8f;
+    [SerializeField] protected float rotationSpeed = 10f;
 
     [Header("Angle Clamp")]
-    [SerializeField] private float minAngle = -60f;
-    [SerializeField] private float maxAngle = 60f;
+    [SerializeField] protected float minAngle = -60f;
+    [SerializeField] protected float maxAngle = 60f;
 
     [Header("Recoil - Angle")]
-    [SerializeField] private float recoilAngle = 45f;
-    [SerializeField] private float recoilRiseSpeed = 800f;
-    [SerializeField] private float recoilReturnSpeed = 12f;
+    [SerializeField] protected float recoilAngle = 45f;
+    [SerializeField] protected float recoilRiseSpeed = 800f;
+    [SerializeField] protected float recoilReturnSpeed = 12f;
 
     [Header("Recoil - Position")]
-    [SerializeField] private float recoilPushDist = 0.3f;   // 뒤로 밀리는 거리
-    [SerializeField] private float recoilPushSpeed = 800f;  // 밀리는 속도
-    [SerializeField] private float recoilPullSpeed = 10f;   // 복귀 속도
-    private bool isRecoil = false;
+    [SerializeField] protected float recoilPushDist = 0.3f;   // 뒤로 밀리는 거리
+    [SerializeField] protected float recoilPushSpeed = 800f;  // 밀리는 속도
+    [SerializeField] protected float recoilPullSpeed = 10f;   // 복귀 속도
+    protected bool isRecoil = false;
 
-    private Transform _player;
-    private EnemyBlackboard _enemyBB;
-    private bool _isFacingRight = true;
+    protected Transform _player;
+    protected EnemyBlackboard _enemyBB;
+    protected bool _isFacingRight = true;
 
     // 각도 반동
-    private float _recoilAngleOffset = 0f;
-    private float _recoilAngleTarget = 0f;
-    private bool _recoilAngleRising = false;
+    protected float _recoilAngleOffset = 0f;
+    protected float _recoilAngleTarget = 0f;
+    protected bool _recoilAngleRising = false;
 
     // 위치 반동
-    private Vector3 _armBaseLocalPos;         // 원래 로컬 위치 (flip 고려)
-    private float _recoilPosOffset = 0f;      // 뒤로 밀린 거리 (스칼라)
-    private float _recoilPosTarget = 0f;
-    private bool _recoilPosRising = false;
-    private Vector3 _fireBaseLocalPos;
+    protected Vector3 _armBaseLocalPos;         // 원래 로컬 위치 (flip 고려)
+    protected float _recoilPosOffset = 0f;      // 뒤로 밀린 거리 (스칼라)
+    protected float _recoilPosTarget = 0f;
+    protected bool _recoilPosRising = false;
+    protected Vector3 _fireBaseLocalPos;
 
     // 외부 API
     public float DetactionRange { get => detectionRange; set => detectionRange = value; }
     public EnemyBlackboard EnemyBlackBoard { get => _enemyBB; set => _enemyBB = value; }
 
-    private void Awake()
+    protected virtual void Awake()
     {
         var playerObj = GameObject.FindWithTag("Player");
         if (playerObj != null) _player = playerObj.transform;
@@ -57,7 +57,7 @@ public class EnemyArmAim : MonoBehaviour
         _fireBaseLocalPos = firePivot.localPosition;
     }
 
-    private void Update()
+    protected virtual void Update()
     {
         if (Input.GetKeyDown(KeyCode.N))
             TriggerRecoil();
@@ -65,7 +65,7 @@ public class EnemyArmAim : MonoBehaviour
         UpdateRecoil();
     }
 
-    private void LateUpdate()
+    protected virtual void LateUpdate()
     {
         if (_player == null || armPivot == null) return;
 
@@ -146,7 +146,7 @@ public class EnemyArmAim : MonoBehaviour
 
     }
 
-    public void TriggerRecoil()
+    public virtual void TriggerRecoil()
     {
         // 각도
         _recoilAngleOffset = 0f;
@@ -160,7 +160,7 @@ public class EnemyArmAim : MonoBehaviour
         isRecoil = true;
     }
 
-    private void UpdateRecoil()
+    protected virtual void UpdateRecoil()
     {
         // 각도
         if (_recoilAngleRising)
@@ -195,7 +195,7 @@ public class EnemyArmAim : MonoBehaviour
         }
     }
 
-    private float GetTargetWorldAngle(float rawAngle)
+    protected virtual float GetTargetWorldAngle(float rawAngle)
     {
         if (_isFacingRight)
             return Mathf.Clamp(rawAngle, minAngle, maxAngle);
@@ -206,13 +206,13 @@ public class EnemyArmAim : MonoBehaviour
         }
     }
 
-    private void TryFlip(float rawAngle)
+    protected virtual void TryFlip(float rawAngle)
     {
         bool shouldFaceRight = rawAngle > -90f && rawAngle < 90f;
         if (shouldFaceRight != _isFacingRight) Flip();
     }
 
-    private void Flip()
+    protected virtual void Flip()
     {
         _isFacingRight = !_isFacingRight;
 
@@ -234,20 +234,20 @@ public class EnemyArmAim : MonoBehaviour
         firePivot.localPosition = _fireBaseLocalPos;
     }
 
-    private float NormalizeAngle(float angle)
+    protected virtual float NormalizeAngle(float angle)
     {
         while (angle > 180f) angle -= 360f;
         while (angle < -180f) angle += 360f;
         return angle;
     }
 
-    public void SetFacing(bool facingRight)
+    public virtual void SetFacing(bool facingRight)
     {
         if (_isFacingRight != facingRight) Flip();
     }
 
 #if UNITY_EDITOR
-    private void OnDrawGizmosSelected()
+    protected virtual void OnDrawGizmosSelected()
     {
         if (bodyTransform == null) return;
         Gizmos.color = new Color(1f, 0.5f, 0f, 0.4f);
