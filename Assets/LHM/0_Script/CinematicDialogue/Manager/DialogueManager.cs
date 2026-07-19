@@ -34,6 +34,10 @@ namespace DialogSystem.CinematicDialogue
         private DialoguePlaybackState _state;
         private CancellationTokenSource _playbackCts;
 
+        // 타이핑 스킵용 상태변수
+        private bool _isTyping = false;
+        private bool _skipRequested = false;
+
         public CancellationTokenSource PlaybackCts => _playbackCts ?? null;
 
         // 본래 플레이어 위치로 복귀하기 위해 저장해둘 변수
@@ -72,11 +76,21 @@ namespace DialogSystem.CinematicDialogue
         // ----------------------------------------------------
         private void Update()
         {
-            // _playbackCts가 null이 아니라는 것은 현재 대화가 진행 중임을 의미합니다.
-            if (_playbackCts != null && Input.GetKeyDown(KeyCode.Escape))
+            if (_playbackCts != null)
             {
-                Debug.Log("[DialogueManager] ESC 입력 감지: 대화 스킵 발동!");
-                Stop(); // 대화를 즉시 중단합니다.
+                // 1. ESC 전체 대화 스킵
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    Debug.Log("[DialogueManager] ESC 입력 감지: 대화 스킵 발동!");
+                    Stop();
+                    return;
+                }
+
+                // 2. 텍스트가 한 글자씩 나오는 중일 때 좌클릭이나 F키를 누르면 빠른 출력 요청
+                if (_isTyping && (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.F)))
+                {
+                    _skipRequested = true;
+                }
             }
         }
 
@@ -260,19 +274,38 @@ namespace DialogSystem.CinematicDialogue
         private async UniTask DisplayTextAsync(string text, CancellationToken ct)
         {
             if (string.IsNullOrEmpty(text) || _displayText == null) return;
+
+            // 타이핑 시작 플래그 ON
+            _isTyping = true;
+            _skipRequested = false;
+
             for (int i = 0; i < text.Length; i++)
             {
                 ct.ThrowIfCancellationRequested();
+
+                // [추가] 사용자가 클릭/F키로 스킵을 요청한 경우
+                if (_skipRequested)
+                {
+                    // 남은 텍스트를 한 번에 다 출력합니다.
+                    _displayText.text += text.Substring(i);
+                    _state.displayedCharacters += (text.Length - i);
+
+                    //  [click] 커맨드 중복현상을 막기 위해 1프레임 대기.
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                    break;
+                }
+
                 _displayText.text += text[i];
                 _state.displayedCharacters++;
-                if (_state.isWaitingForInput)
-                {
-                    _displayText.text += text.Substring(i + 1);
-                    _state.displayedCharacters = text.Length;
-                    return;
-                }
+
+                // (기존에 있던 isWaitingForInput 검사 로직은 삭제되었습니다.)
+
                 await UniTask.Delay(TimeSpan.FromSeconds(_currentTypeSpeed), cancellationToken: ct);
             }
+
+            // 타이핑 종료 플래그 OFF
+            _isTyping = false;
+            _skipRequested = false;
         }
 
         private string FindJumpTarget(List<DialogueCommand> commands)

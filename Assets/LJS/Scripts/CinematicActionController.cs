@@ -217,9 +217,10 @@ public class CinematicActionController : MonoBehaviour
 
         while (elapsed < duration)
         {
+            ct.ThrowIfCancellationRequested();
             elapsed += Time.deltaTime;
             npc.position = Vector3.Lerp(startPos, targetPos, elapsed / duration);
-            await UniTask.Yield();
+            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken: ct);
         }
 
         npc.position = targetPos;
