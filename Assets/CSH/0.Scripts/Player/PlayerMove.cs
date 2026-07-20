@@ -322,8 +322,6 @@ public class PlayerMove : MonoBehaviour
             return;
         }
 
-        // 벽 슬라이딩 중이 아니면 무시
-        if (!state.isWallSliding) return;
         // 대쉬 중 무시
         if (state.isDashing) return;
 
@@ -351,9 +349,11 @@ public class PlayerMove : MonoBehaviour
         // 허리는 막혀있고, 머리 위는 뚫려있으면 → 모서리 감지
         if (midHit.collider != null && topHit.collider == null&&(moveInput!=0||verticalInput !=0))
         {
-            StartClimb(dirX, origin.y);
+            // 벽 슬라이딩 중이 아니면 무시
+            if (!state.isWallSliding) return;
+            StartClimb(dirX, origin.y+1);
         }
-        else if(botHit.collider != null && midHit.collider == null && topHit.collider == null
+        else if(botHit.collider != null && midHit.collider != null && topHit.collider == null
             && (moveInput != 0 || verticalInput != 0))
         {
             StartClimb(dirX, origin.y);

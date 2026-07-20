@@ -3,17 +3,11 @@
 public class TurretArmAim : EnemyArmAim
 {
     [SerializeField] protected SpriteRenderer frontRenderer;
-    protected override void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.N))
-            TriggerRecoil();
-
-        UpdateRecoil();
-    }
 
     protected override void LateUpdate()
     {
         if (_player == null || armPivot == null) return;
+        if (_enemyBB.enemyState.currentHp <= 0) return;
 
         // ── 위치 반동 적용 ──
         // 현재 aim 방향 반대(뒤)로 밀기

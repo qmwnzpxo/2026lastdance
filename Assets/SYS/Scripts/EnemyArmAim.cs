@@ -62,12 +62,15 @@ public class EnemyArmAim : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.N))
             TriggerRecoil();
 
+        if (_enemyBB.enemyState.currentHp <= 0) return;
         UpdateRecoil();
     }
 
     protected virtual void LateUpdate()
     {
         if (_player == null || armPivot == null) return;
+
+        if (_enemyBB.enemyState.currentHp <= 0) return;
 
         // ── 위치 반동 적용 ──
         // 현재 aim 방향 반대(뒤)로 밀기

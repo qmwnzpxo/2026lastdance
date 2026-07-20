@@ -24,6 +24,7 @@ namespace DialogSystem.CinematicDialogue
         [SerializeField] private GameObject _cinematicTopBar;      // 화면 위 검은 바
         [SerializeField] private GameObject _cinematicBottomBar;   // 화면 아래 검은 바
         [SerializeField] private GameObject _playerHUDPanel;       // 플레이어 HUD 체력창 패널
+        [SerializeField] private GameObject _tutorialPanel;         // 튜토리얼 설명 패널
 
         [Header("카메라 연출 설정")]
         [SerializeField] private Camera _mainCamera;               // 메인 카메라
@@ -113,6 +114,7 @@ namespace DialogSystem.CinematicDialogue
             if (_dialoguePanel != null) _dialoguePanel.SetActive(true);
             SetCinematicBars(true);
             if (_playerHUDPanel != null) _playerHUDPanel.SetActive(false);
+            if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
 
             /*// 시네머신 가상 카메라 끄기
             if (_cinemachineCameraObject != null)
@@ -340,6 +342,7 @@ namespace DialogSystem.CinematicDialogue
             if (_dialoguePanel != null) _dialoguePanel.SetActive(false);
             SetCinematicBars(false);
             if (_playerHUDPanel != null) _playerHUDPanel.SetActive(true);
+            if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
 
             /*// 카메라 복귀
             if (_mainCamera != null && _playerTransform != null)

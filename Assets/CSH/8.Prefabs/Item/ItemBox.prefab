@@ -96,13 +96,13 @@ MonoBehaviour:
   _dropEntries:
   - type: 0
     prefab: {fileID: 5185132864317028418, guid: 262a0578f9a99074886593f01d865039, type: 3}
-    weight: 20
+    weight: 2
   - type: 0
     prefab: {fileID: 5185132864317028418, guid: a289732e5491c084c99a41b87f349aad, type: 3}
-    weight: 30
+    weight: 2
   - type: 1
     prefab: {fileID: 5185132864317028418, guid: a289732e5491c084c99a41b87f349aad, type: 3}
-    weight: 10
+    weight: 2
   _chipPrefabs:
   - chip: 1
     prefab: {fileID: 5185132864317028418, guid: a8f1396e9e20e6f48a367fc384cf52da, type: 3}

@@ -34,6 +34,8 @@ public class CameraFollow : MonoBehaviour
     // 카메라 흔들림(지진) 기능용 CancellationTokenSource
     private CancellationTokenSource shakeCts;
 
+    public static bool ZoomRequest { get; set; } = false;
+
 
 
     // ────────────────────────────────────────
@@ -63,7 +65,10 @@ public class CameraFollow : MonoBehaviour
     {
         cmZoom.gameObject.SetActive(false);
         cmGamePlay.gameObject.SetActive(true);
-        startWhenZoom().Forget();
+#if UNITY_EDITOR
+        if(ZoomRequest)
+#endif
+            startWhenZoom().Forget();
 
     }
     #endregion

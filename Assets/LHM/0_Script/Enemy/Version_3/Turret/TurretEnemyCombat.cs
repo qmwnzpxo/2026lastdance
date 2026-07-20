@@ -1,10 +1,11 @@
 ﻿using UnityEngine;
+using System;
 
 public class TurretEnemyCombat : EnemyCombat
 {
 
     [SerializeField] EnemyArmAim armAim;
-
+    public event Action OnShootEvent;
 
     public override void Initialize(Transform playerTransform)
     {
@@ -17,6 +18,7 @@ public class TurretEnemyCombat : EnemyCombat
     {
         base.Shoot();
         armAim.TriggerRecoil();
+        OnShootEvent?.Invoke();
     }
 
 
