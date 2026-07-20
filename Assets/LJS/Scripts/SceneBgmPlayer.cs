@@ -14,5 +14,10 @@ public class SceneBgmPlayer : MonoBehaviour
         {
             AudioManager.Instance.PlayBGM(sceneBGM, baseVolume);
         }
+        else
+        {
+            // 인스펙터에 음악이 비어있다면 현재 재생 중인 음악을 정지시킵니다[cite: 9].
+            AudioManager.Instance.StopBGM();
+        }
     }
 }
