@@ -325,7 +325,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _detectionRange: 10
-  _chaseMaintenanceRange: 15
+  _chaseMaintenanceRange: 10
   _groundLayer:
     serializedVersion: 2
     m_Bits: 1536
