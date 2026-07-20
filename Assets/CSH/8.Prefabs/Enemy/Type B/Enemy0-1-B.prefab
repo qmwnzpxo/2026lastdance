@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eab6b2d43fa130f4c93cdbbd2d55da34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHp: 5
+  maxHp: 3
   currentHp: 0
   deathDelay: 2
 --- !u!114 &5456282834720918663

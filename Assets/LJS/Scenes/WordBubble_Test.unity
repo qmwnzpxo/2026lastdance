@@ -5919,7 +5919,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &951829947
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5927,7 +5927,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 951829946}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2ddcc7e25f16c104ebd1d18928efe344, type: 3}
   m_Name: 
@@ -7223,7 +7223,8 @@ MonoBehaviour:
   _speakerNameText: {fileID: 106835045}
   _cinematicTopBar: {fileID: 1662303629}
   _cinematicBottomBar: {fileID: 862459716}
-  _playerHUDPanel: {fileID: 0}
+  _playerHUDPanel: {fileID: 1697285828}
+  _tutorialPanel: {fileID: 951829946}
   _mainCamera: {fileID: 2108184942}
   _dialogueCamera: {fileID: 0}
   _cinemachineCameraObject: {fileID: 1243560641}
@@ -11755,6 +11756,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5822f97eade448a4991884bc1c050148, type: 3}
+--- !u!1 &1697285828 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7059709190728113333, guid: 4cf85691ad8a6d944840e5b780b1c9f8, type: 3}
+  m_PrefabInstance: {fileID: 797148432}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1697777574
 PrefabInstance:
   m_ObjectHideFlags: 0
