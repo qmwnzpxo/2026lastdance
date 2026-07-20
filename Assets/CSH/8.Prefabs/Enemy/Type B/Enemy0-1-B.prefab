@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 8666941810540424932}
   - component: {fileID: 2158960094925752489}
   - component: {fileID: 1690636021949884914}
+  - component: {fileID: 4195137534427503003}
   m_Layer: 7
   m_Name: Enemy0-1-B
   m_TagString: Untagged
@@ -123,6 +124,7 @@ MonoBehaviour:
   _attackCooldown: 1
   _stunDuration: 1
   requireInit: 1
+  NodeState: 0
   _moveSpeed: 2
   _patrolDirection: 1
   _patrolEdgeCheckX: 0.5
@@ -315,6 +317,32 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &4195137534427503003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837660261499592793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 268172b022cff6e42af89e025fa73e3b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Run1: {fileID: 0}
+  Run2: {fileID: 0}
+  Run3: {fileID: 0}
+  Run4: {fileID: 0}
+  Flash: {fileID: 0}
+  DownFlash: {fileID: 0}
+  Promotion: {fileID: 0}
+  EnemyShot: {fileID: 8300000, guid: 002eee02ead0cbf4fbbe082febf52c07, type: 3}
+  randomClips:
+  - {fileID: 8300000, guid: 66c8d5eef734ea340aaa663d93a26f10, type: 3}
+  - {fileID: 8300000, guid: 88e66bd09564543448431ace642dd46a, type: 3}
+  - {fileID: 8300000, guid: 9bac5552a66365d4aaa0d25970ba4af3, type: 3}
+  minPitch: 0.9
+  maxPitch: 1.1
 --- !u!1 &5957513746892658133
 GameObject:
   m_ObjectHideFlags: 0

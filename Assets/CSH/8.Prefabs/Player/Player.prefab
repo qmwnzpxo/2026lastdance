@@ -649,6 +649,7 @@ GameObject:
   - component: {fileID: 2337620002274787337}
   - component: {fileID: 4829895224763142948}
   - component: {fileID: 5846648695814981030}
+  - component: {fileID: 5755546228978066706}
   m_Layer: 0
   m_Name: sprite
   m_TagString: Untagged
@@ -748,6 +749,31 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5755546228978066706
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4532960464336095568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 268172b022cff6e42af89e025fa73e3b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Run1: {fileID: 8300000, guid: 0863279986d7a184da3f1c47269ab863, type: 3}
+  Run2: {fileID: 8300000, guid: 7de6170d327f5c743bb935f8eb108f84, type: 3}
+  Run3: {fileID: 8300000, guid: 573d20c996c0f2b46bb794d89de97d8c, type: 3}
+  Run4: {fileID: 8300000, guid: a5bb272f14eb9634d902768cce2c108e, type: 3}
+  Flash: {fileID: 8300000, guid: d810be813994426449c398008bb2cafb, type: 3}
+  DownFlash: {fileID: 8300000, guid: 84fabd03beb2bad48b3dd5488e703a0b, type: 3}
+  Promotion: {fileID: 8300000, guid: 8cc34c810268de649ae43c8a347be5cf, type: 3}
+  EnemyShot: {fileID: 0}
+  randomClips:
+  - {fileID: 8300000, guid: 6ad875a18c524204b89dc246cb5ab1d4, type: 3}
+  - {fileID: 8300000, guid: 6860ce81b94d43f4a94ea3d915745256, type: 3}
+  minPitch: 0.9
+  maxPitch: 1.1
 --- !u!1 &5497363790160130025
 GameObject:
   m_ObjectHideFlags: 0
