@@ -232,7 +232,7 @@ GameObject:
   - component: {fileID: 1408571082251471218}
   - component: {fileID: 4730014198125097820}
   - component: {fileID: 8385911358598267176}
-  - component: {fileID: 4672207314301103903}
+  - component: {fileID: 1003428872745860312}
   m_Layer: 7
   m_Name: Enemy0-1-C
   m_TagString: Untagged
@@ -511,7 +511,7 @@ MonoBehaviour:
   recoilPushSpeed: 800
   recoilPullSpeed: 10
   frontRenderer: {fileID: 933297249812275681}
---- !u!114 &4672207314301103903
+--- !u!114 &1003428872745860312
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -520,12 +520,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 8339848311546112254}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c61c00217c78f354bba6b5c0cd338ef1, type: 3}
+  m_Script: {fileID: 11500000, guid: da4f7f6fb5d8b6442bf47bf26cd6aa56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   shootSound: {fileID: 8300000, guid: 002eee02ead0cbf4fbbe082febf52c07, type: 3}
-  minPitch: 0.9
-  maxPitch: 1.1
+  minPitch: 0.7
+  maxPitch: 0.75
 --- !u!1 &9221370937066438322
 GameObject:
   m_ObjectHideFlags: 0
