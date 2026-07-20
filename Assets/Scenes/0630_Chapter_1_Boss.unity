@@ -384,6 +384,7 @@ MonoBehaviour:
   _cinematicTopBar: {fileID: 1629429908}
   _cinematicBottomBar: {fileID: 1710060737}
   _playerHUDPanel: {fileID: 202987112}
+  _tutorialPanel: {fileID: 0}
   _mainCamera: {fileID: 815775041}
   _dialogueCamera: {fileID: 0}
   _cinemachineCameraObject: {fileID: 2018734652}
@@ -18817,7 +18818,7 @@ Rigidbody2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1241465524}
-  m_BodyType: 0
+  m_BodyType: 2
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
