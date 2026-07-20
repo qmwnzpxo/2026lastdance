@@ -6,6 +6,17 @@ public class AudioManager : MonoBehaviour
     // 싱글톤
     public static AudioManager Instance { get; private set; }
 
+    [Header("전체 볼륨 조절")]
+    [Range(0f, 1f)] public float masterBGMVolume = 0.5f;
+    [Range(0f, 1f)] public float masterSFXVolume = 0.5f;
+
+    // 기본 BGM 볼륨
+    private float _currentBGMBaseVolume = 1f;
+
+    [Header("소리 뭉개짐 방지 세팅")]
+    public float sfxCooldown = 0.05f;
+    private Dictionary<AudioClip, float> clipLastPlayTime = new Dictionary<AudioClip, float>();
+
     [Header("오디오 채널 (자동 생성됨)")]
     private AudioSource bgmSource;
     private List<AudioSource> sfxPool = new List<AudioSource>();
@@ -79,9 +90,24 @@ public class AudioManager : MonoBehaviour
         // 이미 같은 곡이 재생 중이라면 처음부터 다시 덮어씌우지 않고 유지
         if (bgmSource.clip == clip && bgmSource.isPlaying) return;
 
+        _currentBGMBaseVolume = volume;
         bgmSource.clip = clip;
-        bgmSource.volume = volume;
+        bgmSource.volume = _currentBGMBaseVolume * masterBGMVolume;
         bgmSource.Play();
+    }
+
+    /// <summary>
+    /// BGM 마스터 볼륨을 실시간으로 변경합니다. (UI 환경설정 옵션 창과 연결)
+    /// </summary>
+    public void SetMasterBGMVolume(float volume)
+    {
+        masterBGMVolume = Mathf.Clamp01(volume);
+
+        // 현재 BGM이 재생 중이라면 변경된 마스터 볼륨을 즉시 소리에 반영
+        if (bgmSource != null)
+        {
+            bgmSource.volume = _currentBGMBaseVolume * masterBGMVolume;
+        }
     }
 
     /// <summary>
@@ -99,11 +125,27 @@ public class AudioManager : MonoBehaviour
     {
         if (clip == null) return;
 
-        AudioSource availableSource = GetAvailableSFXSource();
-        availableSource.clip = clip;
-        availableSource.volume = volume;
-        availableSource.pitch = pitch;
+        // [소리 뭉개짐 방지] 동일한 클립이 너무 짧은 시간 내에 다시 재생되는지 확인
+        if (clipLastPlayTime.ContainsKey(clip))
+        {
+            float lastTime = clipLastPlayTime[clip];
+            if (Time.time - lastTime < sfxCooldown)
+            {
+                // 0.05초(sfxCooldown)가 지나지 않았다면 재생을 취소하여 뭉개짐을 막습니다.
+                return;
+            }
+        }
 
+        // 현재 재생 시간을 기록 (다음 번 검사를 위해)
+        clipLastPlayTime[clip] = Time.time;
+
+        AudioSource availableSource = GetAvailableSFXSource(); // (기존 채널 찾는 함수)
+        availableSource.clip = clip;
+
+        // [볼륨 일괄 조절] 개별 볼륨에 마스터 볼륨을 곱해서 최종 소리를 냅니다.
+        availableSource.volume = volume * masterSFXVolume;
+
+        availableSource.pitch = pitch;
         availableSource.Play();
     }
 

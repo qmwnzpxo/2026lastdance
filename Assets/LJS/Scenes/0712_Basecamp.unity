@@ -14063,6 +14063,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sceneBGM: {fileID: 8300000, guid: 114fffcf82c18dc4c9f94b3849dd24e2, type: 3}
+  baseVolume: 0.6
 --- !u!4 &1355561222
 Transform:
   m_ObjectHideFlags: 0

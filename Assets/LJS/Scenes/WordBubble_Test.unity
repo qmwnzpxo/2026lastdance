@@ -8266,6 +8266,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dbb517c05cf5904f89562f469cd7635, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  masterBGMVolume: 0.5
+  masterSFXVolume: 0.5
+  sfxCooldown: 0.05
   initialPoolSize: 10
 --- !u!4 &1267472105
 Transform:
@@ -10427,6 +10430,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sceneBGM: {fileID: 8300000, guid: 82e6f14301e757e46968dcd842fb3f31, type: 3}
+  baseVolume: 0.6
 --- !u!4 &1594390326
 Transform:
   m_ObjectHideFlags: 0
