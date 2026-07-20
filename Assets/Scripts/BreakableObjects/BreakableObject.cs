@@ -22,9 +22,9 @@ namespace ItemSystem
     {
         [Header("Stats")]
         [SerializeField] protected float _maxHP = 3f;
+        [SerializeField] protected float _currentHP;
 
         // ── 내부 상태 ─────────────────────────────────────────────────────
-        protected float _currentHP;
         protected bool _isBroken;
 
         public float CurrentHP => _currentHP;
