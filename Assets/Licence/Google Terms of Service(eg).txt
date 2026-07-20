@@ -1,0 +1,270 @@
+Google Terms of Service
+Effective Date: May 22, 2024 | Archived Version | Download PDF
+
+Country Version: South Korea
+
+The Google Terms of Service will be updated on July 30, 2026, to make it easier for users to understand what they can expect from Google and what Google can expect from users when using Google services. Until then, the terms below will continue to apply.
+Check new terms and conditions preview
+
+Contents covered in these Terms and Conditions
+We understand that reviewing these Terms of Service may be cumbersome, but it is important to clarify what you can expect from Google and what Google expects from you when using Google services .
+These Terms of Service reflect Google's business practices , applicable laws, and certain things that Google holds to be true at all times . Therefore, your interaction with Google services defines your relationship with Google based on these Terms of Service. For example, the Terms include topics under the following headings:
+
+What you can expect from Google . Explains how Google provides and develops services.
+What Google expects of you . We establish certain rules regarding the use of Google services.
+Content within Google services . Describes the intellectual property rights to content found in Google services and explains whether ownership of such content belongs to you, Google, or another person.
+In the event of a problem or conflict of opinion , we explain your other legal rights and matters you should be aware of in case a third party violates these Terms.
+By accessing or using Google services, you agree to these Terms, so it is important to familiarize yourself with them.
+
+In addition to these Terms, Google publishes a Privacy Policy . While the Privacy Policy is not included in these Terms, we recommend reading it to better understand how to update, manage, export, and delete your information .
+
+Terms and conditions
+Service provider
+The entities providing Google services and entering into a contract with you are as follows.
+
+Google LLC
+incorporated under the laws of the State of Delaware, USA and operated under the laws of the United States.
+
+1600 Amphitheatre Parkway
+Mountain View, California 94043
+USA
+
+Age requirements
+If you are under the age to manage your Google account yourself, you need permission from a parent or legal representative to use your Google account. Please read these Terms with your parent or legal representative.
+
+If you permit a child to use the Service as a parent or legal representative , these Terms apply to you, and you are responsible for the child's activities within the Service.
+
+Some Google services are subject to additional age requirements specified in service-specific additional terms and policies .
+
+
+Your relationship with Google
+These Terms help define the relationship between you and Google. In these Terms, "Google" or "we" refers to Google LLC and its affiliates . Simply put, if you agree to abide by these Terms, which reflect Google's business operations and monetization methods, Google permits you to access and use Google Services .
+
+What to expect from Google
+Providing diverse and useful services
+
+We provide various services to which these Terms and Conditions apply, including the following.
+Apps and sites (e.g., Google Search and Google Maps)
+Platform (e.g., Google Shopping)
+Combined services (e.g., Google Maps embedded in third-party apps or sites)
+Devices (e.g., Google Nest and Pixel)
+Among these services, there are many that include content that can be streamed or interacted with.
+
+Google services are designed to collaborate, making it easier to move from one activity to the next. For example, if a Calendar event includes an address, clicking the address displays the route to that address on Google Maps.
+
+Google service development, improvement, and update
+
+Google continuously develops new technologies and features to improve its services. For example, it uses artificial intelligence and machine learning to provide simultaneous translation or to more effectively detect and block spam and malware. As part of these ongoing improvements, Google adds or removes features, increases or decreases restrictions on its services, and introduces new services or discontinues existing ones. If a service requires or includes downloadable or pre-installed software, the software may automatically update on your device when a new version or feature becomes available. For some services, you may adjust your automatic update settings.
+
+Google has a thorough product research program and carefully considers your interests as a user, your reasonable expectations, and the potential impact on you and other users before changing or discontinuing a service. Google changes or discontinues a service only when there is a valid reason, such as to improve performance or security, comply with laws, prevent illegal activity or abuse of the service, or reflect advanced technology, or when some features or the entire service are no longer popular or economically viable.
+
+In the event of material changes that adversely affect your use of Google services or the discontinuation of services, Google will provide reasonable prior notice. However, exceptions apply in urgent situations, such as to prevent abuse of the services, respond to legal requirements, or address security and operability issues. Additionally, in accordance with applicable laws and policies, Google provides the opportunity to export your content from your Google account using Google Takeout .
+
+What Google Expects from You
+Compliance with these Terms and Conditions and Additional Service-Specific Terms
+
+As long as you comply with the following, the access and usage rights to Google services granted to you by us will continue.
+These Terms and Conditions
+Additional terms per service (e.g., additional age requirements)
+Google also provides various resources, such as policies and the Help Center, to answer common questions and set expectations regarding the use of services. These resources include the Privacy Policy , Copyright Help Center , Safety Center , Transparency Center , and other pages accessible on the Policy Site . Finally, Google may provide specific guidance and warnings within Google services, such as dialogs that inform you of important information.
+
+Google grants you the right to use Google services, but Google retains all intellectual property rights it has in relation to the services.
+
+Respect for others
+
+Google wants to maintain an environment where all users respect one another, and to this end, you must adhere to the following basic code of conduct.
+Compliance with relevant laws, including export control, sanctions, and human trafficking laws
+Respect for the rights of others, including personal information protection and intellectual property rights
+Prohibition of acts that abuse or cause harm to others or oneself (e.g., misleading, deception, unauthorized identity theft, defamation, mockery, harassment, stalking) or acts that threaten to inflict such abuse or harm or encourage such acts.
+Google ’s additional service-specific terms and policies , such as Google ’s Generative AI Prohibited Uses Policy, describe additional details regarding appropriate behavior that anyone using the service must comply with. If you discover instances where others do not comply with such rules, you can report abuse across many Google services. Google provides the procedures described in the Actions to Take in Problematic Situations section when handling reported abuse .
+
+Prohibition of abuse of Google services
+Most users who access or use Google services are familiar with the general rules for maintaining the security and openness of the internet. Unfortunately, because there is a small number of users who do not comply with these rules, Google explains them here to protect Google services and users from abuse. Accordingly, they are as follows:
+
+You must not abuse, interfere with, interrupt, or cause damage to Google services or systems through the following actions, etc.
+The act of installing malware
+Spamming, hacking, or bypassing Google systems or security measures
+Acts of jailbreaking, performing hostile prompts and prompt injections ( except when part of Google's safety and bug testing program )
+Accessing or using Google services or content in the following false or fraudulent manner
+phishing
+The act of creating fake accounts or content (e.g., fake reviews)
+The act of misleading others to believe that generative AI content was created by humans
+The act of providing a service actually created by Google as if it were created by you (or someone else).
+The act of providing services not created by Google as if they were created by Google
+Acts that infringe upon the legal rights of others, such as intellectual property rights and privacy rights, by using Google services (including content provided through them).
+Reverse engineering Google services or underlying technologies (e.g., Google's machine learning models) to obtain trade secrets or other proprietary information (except where permitted by applicable laws)
+The act of accessing the content of Google services using automated means on Google webpages in a manner that violates computer-readable requests (e.g., robots.txt files that reject crawling, learning, or other activities).
+The act of developing machine learning models or related AI technologies using AI-generated content from Google services
+Acts of concealing one's identity or making false statements for the purpose of violating these Terms and Conditions
+The act of providing services that encourage others to violate these Terms and Conditions
+Permission to use your content
+
+Some of Google’s services are designed to allow you to upload, submit, store, transmit, receive, or share your content . You are not obligated to provide content to Google services and may choose the content you wish to provide. To upload or share content, you must possess the necessary rights to do so, and such content must be lawful.
+
+License
+Your content belongs to you. That is, you retain the intellectual property rights to your content . For example, you have intellectual property rights to your own creations, such as reviews you have written. Or you may have the right to share the creations of others if they have granted you permission.
+
+If Google is restricted from using your content due to intellectual property rights, Google must obtain permission from you. You grant Google such permission through this license.
+
+Applicable to
+This license applies to your content protected by intellectual property rights .
+
+Exclusion from application
+This license does not affect your privacy rights and is solely for your intellectual property rights.
+This license does not apply to the following types of content.
+Public factual information provided by you (e.g., corrections to the address of a local business). Since this information is considered public fact freely available to anyone, a license is not required.
+Your feedback (e.g., suggestions for service improvement). Feedback is covered in the service-related communication section below.
+License scope
+The contents of this license are as follows.
+Worldwide. Valid anywhere in the world.
+Non-exclusive. You may license your content to others.
+Free of charge. No monetary compensation is paid for the license.
+authority
+Google may do the following through this license.
+
+Hosting, replicating, distributing, delivering, and using your content (e.g., storing content in Google systems so you can access your content from anywhere)
+Post, publicly perform, or publicly display content that you have disclosed to other users.
+Modify your content or create derivative works (e.g., change content format, translation, etc.)
+Sublicense the above permissions to the following targets:
+Sublicensing other users (e.g., the ability to share photos with selected people) to ensure the service operates as originally intended
+Sublicense to a business partner who has signed an agreement with Google consistent with these Terms in content, solely for the limited purposes specified in the purpose section below
+purpose
+The purpose of this license is limited to the following.
+
+Operation and improvement of the Service . This refers to ensuring that the Service is provided as intended and creating new features. This also includes analyzing your content for the following purposes using automated systems and algorithms.
+Prevent spam, malware, and illegal content
+Identifying data patterns (e.g., determining when to recommend new albums to group related photos in Google Photos)
+Providing personalized services to you, such as recommendations and personalized search results, content, and advertisements ( which can be changed or disabled in Ad Settings ).
+This analysis is performed during content transmission, reception, and storage.
+We use content you have publicly shared to promote the service . For example, we may quote reviews you have written to promote Google apps. Or we may use screenshots of apps you provide on the Play Store for the promotional purposes of Google Play.
+period
+This license lasts for the duration that your content is protected by intellectual property rights.
+
+If you remove content subject to this license from Google services, Google systems will cease making the content public within a reasonable time. There are two exceptions to this:
+
+If you have already shared your content with other users before deleting it. For example, if you shared a photo with a friend and that friend made a copy or shared it again, the photo may continue to appear on your friend's Google account even after you delete it from your Google account.
+If you have provided your content through a third-party service, search engines, including Google Search, may continue to find and display your content as part of search results.
+
+Using Google services
+Your Google account
+If you meet the age requirements, you can create a Google account for your convenience at any time . Some services require a Google account for use. For example, to use Gmail, you must have a Google account to have space to send and receive emails.
+
+You are responsible for the use of your Google account, including taking reasonable measures to protect your Google account. Google recommends that you use the security check regularly.
+
+Using Google services for organizations or businesses
+Various organizations , including businesses, non-profits, and schools, use Google services . To use Google services for your organization, you must meet the following conditions.
+The authorized representative of the organization shall agree to these Terms and Conditions.
+Your organization administrator will assign you a Google account. That administrator may require you to comply with additional rules and may access or disable your Google account.
+Service-related communication
+Google may send service announcements or other information to provide you with services. To learn more about how Google communicates with you, please refer to the Google Privacy Policy .
+
+If you submit feedback, such as suggestions for improving Google services, Google may take action based on your feedback without any obligation to you.
+
+
+Content within Google services
+Your content
+You may create original content through some Google services . Google does not claim ownership of such content.
+
+Some Google services offer you the opportunity to share content. For example, you can post product or restaurant reviews that you have written yourself, or upload blog posts that you have created yourself.
+
+To learn more about your rights to your content and how your content is used on Google services, please refer to the Permissions for your content .
+To learn more about why and how user-generated content may be removed from Google services, please refer to the Delete Your Content section.
+If you believe someone is infringing on your intellectual property rights, you can report the infringement so that Google can take appropriate action. For example, Google may suspend or close the Google account of a user who repeatedly infringes on copyright , as stated in the Copyright Help Center .
+
+Google content
+Some Google services include content owned by Google (e.g., many visual images displayed on Google Maps). You may use Google’s content as permitted by these Terms and any additional service-specific terms , but Google retains all intellectual property rights to the Google content. You must not remove, obscure, or alter any of Google’s brands, logos, or legal notices. To use Google’s brands or logos, please refer to the Google Brand License page.
+
+Other content
+Finally, some Google services grant you access to content owned by other users or organizations (e.g., a store owner's business description or a newspaper article published on Google News). You may not use such content without the permission of these users or organizations or unless permitted by law. The perspectives presented in content by other users or organizations belong to those users or organizations and do not necessarily reflect Google's perspective.
+
+
+Software within Google services
+Some of Google's services include downloadable or pre-installed software. Google grants you permission to use such software as part of the service.
+
+The details of the license Google grants you are as follows.
+Worldwide. Valid anywhere in the world.
+Non-exclusive. Google may license the software to others.
+Free of charge. No monetary fee is required for the license.
+Personal. Does not apply to others.
+Non-transferable. You cannot transfer the license to another person.
+Some Google services include software provided under the terms of open source licenses that Google offers to you. In some cases, the terms of open source licenses may expressly override parts of these Terms, so please be sure to read such licenses.
+
+You may not copy, modify, distribute, sell, or rent any part of the Google services or software.
+
+
+If there are problems or conflicts of opinion
+Both the law and these Terms and Conditions grant you (1) the right to a certain level of service quality and (2) the right to a solution in case of problems.
+
+guarantee
+Google provides Google services using reasonable technology and care . If Google fails to meet the quality standards specified in this warranty , you agree to notify Google and for Google to work with you to resolve the issue.
+
+ma'am
+Google promises only what is provided under the law that cannot be limited by these Terms with respect to the Services (including content within the Services, specific features of Google Services, reliability, availability, and ability to meet your needs), (1) warranty items, (2) additional terms per service, and (3).
+
+Do not rely on the 'Service' for medical, legal, financial, or other professional advice. All content related to these topics is provided for informational purposes only and cannot replace the advice of a qualified professional.
+
+responsibility
+For all users
+Both the law and these Terms aim to strike a balance regarding what you or Google may claim from the other party in the event that a problem arises. For this reason, while the law does not limit certain liabilities under these Terms , it permits otherwise.
+
+These Terms limit Google's liability to the extent permitted by applicable laws. These Terms do not limit liability for the following:
+Fraud or false statement
+Death or injury caused by negligence
+gross negligence
+Intentional misconduct
+In addition to the liability described above, Google is liable under applicable laws for any violation of these Terms or any additional terms specific to the relevant services .
+
+Limited to business users and organizations
+The following applies to business users or organizations .
+
+To the extent permitted by applicable law, you indemnify Google and its directors, officers, employees, and service partners from all third-party legal proceedings (including government actions) arising from or in connection with your unlawful use of the Service or your violation of these Terms or any additional terms per service. This indemnification applies to all liabilities and expenses incurred, including claims, losses, damages, judgments, fines, litigation costs, and legal counsel fees, except where liability or costs arise from Google's breach, negligence, or willful misconduct.
+Where you are legally exempt from certain obligations, including indemnities , such obligations do not apply to you under these Terms. For example, the United Nations enjoys certain immunity from legal obligations, and these Terms do not supersede such immunity.
+Google assumes no responsibility for the following.
+Loss of profits, revenue, business opportunities, goodwill, or anticipated savings
+Indirect or consequential loss
+punitive damages
+For all users above , except as specified in the terms, Google’s total liability for indemnification arising from or in connection with these Terms shall be limited to the greater of (1) USD 500 or (2) 125% of the fees paid by the user to use the relevant services during the 12 months prior to the breach.
+Measures in problematic situations
+Before taking the measures described below, Google will provide prior notice where reasonably possible, explain the reasons for the measures, and give you an opportunity to explain and resolve the issue. However, exceptions apply where it is reasonably judged that this would result in the following situations.
+
+If it causes harm or liability to the user, a third party, or Google
+In the case of violating laws or orders of regulatory authorities
+Cases of obstructing the investigation
+If it compromises the operation, integrity, or security of Google services
+Delete your content
+If Google can reasonably judge that your content (1) materially violates these Terms, any additional terms or policies for any service , (2) violates applicable laws, or (3) could cause harm to Google’s users, third parties, or Google, Google reserves the right to remove all or part of such content in accordance with applicable laws. Examples of such content include child pornography, content that promotes human trafficking or harassment, terrorism-related content, and content that infringes upon the intellectual property rights of others .
+
+Suspension or termination of access to Google services
+Google may suspend or terminate your access to the service or delete your Google account in the following cases, and this does not limit other rights that Google may exercise.
+
+If you make a material or repeated violation of these Terms, any additional terms or policies for any service
+If necessary to comply with legal obligations or court orders
+If Google reasonably determines that your actions cause harm or liability to users, third parties, or Google (e.g., hacking, phishing, harassment, spamming, misleading others, or scraping content not owned by you)
+For detailed information on why Google suspends your account and what happens when it is suspended, please refer to this Help Center page . If you believe your Google account was suspended or terminated by mistake, you can dispute the decision .
+
+You may stop using Google services at any time if you wish. If you stop using the services, please let us know the reason so that Google can continue to improve the services .
+
+Dispute Resolution, Governing Law, and Jurisdiction
+To learn how to contact Google, please refer to the Contact Us page .
+
+All disputes arising out of or in connection with these Terms, any additional terms per service , or any related services shall be governed by the laws of the State of California, regardless of international private law. Such disputes shall be under the exclusive jurisdiction of the federal or state courts of Santa Clara County, California, United States, and you and Google agree that such courts shall have personal jurisdiction.
+
+You may file a lawsuit regarding a dispute in the courts of your country of residence only for certain disputes where the applicable laws of your country of residence do not permit jurisdiction over such disputes. Likewise, where the applicable laws of your country of residence do not permit the courts of your country of residence to adopt California law as governing law, the applicable laws of your country, state, or other region of residence shall apply to such disputes.
+
+
+Regarding these Terms and Conditions
+You hold certain rights that, under the law, cannot be limited by agreements such as these Terms of Service. These Terms do not limit such rights under any circumstances.
+
+These Terms describe the relationship between you and Google. Even if a third party benefits from the relationship between you and Google under these Terms, these Terms do not create any legal rights for any other person or organization .
+
+Google has provided examples of Google services to help you understand these Terms . However, some of the mentioned services may not be available in the country where you reside.
+
+In the event of a conflict between these Terms and Conditions and Additional Terms for a Service, the Additional Terms shall apply to the relevant Service.
+
+If a specific provision is found to be invalid or unenforceable, this does not affect other provisions.
+
+If you fail to comply with these Terms or any additional terms per service , even if Google does not take immediate action, this does not mean that you waive any rights held by Google, including the right to take future action.
+
+Google may change these Terms and Additional Terms by Service to (1) reflect changes in the Service or changes in business practices (e.g., adding new services, features, technologies, prices, or benefits, or removing existing ones), (2) for statutory, regulatory, or security reasons, or (3) to prevent abuse or harm to the Service .
+
+If there are material changes to these Terms or any additional terms for each service , Google will provide 30 days' prior notice and an opportunity to review the changes, except in cases where (1) we are launching a new service or feature that benefits you, or (2) there are urgent circumstances, such as preventing ongoing abuse or responding to local laws. If you do not agree to the new terms, you must delete your content and stop using the service. You may also terminate your relationship with Google at any time by closing your Google account .

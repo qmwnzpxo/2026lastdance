@@ -1,0 +1,28 @@
+The Google Terms of Service were updated on May 22, 2024, to cover AI-related topics . As of that date, these additional Terms of Service for Generative AI no longer apply, except for business partners with signed agreements referencing these Terms.
+Generative AI Additional Service Terms
+Last modified: August 9, 2023 | Archived version
+
+To use the Google service that refers to these Terms (hereinafter the " Service "), you must agree to (1) the Google Terms of Service and (2) these Generative AI Additional Service Terms.
+
+Please read the above documents carefully. These documents, collectively referred to as the ‘ Terms ,’ specify what you can expect from Google and what Google expects from you when using Google services .
+
+Also, check the Privacy Policy (including all Privacy Policy provided in relation to the 'Service') to learn about the information Google collects and how to update, manage, export, and delete that information .
+
+Age requirements
+In addition to the 'Age Requirements' section of the Google Terms of Service, you must also comply with any additional age restrictions set forth in relation to the 'Service'.
+
+Usage restrictions
+You cannot use the 'service' to develop machine learning models or related technologies.
+
+In addition to the 'Respect for Others' section of the Google Terms of Service, you must comply with the Prohibited Use Policy , which provides additional details regarding what you must observe when using the 'Service' .
+
+The 'Service' includes security features that block harmful content, such as content that violates the Prohibited Use Policy . As mentioned in the 'Respect for Others' section of the Google Terms of Service , you must not bypass these protections or use content that violates these 'Terms'.
+
+You must comply with applicable 'service'-specific notices, such as warnings to avoid entering sensitive or confidential information.
+
+ma'am
+The 'Service' may provide inaccurate or offensive content that does not represent Google's position.
+
+Please think carefully before relying on, posting, or using the content provided by the 'Service' in any other way.
+
+Do not rely on the 'Service' for medical, legal, financial, or other professional advice. All content related to these topics is provided for informational purposes only and cannot replace the advice of a qualified professional.
