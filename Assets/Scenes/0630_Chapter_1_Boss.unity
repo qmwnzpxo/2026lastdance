@@ -20184,7 +20184,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb0c05a0db49c1c429cfd14a3a0e9ea7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHP: 500
+  maxHP: 250
   walkSpeed: 3
   boosterJumpSpeed: 10
   attackPower: 3
