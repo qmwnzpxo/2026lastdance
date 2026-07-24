@@ -1,168 +1,130 @@
 ========
-캐릭터
-========
-Ghost character Free
-라이선스 : Standard Unity Asset Store EULA\
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 : Sigmoid Button Assets
-라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
-
-========
 엔티티
 ========
-Lowpoly training dummy
-라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 : iltaen
-라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
-
-Sci-Fi Handgun
-라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :  Life Hacker
-라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
+[Free] Drone
+라이선스 : [Free] Drone by Papoy Core
+라이선스 전문 :https://papoycore.itch.io/free-drone
+저작자 : Papoy Core
 
 ========
 폰트
 ========
 Liberation Sans
 라이선스 : SIL Open Font License 1.1 (OFL-1.1)
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/SIL%20Open%20Font%20License(OFL)(eg).txt
+라이선스 전문 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License%20(OFL)(kr).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License(OFL)(eg).txt
 저작자 : Red Hat, Inc.
 라이선스 파일 : SIL Open Font License(OFL)(eg) , SIL Open Font License(OFL)(kr)
 Kenia
 라이선스 : SIL Open Font License 1.1 (OFL-1.1)
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/SIL%20Open%20Font%20License(OFL)(eg).txt
+라이선스 전문 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License%20(OFL)(kr).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License(OFL)(eg).txt
 저작자 : Julia Petretta
 라이선스 파일 : SIL Open Font License(OFL)(eg) , SIL Open Font License(OFL)(kr)
 
-Cafe24 Surround
+Galmuri 7,11,14 / GalmuriMono 7,9,11
 라이선스 : OFL(OpenFont License)
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/SIL%20Open%20Font%20License(OFL)(eg).txt
-저작자 :  Life Hacker
+라이선스 전문 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License%20(OFL)(kr).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License(OFL)(eg).txt
+저작자 :  Lee Minseo
 라이선스 파일 : SIL Open Font License(OFL)(eg) , SIL Open Font License(OFL)(kr)
 ========
 이펙트
 ========
-Polygon Arsenal
-라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 : Archanor VFX
-라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
+Magic Pack 10
+라이선스 : Free for personal and commercial use. Modification allowed
+라이선스 사이트 : https://ansimuz.itch.io/gothicvania-magic-pack-10
+저작자 : ansimuz
 
-Cartoon FX 2 Remaster
-라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 : Jean Moreno
-라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
-
-Hyper Casual FX
-라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :Lana Studio
-라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
-
-Ultimate Loot VFX Pack - 175 Effects
-라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :  Piloto Studio
-라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
+VFX COLLECTION - VOL 4 - Pixel Art Effects
+라이선스 : Creator's Custom License (Royalty-Free)
+라이선스 사이트 : https://kiddolink.itch.io/vfx-collection-vol-4-pixel-art
+저작자 : kiddolink
 ========
 맵
 ========
-POLYGON Dungeons - Low Poly 3D Art by Synty
+Warped City 2
 라이선스 :Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :  Synty Studios
+라이선스 전문 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt
+저작자 :  Ansimuz
 라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
 
-POLYGON Nightclubs - Low Poly 3D Art by Synty
+Pixel Art - Vending Machines Pack
 라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :  Synty Studios
+라이선스 전문 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt
+저작자 :  karsiori
 라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
 
-POLYGON Horror Carnival - Low Poly 3D Art by Synty
+Pixel Art - Fridge Pack - Animated
 라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :  Synty Studios
+라이선스 전문 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt
+저작자 :  Digital Moons
 라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
 
-Toon Suburban Pack
+Pixel Skies DEMO Background pack
 라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :  SICS Games
+라이선스 전문 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt
+저작자 : Digital Moons
 라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
-
-
 ========
 쉐이더
 ========
 Polyverse Skies | Low Poly Skybox Shaders
 라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
+라이선스 전문 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt
 저작자 :  SICS Games
 라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
 
 ========
 GUI
 ========
-GUIPack2DFree - Simple Popup System
+Fullscreen effects
 라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :  Neptun Digital
+라이선스 전문 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt
+저작자 :  Hovl Studio
 라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
 
-2D Simple UI Pack
-라이선스 : Standard Unity Asset Store EULA 
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :  OArielG
-라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
-
-Crosshairs
+Heat - Complete Modern UI
 라이선스 : Standard Unity Asset Store EULA
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20EULA(eg).txt
-저작자 :  OccaSoftware
+라이선스 전문 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt
+저작자 :  Michsky
 라이선스 파일 : Standard Unity Asset Store EULA(eg), Standard Unity Asset Store EULA(kr)
-
 
 ========
 서브파티
 ========
 Unitask
 라이선스 : MIT License
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/MIT%20License(eg).txt
+라이선스 전문 :
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(kr).txt
 저작자 :  Yoshifumi Kawai 
 라이선스 파일 : The MIT License(eg), The MIT License(kr)
 라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/MIT%20License(eg).txt
 
 NUnit.Framework
 라이선스 : MIT License
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/MIT%20License(eg).txt
+라이선스 전문 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(kr).txt
 저작자 :  NUnit Project / The NUnit Team
 라이선스 파일 : The MIT License(eg), The MIT License(kr)
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/MIT%20License(eg).txt
+라이선스 전문 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(kr).txt
 
 TMP_FontAssets
 라이선스 : Unity Companion License
-라이선스 전문 :https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Unity%20Companion%20License(eg).txt
+라이선스 전문 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Unity%20Companion%20License(eg).txt
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Unity%20Companion%20License(kr).txt
 저작자 : Unity Technologies ApS
 라이선스 파일 : Unity Companion License(eg) , Unity Companion License(kr)
 
-
-========
-애니메이션
-========
-Character animations provided by Mixamo (Adobe Systems Inc.)  
-Used under Mixamo License Terms (https://www.mixamo.com/)
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Mixamo(eg).txt
-========
-음악
-========
-Music generated using Suno AI (Pro plan). 
-Commercial use permitted under Suno AI Terms & Conditions as of [2025-11-07]. 
-See: https://help.suno.com/en/articles/2425345
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Suno(eg).txt
 
 ========
 이미지 
@@ -170,20 +132,27 @@ See: https://help.suno.com/en/articles/2425345
 Image created by ChatGPT (OpenAI)
 라이선스 : Used under OpenAI’s Content Policy and Terms of Use (as of Apr 2024)
 라이선스 파일 : OpenAI Terms of use(eg),OpenAI Terms of use(kr),OpenAI Usage policie(eg),OpenAI Usage policie(kr)
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/OpenAI%20Terms%20of%20use(eg).txt, https://github.com/asjadhl/SoulRock/blob/main/Assets/Lisence/OpenAI%20Usage%20policie(eg).txt
+라이선스 전문 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/OpenAI%20Terms%20of%20use(eg).txt, https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/OpenAI%20Terms%20of%20use(kr).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/OpenAI%20Usage%20policie(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/OpenAI%20Usage%20policie(kr).txt
 
 Some code and documentation were co-authored with the assistance of Microsoft Copilot.
 All Copilot outputs were reviewed and finalized by the development team,
 and Microsoft Copilot does not hold copyright over the results
 라이선스 : Used under Microsoft Copilot Terms of Use and Microsoft Services Agreement (as of Apr 2024)
 라이선스 파일 : Microsoft(eg),Microsoft(kr),Copilot(eg),Copilot(kr)
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/Microsoft(eg).txt , https://github.com/asjadhl/SoulRock/blob/main/Assets/Lisence/Copilot(eg).txt
+라이선스 전문 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Microsoft(eg).txt , 
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Microsoft(kr).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Copilot(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Copilot(kr).txt
 
 ========
-효과음  
+효과음 및 효과음
 ========
-ElevenLabs (Free Plan)
-라이선스 : Non-commercial use only, attribution required  
-출처 : https://elevenlabs.io/terms-of-use  (Accessed 2025.11)
-라이선스 파일 : ElevenLabs Terms of Service(non-EEA) (eg) , ElevenLabs Terms of Service(non-EEA) (kr)
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/ElevenLabs%20Terms%20of%20Service(non-EEA)%20(eg).txt
+PixaBay
+라이선스 : Pixabay License
+라이선스 파일 : Pixabay Content License Summary(eg) ,Pixabay Content License Summary(kr),Pixabay Terms of Service(eg),Pixabay Terms of Service(kr)
+라이선스 전문 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Pixabay%20Content%20License%20Summary(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Pixabay%20Content%20License%20Summary(kr).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Pixabay%20Terms%20of%20Service(eg).txt,
+https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Pixabay%20Terms%20of%20Service(kr).txt

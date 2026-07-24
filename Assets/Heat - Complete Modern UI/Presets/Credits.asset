@@ -17,73 +17,179 @@ MonoBehaviour:
   headerSpacing: 30
   nameListSpacing: 50
   credits:
-  - headerTitle: Created by
-    headerTitleKey: CreditsCreatedBy
+  - headerTitle: Team
+    headerTitleKey: 4 Leader
     items:
-    - Team Michsky
+    - 4 Leader
+  - headerTitle: Team Leader
+    headerTitleKey: im
+    items:
+    - "\uC784\uC9C4\uC12D"
   - headerTitle: Art Design
     headerTitleKey: CreditsArtDesign
     items:
-    - Mariyah Gaines
-    - Ralphy Griffin
-    - Ricky Broughton
-    - Selena Crouch
-    - Felix Corbett
+    - "\uC2EC\uC608\uC131"
+  - headerTitle: Game Designer
+    headerTitleKey: CreditsGameDesign
+    items:
+    - "\uC774\uD604\uBBFC"
   - headerTitle: Programming
     headerTitleKey: CreditsProgrammer
     items:
-    - Teo Cohen
-    - Kezia Bush
-    - Darsh Stokes
-  - headerTitle: Sound Design
-    headerTitleKey: CreditsSoundDesign
+    - "\uCD5C\uC0C1\uD76C"
+  - headerTitle: License Entity
+    headerTitleKey: CreditsEntity
     items:
-    - Thomas Beaumont
-    - Lily-Anne Taylor
-  - headerTitle: Concept Artist
-    headerTitleKey: CreditsConceptArtist
+    - '[Free] Drone'
+    - "\uB77C\uC774\uC120\uC2A4 : [Free] Drone by Papoy Core"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://papoycore.itch.io/free-drone"
+    - "\uC800\uC791\uC790 : Papoy Core"
+  - headerTitle: License Font
+    headerTitleKey: CreditsFont
     items:
-    - Madeline Xiong
-  - headerTitle: VFX Artist
-    headerTitleKey: CreditsVFXArtist
+    - Liberation Sans
+    - "\uB77C\uC774\uC120\uC2A4 : SIL Open Font License 1.1 (OFL-1.1)"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License%20(OFL)(kr).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License(OFL)(eg).txt"
+    - "\uC800\uC791\uC790 : Red Hat, Inc."
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : SIL Open Font License(OFL)(eg) , SIL
+      Open Font License(OFL)(kr)"
+    - Kenia
+    - "\uB77C\uC774\uC120\uC2A4 : SIL Open Font License 1.1 (OFL-1.1)"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License%20(OFL)(kr).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License(OFL)(eg).txt"
+    - "\uC800\uC791\uC790 : Julia Petretta "
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : SIL Open Font License(OFL)(eg) , SIL
+      Open Font License(OFL)(kr)"
+    - Galmuri 7,11,14 / GalmuriMono 7,9,11
+    - "\uB77C\uC774\uC120\uC2A4 : OFL(OpenFont License)"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License%20(OFL)(kr).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/SIL%20Open%20Font%20License(OFL)(eg).txt"
+    - "\uC800\uC791\uC790 :  Lee Minseo"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : SIL Open Font License(OFL)(eg) , SIL
+      Open Font License(OFL)(kr)"
+  - headerTitle: License Effect
+    headerTitleKey: CreditsEffect
     items:
-    - Cassian Wilcox
-    - Nylah Sykes
-  - headerTitle: Voiceover
-    headerTitleKey: CreditsVoiceover
+    - Magic Pack 10
+    - "\uB77C\uC774\uC120\uC2A4 : Free for personal and commercial use. Modification
+      allowed"
+    - "\uB77C\uC774\uC120\uC2A4 \uC0AC\uC774\uD2B8 : https://ansimuz.itch.io/gothicvania-magic-pack-10"
+    - "\uC800\uC791\uC790 : ansimuz"
+    - VFX COLLECTION - VOL 4 - Pixel Art Effects
+    - "\uB77C\uC774\uC120\uC2A4 : Creator's Custom License (Royalty-Free)"
+    - "\uB77C\uC774\uC120\uC2A4 \uC0AC\uC774\uD2B8 : https://kiddolink.itch.io/vfx-collection-vol-4-pixel-art"
+    - "\uC800\uC791\uC790 : kiddolink"
+  - headerTitle: License Map
+    headerTitleKey: CreditsMap
     items:
-    - Willie Lawson
-    - Lorena Lozano
-    - Jonny Allen
-    - Keagan Guest
-  - headerTitle: User Interface
-    headerTitleKey: CreditsUI
+    - Warped City 2
+    - "\uB77C\uC774\uC120\uC2A4 :Standard Unity Asset Store EULA"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt"
+    - "\uC800\uC791\uC790 :  Ansimuz"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : Standard Unity Asset Store EULA(eg),
+      Standard Unity Asset Store EULA(kr) "
+    - Pixel Art - Vending Machines Pack
+    - "\uB77C\uC774\uC120\uC2A4 : Standard Unity Asset Store EULA "
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt"
+    - "\uC800\uC791\uC790 :  karsiori"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : Standard Unity Asset Store EULA(eg),
+      Standard Unity Asset Store EULA(kr)"
+    - Pixel Art - Fridge Pack - Animated
+    - "\uB77C\uC774\uC120\uC2A4 : Standard Unity Asset Store EULA"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt"
+    - "\uC800\uC791\uC790 :  Digital Moons"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : Standard Unity Asset Store EULA(eg),
+      Standard Unity Asset Store EULA(kr)"
+    - Pixel Skies DEMO Background pack
+    - "\uB77C\uC774\uC120\uC2A4 : Standard Unity Asset Store EULA"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt"
+    - "\uC800\uC791\uC790 : Digital Moons"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : Standard Unity Asset Store EULA(eg),
+      Standard Unity Asset Store EULA(kr)"
+  - headerTitle: License Shader
+    headerTitleKey: CreditsShader
     items:
-    - Bobby Gray
-  - headerTitle: Playtesters
+    - Polyverse Skies | Low Poly Skybox Shaders
+    - "\uB77C\uC774\uC120\uC2A4 : Standard Unity Asset Store EULA"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt"
+    - "\uC800\uC791\uC790 :  SICS Games"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : Standard Unity Asset Store EULA(eg),
+      Standard Unity Asset Store EULA(kr)"
+  - headerTitle: License GUI
     headerTitleKey: CreditsPlaytesters
     items:
-    - Alberto Ewing
-    - Leonidas West
-    - Gary Alcock
-    - Erika Frey
-    - Gloria Fulton
-  mentions:
-  - ID: Logo Placeholder
-    icon: {fileID: 21300000, guid: 6c6acdf7b632b1647b8e847aa5e8a59e, type: 3}
-    description: 'Optional footnote goes here.
-
-      You can add additional information
-      or license details here.'
-    descriptionKey: CreditsLogoDescription
-    descriptionSpacing: 30
-    layoutSpacing: 160
-  - ID: Logo Placeholder 2
-    icon: {fileID: 21300000, guid: 78ca0ac98a59e2d49a61da6d805033a7, type: 3}
-    description: 'Optional footnote goes here.
-
-      You can add additional information
-      or license details here.'
-    descriptionKey: CreditsLogoDescription
-    descriptionSpacing: 30
-    layoutSpacing: 160
+    - Fullscreen effects
+    - "\uB77C\uC774\uC120\uC2A4 : Standard Unity Asset Store EULA"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt"
+    - "\uC800\uC791\uC790 :  Hovl Studio"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : Standard Unity Asset Store EULA(eg),
+      Standard Unity Asset Store EULA(kr)"
+    - Heat - Complete Modern UI
+    - "\uB77C\uC774\uC120\uC2A4 : Standard Unity Asset Store EULA"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Standard%20Unity%20Asset%20Store%20EULA(kr).txt"
+    - "\uC800\uC791\uC790 :  Michsky"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : Standard Unity Asset Store EULA(eg),
+      Standard Unity Asset Store EULA(kr)"
+  - headerTitle: License Sub Party
+    headerTitleKey: CreditsSub Party
+    items:
+    - Unitask
+    - "\uB77C\uC774\uC120\uC2A4 : MIT License"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(kr).txt"
+    - "\uC800\uC791\uC790 :  Yoshifumi Kawai "
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : The MIT License(eg), The MIT License(kr)"
+    - NUnit.Framework
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(kr).txt"
+    - "\uC800\uC791\uC790 :  NUnit Project / The NUnit Team"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : The MIT License(eg), The MIT License(kr)"
+    - TMP_FontAssets
+    - "\uB77C\uC774\uC120\uC2A4 : Unity Companion License"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 :https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Unity%20Companion%20License(eg).txt
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Unity%20Companion%20License(kr).txt"
+    - "\uC800\uC791\uC790 : Unity Technologies ApS"
+  - headerTitle: License Image
+    headerTitleKey: CreditsImage
+    items:
+    - Image created by ChatGPT (OpenAI)
+    - "\uB77C\uC774\uC120\uC2A4 : Used under OpenAI\u2019s Content Policy and Terms
+      of Use (as of Apr 2024)"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : OpenAI Terms of use(eg),OpenAI Terms
+      of use(kr),OpenAI Usage policie(eg),OpenAI Usage policie(kr)"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/OpenAI%20Terms%20of%20use(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/OpenAI%20Terms%20of%20use(kr).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/OpenAI%20Usage%20policie(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/OpenAI%20Usage%20policie(kr).txt"
+    - Some code and documentation were co-authored with the assistance of Microsoft
+      Copilot.
+    - All Copilot outputs were reviewed and finalized by the development team,
+    - and Microsoft Copilot does not hold copyright over the results
+    - "\uB77C\uC774\uC120\uC2A4 : Used under Microsoft Copilot Terms of Use and Microsoft
+      Services Agreement (as of Apr 2024)"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : Microsoft(eg),Microsoft(kr),Copilot(eg),Copilot(kr)"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Microsoft(eg).txt
+      ,  https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Microsoft(kr).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Copilot(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Copilot(kr).txt "
+  - headerTitle: License Sound
+    headerTitleKey: CreditsSub Sound
+    items:
+    - PixaBay
+    - "\uB77C\uC774\uC120\uC2A4 : Pixabay License"
+    - "\uB77C\uC774\uC120\uC2A4 \uD30C\uC77C : Pixabay Content License Summary(eg)
+      ,Pixabay Content License Summary(kr),Pixabay Terms of Service(eg),Pixabay Terms
+      of Service(kr)"
+    - "\uB77C\uC774\uC120\uC2A4 \uC804\uBB38 : https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Pixabay%20Content%20License%20Summary(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Pixabay%20Content%20License%20Summary(kr).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Pixabay%20Terms%20of%20Service(eg).txt,
+      https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/Pixabay%20Terms%20of%20Service(kr).txt"
+  mentions: []
