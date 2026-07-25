@@ -107,7 +107,7 @@ https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License
 https://github.com/qmwnzpxo/2026lastdance/blob/main/Assets/Licence/MIT%20License(kr).txt
 저작자 :  Yoshifumi Kawai 
 라이선스 파일 : The MIT License(eg), The MIT License(kr)
-라이선스 전문 : https://github.com/asjadhl/SoulRock/blob/main/Assets/Licence/MIT%20License(eg).txt
+
 
 NUnit.Framework
 라이선스 : MIT License
