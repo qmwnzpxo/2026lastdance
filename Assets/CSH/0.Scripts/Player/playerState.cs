@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum PlayerChip
@@ -34,7 +35,10 @@ public class PlayerState : MonoBehaviour, IDamageable
     [RuntimeOnly, SerializeField] private float maxDashGauge = 100f;
     private float dashCost = 20f;
     public float dashGaugePerDash = 20f;
-    
+
+    [RuntimeOnly, SerializeField] public bool isExhausted = false;
+    public float exhaustRecoverThreshold = 20f;
+
     // ── 소모품(섬광탄) 설정 ───────────────────
     [Header("소모품")]
     public int flashCount;
@@ -87,7 +91,9 @@ public class PlayerState : MonoBehaviour, IDamageable
     public event System.Action OnDashStopped;
     public void NotifyDashStopped() => OnDashStopped?.Invoke();
 
-    
+    private PlayerAnimation playerAnimation;
+    private CancellationTokenSource deathCts;
+    private float deathAnimationDuration = 0.85f;
 
 
     public void Awake()
@@ -98,6 +104,8 @@ public class PlayerState : MonoBehaviour, IDamageable
         //    hitWorldLight = transform.Find("Hit World Light").GetComponent<Light2D>();
         InitState();
 
+        if(playerAnimation == null)
+            playerAnimation = GetComponent<PlayerAnimation>();
     }
 
     public void Update()
@@ -110,6 +118,11 @@ public class PlayerState : MonoBehaviour, IDamageable
             GetChips(PlayerChip.blue);
         }
 #endif
+        if(isDead)
+        {
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.B))
         {
             MoveNextChip();
@@ -125,7 +138,17 @@ public class PlayerState : MonoBehaviour, IDamageable
     public void ModifyGauge(float value)
     {
         stamina += value;
-        stamina = Mathf.Clamp(stamina, 0, 100);
+        stamina = Mathf.Clamp(stamina, 0, maxStamina);
+
+        if (stamina <= 0f)
+        {
+            stamina = 0f;
+            isExhausted = true;
+        }
+        else if (isExhausted && stamina >= exhaustRecoverThreshold)
+        {
+            isExhausted = false;
+        }
     }
 
     // 게이지 소비. 잔량 부족 시 false 반환
@@ -147,6 +170,7 @@ public class PlayerState : MonoBehaviour, IDamageable
         currentHP = maxHP;
         dashGauge = maxDashGauge;
         stamina = maxStamina;
+        isExhausted = false;
 #if UNITY_EDITOR
         dashCost = 1f;
         dashGaugePerDash = 10f;
@@ -198,12 +222,48 @@ public class PlayerState : MonoBehaviour, IDamageable
 
         isDead = true;
         Debug.Log("Player died!");
+
+        isDashing = false;
+        isAttacking = false;
+
+        playerAnimation?.Death();
+
+        deathCts?.Cancel();
+        deathCts?.Dispose();
+        deathCts = new CancellationTokenSource();
+
+        RespawnRoutine(deathCts.Token).Forget();
+    }
+    private async UniTaskVoid RespawnRoutine(CancellationToken ct)
+    {
+        // 사망 애니메이션 재생 대기 (실시간 기준, timeScale 영향 없음)
+        await UniTask.Delay(
+            System.TimeSpan.FromSeconds(deathAnimationDuration),
+            ignoreTimeScale: true,
+            cancellationToken: ct
+        ).SuppressCancellationThrow();
+
+        if (ct.IsCancellationRequested) return;
+
+        Respawn();
     }
 
-    public void Revive()
+    private void Respawn()
     {
+        var point = RespawnPoint.FindNearestLeft(transform.position.x);
+
+        if (point != null)
+        {
+            transform.position = point.Position;
+        }
+        // point가 null이면 제자리 부활 (위치 변경 없음)
+
+        currentHP = maxHP;
+        stamina = maxStamina;
+        dashGauge = maxDashGauge;
+
         isDead = false;
-        InitState();
+        Debug.Log("[PlayerState] 리스폰 완료.");
     }
 
     public void Heal(float amount)
@@ -212,6 +272,7 @@ public class PlayerState : MonoBehaviour, IDamageable
             return;
 
         currentHP = Mathf.Min(currentHP + amount, maxHP);
+        dashGauge += Mathf.Min(dashGauge + amount, maxDashGauge);
         Debug.Log($"Player healed {amount}. Current HP: {currentHP}/{maxHP}");
     }
 
@@ -257,9 +318,12 @@ public class PlayerState : MonoBehaviour, IDamageable
 
         Debug.Log(currentChip);
     }
-    void OnDestroy() // 추가
+    void OnDestroy()
     {
         hitCts?.Cancel();
         hitCts?.Dispose();
+
+        deathCts?.Cancel();
+        deathCts?.Dispose();
     }
 }

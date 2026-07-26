@@ -7001,6 +7001,84 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1055237865
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1055237866}
+  - component: {fileID: 1055237867}
+  m_Layer: 0
+  m_Name: 1 (12)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1055237866
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1055237865}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: 289.4, y: 0.8, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2087209516}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
+--- !u!61 &1055237867
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1055237865}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 13.65401}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 71.1, y: 28.30802}
+  m_EdgeRadius: 0
 --- !u!1 &1055300835
 GameObject:
   m_ObjectHideFlags: 0
@@ -8270,6 +8348,8 @@ MonoBehaviour:
   masterBGMVolume: 0.5
   masterSFXVolume: 0.5
   sfxCooldown: 0.05
+  BGMMixer: {fileID: 6994490987773217343, guid: fd2e95e311c5b5e4da32b572f6628427, type: 2}
+  SFXMixer: {fileID: 7631198204876010554, guid: fd2e95e311c5b5e4da32b572f6628427, type: 2}
   initialPoolSize: 10
 --- !u!4 &1267472105
 Transform:
@@ -17571,15 +17651,27 @@ PrefabInstance:
       propertyPath: m_Material
       value: 
       objectReference: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
+    - target: {fileID: 7286359988555590773, guid: f1acbf5cda8d13f41ac75eabdcbdf217, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7372704899371024675, guid: f1acbf5cda8d13f41ac75eabdcbdf217, type: 3}
       propertyPath: m_Material
       value: 
       objectReference: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 8495261956079878497, guid: f1acbf5cda8d13f41ac75eabdcbdf217, type: 3}
+      insertIndex: 3
+      addedObject: {fileID: 1055237866}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f1acbf5cda8d13f41ac75eabdcbdf217, type: 3}
+--- !u!4 &2087209516 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8495261956079878497, guid: f1acbf5cda8d13f41ac75eabdcbdf217, type: 3}
+  m_PrefabInstance: {fileID: 2087209515}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2091777276
 GameObject:
   m_ObjectHideFlags: 0

@@ -211,7 +211,7 @@ public class PlayerMove : MonoBehaviour
     void ApplyMovement()
     {
         if (state.isWallJumping) return;
-        if ((state.isWallSliding && !state.isGrounded) || state.isOnCeiling || state.isPowerRun)
+        if ((state.isWallSliding && !state.isGrounded) || state.isOnCeiling || (state.isPowerRun && moveInput != 0))
         {
             float gaugeChange = CustomTime.ScaledFixedDeltaTime(state.category) * (state.isPowerRun ? RunSpeed : 1f);
             state.ModifyGauge(-gaugeChange);
@@ -231,10 +231,9 @@ public class PlayerMove : MonoBehaviour
             : rb.linearVelocity.y;
         rb.linearVelocity = new Vector2(xMove * (state.isPowerRun ? RunSpeed : 1f), yMove);
     }
-
     void HandlePowerRun()
     {
-        state.isPowerRun = Input.GetKey(KeyCode.LeftShift) && moveInput != 0;
+        state.isPowerRun = Input.GetKey(KeyCode.LeftShift) && (moveInput != 0 || verticalInput != 0) && !state.isExhausted;
     }
 
     void ApplyWallSlide()
@@ -271,7 +270,7 @@ public class PlayerMove : MonoBehaviour
             , targetSlideSpeed, CustomTime.ScaledFixedDeltaTime(state.category) * 10f);
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, smoothedY);*/
 
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, targetSlideSpeed);
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, targetSlideSpeed * (state.isPowerRun?1f:runSpeed));
     }
 
 
@@ -287,7 +286,7 @@ public class PlayerMove : MonoBehaviour
             //&& !state.isGrounded
             && !state.isOnCeiling
             && !state.isDashing
-            && state.stamina > 0;
+            && !state.isExhausted;
         if(state.isWallSliding)
         {
             rb.gravityScale = 0f;
@@ -347,11 +346,11 @@ public class PlayerMove : MonoBehaviour
             botOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
 
         // 허리는 막혀있고, 머리 위는 뚫려있으면 → 모서리 감지
-        if (midHit.collider != null && topHit.collider == null&&(moveInput!=0||verticalInput !=0))
+        if (midHit.collider != null && topHit.collider == null&&(moveInput!=0||verticalInput > 0))
         {
             // 벽 슬라이딩 중이 아니면 무시
             if (!state.isWallSliding) return;
-            StartClimb(dirX, origin.y+1);
+            StartClimb(dirX, origin.y+0.5f);
         }
         else if(botHit.collider != null && midHit.collider != null && topHit.collider == null
             && (moveInput != 0 || verticalInput != 0))
@@ -385,10 +384,9 @@ public class PlayerMove : MonoBehaviour
     void FinishClimb()
     {
         isClimbing = false;
-        RestoreGravity();
 
-        // 등반 완료 후 위쪽으로 약간 튀어오르는 느낌
-        rb.linearVelocity = new Vector2(climbDirX * _climbHorizSpeed, 2f);
+        rb.linearVelocity = new Vector2(climbDirX * _climbHorizSpeed, 0f);
+        RestoreGravity();
     }
 
 
@@ -450,7 +448,7 @@ public class PlayerMove : MonoBehaviour
             FlipYSprite(state.isOnCeiling);
         }
 
-        if (state.isOnCeiling && (!isTouchingCeiling || state.stamina <= 0))
+        if (state.isOnCeiling && (!isTouchingCeiling || state.isExhausted))
             DetachFromCeiling();
 
         wasTouchingCeiling = isTouchingCeiling;
@@ -494,7 +492,7 @@ public class PlayerMove : MonoBehaviour
     void RotateSprite()
     {
         if (spriteRenderer == null) return;
-    if (state.isOnCeiling) return;
+        //if (state.isOnCeiling) return;
 
         if (state.isTouchingLWall && (!state.isGrounded || !state.isOnCeiling))
         {
@@ -538,10 +536,16 @@ public class PlayerMove : MonoBehaviour
             }
             if (Mathf.Abs(rb.linearVelocityX) <= 0.01) ani.Run_off();
         }
-        else if (verticalInput != 0f && state.isWallSliding)
+        else if ((verticalInput != 0f||moveInput != 0f) && state.isWallSliding)
         {
             ani.Run_on();
         }
+        else
+        {
+            ani.Run_off();
+            ani.Power_Run_off();
+        }
+
 
 
         if (state.isAttacking)

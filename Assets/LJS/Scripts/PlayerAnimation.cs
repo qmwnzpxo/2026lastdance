@@ -66,4 +66,8 @@ public class PlayerAnimation : MonoBehaviour
     {
         ani.SetTrigger("isDash_Blue");
     }
+    public void Death()
+    {
+        ani.SetTrigger("isDead");
+    }
 }

@@ -310,7 +310,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -890,7 +890,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -968,7 +968,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -10815,7 +10815,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -12243,6 +12243,7 @@ MonoBehaviour:
   _cinematicTopBar: {fileID: 502675549}
   _cinematicBottomBar: {fileID: 2054931602}
   _playerHUDPanel: {fileID: 0}
+  _tutorialPanel: {fileID: 0}
   _mainCamera: {fileID: 679428038}
   _dialogueCamera: {fileID: 2019405909}
   _cinemachineCameraObject: {fileID: 0}
@@ -17498,7 +17499,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 591f171329a8ea7408ab8c514414c37c, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0

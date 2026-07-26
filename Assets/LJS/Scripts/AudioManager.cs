@@ -1,38 +1,42 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Audio;
 
 public class AudioManager : MonoBehaviour
 {
-    // ½Ì±ÛÅæ
+    // ì‹±ê¸€í†¤
     public static AudioManager Instance { get; private set; }
 
-    [Header("ÀüÃ¼ º¼·ı Á¶Àı")]
+    [Header("ì „ì²´ ë³¼ë¥¨ ì¡°ì ˆ")]
     [Range(0f, 1f)] public float masterBGMVolume = 0.5f;
     [Range(0f, 1f)] public float masterSFXVolume = 0.5f;
 
-    // ±âº» BGM º¼·ı
+    // ê¸°ë³¸ BGM ë³¼ë¥¨
     private float _currentBGMBaseVolume = 1f;
 
-    [Header("¼Ò¸® ¹¶°³Áü ¹æÁö ¼¼ÆÃ")]
+    [Header("ì†Œë¦¬ ë­‰ê°œì§ ë°©ì§€ ì„¸íŒ…")]
     public float sfxCooldown = 0.05f;
     private Dictionary<AudioClip, float> clipLastPlayTime = new Dictionary<AudioClip, float>();
 
-    [Header("¿Àµğ¿À Ã¤³Î (ÀÚµ¿ »ı¼ºµÊ)")]
+    [Header("ì˜¤ë””ì˜¤ ì±„ë„ (ìë™ ìƒì„±ë¨)")]
+    [SerializeField] private AudioMixerGroup BGMMixer;
+    [SerializeField] private AudioMixerGroup SFXMixer;
     private AudioSource bgmSource;
     private List<AudioSource> sfxPool = new List<AudioSource>();
 
-    [Header("Ç®¸µ ¼³Á¤")]
-    [Tooltip("°ÔÀÓ ½ÃÀÛ ½Ã ¹Ì¸® ¸¸µé¾îµÑ È¿°úÀ½ Ã¤³ÎÀÇ °³¼ö")]
+
+    [Header("í’€ë§ ì„¤ì •")]
+    [Tooltip("ê²Œì„ ì‹œì‘ ì‹œ ë¯¸ë¦¬ ë§Œë“¤ì–´ë‘˜ íš¨ê³¼ìŒ ì±„ë„ì˜ ê°œìˆ˜")]
     public int initialPoolSize = 10;
 
     void Awake()
     {
-        // ½Ì±ÛÅæ ¼¼ÆÃ
+        // ì‹±ê¸€í†¤ ì„¸íŒ…
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            InitializeAudioSystem(); // ¿Àµğ¿À ¼¼ÆÃ
+            InitializeAudioSystem(); // ì˜¤ë””ì˜¤ ì„¸íŒ…
         }
         else
         {
@@ -40,19 +44,20 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // 2. ÀÎ½ºÆåÅÍ ¼³Á¤ ¾øÀÌ ½ºÅ©¸³Æ®°¡ ½º½º·Î ¿Àµğ¿À È¯°æÀ» ±¸ÃàÇÏ´Â ÇÔ¼ö
+    // 2. ì¸ìŠ¤í™í„° ì„¤ì • ì—†ì´ ìŠ¤í¬ë¦½íŠ¸ê°€ ìŠ¤ìŠ¤ë¡œ ì˜¤ë””ì˜¤ í™˜ê²½ì„ êµ¬ì¶•í•˜ëŠ” í•¨ìˆ˜
     private void InitializeAudioSystem()
     {
-        // --- BGM ¼Ò½º ¼¼ÆÃ ---
+        // --- BGM ì†ŒìŠ¤ ì„¸íŒ… ---
         GameObject bgmObject = new GameObject("BGM_Source");
         bgmObject.transform.SetParent(this.transform);
 
         bgmSource = bgmObject.AddComponent<AudioSource>();
         bgmSource.playOnAwake = false;
-        bgmSource.loop = true;       // ¹è°æÀ½¾ÇÀº ±âº»ÀûÀ¸·Î ¹«ÇÑ ¹İº¹
-        bgmSource.spatialBlend = 0f; // 2D »ç¿îµå °íÁ¤
+        bgmSource.loop = true;       // ë°°ê²½ìŒì•…ì€ ê¸°ë³¸ì ìœ¼ë¡œ ë¬´í•œ ë°˜ë³µ
+        bgmSource.spatialBlend = 0f; // 2D ì‚¬ìš´ë“œ ê³ ì •
+        bgmSource.outputAudioMixerGroup = BGMMixer; // BGM ë¯¹ì„œ ê·¸ë£¹ ì—°ê²°
 
-        // --- SFX Ç®¸µ ¼¼ÆÃ ---
+        // --- SFX í’€ë§ ì„¸íŒ… ---
         GameObject sfxContainer = new GameObject("SFX_Pool");
         sfxContainer.transform.SetParent(this.transform);
 
@@ -62,7 +67,7 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // »õ·Î¿î È¿°úÀ½ Ã¤³Î(AudioSource)À» »ı¼ºÇÏ°í Ç®(Pool)¿¡ ³Ö´Â ÇÔ¼ö
+    // ìƒˆë¡œìš´ íš¨ê³¼ìŒ ì±„ë„(AudioSource)ì„ ìƒì„±í•˜ê³  í’€(Pool)ì— ë„£ëŠ” í•¨ìˆ˜
     private AudioSource CreateNewSFXSource(Transform parent)
     {
         GameObject sfxObject = new GameObject($"SFX_Source_{sfxPool.Count}");
@@ -70,24 +75,25 @@ public class AudioManager : MonoBehaviour
 
         AudioSource source = sfxObject.AddComponent<AudioSource>();
         source.playOnAwake = false;
-        source.spatialBlend = 0f; // 2D ¾×¼Ç °ÔÀÓÀÌ¹Ç·Î 2D »ç¿îµå °íÁ¤
+        source.spatialBlend = 0f; // 2D ì•¡ì…˜ ê²Œì„ì´ë¯€ë¡œ 2D ì‚¬ìš´ë“œ ê³ ì •
+        source.outputAudioMixerGroup = SFXMixer; // SFX ë¯¹ì„œ ê·¸ë£¹ ì—°ê²°
 
         sfxPool.Add(source);
         return source;
     }
 
     // ==========================================
-    // [¿ÜºÎ¿¡¼­ È£ÃâÇØ »ç¿ëÇÒ ¿Àµğ¿À Àç»ı ÇÔ¼öµé]
+    // [ì™¸ë¶€ì—ì„œ í˜¸ì¶œí•´ ì‚¬ìš©í•  ì˜¤ë””ì˜¤ ì¬ìƒ í•¨ìˆ˜ë“¤]
     // ==========================================
 
     /// <summary>
-    /// ¹è°æÀ½¾ÇÀ» Àç»ıÇÕ´Ï´Ù. ¾ÀÀÌ ³Ñ¾î°¡µµ µ¿ÀÏÇÑ °îÀÌ¸é ²÷±âÁö ¾Ê½À´Ï´Ù.
+    /// ë°°ê²½ìŒì•…ì„ ì¬ìƒí•©ë‹ˆë‹¤. ì”¬ì´ ë„˜ì–´ê°€ë„ ë™ì¼í•œ ê³¡ì´ë©´ ëŠê¸°ì§€ ì•ŠìŠµë‹ˆë‹¤.
     /// </summary>
     public void PlayBGM(AudioClip clip, float volume = 1f)
     {
         if (clip == null) return;
 
-        // ÀÌ¹Ì °°Àº °îÀÌ Àç»ı ÁßÀÌ¶ó¸é Ã³À½ºÎÅÍ ´Ù½Ã µ¤¾î¾º¿ìÁö ¾Ê°í À¯Áö
+        // ì´ë¯¸ ê°™ì€ ê³¡ì´ ì¬ìƒ ì¤‘ì´ë¼ë©´ ì²˜ìŒë¶€í„° ë‹¤ì‹œ ë®ì–´ì”Œìš°ì§€ ì•Šê³  ìœ ì§€
         if (bgmSource.clip == clip && bgmSource.isPlaying) return;
 
         _currentBGMBaseVolume = volume;
@@ -97,13 +103,13 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// BGM ¸¶½ºÅÍ º¼·ıÀ» ½Ç½Ã°£À¸·Î º¯°æÇÕ´Ï´Ù. (UI È¯°æ¼³Á¤ ¿É¼Ç Ã¢°ú ¿¬°á)
+    /// BGM ë§ˆìŠ¤í„° ë³¼ë¥¨ì„ ì‹¤ì‹œê°„ìœ¼ë¡œ ë³€ê²½í•©ë‹ˆë‹¤. (UI í™˜ê²½ì„¤ì • ì˜µì…˜ ì°½ê³¼ ì—°ê²°)
     /// </summary>
     public void SetMasterBGMVolume(float volume)
     {
         masterBGMVolume = Mathf.Clamp01(volume);
 
-        // ÇöÀç BGMÀÌ Àç»ı ÁßÀÌ¶ó¸é º¯°æµÈ ¸¶½ºÅÍ º¼·ıÀ» Áï½Ã ¼Ò¸®¿¡ ¹İ¿µ
+        // í˜„ì¬ BGMì´ ì¬ìƒ ì¤‘ì´ë¼ë©´ ë³€ê²½ëœ ë§ˆìŠ¤í„° ë³¼ë¥¨ì„ ì¦‰ì‹œ ì†Œë¦¬ì— ë°˜ì˜
         if (bgmSource != null)
         {
             bgmSource.volume = _currentBGMBaseVolume * masterBGMVolume;
@@ -111,7 +117,7 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Àç»ı ÁßÀÎ ¹è°æÀ½¾ÇÀ» ¸ØÃä´Ï´Ù.
+    /// ì¬ìƒ ì¤‘ì¸ ë°°ê²½ìŒì•…ì„ ë©ˆì¶¥ë‹ˆë‹¤.
     /// </summary>
     public void StopBGM()
     {
@@ -119,40 +125,40 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// È¿°úÀ½À» Àç»ıÇÕ´Ï´Ù. (¿ÀºêÁ§Æ® Ç®¸µ ÀÛµ¿)
+    /// íš¨ê³¼ìŒì„ ì¬ìƒí•©ë‹ˆë‹¤. (ì˜¤ë¸Œì íŠ¸ í’€ë§ ì‘ë™)
     /// </summary>
     public void PlaySFX(AudioClip clip, float volume = 1f, float pitch = 1f)
     {
         if (clip == null) return;
 
-        // [¼Ò¸® ¹¶°³Áü ¹æÁö] µ¿ÀÏÇÑ Å¬¸³ÀÌ ³Ê¹« ÂªÀº ½Ã°£ ³»¿¡ ´Ù½Ã Àç»ıµÇ´ÂÁö È®ÀÎ
+        // [ì†Œë¦¬ ë­‰ê°œì§ ë°©ì§€] ë™ì¼í•œ í´ë¦½ì´ ë„ˆë¬´ ì§§ì€ ì‹œê°„ ë‚´ì— ë‹¤ì‹œ ì¬ìƒë˜ëŠ”ì§€ í™•ì¸
         if (clipLastPlayTime.ContainsKey(clip))
         {
             float lastTime = clipLastPlayTime[clip];
             if (Time.time - lastTime < sfxCooldown)
             {
-                // 0.05ÃÊ(sfxCooldown)°¡ Áö³ªÁö ¾Ê¾Ò´Ù¸é Àç»ıÀ» Ãë¼ÒÇÏ¿© ¹¶°³ÁüÀ» ¸·½À´Ï´Ù.
+                // 0.05ì´ˆ(sfxCooldown)ê°€ ì§€ë‚˜ì§€ ì•Šì•˜ë‹¤ë©´ ì¬ìƒì„ ì·¨ì†Œí•˜ì—¬ ë­‰ê°œì§ì„ ë§‰ìŠµë‹ˆë‹¤.
                 return;
             }
         }
 
-        // ÇöÀç Àç»ı ½Ã°£À» ±â·Ï (´ÙÀ½ ¹ø °Ë»ç¸¦ À§ÇØ)
+        // í˜„ì¬ ì¬ìƒ ì‹œê°„ì„ ê¸°ë¡ (ë‹¤ìŒ ë²ˆ ê²€ì‚¬ë¥¼ ìœ„í•´)
         clipLastPlayTime[clip] = Time.time;
 
-        AudioSource availableSource = GetAvailableSFXSource(); // (±âÁ¸ Ã¤³Î Ã£´Â ÇÔ¼ö)
+        AudioSource availableSource = GetAvailableSFXSource(); // (ê¸°ì¡´ ì±„ë„ ì°¾ëŠ” í•¨ìˆ˜)
         availableSource.clip = clip;
 
-        // [º¼·ı ÀÏ°ı Á¶Àı] °³º° º¼·ı¿¡ ¸¶½ºÅÍ º¼·ıÀ» °öÇØ¼­ ÃÖÁ¾ ¼Ò¸®¸¦ ³À´Ï´Ù.
+        // [ë³¼ë¥¨ ì¼ê´„ ì¡°ì ˆ] ê°œë³„ ë³¼ë¥¨ì— ë§ˆìŠ¤í„° ë³¼ë¥¨ì„ ê³±í•´ì„œ ìµœì¢… ì†Œë¦¬ë¥¼ ëƒ…ë‹ˆë‹¤.
         availableSource.volume = volume * masterSFXVolume;
 
         availableSource.pitch = pitch;
         availableSource.Play();
     }
 
-    // ÇöÀç ¼Ò¸®°¡ ³ªÁö ¾Ê´Â(³î°í ÀÖ´Â) ¿Àµğ¿À Ã¤³ÎÀ» Ã£¾ÆÁÖ´Â ÇÔ¼ö
+    // í˜„ì¬ ì†Œë¦¬ê°€ ë‚˜ì§€ ì•ŠëŠ”(ë†€ê³  ìˆëŠ”) ì˜¤ë””ì˜¤ ì±„ë„ì„ ì°¾ì•„ì£¼ëŠ” í•¨ìˆ˜
     private AudioSource GetAvailableSFXSource()
     {
-        // 1. ¸®½ºÆ®¸¦ µ¹¸é¼­ Àç»ı ÁßÀÌ ¾Æ´Ñ ¼Ò½º¸¦ Ã£½À´Ï´Ù.
+        // 1. ë¦¬ìŠ¤íŠ¸ë¥¼ ëŒë©´ì„œ ì¬ìƒ ì¤‘ì´ ì•„ë‹Œ ì†ŒìŠ¤ë¥¼ ì°¾ìŠµë‹ˆë‹¤.
         foreach (AudioSource source in sfxPool)
         {
             if (!source.isPlaying)
@@ -161,9 +167,9 @@ public class AudioManager : MonoBehaviour
             }
         }
 
-        // »ç¿îµå ´©¶ô ¹æÁö
+        // ì‚¬ìš´ë“œ ëˆ„ë½ ë°©ì§€
         Transform sfxContainer = transform.Find("SFX_Pool");
-        Debug.LogWarning("SFX Ç®ÀÌ °¡µæ Â÷¼­ Ã¤³ÎÀ» Ãß°¡·Î »ı¼ºÇß½À´Ï´Ù.");
+        Debug.LogWarning("SFX í’€ì´ ê°€ë“ ì°¨ì„œ ì±„ë„ì„ ì¶”ê°€ë¡œ ìƒì„±í–ˆìŠµë‹ˆë‹¤.");
         return CreateNewSFXSource(sfxContainer != null ? sfxContainer : this.transform);
     }
 }
