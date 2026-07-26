@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 에너지탄 - 드론이 발사하는 투사체
@@ -103,7 +103,7 @@ public class EnergyBullet : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             // 현재 크기에 따른 데미지 적용
-            other.GetComponent<PlayerHealth>()?.TakeDamage(currentDamage);
+            other.GetComponent<IDamageable>()?.TakeDamage(currentDamage);
             DestroyBullet();
         }
     }

@@ -22,7 +22,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     // ── 스탯 ──────────────────────────────────
     [Header("스탯")]
     public float damage = 1f;
-    public float currentHP = 100;
+    public float currentHP = 100f;
     public float maxHP = 100f;
     public float stamina = 100f;
     public float maxStamina = 100f;
@@ -180,7 +180,7 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public void TakeDamage(float dmg)
     {
-        if (isDead || isHit) return;
+        if (isDead || isHit || hitCts!=null) return;
         if (isDashing || isRedDashRecording) return;
         currentHP -= dmg;
         if (currentHP <= 0)
@@ -206,13 +206,10 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public async UniTaskVoid HitFeedBack(CancellationToken tk, float duration = 0.3f)
     {
-        //hitLight.enabled = true;
-        //hitWorldLight.enabled = true;
         await CustomTime.WaitForScaledSeconds(duration, category, tk)
             .SuppressCancellationThrow();
         isHit = false;
-        //hitLight.enabled = false;
-        //hitWorldLight.enabled = false;
+        
     }
 
     void Die()

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
 /// <summary>
@@ -320,7 +320,7 @@ public class BossDrone : MonoBehaviour, IDamageable
 
         if (hit.collider != null && hit.collider.CompareTag("Player"))
         {
-            hit.collider.GetComponent<PlayerHealth>()?.TakeDamage(patternDamage);
+            hit.collider.GetComponent<IDamageable>()?.TakeDamage(patternDamage);
         }
 
         // 레이저 시각화 (필요시 LineRenderer 추가)
@@ -359,7 +359,7 @@ public class BossDrone : MonoBehaviour, IDamageable
         {
             if (target.CompareTag("Player"))
             {
-                target.GetComponent<PlayerHealth>()?.TakeDamage(patternDamage);
+                target.GetComponent<IDamageable>()?.TakeDamage(patternDamage);
             }
         }
 

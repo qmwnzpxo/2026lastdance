@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -1244,7 +1244,7 @@ public class BossAttackPatterns : MonoBehaviour
         {
             if (target.CompareTag("Player"))
             {
-                target.GetComponent<PlayerHealth>()?.TakeDamage(chargeDamage);
+                target.GetComponent<IDamageable>()?.TakeDamage(chargeDamage);
             }
         }
     }

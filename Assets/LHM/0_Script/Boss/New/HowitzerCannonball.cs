@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
 /// <summary>
@@ -248,7 +248,7 @@ public class HowitzerCannonball : MonoBehaviour
         {
             if (target.CompareTag("Player"))
             {
-                target.GetComponent<PlayerHealth>()?.TakeDamage(damage);
+                target.GetComponent<IDamageable>()?.TakeDamage(damage);
             }
         }
 

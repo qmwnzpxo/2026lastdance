@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 보스 투사체 스크립트 - 총알 및 대포탄 오브젝트 공통 스크립트
@@ -250,7 +250,7 @@ public class BossProjectile : MonoBehaviour
             else
             {
                 // 총알은 직접 데미지 적용
-                other.GetComponent<PlayerHealth>()?.TakeDamage(damage);
+                other.GetComponent<IDamageable>()?.TakeDamage(damage);
                 ReturnToPool();
             }
         }
@@ -279,7 +279,7 @@ public class BossProjectile : MonoBehaviour
         {
             if (target.CompareTag("Player"))
             {
-                target.GetComponent<PlayerHealth>()?.TakeDamage(damage);
+                target.GetComponent<IDamageable>()?.TakeDamage(damage);
             }
         }
 
