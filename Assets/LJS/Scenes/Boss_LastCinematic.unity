@@ -19889,7 +19889,7 @@ MonoBehaviour:
   startingDialogueId: Scene_13_1
   _cameraDialoguePoint: {fileID: 715703629}
   _teleportPoint: {fileID: 0}
-  _hideAfterDialogue: 0
+  _hideAfterDialogue: 1
 --- !u!1 &1383729466
 GameObject:
   m_ObjectHideFlags: 0

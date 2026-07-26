@@ -1,19 +1,19 @@
-using Cysharp.Threading.Tasks;
+ï»¿using Cysharp.Threading.Tasks;
 using DialogSystem.CinematicDialogue;
 using UnityEngine;
 
 public class AutoDialogueTrigger : MonoBehaviour
 {
-    [Header("´ëº» ¼³Á¤")]
+    [Header("ëŒ€ë³¸ ì„¤ì •")]
     public TextAsset dialogueJson;
     public string startingDialogueId = "intro_01";
 
-    [Header("Ä«¸Ş¶ó ¼³Á¤")]
+    [Header("ì¹´ë©”ë¼ ì„¤ì •")]
     [SerializeField] private Transform _cameraDialoguePoint;
 
-    [Header("Á¾·á ÈÄ ¿¬Ãâ ¼³Á¤")]
+    [Header("ì¢…ë£Œ í›„ ì—°ì¶œ ì„¤ì •")]
     [SerializeField] private Transform _teleportPoint;
-    [SerializeField] private bool _hideAfterDialogue = false;
+    [SerializeField] private bool _hideAfterDialogue = true;
 
     private bool _isPlayerInRange = false;
     private bool _isDialogueActive = false;
@@ -21,47 +21,47 @@ public class AutoDialogueTrigger : MonoBehaviour
 
     private void Awake()
     {
-        // ÇÊ¿ä ½Ã ÃÊ±âÈ­ ·ÎÁ÷
+        // í•„ìš” ì‹œ ì´ˆê¸°í™” ë¡œì§
     }
 
     private async UniTaskVoid StartDialogueAsync()
     {
         if (dialogueJson == null || _playerTransform == null || _cameraDialoguePoint == null)
         {
-            Debug.LogError($"[AutoDialogueTrigger] ´ëº», ÇÃ·¹ÀÌ¾î Á¤º¸, ¶Ç´Â Ä«¸Ş¶ó ´ëÈ­ À§Ä¡ ¿ÀºêÁ§Æ®°¡ ´©¶ôµÇ¾ú½À´Ï´Ù.");
+            Debug.LogError($"[AutoDialogueTrigger] ëŒ€ë³¸, í”Œë ˆì´ì–´ ì •ë³´, ë˜ëŠ” ì¹´ë©”ë¼ ëŒ€í™” ìœ„ì¹˜ ì˜¤ë¸Œì íŠ¸ê°€ ëˆ„ë½ë˜ì—ˆìŠµë‹ˆë‹¤.");
             return;
         }
 
         _isDialogueActive = true;
 
-        // ¸Å´ÏÀú¿¡°Ô Ä«¸Ş¶ó°¡ °¡¾ß ÇÒ À§Ä¡¿Í ÇÃ·¹ÀÌ¾î À§Ä¡¸¦ °Ç³×¸ç ´ëÈ­ ½ÃÀÛ
+        // ë§¤ë‹ˆì €ì—ê²Œ ì¹´ë©”ë¼ê°€ ê°€ì•¼ í•  ìœ„ì¹˜ì™€ í”Œë ˆì´ì–´ ìœ„ì¹˜ë¥¼ ê±´ë„¤ë©° ëŒ€í™” ì‹œì‘
         await DialogueManager.Instance.PlayDialogueAsync(dialogueJson, startingDialogueId, _cameraDialoguePoint, _playerTransform);
 
         if (_teleportPoint != null)
         {
-            // 1. ÇÃ·¹ÀÌ¾î À§Ä¡¸¦ ¸ñÀûÁö ÁÂÇ¥·Î Áï½Ã ¼ø°£ÀÌµ¿
+            // 1. í”Œë ˆì´ì–´ ìœ„ì¹˜ë¥¼ ëª©ì ì§€ ì¢Œí‘œë¡œ ì¦‰ì‹œ ìˆœê°„ì´ë™
             _playerTransform.position = _teleportPoint.position;
 
-            // 2. 2D ¹°¸®(Rigidbody2D) °ü¼º Á¦°Å
+            // 2. 2D ë¬¼ë¦¬(Rigidbody2D) ê´€ì„± ì œê±°
             if (_playerTransform.TryGetComponent<Rigidbody2D>(out var rb))
             {
                 rb.linearVelocity = Vector2.zero;
             }
 
-            Debug.Log($"[AutoDialogueTrigger] ´ëÈ­ ¿Ï·á ÈÄ ÇÃ·¹ÀÌ¾î¸¦ {_teleportPoint.name} À§Ä¡·Î ¼ø°£ÀÌµ¿ ½ÃÄ×½À´Ï´Ù.");
+            Debug.Log($"[AutoDialogueTrigger] ëŒ€í™” ì™„ë£Œ í›„ í”Œë ˆì´ì–´ë¥¼ {_teleportPoint.name} ìœ„ì¹˜ë¡œ ìˆœê°„ì´ë™ ì‹œì¼°ìŠµë‹ˆë‹¤.");
         }
 
         _isDialogueActive = false;
 
         if (_hideAfterDialogue)
         {
-            // ¼û°ÜÁö´Â °æ¿ì, ´õ ÀÌ»ó »óÈ£ÀÛ¿ëÇÒ ¼ö ¾øµµ·Ï ¿ÀºêÁ§Æ® ÀÚÃ¼¸¦ ºñÈ°¼ºÈ­
+            // ìˆ¨ê²¨ì§€ëŠ” ê²½ìš°, ë” ì´ìƒ ìƒí˜¸ì‘ìš©í•  ìˆ˜ ì—†ë„ë¡ ì˜¤ë¸Œì íŠ¸ ìì²´ë¥¼ ë¹„í™œì„±í™”
             gameObject.SetActive(false);
-            Debug.Log($"[AutoDialogueTrigger] {gameObject.name} ¿ÀºêÁ§Æ®°¡ ºñÈ°¼ºÈ­µÇ¾î È­¸é¿¡¼­ »ç¶óÁ³½À´Ï´Ù.");
+            Debug.Log($"[AutoDialogueTrigger] {gameObject.name} ì˜¤ë¸Œì íŠ¸ê°€ ë¹„í™œì„±í™”ë˜ì–´ í™”ë©´ì—ì„œ ì‚¬ë¼ì¡ŒìŠµë‹ˆë‹¤.");
         }
     }
 
-    // UI ¹öÆ° µîÀ¸·Î °­Á¦ ´ëÈ­È£Ãâ ÇÔ¼ö
+    // UI ë²„íŠ¼ ë“±ìœ¼ë¡œ ê°•ì œ ëŒ€í™”í˜¸ì¶œ í•¨ìˆ˜
     public void ForceStartDialogue(Transform player)
     {
         _playerTransform = player;
@@ -76,8 +76,8 @@ public class AutoDialogueTrigger : MonoBehaviour
             _isPlayerInRange = true;
             _playerTransform = other.transform;
 
-            // [ÇÙ½É º¯°æÁ¡] Å° ÀÔ·ÂÀ» ±â´Ù¸®´Â Update¹® ´ë½Å, 
-            // ÇÃ·¹ÀÌ¾î°¡ ´êÀÚ¸¶ÀÚ ´ëÈ­ ÁßÀÌ ¾Æ´Ï¶ó¸é °ğ¹Ù·Î ºñµ¿±â ´ëÈ­¸¦ ½ÇÇàÇÕ´Ï´Ù.
+            // [í•µì‹¬ ë³€ê²½ì ] í‚¤ ì…ë ¥ì„ ê¸°ë‹¤ë¦¬ëŠ” Updateë¬¸ ëŒ€ì‹ , 
+            // í”Œë ˆì´ì–´ê°€ ë‹¿ìë§ˆì ëŒ€í™” ì¤‘ì´ ì•„ë‹ˆë¼ë©´ ê³§ë°”ë¡œ ë¹„ë™ê¸° ëŒ€í™”ë¥¼ ì‹¤í–‰í•©ë‹ˆë‹¤.
             if (!_isDialogueActive)
             {
                 StartDialogueAsync().Forget();
@@ -93,7 +93,7 @@ public class AutoDialogueTrigger : MonoBehaviour
             _isDialogueActive = false;
             _playerTransform = null;
 
-            // ÇÃ·¹ÀÌ¾î°¡ °­Á¦·Î ¹üÀ§¸¦ ¹ş¾î³ª¸é ´ëÈ­ Áß´Ü
+            // í”Œë ˆì´ì–´ê°€ ê°•ì œë¡œ ë²”ìœ„ë¥¼ ë²—ì–´ë‚˜ë©´ ëŒ€í™” ì¤‘ë‹¨
             DialogueManager.Instance.Stop();
         }
     }
