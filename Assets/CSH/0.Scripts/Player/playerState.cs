@@ -34,7 +34,7 @@ public class PlayerState : MonoBehaviour, IDamageable
     [RuntimeOnly, SerializeField] private float dashGauge = 50f;
     [RuntimeOnly, SerializeField] private float maxDashGauge = 100f;
     private float dashCost = 20f;
-    public float dashGaugePerDash = 20f;
+    [RuntimeOnly, SerializeField] public float dashGaugePerDash = 10f;
 
     [RuntimeOnly, SerializeField] public bool isExhausted = false;
     public float exhaustRecoverThreshold = 20f;
