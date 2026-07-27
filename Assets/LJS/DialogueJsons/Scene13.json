@@ -227,6 +227,20 @@
     "id": "Scene_13_33",
     "speakerName": "제니스",
     "text": "[event: 12-p_Flip_Right][event: 12-p_Idle](지금 들키면 곤란하다, 빨리 벗어나자.)[event: 12-p_Run][action: 12-p_달리기] [click]",
+    "nextIds": [ "Scene_13_34" ],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_13_34",
+    "speakerName": "SYSTEM",
+    "text": "저희가 준비한 데모는 여기까지입니다. [click]",
+    "nextIds": [ "Scene_13_35" ],
+    "jumpId": ""
+  },
+  {
+    "id": "Scene_13_35",
+    "speakerName": "SYSTEM",
+    "text": "플레이 해주셔서 감사합니다. [click]",
     "nextIds": [],
     "jumpId": ""
   }

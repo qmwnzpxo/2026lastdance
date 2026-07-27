@@ -1255,9 +1255,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0
+    y: -0.2609309
     width: 1
-    height: 1
+    height: 1.5232723
   near clip plane: 0.1
   far clip plane: 5000
   field of view: 40
@@ -1801,6 +1801,37 @@ MonoBehaviour:
   delayBeforeFade: 2.5
   fadeDuration: 1
   fadeImage: {fileID: 483693241}
+--- !u!1 &983559151
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 983559152}
+  m_Layer: 0
+  m_Name: GameObject (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &983559152
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 983559151}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 10.776505, y: -2.3030298, z: -0.06834518}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1000484306
 GameObject:
   m_ObjectHideFlags: 0
@@ -20244,7 +20275,7 @@ MonoBehaviour:
   bouncePelletPrefab: {fileID: 5309555960500485855, guid: 8f1fc0d71fb6b434ea9faa32ccd1d509, type: 3}
   poolSize: 30
   phaseTransitionEffect: {fileID: 3942825033974895155, guid: cbda04bade8e3fb489814df5f29a05d6, type: 3}
-  deathEffect: {fileID: 7374832012837942830, guid: a3651e7f8f8b6e840bf91eaea35c0410, type: 3}
+  deathEffect: {fileID: 7374832012837942830, guid: 9ca53011b7a548d4da3d4399d67c0f1c, type: 3}
   hitFlashSprites: []
   hitInvincibilityDuration: 0.2
   hitFlashCount: 3
@@ -21424,3 +21455,4 @@ SceneRoots:
   - {fileID: 1773033283}
   - {fileID: 548757312}
   - {fileID: 4990274}
+  - {fileID: 983559152}

@@ -5,29 +5,29 @@ using UnityEngine.UI;
 
 public class BossDeathSceneTransition : MonoBehaviour
 {
-    [Header("º¸½º ÂüÁ¶")]
-    [Tooltip("DamageHandler°¡ ¾Æ´Ñ BossController ÄÄÆ÷³ÍÆ®¸¦ ¿¬°áÇØÁÖ¼¼¿ä.")]
+    [Header("ë³´ìŠ¤ ì°¸ì¡°")]
+    [Tooltip("DamageHandlerê°€ ì•„ë‹Œ BossController ì»´í¬ë„ŒíŠ¸ë¥¼ ì—°ê²°í•´ì£¼ì„¸ìš”.")]
     [SerializeField] private BossController bossController;
 
-    [Header("¾À ÀÌµ¿ ¼³Á¤")]
-    [Tooltip("ÀÌµ¿ÇÒ ´ÙÀ½ ¾ÀÀÇ ÀÌ¸§À» ÀÔ·ÂÇÏ¼¼¿ä.")]
+    [Header("ì”¬ ì´ë™ ì„¤ì •")]
+    [Tooltip("ì´ë™í•  ë‹¤ìŒ ì”¬ì˜ ì´ë¦„ì„ ì…ë ¥í•˜ì„¸ìš”.")]
     [SerializeField] private string nextSceneName = "NextSceneName";
 
-    [Tooltip("º¸½º »ç¸Á ¿¬ÃâÀ» ±â´Ù¸®´Â ½Ã°£ (DeadState ÄÚ·çÆ¾ÀÌ 2ÃÊ ´ë±âÇÏ¹Ç·Î 2~2.5ÃÊ ±ÇÀå)")]
+    [Tooltip("ë³´ìŠ¤ ì‚¬ë§ ì—°ì¶œì„ ê¸°ë‹¤ë¦¬ëŠ” ì‹œê°„ (DeadState ì½”ë£¨í‹´ì´ 2ì´ˆ ëŒ€ê¸°í•˜ë¯€ë¡œ 2~2.5ì´ˆ ê¶Œì¥)")]
     [SerializeField] private float delayBeforeFade = 2.5f;
 
-    [Tooltip("È­¸éÀÌ ¾îµÎ¿öÁö´Â µ¥ °É¸®´Â ½Ã°£")]
+    [Tooltip("í™”ë©´ì´ ì–´ë‘ì›Œì§€ëŠ” ë° ê±¸ë¦¬ëŠ” ì‹œê°„")]
     [SerializeField] private float fadeDuration = 1.5f;
 
-    [Header("UI ¿¬°á")]
-    [Tooltip("È­¸é ÀüÃ¼¸¦ µ¤´Â °ËÀº»ö UI Image¸¦ ¿¬°áÇØÁÖ¼¼¿ä.")]
+    [Header("UI ì—°ê²°")]
+    [Tooltip("í™”ë©´ ì „ì²´ë¥¼ ë®ëŠ” ê²€ì€ìƒ‰ UI Imageë¥¼ ì—°ê²°í•´ì£¼ì„¸ìš”.")]
     [SerializeField] private Image fadeImage;
 
-    private bool _isTransitionStarted = false; // Áßº¹ ½ÇÇà ¹æÁö¿ë ÇÃ·¡±×
+    private bool _isTransitionStarted = false; // ì¤‘ë³µ ì‹¤í–‰ ë°©ì§€ìš© í”Œë˜ê·¸
 
     private void Start()
     {
-        // È­¸éÀ» Åõ¸íÇÏ°Ô ÃÊ±âÈ­ÇÏ°í ÅÍÄ¡¸¦ ¹æÇØÇÏÁö ¾Ê°Ô ¼³Á¤ÇÕ´Ï´Ù.
+        // í™”ë©´ì„ íˆ¬ëª…í•˜ê²Œ ì´ˆê¸°í™”í•˜ê³  í„°ì¹˜ë¥¼ ë°©í•´í•˜ì§€ ì•Šê²Œ ì„¤ì •í•©ë‹ˆë‹¤.
         if (fadeImage != null)
         {
             fadeImage.color = new Color(0, 0, 0, 0);
@@ -36,19 +36,19 @@ public class BossDeathSceneTransition : MonoBehaviour
 
         if (bossController == null)
         {
-            Debug.LogWarning("[BossDeathSceneTransition] BossController°¡ ¿¬°áµÇÁö ¾Ê¾Ò½À´Ï´Ù!");
+            Debug.LogWarning("[BossDeathSceneTransition] BossControllerê°€ ì—°ê²°ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤!");
         }
     }
 
     private void Update()
     {
-        // ¾À ÀüÈ¯ÀÌ ¾ÆÁ÷ ½ÃÀÛµÇÁö ¾Ê¾Ò°í, º¸½º ÄÁÆ®·Ñ·¯°¡ Á¸ÀçÇÒ ¶§ ¸Å ÇÁ·¹ÀÓ »óÅÂ¸¦ È®ÀÎÇÕ´Ï´Ù.
+        // ì”¬ ì „í™˜ì´ ì•„ì§ ì‹œì‘ë˜ì§€ ì•Šì•˜ê³ , ë³´ìŠ¤ ì»¨íŠ¸ë¡¤ëŸ¬ê°€ ì¡´ì¬í•  ë•Œ ë§¤ í”„ë ˆì„ ìƒíƒœë¥¼ í™•ì¸í•©ë‹ˆë‹¤.
         if (!_isTransitionStarted && bossController != null)
         {
-            // º¸½ºÀÇ ÇöÀç »óÅÂ°¡ '»ç¸Á(Dead)'À¸·Î º¯°æµÇ¾ú´ÂÁö Á÷Á¢ È®ÀÎÇÕ´Ï´Ù.
+            // ë³´ìŠ¤ì˜ í˜„ì¬ ìƒíƒœê°€ 'ì‚¬ë§(Dead)'ìœ¼ë¡œ ë³€ê²½ë˜ì—ˆëŠ”ì§€ ì§ì ‘ í™•ì¸í•©ë‹ˆë‹¤.
             if (bossController.GetCurrentState() == BossState.Dead)
             {
-                _isTransitionStarted = true; // ÄÚ·çÆ¾ÀÌ ¿©·¯ ¹ø ½ÇÇàµÇ´Â °ÍÀ» ¸·½À´Ï´Ù.
+                _isTransitionStarted = true; // ì½”ë£¨í‹´ì´ ì—¬ëŸ¬ ë²ˆ ì‹¤í–‰ë˜ëŠ” ê²ƒì„ ë§‰ìŠµë‹ˆë‹¤.
                 StartCoroutine(SceneTransitionCoroutine());
             }
         }
@@ -56,15 +56,15 @@ public class BossDeathSceneTransition : MonoBehaviour
 
     private IEnumerator SceneTransitionCoroutine()
     {
-        Debug.Log($"[BossDeathSceneTransition] º¸½º »ç¸Á »óÅÂ °¨ÁöµÊ. {delayBeforeFade}ÃÊ ´ë±â ÈÄ ÆäÀÌµå ¾Æ¿ô ½ÃÀÛ.");
+        Debug.Log($"[BossDeathSceneTransition] ë³´ìŠ¤ ì‚¬ë§ ìƒíƒœ ê°ì§€ë¨. {delayBeforeFade}ì´ˆ ëŒ€ê¸° í›„ í˜ì´ë“œ ì•„ì›ƒ ì‹œì‘.");
 
-        // 1. º¸½ºÀÇ »ç¸Á ¾Ö´Ï¸ŞÀÌ¼Ç°ú ÀÌÆåÆ®°¡ ³¡³¯ ¶§±îÁö ´ë±âÇÕ´Ï´Ù.
+        // 1. ë³´ìŠ¤ì˜ ì‚¬ë§ ì• ë‹ˆë©”ì´ì…˜ê³¼ ì´í™íŠ¸ê°€ ëë‚  ë•Œê¹Œì§€ ëŒ€ê¸°í•©ë‹ˆë‹¤.
         yield return new WaitForSeconds(delayBeforeFade);
 
-        // 2. È­¸é ÆäÀÌµå ¾Æ¿ô (¼­¼­È÷ ¾ÏÀü)
+        // 2. í™”ë©´ í˜ì´ë“œ ì•„ì›ƒ (ì„œì„œíˆ ì•”ì „)
         if (fadeImage != null)
         {
-            fadeImage.raycastTarget = true; // ÆäÀÌµå ¾Æ¿ô Áß ÇÃ·¹ÀÌ¾îÀÇ UI ÅÍÄ¡ ¹æÁö
+            fadeImage.raycastTarget = true; // í˜ì´ë“œ ì•„ì›ƒ ì¤‘ í”Œë ˆì´ì–´ì˜ UI í„°ì¹˜ ë°©ì§€
             float timer = 0f;
             while (timer < fadeDuration)
             {
@@ -75,19 +75,19 @@ public class BossDeathSceneTransition : MonoBehaviour
             }
         }
 
-        Debug.Log($"[BossDeathSceneTransition] '{nextSceneName}' ¾À ºñµ¿±â ·Îµù ½ÃÀÛ.");
+        Debug.Log($"[BossDeathSceneTransition] '{nextSceneName}' ì”¬ ë¹„ë™ê¸° ë¡œë”© ì‹œì‘.");
 
-        // 3. ºñµ¿±â ¾À ·Îµå (LoadSceneAsync È°¿ë)
+        // 3. ë¹„ë™ê¸° ì”¬ ë¡œë“œ (LoadSceneAsync í™œìš©)
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(nextSceneName);
-        asyncLoad.allowSceneActivation = false; // ·ÎµùÀÌ ³¡³ªµµ Áï½Ã ³Ñ¾î°¡Áö ¾Êµµ·Ï ´ë±â
+        asyncLoad.allowSceneActivation = false; // ë¡œë”©ì´ ëë‚˜ë„ ì¦‰ì‹œ ë„˜ì–´ê°€ì§€ ì•Šë„ë¡ ëŒ€ê¸°
 
-        // À¯´ÏÆ¼ÀÇ ºñµ¿±â ·ÎµùÀº 90%(0.9)°¡ µÇ¸é ¿Ï·á·Î ÆÇÁ¤ÇÕ´Ï´Ù.
+        // ìœ ë‹ˆí‹°ì˜ ë¹„ë™ê¸° ë¡œë”©ì€ 90%(0.9)ê°€ ë˜ë©´ ì™„ë£Œë¡œ íŒì •í•©ë‹ˆë‹¤.
         while (asyncLoad.progress < 0.9f)
         {
             yield return null;
         }
 
-        // 4. ·Îµù ¿Ï·á ¹× ¾À È°¼ºÈ­
+        // 4. ë¡œë”© ì™„ë£Œ ë° ì”¬ í™œì„±í™”
         asyncLoad.allowSceneActivation = true;
     }
 }
