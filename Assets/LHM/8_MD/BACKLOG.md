@@ -93,8 +93,8 @@
 
 | ID | 유형 | 작업 | 완료 기준 (씬) | 범위 밖 | 의존 | 예상 파일 | 상태 |
 |---|---|---|---|---|---|---|---|
-| T1 | 로직 | 최소 공용 기반: `IRandom`·`SystemRandom(seed)`·`GameLog`(Conditional) + UniTask 미관측 예외 → GameLog 등록 | 에디터 컴파일 에러 0. T2 씬 테스트에서 GameLog 출력이 Console에 보임 | GameClock(→Q3), 기존 Debug.Log 교체 | Q1·Q2 | Core/IRandom.cs, Core/SystemRandom.cs, Gimmick/GameLog.cs, Gimmick/UniTaskExceptionBootstrap.cs | 🎮 |
-| T2 | 어댑터 | BossController 이벤트 훅: `BattleStarted`(등장 끝), `PhaseChanged(int)`, `Died`, `InvulnerableChanged(bool)` + `IsInvulnerable` 읽기 프로퍼티. 기존 코루틴·흐름은 그대로, 발생 지점에 호출만 추가 | 플레이: 착지 1초 후 BattleStarted 로그 1회 / F1 → PhaseChanged(2) 1회(다시 F1 눌러도 추가 없음) / 사망 → Died 1회 / 등장 중 Invulnerable=true → 끝나면 false | 페이즈 경계 버그 수정(T22), 체력바 표시 | T1 | New/BossController.cs (+40줄 내외) | ✅ |
+| T1 | 로직 | 최소 공용 기반: `IRandom`·`SystemRandom(seed)`·`GameLog`(Conditional) + UniTask 미관측 예외 → GameLog 등록 | 에디터 컴파일 에러 0. T2 씬 테스트에서 GameLog 출력이 Console에 보임 | GameClock(→Q3), 기존 Debug.Log 교체 | Q1·Q2 | Core/IRandom.cs, Core/SystemRandom.cs, Gimmick/GameLog.cs, Gimmick/UniTaskExceptionBootstrap.cs | 🏁 |
+| T2 | 어댑터 | BossController 이벤트 훅: `BattleStarted`(등장 끝), `PhaseChanged(int)`, `Died`, `InvulnerableChanged(bool)` + `IsInvulnerable` 읽기 프로퍼티. 기존 코루틴·흐름은 그대로, 발생 지점에 호출만 추가 | 플레이: 착지 1초 후 BattleStarted 로그 1회 / F1 → PhaseChanged(2) 1회(다시 F1 눌러도 추가 없음) / 사망 → Died 1회 / 등장 중 Invulnerable=true → 끝나면 false | 페이즈 경계 버그 수정(T22), 체력바 표시 | T1 | New/BossController.cs (+40줄 내외) | 🎮 |
 | T3 | 어댑터 | `BossArenaDirector` + `IBossGimmick`(`UniTask RunAsync(ct)`, `ReleaseAll()`) : 페이즈별 CTS 보유, BattleStarted→1P 기믹 시작, PhaseChanged(2)→1P Cancel+ReleaseAll 후 2P 시작, Died→전부 Cancel+ReleaseAll. `BossArenaConfig`(방 경계 40×30, 중앙 상단·하단 중앙 앵커 오프셋) | Scene 뷰 Gizmo로 방 경계·앵커 표시. 인스펙터 읽기 전용 "현재 페이즈 / 실행 중 기믹 수". 기믹 0개로도 시작·취소 로그가 순서대로 1회씩 | 개별 기믹 | T2 | Gimmick/BossArenaDirector.cs, Gimmick/IBossGimmick.cs, Gimmick/BossArenaConfig.cs | ✅ |
 | T4 | 에디터 | 보스룸 씬에 Director 배치, Config 에셋 생성·연결, 방 크기 40×30 이상 확인 | 현민 플레이 확인 (T3 완료 기준 재확인) | — | T3 | (현민) | ✅ |
 
@@ -138,6 +138,7 @@
 | T22 | 어댑터 | 기존 보정: 50% 경계(`>= 0.5`→1P, 체력바 동일), 반복 방지 3번째 교체, 드론 제한 하드코딩 → 필드. **거리 2/8/9는 그대로**(임시 축소 값). 코루틴 구조는 손대지 않음 | HP 250 → 1P 유지, 249 → 2P / 같은 패턴 2연속은 허용, 3번째에 교체 로그 / 드론 1마리 활성 시 연사 대체 | 거리 조정, 콤보 재설계 | — | New/BossController.cs, New/BossAttackPatterns.cs, New/BossHealthBar.cs | ✅ |
 | T23 | 어댑터 | 회수 누락 보강: 파편 2종을 기존 파편 풀 사용으로, 에너지탄 회수 경로 추가 → 전환·사망 시 함께 회수 | 곡사포 AirBurst/Bounce 직후 F1 → 파편 전부 사라짐, 드론 에너지탄 비행 중 보스 사망 → 사라짐 | 새 기믹(T3에서 처리) | T2 | New/HowitzerCannonball.cs, New/ConductorDrone.cs, New/EnergyBullet.cs, New/BossController.cs | ✅ |
 | T24 | 에디터 | 체력바 상단 중앙 가로 배치, 자물쇠/쉴드 이미지 연결, 최종 통합 플레이(1P→2P→사망 전 과정) | 현민 플레이 확인: 전환·사망 후 씬에 레이저·판넬·벽·거울·UI·발사체 0개 | — | T21~T23 | (현민) | ✅ |
+| T26 | 에디터 툴 | 테스트 씬 생성 툴 `UnMachine/Test Scene/Boss Arena` (AI_RULES 0장 2번 예외): 40×30 방(바닥·천장·좌우 벽, ground 레이어), 카메라, Global Light 2D, 위치 마커, 플레이어·보스 프리팹 배치, 보스 player 참조 연결. 같은 이름 씬은 덮어쓰지 않음 | 메뉴 실행 → `Test_Boss.unity` 생성, Play 시 플레이어가 바닥에 서고 보스가 낙하·착지 | 기존 씬 수정, 보스 프리팹 제작 | — | New/Editor/BossTestSceneBuilder.cs | 🎮 |
 
 권장 순서: T1→T2→T3→T4 → T22 → (B-1 ‖ B-2) → T19 → T21 → B-3(T14~T18 → T25 → T20) → T23 → T24
 

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using BossBT;
 using BossSystem;
+using UnMachine;
 
 /// <summary>
 /// 보스 상태 열거형
@@ -156,6 +157,31 @@ public class BossController : MonoBehaviour, IDamageable
 
     // 돌진 등 패턴 중 FacePlayer() 억제 플래그
     private bool _facingLocked = false;
+
+    // ── 외부 알림 이벤트 (T2: 기믹 Director·체력바 연동용) ──
+    // 기존 FSM 흐름은 그대로 두고 발생 지점에서 호출만 한다.
+
+    /// <summary>등장 연출이 끝나고 전투가 시작될 때 1회.</summary>
+    public event System.Action BattleStarted;
+
+    /// <summary>페이즈가 바뀐 직후 (인자: 새 페이즈 번호). 전환은 최초 1회만 일어난다.</summary>
+    public event System.Action<int> PhaseChanged;
+
+    /// <summary>Dead 상태 최초 진입 시 1회.</summary>
+    public event System.Action Died;
+
+    /// <summary>
+    /// 무적(체력바 자물쇠 표시 대상) 여부가 바뀔 때. 0.2초 피격 무적은 포함하지 않는다 (BACKLOG Q4).
+    /// 구독 직후에는 이벤트를 기다리지 말고 <see cref="IsInvulnerable"/> 를 먼저 읽는다.
+    /// </summary>
+    public event System.Action<bool> InvulnerableChanged;
+
+    /// <summary>현재 무적(자물쇠 표시 대상) 여부. 지금은 등장 중만 true. (T19에서 2페이즈 쉴드 추가 예정)</summary>
+    public bool IsInvulnerable => ComputeInvulnerable();
+
+    // 마지막으로 알린 값 (변화 감지용). false로 시작해서 Start의 Appearing 진입 때 true 알림이 1회 나간다.
+    private bool _isInvulnerableNotified = false;
+    private bool _hasDied = false;
 
     /// <summary>
     /// HP UI 이벤트(온HpChanged) 연동용.
@@ -568,6 +594,10 @@ public class BossController : MonoBehaviour, IDamageable
             audioSource.Play();
         }
 
+        // 전투 시작 알림 (Idle 전이 직전 — 구독자가 1페이즈 기믹을 시작한다)
+        GameLog.Info("[Boss] BattleStarted", this);
+        BattleStarted?.Invoke();
+
         // Appearing 상태 해제 후 Idle로 전이
         ChangeState(BossState.Idle);
     }
@@ -582,6 +612,17 @@ public class BossController : MonoBehaviour, IDamageable
             return;
 
         currentState = newState;
+
+        // 무적 표시 여부 갱신 (바뀐 경우에만 알림)
+        UpdateInvulnerableNotification();
+
+        // Dead 최초 진입 알림 — Dead→Dead 재진입은 무시
+        if (newState == BossState.Dead && !_hasDied)
+        {
+            _hasDied = true;
+            GameLog.Info("[Boss] Died", this);
+            Died?.Invoke();
+        }
 
         // 애니메이터 파라미터 설정
         if (animator != null)
@@ -1046,6 +1087,8 @@ public class BossController : MonoBehaviour, IDamageable
 
 
 
+                NotifyPhaseChanged();
+
                 ChangeState(BossState.Idle);
                 Debug.Log("[Debug] F1: 2페이즈 전환 완료 → 드론 패턴 활성화됨");
             }
@@ -1144,6 +1187,9 @@ public class BossController : MonoBehaviour, IDamageable
 
 
 
+
+            // 페이즈 전환 알림 (정리 완료 후, 새 루프 시작 전 — 구독자가 이전 페이즈 기믹을 회수하고 다음 기믹을 시작)
+            NotifyPhaseChanged();
 
             // 5) 새 상태 시작
             ChangeState(BossState.Idle);
@@ -1295,6 +1341,36 @@ public class BossController : MonoBehaviour, IDamageable
 
         // 보스 오브젝트 비활성화
         gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 페이즈 전환 알림. 전환 블록(TakeDamage, 에디터 F1)에서 currentPhase 갱신 후 호출한다.
+    /// </summary>
+    private void NotifyPhaseChanged()
+    {
+        GameLog.Info($"[Boss] PhaseChanged → {currentPhase}", this);
+        PhaseChanged?.Invoke(currentPhase);
+    }
+
+    /// <summary>무적 표시 대상 판정의 단일 기준. T19에서 2페이즈 쉴드 조건을 여기에 더한다.</summary>
+    private bool ComputeInvulnerable()
+    {
+        return currentState == BossState.Appearing;
+    }
+
+    /// <summary>
+    /// 현재 상태 기준 무적 표시 여부를 계산하고, 바뀌었으면 InvulnerableChanged 를 발생시킨다.
+    /// 피격 0.2초 무적(_isInvincible)은 체력바에 표시하지 않으므로 제외한다 (BACKLOG Q4).
+    /// </summary>
+    private void UpdateInvulnerableNotification()
+    {
+        bool invulnerable = ComputeInvulnerable();
+        if (invulnerable == _isInvulnerableNotified)
+            return;
+
+        _isInvulnerableNotified = invulnerable;
+        GameLog.Info($"[Boss] InvulnerableChanged → {invulnerable}", this);
+        InvulnerableChanged?.Invoke(invulnerable);
     }
 
     /// <summary>
