@@ -93,51 +93,51 @@
 
 | ID | 유형 | 작업 | 완료 기준 (씬) | 범위 밖 | 의존 | 예상 파일 | 상태 |
 |---|---|---|---|---|---|---|---|
-| T1 | 로직 | 최소 공용 기반: `IRandom`·`SystemRandom(seed)`·`GameLog`(Conditional) + UniTask 미관측 예외 → GameLog 등록 | 에디터 컴파일 에러 0. T2 씬 테스트에서 GameLog 출력이 Console에 보임 | GameClock(→Q3), 기존 Debug.Log 교체 | Q1·Q2 | Core/IRandom.cs, Core/SystemRandom.cs, Gimmick/GameLog.cs, Gimmick/UniTaskExceptionBootstrap.cs | ⬜ |
-| T2 | 어댑터 | BossController 이벤트 훅: `BattleStarted`(등장 끝), `PhaseChanged(int)`, `Died`, `InvulnerableChanged(bool)` + `IsInvulnerable` 읽기 프로퍼티. 기존 코루틴·흐름은 그대로, 발생 지점에 호출만 추가 | 플레이: 착지 1초 후 BattleStarted 로그 1회 / F1 → PhaseChanged(2) 1회(다시 F1 눌러도 추가 없음) / 사망 → Died 1회 / 등장 중 Invulnerable=true → 끝나면 false | 페이즈 경계 버그 수정(T22), 체력바 표시 | T1 | New/BossController.cs (+40줄 내외) | ⬜ |
-| T3 | 어댑터 | `BossArenaDirector` + `IBossGimmick`(`UniTask RunAsync(ct)`, `ReleaseAll()`) : 페이즈별 CTS 보유, BattleStarted→1P 기믹 시작, PhaseChanged(2)→1P Cancel+ReleaseAll 후 2P 시작, Died→전부 Cancel+ReleaseAll. `BossArenaConfig`(방 경계 40×30, 중앙 상단·하단 중앙 앵커 오프셋) | Scene 뷰 Gizmo로 방 경계·앵커 표시. 인스펙터 읽기 전용 "현재 페이즈 / 실행 중 기믹 수". 기믹 0개로도 시작·취소 로그가 순서대로 1회씩 | 개별 기믹 | T2 | Gimmick/BossArenaDirector.cs, Gimmick/IBossGimmick.cs, Gimmick/BossArenaConfig.cs | ⬜ |
-| T4 | 에디터 | 보스룸 씬에 Director 배치, Config 에셋 생성·연결, 방 크기 40×30 이상 확인 | 현민 플레이 확인 (T3 완료 기준 재확인) | — | T3 | (현민) | ⬜ |
+| T1 | 로직 | 최소 공용 기반: `IRandom`·`SystemRandom(seed)`·`GameLog`(Conditional) + UniTask 미관측 예외 → GameLog 등록 | 에디터 컴파일 에러 0. T2 씬 테스트에서 GameLog 출력이 Console에 보임 | GameClock(→Q3), 기존 Debug.Log 교체 | Q1·Q2 | Core/IRandom.cs, Core/SystemRandom.cs, Gimmick/GameLog.cs, Gimmick/UniTaskExceptionBootstrap.cs | 🎮 |
+| T2 | 어댑터 | BossController 이벤트 훅: `BattleStarted`(등장 끝), `PhaseChanged(int)`, `Died`, `InvulnerableChanged(bool)` + `IsInvulnerable` 읽기 프로퍼티. 기존 코루틴·흐름은 그대로, 발생 지점에 호출만 추가 | 플레이: 착지 1초 후 BattleStarted 로그 1회 / F1 → PhaseChanged(2) 1회(다시 F1 눌러도 추가 없음) / 사망 → Died 1회 / 등장 중 Invulnerable=true → 끝나면 false | 페이즈 경계 버그 수정(T22), 체력바 표시 | T1 | New/BossController.cs (+40줄 내외) | ✅ |
+| T3 | 어댑터 | `BossArenaDirector` + `IBossGimmick`(`UniTask RunAsync(ct)`, `ReleaseAll()`) : 페이즈별 CTS 보유, BattleStarted→1P 기믹 시작, PhaseChanged(2)→1P Cancel+ReleaseAll 후 2P 시작, Died→전부 Cancel+ReleaseAll. `BossArenaConfig`(방 경계 40×30, 중앙 상단·하단 중앙 앵커 오프셋) | Scene 뷰 Gizmo로 방 경계·앵커 표시. 인스펙터 읽기 전용 "현재 페이즈 / 실행 중 기믹 수". 기믹 0개로도 시작·취소 로그가 순서대로 1회씩 | 개별 기믹 | T2 | Gimmick/BossArenaDirector.cs, Gimmick/IBossGimmick.cs, Gimmick/BossArenaConfig.cs | ✅ |
+| T4 | 에디터 | 보스룸 씬에 Director 배치, Config 에셋 생성·연결, 방 크기 40×30 이상 확인 | 현민 플레이 확인 (T3 완료 기준 재확인) | — | T3 | (현민) | ✅ |
 
 #### B-1. 1페이즈 — 회전 레이저
 
 | ID | 유형 | 작업 | 완료 기준 (씬) | 범위 밖 | 의존 | 예상 파일 | 상태 |
 |---|---|---|---|---|---|---|---|
-| T5 | 로직 | `RotatingBeam`(각도 진행: 시작각·속도·방향, dt 입력) + `DamageTickTimer`(대상별 피해 간격) | T6 Gizmo에서 빔 각도가 Config 속도대로 회전 (속도 0 → 정지, 음수 → 역회전) | 레이캐스트·표시 | T1 | Core/RotatingBeam.cs, Core/DamageTickTimer.cs | ⬜ |
-| T6 | 어댑터 | `RotatingLaserGimmick`(IBossGimmick): 보스 양옆 연결부 앵커 2곳에서 빔, `Physics2D.Raycast`(NonAlloc)로 벽까지 길이, 플레이어 `IDamageable` 틱 피해, LineRenderer 끝점 갱신. `RotatingLaserConfig` | 1P 시작 시 양옆에서 빔 2개가 회전, 빔이 벽에서 끊김, 닿아 있으면 틱 간격마다 플레이어 HP 감소, F1 → 즉시 사라짐, 사망 → 사라짐 | 전조·이펙트 | T3·T5 | Gimmick/RotatingLaserGimmick.cs, Gimmick/RotatingLaserConfig.cs | ⬜ |
-| T7 | 연출 | 레이저 전조(경고선 깜빡임 → 발사), 시작/종료 페이드, 발사 루프 사운드 호출 | 시작 전 경고선이 Config 시간만큼 보인 뒤 피해 판정 시작(경고 중엔 피해 0) | 셰이더 제작 | T6 | Gimmick/RotatingLaserView.cs | ⬜ |
-| T8 | 에디터 | 보스 프리팹 양옆 앵커·LineRenderer 2개·Config 에셋·플레이어 레이어 마스크 | 현민 플레이 확인 | — | T7 | (현민) | ⬜ |
+| T5 | 로직 | `RotatingBeam`(각도 진행: 시작각·속도·방향, dt 입력) + `DamageTickTimer`(대상별 피해 간격) | T6 Gizmo에서 빔 각도가 Config 속도대로 회전 (속도 0 → 정지, 음수 → 역회전) | 레이캐스트·표시 | T1 | Core/RotatingBeam.cs, Core/DamageTickTimer.cs | ✅ |
+| T6 | 어댑터 | `RotatingLaserGimmick`(IBossGimmick): 보스 양옆 연결부 앵커 2곳에서 빔, `Physics2D.Raycast`(NonAlloc)로 벽까지 길이, 플레이어 `IDamageable` 틱 피해, LineRenderer 끝점 갱신. `RotatingLaserConfig` | 1P 시작 시 양옆에서 빔 2개가 회전, 빔이 벽에서 끊김, 닿아 있으면 틱 간격마다 플레이어 HP 감소, F1 → 즉시 사라짐, 사망 → 사라짐 | 전조·이펙트 | T3·T5 | Gimmick/RotatingLaserGimmick.cs, Gimmick/RotatingLaserConfig.cs | ✅ |
+| T7 | 연출 | 레이저 전조(경고선 깜빡임 → 발사), 시작/종료 페이드, 발사 루프 사운드 호출 | 시작 전 경고선이 Config 시간만큼 보인 뒤 피해 판정 시작(경고 중엔 피해 0) | 셰이더 제작 | T6 | Gimmick/RotatingLaserView.cs | ✅ |
+| T8 | 에디터 | 보스 프리팹 양옆 앵커·LineRenderer 2개·Config 에셋·플레이어 레이어 마스크 | 현민 플레이 확인 | — | T7 | (현민) | ✅ |
 
 #### B-2. 1페이즈 — RGB 판넬
 
 | ID | 유형 | 작업 | 완료 기준 (씬) | 범위 밖 | 의존 | 예상 파일 | 상태 |
 |---|---|---|---|---|---|---|---|
-| T9 | 로직 | `PanelWanderPlanner`(방 경계 안 무작위 목표점, IRandom, 도착 판정·최소 이동거리) + `PanelAttackCycle`(대기→전조→발사→쿨다운 상태 전이, dt 입력) | T10 Gizmo에서 목표점이 항상 방 경계 안, 고정 시드 재시작 시 같은 경로 | 공격 내용 | T1 | Core/PanelWanderPlanner.cs, Core/PanelAttackCycle.cs | ⬜ |
-| T10 | 어댑터 | `BossPanel`(이동·`IDamageable` 피격·체력 0 → 파괴·풀 반환 시 CTS Cancel·상태 초기화) + `BossPanelGimmick`(보스 몸 위치에서 A/B/C 스폰, 파괴 후 재스폰 대기, 활성 목록, ReleaseAll) + `BossPanelConfig`(타입별 배열). **이동·파괴만, 공격 없음** | 1P 시작 시 보스 몸에서 R·G·B 판넬이 나와 경계 안에서만 무작위 이동(Gizmo 목표점), 플레이어 공격으로 파괴 → 재스폰 시간 뒤 다시 등장, F1 → 전부 사라지고 재스폰 대기도 취소, 다시 플레이해도 이전 위치·체력 안 남음 | 공격, 파괴 연출 | T3·T9 | Gimmick/BossPanel.cs, Gimmick/BossPanelGimmick.cs, Gimmick/BossPanelConfig.cs, Gimmick/PanelType.cs | ⬜ |
-| T11 | 어댑터 | 판넬 타입별 공격 전략 `IPanelAttack` × A(조준 레이저)/B(8방향 탄)/C(돌진) — "판넬 안". B 탄은 기존 `BossController.GetBulletFromPool()` 재사용(→ 기존 일괄 회수에 포함) | 레드: 조준선 추적→고정→발사, 고정 후 피하면 피해 0 / 블루: 정지 후 8발 원형 / 그린: 깜빡임 후 플레이어 위치로 돌진·접촉 피해. F1 시 발사체까지 사라짐 | 연출 | T10 | Gimmick/IPanelAttack.cs, Gimmick/PanelAttackRed.cs, Gimmick/PanelAttackBlue.cs, Gimmick/PanelAttackGreen.cs | ⬜ |
-| T12 | 연출 | 판넬 색·전조 깜빡임·피격/파괴 이펙트·사운드 호출 | 전조가 공격 전 Config 시간만큼 보임, 파괴 시 이펙트 1회 | 아트 제작 | T11 | Gimmick/BossPanelView.cs | ⬜ |
-| T13 | 에디터 | 판넬 프리팹 3종(SpriteRenderer·Collider2D·View), Config 에셋 | 현민 플레이 확인 | — | T12 | (현민) | ⬜ |
+| T9 | 로직 | `PanelWanderPlanner`(방 경계 안 무작위 목표점, IRandom, 도착 판정·최소 이동거리) + `PanelAttackCycle`(대기→전조→발사→쿨다운 상태 전이, dt 입력) | T10 Gizmo에서 목표점이 항상 방 경계 안, 고정 시드 재시작 시 같은 경로 | 공격 내용 | T1 | Core/PanelWanderPlanner.cs, Core/PanelAttackCycle.cs | ✅ |
+| T10 | 어댑터 | `BossPanel`(이동·`IDamageable` 피격·체력 0 → 파괴·풀 반환 시 CTS Cancel·상태 초기화) + `BossPanelGimmick`(보스 몸 위치에서 A/B/C 스폰, 파괴 후 재스폰 대기, 활성 목록, ReleaseAll) + `BossPanelConfig`(타입별 배열). **이동·파괴만, 공격 없음** | 1P 시작 시 보스 몸에서 R·G·B 판넬이 나와 경계 안에서만 무작위 이동(Gizmo 목표점), 플레이어 공격으로 파괴 → 재스폰 시간 뒤 다시 등장, F1 → 전부 사라지고 재스폰 대기도 취소, 다시 플레이해도 이전 위치·체력 안 남음 | 공격, 파괴 연출 | T3·T9 | Gimmick/BossPanel.cs, Gimmick/BossPanelGimmick.cs, Gimmick/BossPanelConfig.cs, Gimmick/PanelType.cs | ✅ |
+| T11 | 어댑터 | 판넬 타입별 공격 전략 `IPanelAttack` × A(조준 레이저)/B(8방향 탄)/C(돌진) — "판넬 안". B 탄은 기존 `BossController.GetBulletFromPool()` 재사용(→ 기존 일괄 회수에 포함) | 레드: 조준선 추적→고정→발사, 고정 후 피하면 피해 0 / 블루: 정지 후 8발 원형 / 그린: 깜빡임 후 플레이어 위치로 돌진·접촉 피해. F1 시 발사체까지 사라짐 | 연출 | T10 | Gimmick/IPanelAttack.cs, Gimmick/PanelAttackRed.cs, Gimmick/PanelAttackBlue.cs, Gimmick/PanelAttackGreen.cs | ✅ |
+| T12 | 연출 | 판넬 색·전조 깜빡임·피격/파괴 이펙트·사운드 호출 | 전조가 공격 전 Config 시간만큼 보임, 파괴 시 이펙트 1회 | 아트 제작 | T11 | Gimmick/BossPanelView.cs | ✅ |
+| T13 | 에디터 | 판넬 프리팹 3종(SpriteRenderer·Collider2D·View), Config 에셋 | 현민 플레이 확인 | — | T12 | (현민) | ✅ |
 
 #### B-3. 2페이즈 — 레이저 벽·거울·아재 패턴
 
 | ID | 유형 | 작업 | 완료 기준 (씬) | 범위 밖 | 의존 | 예상 파일 | 상태 |
 |---|---|---|---|---|---|---|---|
-| T14 | 로직 | `ClosingWallModel`: 좌/우 벽 x 위치, 수렴 속도, **최소 간격(중앙 안전지대) 보장**, `Push(amount)`(아재 성공 시 후퇴용) | T15 Gizmo에서 벽이 최소 간격에서 멈춤, Push 시 바깥으로 이동 후 다시 수렴 | 피해 판정 | T1 | Core/ClosingWallModel.cs | ⬜ |
-| T15 | 어댑터 | `LaserWallGimmick`(IBossGimmick): 양 끝 벽 Transform 이동, 접촉 틱 피해(트리거), `LaserWallConfig` | F1 → 화면 양 끝에서 벽이 좁혀오다 최소 간격에서 정지, 닿으면 틱 피해, 사망 → 사라짐 | 아재 연동 | T3·T14 | Gimmick/LaserWallGimmick.cs, Gimmick/LaserWallConfig.cs, Gimmick/LaserWallHitbox.cs | ⬜ |
-| T16 | 어댑터 | `BossMirror`(상호작용 오브젝트): 2P 시작 시 하단 정중앙 등장, 반경 안 플레이어 감지 → "V" 프롬프트, 상호작용 키 입력 시 `Interacted` 이벤트, 쿨다운 중 무시. 키는 Config KeyCode(기본 V) | 2P 진입 시 거울 등장, 반경 안에서만 V 프롬프트·로그, 반경 밖 V 무시, 사망 시 사라짐 | 커맨드 판정 | T3 | Gimmick/BossMirror.cs, Gimmick/InteractPromptView.cs | ⬜ |
-| T17 | 로직 | `AjaeCommandSequence`(IRandom으로 방향 3개 + Space 마무리 생성) + `AjaeCommandJudge`(입력 진행·오답 1회 즉시 실패·제한시간 → Success/Fail) + `AjaeConfig`(길이·제한시간·반경·쿨다운·키·실패 피해) | T18 팝업에서 길이·제한시간이 Config 값과 같음, 오답 1회에 즉시 Fail, 시간 초과 Fail | UI | T1 | Core/AjaeCommandSequence.cs, Core/AjaeCommandJudge.cs, Gimmick/AjaeConfig.cs | ⬜ |
-| T18 | 연출 | 커맨드 UI: 화면 중앙 대형 팝업(화살표 칸·진행 하이라이트·남은 시간 바) + Presenter(입력→Judge, 결과→View, 입력 중 플레이어 이동·점프 잠금) + `PlayerMove` 에 외부 잠금 플래그 `SetInputLocked(bool)` 추가. 판정은 Judge만 | V → 팝업, 맞는 키마다 칸 점등, 틀리면 실패 표시, 시간 초과 실패, 입력 중 방향키·Space로 플레이어가 움직이거나 점프하지 않음, 끝나면(성공·실패·시간 초과·보스 사망 모두) 팝업 닫히고 이동 복구 | 결과 효과 | T16·T17 | Gimmick/AjaeCommandPresenter.cs, Gimmick/AjaeCommandView.cs, CSH/0.Scripts/Player/PlayerMove.cs (잠금 플래그만) | ⬜ |
-| T19 | 어댑터 | BossController 그로기·쉴드: `BossState.Groggy`(enum **맨 끝에 추가** → 기존 Animator `State` 정수값 유지), `EnterGroggy(seconds)`(ForceStopAllPatterns·이동 정지·피해 허용, UniTask 대기 + 사망 시 취소 → 끝나면 Idle), `SetShield(bool)`(2P 기본 쉴드, TakeDamage에서 거부, `InvulnerableChanged` 발생). 기존 코루틴은 그대로 | 디버그 키로 그로기 → 보스가 공격·이동 멈추고 Config 시간 뒤 Idle 복귀, 그로기 중 사망하면 Dead만 진행. 쉴드 On이면 피해 0 | 아재 연결 | T2 | New/BossController.cs, Gimmick/BossGroggyConfig.cs | ⬜ |
-| T25 | 어댑터 | 아재 결과 연결: 성공 → `EnterGroggy` + 그로기 동안 쉴드 해제(Q4), 실패 → 플레이어 피해 + 재시도 쿨다운. 입력 중 보스 새 콤보 보류 | 성공 시 보스 그로기·자물쇠 사라짐·딜 가능 → 끝나면 쉴드 복귀 / 실패 시 플레이어 HP가 Config만큼 감소, 쿨다운 동안 V 무시 | — | T15·T18·T19 | Gimmick/AjaeOutcomeHandler.cs (+Director 소폭) | ⬜ |
-| T20 | 에디터 | 벽 2개·거울 프리팹, 커맨드 UI 캔버스(중앙), Config 에셋, Animator에 Groggy 상태(State 값 = 8) 추가 | 현민 플레이 확인 | — | T25 | (현민) | ⬜ |
+| T14 | 로직 | `ClosingWallModel`: 좌/우 벽 x 위치, 수렴 속도, **최소 간격(중앙 안전지대) 보장**, `Push(amount)`(아재 성공 시 후퇴용) | T15 Gizmo에서 벽이 최소 간격에서 멈춤, Push 시 바깥으로 이동 후 다시 수렴 | 피해 판정 | T1 | Core/ClosingWallModel.cs | ✅ |
+| T15 | 어댑터 | `LaserWallGimmick`(IBossGimmick): 양 끝 벽 Transform 이동, 접촉 틱 피해(트리거), `LaserWallConfig` | F1 → 화면 양 끝에서 벽이 좁혀오다 최소 간격에서 정지, 닿으면 틱 피해, 사망 → 사라짐 | 아재 연동 | T3·T14 | Gimmick/LaserWallGimmick.cs, Gimmick/LaserWallConfig.cs, Gimmick/LaserWallHitbox.cs | ✅ |
+| T16 | 어댑터 | `BossMirror`(상호작용 오브젝트): 2P 시작 시 하단 정중앙 등장, 반경 안 플레이어 감지 → "V" 프롬프트, 상호작용 키 입력 시 `Interacted` 이벤트, 쿨다운 중 무시. 키는 Config KeyCode(기본 V) | 2P 진입 시 거울 등장, 반경 안에서만 V 프롬프트·로그, 반경 밖 V 무시, 사망 시 사라짐 | 커맨드 판정 | T3 | Gimmick/BossMirror.cs, Gimmick/InteractPromptView.cs | ✅ |
+| T17 | 로직 | `AjaeCommandSequence`(IRandom으로 방향 3개 + Space 마무리 생성) + `AjaeCommandJudge`(입력 진행·오답 1회 즉시 실패·제한시간 → Success/Fail) + `AjaeConfig`(길이·제한시간·반경·쿨다운·키·실패 피해) | T18 팝업에서 길이·제한시간이 Config 값과 같음, 오답 1회에 즉시 Fail, 시간 초과 Fail | UI | T1 | Core/AjaeCommandSequence.cs, Core/AjaeCommandJudge.cs, Gimmick/AjaeConfig.cs | ✅ |
+| T18 | 연출 | 커맨드 UI: 화면 중앙 대형 팝업(화살표 칸·진행 하이라이트·남은 시간 바) + Presenter(입력→Judge, 결과→View, 입력 중 플레이어 이동·점프 잠금) + `PlayerMove` 에 외부 잠금 플래그 `SetInputLocked(bool)` 추가. 판정은 Judge만 | V → 팝업, 맞는 키마다 칸 점등, 틀리면 실패 표시, 시간 초과 실패, 입력 중 방향키·Space로 플레이어가 움직이거나 점프하지 않음, 끝나면(성공·실패·시간 초과·보스 사망 모두) 팝업 닫히고 이동 복구 | 결과 효과 | T16·T17 | Gimmick/AjaeCommandPresenter.cs, Gimmick/AjaeCommandView.cs, CSH/0.Scripts/Player/PlayerMove.cs (잠금 플래그만) | ✅ |
+| T19 | 어댑터 | BossController 그로기·쉴드: `BossState.Groggy`(enum **맨 끝에 추가** → 기존 Animator `State` 정수값 유지), `EnterGroggy(seconds)`(ForceStopAllPatterns·이동 정지·피해 허용, UniTask 대기 + 사망 시 취소 → 끝나면 Idle), `SetShield(bool)`(2P 기본 쉴드, TakeDamage에서 거부, `InvulnerableChanged` 발생). 기존 코루틴은 그대로 | 디버그 키로 그로기 → 보스가 공격·이동 멈추고 Config 시간 뒤 Idle 복귀, 그로기 중 사망하면 Dead만 진행. 쉴드 On이면 피해 0 | 아재 연결 | T2 | New/BossController.cs, Gimmick/BossGroggyConfig.cs | ✅ |
+| T25 | 어댑터 | 아재 결과 연결: 성공 → `EnterGroggy` + 그로기 동안 쉴드 해제(Q4), 실패 → 플레이어 피해 + 재시도 쿨다운. 입력 중 보스 새 콤보 보류 | 성공 시 보스 그로기·자물쇠 사라짐·딜 가능 → 끝나면 쉴드 복귀 / 실패 시 플레이어 HP가 Config만큼 감소, 쿨다운 동안 V 무시 | — | T15·T18·T19 | Gimmick/AjaeOutcomeHandler.cs (+Director 소폭) | ✅ |
+| T20 | 에디터 | 벽 2개·거울 프리팹, 커맨드 UI 캔버스(중앙), Config 에셋, Animator에 Groggy 상태(State 값 = 8) 추가 | 현민 플레이 확인 | — | T25 | (현민) | ✅ |
 
 #### B-4. UI·회수·기존 보정
 
 | ID | 유형 | 작업 | 완료 기준 (씬) | 범위 밖 | 의존 | 예상 파일 | 상태 |
 |---|---|---|---|---|---|---|---|
-| T21 | 어댑터 | 체력바 무적 표시: `InvulnerableChanged` 구독 → 자물쇠 아이콘/쉴드 오버레이 On/Off. 0.2초 피격 무적은 표시 안 함 | 등장 낙하 중 자물쇠 → 전투 시작 시 사라짐 / 2P 진입 시 자물쇠 → 그로기 중 사라짐 → 그로기 끝 다시 표시 / 피격 깜빡임 중엔 자물쇠 안 뜸 | 체력바 레이아웃 | T19 | New/BossHealthBar.cs, Gimmick/BossShieldIndicator.cs | ⬜ |
-| T22 | 어댑터 | 기존 보정: 50% 경계(`>= 0.5`→1P, 체력바 동일), 반복 방지 3번째 교체, 드론 제한 하드코딩 → 필드. **거리 2/8/9는 그대로**(임시 축소 값). 코루틴 구조는 손대지 않음 | HP 250 → 1P 유지, 249 → 2P / 같은 패턴 2연속은 허용, 3번째에 교체 로그 / 드론 1마리 활성 시 연사 대체 | 거리 조정, 콤보 재설계 | — | New/BossController.cs, New/BossAttackPatterns.cs, New/BossHealthBar.cs | ⬜ |
-| T23 | 어댑터 | 회수 누락 보강: 파편 2종을 기존 파편 풀 사용으로, 에너지탄 회수 경로 추가 → 전환·사망 시 함께 회수 | 곡사포 AirBurst/Bounce 직후 F1 → 파편 전부 사라짐, 드론 에너지탄 비행 중 보스 사망 → 사라짐 | 새 기믹(T3에서 처리) | T2 | New/HowitzerCannonball.cs, New/ConductorDrone.cs, New/EnergyBullet.cs, New/BossController.cs | ⬜ |
-| T24 | 에디터 | 체력바 상단 중앙 가로 배치, 자물쇠/쉴드 이미지 연결, 최종 통합 플레이(1P→2P→사망 전 과정) | 현민 플레이 확인: 전환·사망 후 씬에 레이저·판넬·벽·거울·UI·발사체 0개 | — | T21~T23 | (현민) | ⬜ |
+| T21 | 어댑터 | 체력바 무적 표시: `InvulnerableChanged` 구독 → 자물쇠 아이콘/쉴드 오버레이 On/Off. 0.2초 피격 무적은 표시 안 함 | 등장 낙하 중 자물쇠 → 전투 시작 시 사라짐 / 2P 진입 시 자물쇠 → 그로기 중 사라짐 → 그로기 끝 다시 표시 / 피격 깜빡임 중엔 자물쇠 안 뜸 | 체력바 레이아웃 | T19 | New/BossHealthBar.cs, Gimmick/BossShieldIndicator.cs | ✅ |
+| T22 | 어댑터 | 기존 보정: 50% 경계(`>= 0.5`→1P, 체력바 동일), 반복 방지 3번째 교체, 드론 제한 하드코딩 → 필드. **거리 2/8/9는 그대로**(임시 축소 값). 코루틴 구조는 손대지 않음 | HP 250 → 1P 유지, 249 → 2P / 같은 패턴 2연속은 허용, 3번째에 교체 로그 / 드론 1마리 활성 시 연사 대체 | 거리 조정, 콤보 재설계 | — | New/BossController.cs, New/BossAttackPatterns.cs, New/BossHealthBar.cs | ✅ |
+| T23 | 어댑터 | 회수 누락 보강: 파편 2종을 기존 파편 풀 사용으로, 에너지탄 회수 경로 추가 → 전환·사망 시 함께 회수 | 곡사포 AirBurst/Bounce 직후 F1 → 파편 전부 사라짐, 드론 에너지탄 비행 중 보스 사망 → 사라짐 | 새 기믹(T3에서 처리) | T2 | New/HowitzerCannonball.cs, New/ConductorDrone.cs, New/EnergyBullet.cs, New/BossController.cs | ✅ |
+| T24 | 에디터 | 체력바 상단 중앙 가로 배치, 자물쇠/쉴드 이미지 연결, 최종 통합 플레이(1P→2P→사망 전 과정) | 현민 플레이 확인: 전환·사망 후 씬에 레이저·판넬·벽·거울·UI·발사체 0개 | — | T21~T23 | (현민) | ✅ |
 
 권장 순서: T1→T2→T3→T4 → T22 → (B-1 ‖ B-2) → T19 → T21 → B-3(T14~T18 → T25 → T20) → T23 → T24
 

@@ -8,84 +8,90 @@
 ---
 
 ## 기본 정보
-- 작업 제목: <한 줄>
-- BACKLOG 작업 ID: <T3 / 해당 없음>
-- 기획서 근거: <docs/spec/boss.md 6-3, 7장 / 해당 없음>
-- 작성자: <Claude / 현민>
-- 작성 일시: YYYY-MM-DD
-- 모드: <일반 / 경량 / 리뷰 반영>
-- 브랜치: `<git status 로 읽은 현재 브랜치>`
-- 기준 커밋: `<작업 착수 즉시 기록>`
-- 커밋 상태: <현민 커밋 전 / 현민 커밋 완료 (해시: …)>
-- 상태: <🎮 현민 씬 테스트 대기 / 🔧 씬 테스트 실패·수정 중 / 👀 리뷰 대기 / 🔁 리뷰 반영 완료 / ✅ 승인 / ⛔ 막힘>
+- 작업 제목: 최소 공용 기반 — IRandom·SystemRandom·GameLog·UniTask 미관측 예외 등록
+- BACKLOG 작업 ID: T1
+- 기획서 근거: 해당 없음 (AI_RULES 2·3·5장, BACKLOG 0절 Q1·Q2)
+- 작성자: Claude
+- 작성 일시: 2026-11-25
+- 모드: 일반
+- 브랜치: `main`
+- 기준 커밋: `7533420`
+- 커밋 상태: 현민 커밋 전
+- 상태: 🎮 현민 씬 테스트 대기
 
 ## 1. 목표
-<무엇을 왜. 2~3줄>
+보스 기믹(T2~) 새 코드가 AI_RULES를 지키는 데 필요한 최소 기반을 만든다: Core용 난수 인터페이스(시드 고정 재현), 빌드에서 빠지는 공용 로그, `.Forget()` 예외 수집.
 
 ## 2. 변경 파일
-| 파일 | 계층 (Core / Runtime / Editor / Test) | 변경 내용 |
+| 파일 | 계층 | 변경 내용 |
 |---|---|---|
-| | | |
+| `Assets/LHM/0_Script/Boss/New/Core/IRandom.cs` | Core | 신규. `Next(int,int)`, `Range(float,float)`, `Value01` |
+| `Assets/LHM/0_Script/Boss/New/Core/SystemRandom.cs` | Core | 신규. `System.Random` 래퍼, 시드 생성자 / 시간 시드 생성자, 잘못된 범위는 `ArgumentOutOfRangeException` |
+| `Assets/LHM/0_Script/Boss/New/Gimmick/GameLog.cs` | Runtime | 신규. `Info/Warn/Error/LogException` (`[Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]`), `[RuntimeInitializeOnLoadMethod]`로 `UniTaskScheduler.UnobservedTaskException` 등록 |
+| `Assets/LHM/8_MD/HANDOFF.md`, `BACKLOG.md` | docs | 본 문서, T1 상태 🎮 |
 
 ## 3. 동작 변화와 리스크
-- 동작 변화:
-- 리스크: (직렬화 필드 이름 변경, asmdef 참조 변경, 실행 순서 의존, 풀 초기화, 기존 `.asset` 값과 새 초기값 차이 등)
+- 동작 변화: Play 시작 시 Console에 `[GameLog] 초기화: UniTask 미관측 예외 → GameLog 등록` 1회. 기존 코드 동작 변화 없음 (아무도 아직 사용하지 않음).
+- 리스크:
+  - BACKLOG 예상 파일의 `UniTaskExceptionBootstrap.cs`는 만들지 않고 GameLog 안 정적 초기화로 합침 → 씬 배치 불필요(에디터 작업 0). 파일 4 → 3.
+  - 릴리스 빌드에서는 예외 핸들러를 **등록하지 않음**(`#if UNITY_EDITOR || DEVELOPMENT_BUILD`). 등록하면 GameLog 호출이 제거돼 예외가 조용히 사라지기 때문. 릴리스는 UniTask 기본 동작(Debug.LogException) 유지.
+  - asmdef 없음 → Assembly-CSharp에 포함. UniTask 참조는 기존 `BossContext.cs`가 이미 `Cysharp.Threading.Tasks`를 쓰므로 자동 참조되는 것으로 판단.
+  - 다른 스크립트가 이미 `UniTaskScheduler.UnobservedTaskException` 을 구독하면 둘 다 호출됨 (Assets 검색 결과 구독처 없음).
 
 ## 4. 정적 점검 (Claude — 실행 아님)
 | 항목 | 결과 |
 |---|---|
-| 컴파일 가능성 자체 점검 (API·using·asmdef) | <문제 없음 / 확신 없는 API: …> |
-| unity-guard | <문제 없음 / 남은 예외: …> |
-| spec-check | <일치 / 불일치 n건 → 6번 / 해당 없음> |
+| 컴파일 가능성 자체 점검 (API·using·asmdef) | 문제 없음으로 판단. `UniTaskScheduler.UnobservedTaskException`(event `Action<Exception>`), `RuntimeInitializeLoadType.SubsystemRegistration`(2019.2+) 사용. `Debug`/`Object` 는 별칭으로 System 쪽과 모호성 제거. Conditional 메서드는 모두 void. 릴리스 빌드에선 `using Cysharp.Threading.Tasks` 미사용 경고 가능(에러 아님) |
+| unity-guard | 문제 없음. Core 2개는 `UnityEngine` 참조 0 (`Random` = `System.Random`), async void·코루틴·Find·Time 없음 |
+| spec-check | 해당 없음 (기획서 수치 없음) |
 
 ## 5. 에디터 작업 (현민)
-> 현민이 그대로 따라 할 수 있게 순서대로. 없으면 "없음".
+없음. Unity를 열면 `Core/`, `Gimmick/` 폴더와 `.cs` 의 `.meta` 가 자동 생성된다.
 
-1. <예: `Assets/_Project/Config/` 에서 우클릭 → Create → UnMachine/Config/Boss → `BossConfig_Ch1` 생성>
-2. <예: 씬 `Stage1-1` 의 `Boss` 오브젝트 → `BossController` 의 `Config` 칸에 `BossConfig_Ch1` 연결>
-3. <예: 기존 `.asset` 의 값을 바꿔야 하면: 필드 이름 / 현재 값 → 새 값>
-
-## 5-1. 씬 테스트 절차 (현민) — `scene-test-writer` 형식
-| # | 조작 | 기대 결과 (기획서 근거) | 결과 (현민) |
+## 5-1. 씬 테스트 절차 (현민)
+| # | 조작 | 기대 결과 | 결과 (현민) |
 |---|---|---|---|
-| 1 | | | ⬜ |
+| 1 | Unity를 열고 컴파일 완료까지 대기 | Console에 컴파일 에러 0 | ⬜ |
+| 2 | 아무 씬(예: `LHM.unity`) Play | Console에 `[GameLog] 초기화: UniTask 미관측 예외 → GameLog 등록` **1회** | ⬜ |
+| 3 | Play 정지 → 다시 Play | 다시 1회만 (중복 2줄 아님) | ⬜ |
 
-- 경계 상황: <예: 보스 체력을 인스펙터에서 250으로 맞춘 뒤 1 피해>
-- 디버그 표시: <예: Scene 뷰에서 Boss 선택 시 콤보 거리 원(5 / 30) Gizmo>
-- Console에 나오면 안 되는 것: <NullReferenceException, "Config 누락" 에러 로그>
+- 경계 상황: Enter Play Mode Options에서 Domain Reload를 꺼둔 경우에도 3번이 1줄인지 (중복 구독 방지 확인)
+- 디버그 표시: 해당 없음 (IRandom은 T9·T17에서 Gizmo/팝업으로 재현성 확인)
+- Console에 나오면 안 되는 것: `CS0246`(UniTask 못 찾음), `CS0104`(Debug/Object 모호), 같은 초기화 로그 2줄
 
 ## 5-2. 현민 씬 테스트 결과
-> 현민이 알려준 결과만 적는다. 알려주기 전에는 "대기".
-- 결과: <대기 / 통과 / 실패 — 항목 번호와 Console 로그 요약>
+- 결과: 대기
 
 ## 6. 기획서와 다르게 한 점
-| 기획서 (spec 위치) | 구현 | 이유 |
+| 기획서 / BACKLOG | 구현 | 이유 |
 |---|---|---|
-| | | |
+| BACKLOG T1 예상 파일 `Gimmick/UniTaskExceptionBootstrap.cs` | GameLog 내부 정적 초기화로 합침 | 씬 배치 없이 동작, 파일 수 감소 |
 
 ## 7. 결정 사항
-- (중요하면 `docs/DECISIONS.md` 에도 기록)
+- 네임스페이스: 공용 Core 타입 = `UnMachine.Core` (IRandom·SystemRandom), 공용 로그 = `UnMachine` (GameLog). 보스 전용 코드는 Q1대로 `UnMachine.Core.Boss` / `UnMachine.Boss` 사용 예정. 공용 기반은 보스 외에서도 쓰므로 `.Boss` 를 붙이지 않음.
 
 ## 8. 알려진 문제 / 미완료
--
+- 기존 코드의 `Debug.Log` 는 그대로 (범위 밖).
+- GameClock 미도입 (Q3: 어댑터에서 `Time.deltaTime` + guard-allow).
 
 ## 9. 리뷰어에게 요청
--
+- 릴리스 빌드에서 핸들러 미등록 판단이 타당한지
+- 네임스페이스 결정(7번)
 
 ## 10. 질문 (현민 답변 필요)
--
+- 없음 (Q18은 T19 착수 전까지 답변 필요)
 
 ## 11. 다음 할 일
-1.
+1. 현민 씬 테스트 → 커밋
+2. 새 세션에서 `/task T2` (BossController 이벤트 훅)
 
 ## 11-1. 커밋 제안 (현민이 판단해서 직접 커밋)
-- 메시지: `[feat] <요약>`
-- 포함할 파일: <목록> + 새 `.cs`·폴더의 `.meta` (에디터를 연 뒤 생성됨)
-- 나누면 좋은 단위: <있으면>
+- 메시지: `[feat] T1 공용 기반: IRandom·SystemRandom·GameLog`
+- 포함할 파일: `Assets/LHM/0_Script/Boss/New/Core/IRandom.cs`, `Core/SystemRandom.cs`, `Gimmick/GameLog.cs` + `Core/`·`Gimmick/` 폴더와 각 `.cs` 의 `.meta` (에디터를 연 뒤 생성됨), `Assets/LHM/8_MD/HANDOFF.md`, `Assets/LHM/8_MD/BACKLOG.md`
+- 나누면 좋은 단위: BACKLOG 승인(⬜→✅) 변경은 `[docs] BACKLOG 전체 승인` 으로 먼저 따로 커밋해도 됨
 
-## 12. 리뷰 대응 (리뷰 반영 시에만 작성, 기준: `docs/REVIEW.md`)
-| 지적 | 심각도 | 조치 (반영 / 보류 / 반박) | 설명 |
-|---|---|---|---|
+## 12. 리뷰 대응
+(리뷰 반영 시 작성)
 
-## 13. 규칙 변경 제안 (있으면)
--
+## 13. 규칙 변경 제안
+- AI_RULES 5장 "UniTask `.Forget()` 예외는 부트스트랩에서 1회 등록"에 "릴리스 빌드에서는 등록하지 않는다(GameLog가 제거되어 예외가 사라짐)"를 덧붙이는 것을 제안.
