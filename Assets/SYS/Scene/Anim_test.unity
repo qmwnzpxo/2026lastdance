@@ -4273,7 +4273,7 @@ MonoBehaviour:
   greenDashRange: 5
   greenDashSpeed: 55
   _greenDashInterval: 0.75
-  blueFallSpeed: 80
+  blueFallSpeed: 120
   blueSlamRadius: 3
   blueSlamDamage: 8
   attackBoxSize: {x: 1.1, y: 1.3}

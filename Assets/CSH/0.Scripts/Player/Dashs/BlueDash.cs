@@ -71,29 +71,34 @@ public partial class PlayerDash : MonoBehaviour
         tmg.SetEnemyTimeScale(0.02f);
 
         float elapsed = 0f;
-        bool activated = false;
 
+        // 낙하 입력(우클릭/스페이스)은 PlayerDash.HandleDash에서 처리 → 여기선 슬로우 연출만
         while (elapsed < 1f && !ct.IsCancellationRequested)
         {
             tmg.SetPlayerTimeScale(elapsed / 2);
             tmg.SetEnemyTimeScale(elapsed / 2);
             elapsed += Time.unscaledDeltaTime;
-
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                activated = true;
-                break;
-            }
-            // Yield으로 update 프레임마다 대기 (슬로우 중에도 입력 체크 가능)
             await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken: ct);
         }
 
         // 슬로우 즉시 해제
         tmg.SetPlayerTimeScale(1f);
         tmg.SetEnemyTimeScale(1f);
+    }
 
-        if (activated && !ct.IsCancellationRequested)
-            StartBlueFall();
+    /// <summary>우클릭/스페이스 입력으로 낙하 시작 (QTE 슬로우 중이면 즉시 해제)</summary>
+    void TriggerBlueFall()
+    {
+        _blueAirAfterDash = false;
+        _blueDashSecondInput = true; // 낙하 중 추가 대시 입력 차단 (BlueSlamLand에서 해제)
+
+        _blueQTECts?.Cancel();
+        var tmg = CustomTimeManager.Instance;
+        tmg.SetPlayerTimeScale(1f);
+        tmg.SetEnemyTimeScale(1f);
+
+        playerMove.ResetWallState();
+        StartBlueFall();
     }
 
     void StartBlueFall()

@@ -4,15 +4,32 @@ public class TurretArmAim : EnemyArmAim
 {
     [SerializeField] protected SpriteRenderer frontRenderer;
 
+    protected override void Awake()
+    {
+        base.Awake();
+        // 포탑 스프라이트 원본은 왼쪽을 향함. 시작 상태(_isFacingRight = true)에 맞게
+        // 스프라이트를 맞춰두지 않으면 첫 Flip 전까지 포신이 반대(왼쪽)로 보임
+        ApplySpriteFlip();
+    }
+
+    // 원본 스프라이트가 왼쪽을 향하므로 오른쪽을 볼 때 flipX = true
+    void ApplySpriteFlip()
+    {
+        if (bodyRenderer != null) bodyRenderer.flipX = _isFacingRight;
+        if (armRenderer != null) armRenderer.flipX = _isFacingRight;
+        if (frontRenderer != null) frontRenderer.flipX = _isFacingRight;
+    }
+
     public override void LateTick()
     {
         if (_player == null || armPivot == null) return;
         if (_enemyBB.enemyState.currentHp <= 0) return;
 
         // ── 위치 반동 적용 ──
-        // 현재 aim 방향 반대(뒤)로 밀기
+        // 포신이 실제로 가리키는 방향의 반대(뒤)로 밀기
+        // 왼쪽을 볼 땐 스프라이트가 flipX 되어 있어 포신 방향 = 회전각 + 180
         float aimWorldAngle = armPivot.rotation.eulerAngles.z;
-        float pushRad = (aimWorldAngle) * Mathf.Deg2Rad;
+        float pushRad = (aimWorldAngle + (_isFacingRight ? 180f : 0f)) * Mathf.Deg2Rad;
         Vector3 pushDir = new Vector3(Mathf.Cos(pushRad), Mathf.Sin(pushRad), 0f);
         armPivot.localPosition = _armBaseLocalPos + pushDir * _recoilPosOffset;
 
@@ -33,8 +50,9 @@ public class TurretArmAim : EnemyArmAim
         else
         {
             // 플레이어를 안 볼 때 (순찰 중이거나, 벽 뒤에 있을 때)
-            // 기괴한 -99도 대신, 현재 몸이 바라보는 방향(정면)을 바라보게 합니다.
-            targetWorldAngle = _isFacingRight ? 0f : 180f;
+            // 정면을 바라보게 한다. 조준 각도는 좌우 모두 "정면 기준 상대각"이라
+            // 왼쪽일 때도 0도가 정면 (180을 주면 포신이 뒤로 뒤집힘)
+            targetWorldAngle = 0f;
         }
 
         // 4. 각도 반동 적용 및 최종 회전
@@ -160,19 +178,46 @@ public class TurretArmAim : EnemyArmAim
         float correctedZ = currentZ + (_isFacingRight ? -180f : 180f);
         armPivot.rotation = Quaternion.Euler(0f, 0f, correctedZ);
 
-        if (bodyRenderer != null) bodyRenderer.flipX = _isFacingRight;
-        if (armRenderer != null) armRenderer.flipX = _isFacingRight;
-        if (frontRenderer != null) frontRenderer.flipX = _isFacingRight;
+        ApplySpriteFlip();
 
         // 베이스 위치도 flip
-        _armBaseLocalPos = armPivot.localPosition;
+        // 현재 localPosition엔 반동 밀림이 섞여 있으므로 저장된 기준값을 뒤집는다
+        // (반동 중 Flip 될 때마다 기준점이 밀려 포신이 본체를 벗어나던 문제)
         _armBaseLocalPos.x = -_armBaseLocalPos.x;
         armPivot.localPosition = _armBaseLocalPos;
 
         // 발사 위치도 flip
-        _fireBaseLocalPos = firePivot.localPosition;
         _fireBaseLocalPos.x = -_fireBaseLocalPos.x;
         firePivot.localPosition = _fireBaseLocalPos;
+    }
+
+    /// <summary>
+    /// 포신이 실제로 플레이어를 겨눌 수 있을 때만 true.
+    /// 조준 사거리 밖, 조준 각도 제한 밖, 발사구~플레이어 사이에 지형이 있으면 쏘지 않는다.
+    /// </summary>
+    public bool CanShootAtPlayer()
+    {
+        if (_player == null || armPivot == null || firePivot == null || _enemyBB == null)
+            return false;
+        if (!_enemyBB.hasLOS) return false;
+
+        // 조준 사거리 (이 밖에서는 포신이 정면으로 돌아가 있으므로 발사 금지)
+        if (Vector2.Distance(bodyTransform.position, _player.position) > detectionRange)
+            return false;
+
+        // 조준 각도 제한 (각도 밖이면 포신은 clamp 되어 있는데 탄은 플레이어로 날아감 → 바닥 쪽 발사)
+        Vector2 dir = _player.position - armPivot.position;
+        float rawAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        float rel = _isFacingRight ? NormalizeAngle(rawAngle) : NormalizeAngle(rawAngle - 180f);
+        if (rel < minAngle || rel > maxAngle) return false;
+
+        // 발사구에서 플레이어까지 지형에 막히는지
+        Vector2 firePos = firePivot.position;
+        Vector2 toPlayer = (Vector2)_player.position - firePos;
+        if (Physics2D.Raycast(firePos, toPlayer.normalized, toPlayer.magnitude, _enemyBB.groundLayer).collider != null)
+            return false;
+
+        return true;
     }
 
     protected override float NormalizeAngle(float angle)

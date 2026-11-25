@@ -38,7 +38,7 @@ public partial class PlayerDash : MonoBehaviour
     
     // ── 파랑 칩 설정 ─────────────────────────
     [Header("파랑 칩 - 대각 대시 + 낙하 강타")]
-    [SerializeField] private float blueFallSpeed = 80f;   // 낙하 속도
+    [SerializeField] private float blueFallSpeed = 120f;  // 낙하 속도
     [SerializeField] private float blueSlamRadius = 3f;    // 착지 범위 공격 반지름
     [SerializeField] private float blueSlamDamage = 8f;    // 착지 범위 공격 데미지
 
@@ -63,6 +63,10 @@ public partial class PlayerDash : MonoBehaviour
     // ── 파랑 칩 내부 상태 ────────────────────
     [SerializeField]private bool _blueFalling = false; // 낙하 강타 진행 중
     [SerializeField]private bool _blueDashSecondInput = false; // 대시 도중 재입력 받았는지
+    private bool _blueAirAfterDash = false; // 파랑 대시가 끝나고 아직 착지 전 (우클릭/스페이스로 낙하 가능)
+
+    /// <summary>파랑 칩 낙하 강타 진행 중 (PlayerMove에서 벽붙기 금지용)</summary>
+    public bool IsBlueFalling => _blueFalling;
 
     // ── 초록 칩 내부 상태 ────────────────────
     private bool _greenDashing = false; // 초록 칩 대시 모션중
@@ -210,6 +214,7 @@ public partial class PlayerDash : MonoBehaviour
 
         state.dashBuffered = false;
         _blueDashSecondInput = false;
+        _blueAirAfterDash = false;
         _greenDashBuffered = false;
 
         if (!wasDashing) return;
@@ -243,14 +248,27 @@ public partial class PlayerDash : MonoBehaviour
 
         if (_blueDashSecondInput) return;
 
+        // ─── 파랑 칩: 대시가 끝난 뒤 착지 전이면 우클릭/스페이스 → 낙하 ───
+        if (_blueAirAfterDash)
+        {
+            if (state.currentChip != PlayerChip.blue || state.isGrounded || state.isOnCeiling)
+            {
+                _blueAirAfterDash = false;
+            }
+            else if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Space))
+            {
+                TriggerBlueFall();
+                return;
+            }
+        }
+
         if (Input.GetMouseButtonDown(1))
         {
             // ─── 파랑 칩: 대시 도중 재입력 ───
             if (state.currentChip == PlayerChip.blue && state.isDashing)
             {
-                _blueDashSecondInput = true;
                 StopDash();
-                StartBlueFall();
+                TriggerBlueFall();
                 return;
             }
 
@@ -377,6 +395,7 @@ public partial class PlayerDash : MonoBehaviour
             rb.linearVelocity = Vector2.up * 0.05f;
         if (state.currentChip == PlayerChip.blue)
         {
+            _blueAirAfterDash = true;
             StartBlueQTE();
             return;
 

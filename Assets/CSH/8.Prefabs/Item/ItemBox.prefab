@@ -93,13 +93,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _maxHP: 3
+  _currentHP: 0
   _dropEntries:
   - type: 0
     prefab: {fileID: 5185132864317028418, guid: 262a0578f9a99074886593f01d865039, type: 3}
-    weight: 2
+    weight: 0.5
   - type: 0
     prefab: {fileID: 5185132864317028418, guid: a289732e5491c084c99a41b87f349aad, type: 3}
-    weight: 2
+    weight: 0.5
   - type: 1
     prefab: {fileID: 5185132864317028418, guid: a289732e5491c084c99a41b87f349aad, type: 3}
     weight: 2

@@ -91,6 +91,7 @@ public class PlayerMove : MonoBehaviour
     private Vector3 flipSpriteScale;
 
     private PlayerState state;
+    private PlayerDash playerDash;
     private PlayerAnimation ani;
     private TimeScaleReceiver timeScaleReceiver;
 
@@ -112,6 +113,7 @@ public class PlayerMove : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         state = GetComponent<PlayerState>();
         ani = GetComponent<PlayerAnimation>();
+        playerDash = GetComponent<PlayerDash>();
         if (state == null)
         {
             state = GetComponent<PlayerState>();
@@ -377,6 +379,9 @@ public class PlayerMove : MonoBehaviour
         }
     }
 
+    // 파랑 칩 낙하 강타 중에는 벽붙기 금지
+    bool IsBlueFalling => playerDash != null && playerDash.IsBlueFalling;
+
     void HandleWallSlide()
     {
         // 벽에 새로 붙는 순간만 스페이스 판정 창(_wallGrabActive)을 요구하고,
@@ -387,6 +392,7 @@ public class PlayerMove : MonoBehaviour
             //&& !state.isGrounded
             && !state.isOnCeiling
             && !state.isDashing
+            && !IsBlueFalling
             && !state.isExhausted;
         if(state.isWallSliding)
         {
@@ -431,8 +437,8 @@ public class PlayerMove : MonoBehaviour
             return;
         }
 
-        // 대쉬 중 무시
-        if (state.isDashing) return;
+        // 대쉬 중·파랑 낙하 중 무시
+        if (state.isDashing || IsBlueFalling) return;
 
         bool touchingRight = state.isTouchingRWall;
         bool touchingLeft = state.isTouchingLWall;
