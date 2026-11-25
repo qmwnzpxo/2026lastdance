@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class Chapter_1_Jump : MonoBehaviour
@@ -7,7 +7,7 @@ public class Chapter_1_Jump : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
-            SceneManager.LoadScene("0712_Basecamp");
+            SceneManager.LoadScene("Basecamp");
         }
     }
 

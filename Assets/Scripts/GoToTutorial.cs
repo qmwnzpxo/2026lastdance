@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class GoToTutorial : MonoBehaviour
@@ -6,6 +6,6 @@ public class GoToTutorial : MonoBehaviour
     public void LoadTutorialScene()
     {
         Debug.Log("LoadTutorialScene called");
-        SceneManager.LoadScene("WordBubble_Test");
+        SceneManager.LoadScene("Tutorial");
     }
 }
