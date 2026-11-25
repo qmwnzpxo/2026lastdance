@@ -1,0 +1,63 @@
+using UnityEngine;
+using UnMachine.Core.Boss;
+
+namespace UnMachine.Boss
+{
+    /// <summary>
+    /// 보스 행동 상태 머신(BossFlowMachine) 수치. 현민이 인스펙터에서 튜닝한다.
+    /// 초기값 = boss.md 임시 수치. 〔임시값〕 표시는 기획서 확정 시 다시 확인.
+    /// </summary>
+    [CreateAssetMenu(menuName = "UnMachine/Config/Boss Flow", fileName = "BossFlowConfig")]
+    public sealed class BossFlowConfig : ScriptableObject
+    {
+        [Header("휴식")]
+        [Tooltip("1페이즈 휴식(초). spec: boss.md 5장 Resting")]
+        [SerializeField, Min(0f)] private float _restSecondsPhase1 = 1.5f;
+
+        [Tooltip("2페이즈 휴식(초). spec: boss.md 5장 Resting, 8장 2페이즈")]
+        [SerializeField, Min(0f)] private float _restSecondsPhase2 = 0.8f;
+
+        [Header("예고·반격 틈")]
+        [Tooltip("예고 최소 길이(초). 패턴 예고가 더 짧아도 이 값 보장. spec: boss.md 9장")]
+        [SerializeField, Min(0f)] private float _minTelegraphSeconds = 0.4f;
+
+        [Tooltip("2페이즈 반격 틈 배율 (패턴 값 × 이 값). spec: boss.md 8장 2페이즈")]
+        [SerializeField, Min(0f)] private float _phase2PunishScale = 0.8f;
+
+        [Header("인터럽트 상태")]
+        [Tooltip("벽 충돌 기절 길이(초). 끝나면 Resting. spec: boss.md 5장 Stunned")]
+        [SerializeField, Min(0f)] private float _stunnedSeconds = 1.5f;
+
+        [Tooltip("그로기 길이(초). 끝나면 Resting. spec: boss.md 4장·5장 Groggy")]
+        [SerializeField, Min(0f)] private float _groggySeconds = 4f;
+
+        [Tooltip("페이즈 전환 길이(초). 끝나면 2페이즈 Idle. 〔임시값〕 기획서 값 없음, 현민 승인 2026-11-25")]
+        [SerializeField, Min(0f)] private float _phaseTransitionSeconds = 1.5f;
+
+        [Header("받는 피해 배율 〔임시값: 3단계〕")]
+        [Tooltip("기본 배율. spec: boss.md 4장")]
+        [SerializeField, Min(0f)] private float _normalDamageScale = 1f;
+
+        [Tooltip("Punishable·Stunned 배율. spec: boss.md 4장, 17장 #12")]
+        [SerializeField, Min(0f)] private float _vulnerableDamageScale = 1.2f;
+
+        [Tooltip("Groggy 배율. spec: boss.md 4장")]
+        [SerializeField, Min(0f)] private float _groggyDamageScale = 1.5f;
+
+        /// <summary>Core 상태 머신에 넘길 수치 묶음을 만든다.</summary>
+        public BossFlowSettings ToSettings()
+        {
+            var damageScale = new BossDamageScale(_normalDamageScale, _vulnerableDamageScale, _groggyDamageScale);
+
+            return new BossFlowSettings(
+                _restSecondsPhase1,
+                _restSecondsPhase2,
+                _minTelegraphSeconds,
+                _phase2PunishScale,
+                _stunnedSeconds,
+                _groggySeconds,
+                _phaseTransitionSeconds,
+                damageScale);
+        }
+    }
+}
