@@ -4,16 +4,6 @@ using EnemyVersion3;
 [RequireComponent(typeof(EnemyArmAim))]
 public class  TurretEnemyBTController : EnemyBTController
 {
-    // ── 팔 회전 ─────────────────────────────────
-    protected EnemyArmAim _armAim;
-
-    public override void ReInit()
-    {
-        base.ReInit();
-        _armAim = GetComponent<EnemyArmAim>();
-        _armAim.EnemyBlackBoard = _bb;
-    }
-
     protected override BTNode BuildTree()
     {
         return new BTSelector(

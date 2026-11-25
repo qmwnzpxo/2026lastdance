@@ -30,6 +30,7 @@ public class CameraFollow : MonoBehaviour
     private CancellationTokenSource _lockdownCts;
     private float _savedOrthoSize;
     private bool _isLockdown = false;
+    private bool _lockdownExiting = false; // 락다운 해제 줌아웃 진행 중
 
     // 카메라 흔들림(지진) 기능용 CancellationTokenSource
     private CancellationTokenSource shakeCts;
@@ -201,68 +202,72 @@ public class CameraFollow : MonoBehaviour
     private async UniTaskVoid LockdownEnterAsync(
         Transform roomCenter, float targetOrtho, float duration, CancellationToken ct)
     {
-        // 현재 ortho 저장, 타겟을 방 중앙으로 교체
-        _savedOrthoSize = cmGamePlay.Lens.OrthographicSize;
+        // 해제 연출 도중 재진입(레드대쉬 재생 등)이면 현재 줌 상태에서 이어서 시작
+        bool resuming = _lockdownExiting;
+        _lockdownExiting = false;
+
+        if (!resuming)
+            _savedOrthoSize = cmGamePlay.Lens.OrthographicSize;
+
+        float from = resuming ? cmZoom.Lens.OrthographicSize : cmGamePlay.Lens.OrthographicSize;
+
         cmZoom.Follow = roomCenter;
-
-        float from = cmGamePlay.Lens.OrthographicSize;
-        float timer = 0f;
-
         cmBrain.DefaultBlend.Time = 0f;
         SetCameraDumping(0.5f);
+        SetZoomOrtho(from);
         cmZoom.gameObject.SetActive(true);
 
-        var lens = cmZoom.Lens;
-        lens.OrthographicSize = from;
-        cmZoom.Lens = lens;
-
-        while (!ct.IsCancellationRequested)
-        {
-            bool canceled = await UniTask
-                .WaitForFixedUpdate(cancellationToken: ct)
-                .SuppressCancellationThrow();
-            if (canceled) break;
-
-            timer += Time.fixedDeltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / duration));
-
-            lens = cmZoom.Lens;
-            lens.OrthographicSize = Mathf.Lerp(from, targetOrtho, t);
-            cmZoom.Lens = lens;
-
-            if (timer >= duration) break;
-        }
+        await AnimateZoomOrtho(from, targetOrtho, duration, ct);
     }
 
     private async UniTaskVoid LockdownExitAsync(float duration, CancellationToken ct)
     {
+        _lockdownExiting = true;
         cmZoom.Follow = target;
 
         float from = cmZoom.Lens.OrthographicSize;
-        float to = _savedOrthoSize;
-        float timer = 0f;
+        bool canceled = await AnimateZoomOrtho(from, _savedOrthoSize, duration, ct);
 
-        while (!ct.IsCancellationRequested)
-        {
-            bool canceled = await UniTask
-                .WaitForFixedUpdate(cancellationToken: ct)
-                .SuppressCancellationThrow();
-            if (canceled) break;
+        // 취소됐다면 다른 전환(재진입)이 카메라를 이어받은 상태 → 정리하지 않는다
+        if (canceled) return;
 
-            timer += Time.fixedDeltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / duration));
-
-            var lens = cmZoom.Lens;
-            lens.OrthographicSize = Mathf.Lerp(from, to, t);
-            cmZoom.Lens = lens;
-
-            if (timer >= duration) break;
-        }
-
+        _lockdownExiting = false;
         SetCameraDumping(1f);
         cmBrain.DefaultBlend.Time = defaultBlendTime;
         cmZoom.gameObject.SetActive(false);
         isZooming = false;
+    }
+
+    // 렌더 프레임마다(Update) 렌즈를 갱신해 FixedUpdate 주기로 인한 계단 현상을 없앤다.
+    // 반환값: 취소 여부
+    private async UniTask<bool> AnimateZoomOrtho(float from, float to, float duration, CancellationToken ct)
+    {
+        if (duration <= 0f)
+        {
+            SetZoomOrtho(to);
+            return ct.IsCancellationRequested;
+        }
+
+        float timer = 0f;
+        while (timer < duration)
+        {
+            bool canceled = await UniTask
+                .Yield(PlayerLoopTiming.Update, ct)
+                .SuppressCancellationThrow();
+            if (canceled) return true;
+
+            timer += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / duration));
+            SetZoomOrtho(Mathf.Lerp(from, to, t));
+        }
+        return false;
+    }
+
+    private void SetZoomOrtho(float size)
+    {
+        var lens = cmZoom.Lens;
+        lens.OrthographicSize = size;
+        cmZoom.Lens = lens;
     }
 
     #endregion

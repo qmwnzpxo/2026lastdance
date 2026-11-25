@@ -14,6 +14,17 @@ public partial class PlayerDash : MonoBehaviour
     SpriteRenderer ghostSprite;
     PlayerCombat combat;
 
+    // 되감기용 락다운 스냅샷
+    private readonly List<(LockdownRoom room, LockdownRoom.Snapshot snap)> lockdownSnapshots = new();
+    [Header("빨강 칩 - 되감기 카메라")]
+    [SerializeField] private float rewindCameraDuration = 0.4f;
+
+    // 재생 구간 물리 정지용 백업
+    private RigidbodyType2D _savedBodyType;
+    private bool _savedFullKinematicContacts;
+    private bool _physicsFrozen;
+    private readonly List<Collider2D> _overlapResults = new List<Collider2D>(8);
+
     void StartRedDash()
     {
         if (!state.TryUseDashGauge(state.DashCost)) return;
@@ -45,6 +56,7 @@ public partial class PlayerDash : MonoBehaviour
 
         // 타임 스케일 설정 (본체 1.2배 가속, 적 0.1배 슬로우)
         CaptureEnemySnapshots();
+        CaptureLockdownSnapshots();
 
         var tmg = CustomTimeManager.Instance;
         tmg.SetPlayerTimeScale(1.2f);
@@ -105,10 +117,15 @@ public partial class PlayerDash : MonoBehaviour
 
             if (Ghost != null) Ghost.SetActive(false);
             transform.position = startPosition;
+            rb.position = startPosition;
+            rb.linearVelocity = Vector2.zero;
             state.isRedDashRecording = false;
             playerSprite.color = originalColor;
 
             if (ct.IsCancellationRequested) return;
+
+            // 녹화 중 발동된 락다운 되돌리기 (재생 중 경로를 따라 재진입하면 다시 발동)
+            RestoreLockdownSnapshots();
 
 
             // 재생 페이즈
@@ -132,8 +149,8 @@ public partial class PlayerDash : MonoBehaviour
         ReturnAllEnemyBullets();
         RestoreEnemySnapshots();
 
-        rb.gravityScale = 0f;
-        rb.linearVelocity = Vector2.zero;
+        // 기록 추적 구간: 물리 정지 (벽·게이트에 막히지 않고 기록 경로 그대로 이동)
+        FreezePhysicsForPlayback();
 
         var tmg = CustomTimeManager.Instance;
         tmg.SetPlayerTimeScale(1.2f);
@@ -167,7 +184,7 @@ public partial class PlayerDash : MonoBehaviour
                 if (moveIndex < moveRecords.Count)
                 {
                     var m = moveRecords[moveIndex];
-                    rb.MovePosition(Vector2.Lerp(rb.position, m.position, 0.5f));
+                    rb.MovePosition(SampleRecordedPosition(moveIndex, replayTimer));
                     playerSprite.flipX = m.flipX;
                     playerMove.SpriteTransform.localScale = m.spriteScale;
                     playerMove.SpriteTransform.rotation = m.spriteRotation;
@@ -213,6 +230,10 @@ public partial class PlayerDash : MonoBehaviour
         }
         finally
         {
+            // 물리 재개 전, 벽 안에 끼어 있으면 기록상 마지막 안전 위치로 되돌림
+            ResolveWallOverlap(moveIndex);
+            RestorePhysicsAfterPlayback();
+
             state.isRedDashPlaying = false;
             playerMove.RestoreGravity();
             ani.Run_off();
@@ -223,13 +244,130 @@ public partial class PlayerDash : MonoBehaviour
         }
     }
 
+    // ──── 재생 구간 물리 정지 / 벽 끼임 복구 ──────────
+    #region
+    private void FreezePhysicsForPlayback()
+    {
+        if (_physicsFrozen) return;
+        _physicsFrozen = true;
+
+        _savedBodyType = rb.bodyType;
+        _savedFullKinematicContacts = rb.useFullKinematicContacts;
+
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        // Kinematic은 기본적으로 Static과 접촉 보고를 안 하므로,
+        // 락다운 트리거 등 OnTrigger 이벤트를 유지하기 위해 켠다 (충돌 반응은 없음)
+        rb.useFullKinematicContacts = true;
+    }
+
+    private void RestorePhysicsAfterPlayback()
+    {
+        if (!_physicsFrozen) return;
+        _physicsFrozen = false;
+        if (rb == null) return;
+
+        rb.bodyType = _savedBodyType;
+        rb.useFullKinematicContacts = _savedFullKinematicContacts;
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+    }
+
+    // 기록 프레임 사이를 보간해서 재생 위치를 구한다
+    private Vector2 SampleRecordedPosition(int index, float time)
+    {
+        var a = moveRecords[index];
+        if (index + 1 >= moveRecords.Count) return a.position;
+
+        var b = moveRecords[index + 1];
+        float t = Mathf.InverseLerp(a.timestamp, b.timestamp, time);
+        return Vector2.Lerp(a.position, b.position, t);
+    }
+
+    // 현재 위치가 지형(Static 콜라이더)과 겹치면 기록을 거슬러 올라가 안전한 위치로 이동
+    private void ResolveWallOverlap(int moveIndex)
+    {
+        if (rb == null || moveRecords.Count == 0) return;
+        if (!IsBlockedAt(rb.position)) return;
+
+        int last = Mathf.Min(moveIndex, moveRecords.Count - 1);
+        for (int i = last; i >= 0; i--)
+        {
+            Vector2 p = moveRecords[i].position;
+            if (IsBlockedAt(p)) continue;
+
+            rb.position = p;
+            transform.position = p;
+            Debug.Log($"[RedDash] 벽 끼임 복구: index={i}, pos={p}");
+            return;
+        }
+
+        Debug.LogWarning("[RedDash] 벽 끼임 복구 실패: 안전한 기록 위치가 없음");
+    }
+
+    private bool IsBlockedAt(Vector2 pos)
+    {
+        var filter = new ContactFilter2D { useTriggers = false };
+        filter.SetLayerMask(Physics2D.GetLayerCollisionMask(gameObject.layer));
+
+        Vector2 scale = new Vector2(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.y));
+        const float shrink = 0.9f; // 벽에 붙어 있는 상태(벽 슬라이드)는 끼임으로 보지 않음
+
+        _overlapResults.Clear();
+        if (col is CircleCollider2D c)
+            Physics2D.OverlapCircle(pos + c.offset * scale,
+                c.radius * Mathf.Max(scale.x, scale.y) * shrink, filter, _overlapResults);
+        else if (col is BoxCollider2D b)
+            Physics2D.OverlapBox(pos + b.offset * scale, b.size * scale * shrink, 0f, filter, _overlapResults);
+        else if (col is CapsuleCollider2D cap)
+            Physics2D.OverlapCapsule(pos + cap.offset * scale, cap.size * scale * shrink,
+                cap.direction, 0f, filter, _overlapResults);
+        else
+            Physics2D.OverlapPoint(pos, filter, _overlapResults);
+
+        foreach (var hit in _overlapResults)
+        {
+            if (hit == null) continue;
+            var body = hit.attachedRigidbody;
+            if (body == rb) continue;                                         // 자기 자신
+            if (body != null && body.bodyType != RigidbodyType2D.Static) continue; // 적 등 움직이는 대상 제외
+            return true;
+        }
+        return false;
+    }
+    #endregion
+
+    // ──── 락다운 스냅샷 ─────────────────────────────
+    #region
+    private void CaptureLockdownSnapshots()
+    {
+        lockdownSnapshots.Clear();
+        var rooms = FindObjectsByType<LockdownRoom>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var room in rooms)
+            lockdownSnapshots.Add((room, room.CaptureSnapshot()));
+    }
+
+    private void RestoreLockdownSnapshots()
+    {
+        foreach (var (room, snap) in lockdownSnapshots)
+        {
+            if (room == null) continue;
+            room.RestoreSnapshot(snap, rewindCameraDuration);
+        }
+        lockdownSnapshots.Clear();
+    }
+    #endregion
+
     // ──── 적 스냅샷 ─────────────────────────────────
     #region
     private void CaptureEnemySnapshots()
     {
-        var controllers = FindObjectsByType<EnemyBTController>(FindObjectsSortMode.None);
-        foreach (var ctrl in controllers)
+        var controllers = EnemyManager.Instance.Enemies;
+        for (int i = 0; i < controllers.Count; i++)
         {
+            var ctrl = controllers[i];
+            if (ctrl == null) continue;
             var bb = ctrl._BB;
             if (bb == null) continue;
 
@@ -281,13 +419,8 @@ public partial class PlayerDash : MonoBehaviour
 
     private void ReturnAllEnemyBullets()
     {
-        // 씬에 활성화된 EnemyBullet 전부 풀 반환
-        var bullets = FindObjectsByType<EnemyBullet>(FindObjectsSortMode.None);
-        foreach (var bullet in bullets)
-        {
-            if (bullet.gameObject.activeSelf)
-                EnemyBulletPool.Instance.Return(bullet.poolKey, bullet.gameObject);
-        }
+        // 풀에서 대여 중인 EnemyBullet 전부 반환
+        EnemyBulletPool.Instance?.ReturnAll();
     }
 
     #endregion

@@ -4,7 +4,7 @@ public class TurretArmAim : EnemyArmAim
 {
     [SerializeField] protected SpriteRenderer frontRenderer;
 
-    protected override void LateUpdate()
+    public override void LateTick()
     {
         if (_player == null || armPivot == null) return;
         if (_enemyBB.enemyState.currentHp <= 0) return;

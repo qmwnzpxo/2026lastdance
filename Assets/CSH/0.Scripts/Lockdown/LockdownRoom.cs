@@ -106,6 +106,77 @@ public class LockdownRoom : MonoBehaviour
     #endregion
 
     // ────────────────────────────────────────
+    #region 레드대쉬 되감기 (스냅샷)
+
+    /// <summary>레드대쉬 녹화 시작 시점의 락다운 상태</summary>
+    public readonly struct Snapshot
+    {
+        public readonly bool isLocked;
+        public readonly bool isActive;
+        public readonly Vector3[] enemyPositions; // _enemyObjects 인덱스 대응
+        public Snapshot(bool isLocked, bool isActive, Vector3[] enemyPositions)
+        {
+            this.isLocked = isLocked;
+            this.isActive = isActive;
+            this.enemyPositions = enemyPositions;
+        }
+    }
+
+    public Snapshot CaptureSnapshot()
+    {
+        var positions = new Vector3[_enemyObjects.Count];
+        for (int i = 0; i < _enemyObjects.Count; i++)
+            if (_enemyObjects[i] != null) positions[i] = _enemyObjects[i].transform.position;
+        return new Snapshot(_isLocked, gameObject.activeSelf, positions);
+    }
+
+    /// <summary>
+    /// 녹화 구간에서 락다운이 걸렸다면 녹화 이전(미발동) 상태로 되돌린다.
+    /// 재생 중 기록 경로를 따라 트리거에 다시 들어오면 락다운이 정상 재발동된다.
+    /// </summary>
+    public void RestoreSnapshot(Snapshot snap, float cameraDuration)
+    {
+        if (snap.isLocked == _isLocked && snap.isActive == gameObject.activeSelf) return;
+
+        if (snap.isLocked)
+        {
+            // 녹화 중에는 플레이어 공격이 데미지를 주지 않으므로 락다운 해제가 일어나지 않는다.
+            Debug.LogWarning($"[LockdownRoom] {name}: 녹화 중 락다운 해제됨 — 되감기 미지원 상태.");
+            return;
+        }
+
+        RevertToIdle(snap, cameraDuration);
+    }
+
+    // 락다운 발동 전 상태로 복귀
+    private void RevertToIdle(Snapshot snap, float cameraDuration)
+    {
+        UnsubscribeAll();
+        _isLocked = false;
+        SetGatesActive(false);
+
+        for (int i = 0; i < _enemyObjects.Count; i++)
+        {
+            var obj = _enemyObjects[i];
+            if (obj == null) continue;
+            if (snap.enemyPositions != null && i < snap.enemyPositions.Length)
+                obj.transform.position = snap.enemyPositions[i];
+            var enemy = obj.GetComponent<EnemyState>();
+            if (enemy == null) enemy = obj.GetComponentInChildren<EnemyState>(true);
+            if (enemy != null) enemy.Init();
+            obj.SetActive(false);
+        }
+
+        _cameraFollow.EndLockdown(cameraDuration);
+
+        GetComponent<Collider2D>().enabled = true; // 재생 중 재진입 허용
+        gameObject.SetActive(snap.isActive);
+        Debug.Log($"[LockdownRoom] {name}: 레드대쉬 되감기로 락다운 취소.");
+    }
+
+    #endregion
+
+    // ────────────────────────────────────────
     #region 적 관리
     // 적들을 전부 비활성화 시킨다
     private void PreDeactivateEnemies()

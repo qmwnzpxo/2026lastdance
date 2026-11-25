@@ -494,15 +494,21 @@ public class PlayerMove : MonoBehaviour
         if (spriteRenderer == null) return;
         //if (state.isOnCeiling) return;
 
+        // 천장 상태에서는 localScale.y가 음수(FlipYSprite)라 회전 방향이 뒤집혀 보이므로 각도 부호를 반전
+        float rotSign = state.isOnCeiling ? -1f : 1f;
+
         if (state.isTouchingLWall && (!state.isGrounded || !state.isOnCeiling))
         {
-            spriteTransform.rotation = Quaternion.Euler(0, 0, -90);
-            spriteRenderer.flipX = isWallSlideDown;
+            spriteTransform.rotation = Quaternion.Euler(0, 0, -90 * rotSign);
+            // 천장에서는 벽 슬라이드가 아니므로 isWallSlideDown이 갱신되지 않음 → 이동 방향 기반 flipX 유지
+            if (!state.isOnCeiling)
+                spriteRenderer.flipX = isWallSlideDown;
         }
         else if (state.isTouchingRWall && (!state.isGrounded || !state.isOnCeiling))
         {
-            spriteTransform.rotation = Quaternion.Euler(0, 0, 90);
-            spriteRenderer.flipX = isWallSlideDown;
+            spriteTransform.rotation = Quaternion.Euler(0, 0, 90 * rotSign);
+            if (!state.isOnCeiling)
+                spriteRenderer.flipX = isWallSlideDown;
         }
         else
         {

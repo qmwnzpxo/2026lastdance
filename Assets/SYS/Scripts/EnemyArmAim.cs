@@ -57,7 +57,7 @@ public class EnemyArmAim : MonoBehaviour
         _fireBaseLocalPos = firePivot.localPosition;
     }
 
-    protected virtual void Update()
+    public virtual void Tick() // EnemyManager → EnemyBTController가 호출
     {
         if (Input.GetKeyDown(KeyCode.N))
             TriggerRecoil();
@@ -66,7 +66,7 @@ public class EnemyArmAim : MonoBehaviour
         UpdateRecoil();
     }
 
-    protected virtual void LateUpdate()
+    public virtual void LateTick() // EnemyManager → EnemyBTController가 호출
     {
         if (_player == null || armPivot == null) return;
 

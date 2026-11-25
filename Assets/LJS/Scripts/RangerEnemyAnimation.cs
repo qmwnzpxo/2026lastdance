@@ -25,7 +25,7 @@ public class RangerEnemyAnimation : MonoBehaviour
         _rb = GetComponentInParent<Rigidbody2D>();
     }
 
-    private void Update()
+    public void Tick() // called by EnemyBTController via EnemyManager
     {
         UpdateMovementAnimations();
     }

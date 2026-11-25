@@ -20,9 +20,6 @@ public class RangerEnemyBTController : EnemyBTController, IMoveable
     [SerializeField] private float _retreatTriggerRange = 0;
     [SerializeField] private float _retreatDistance = 0;
 
-    // ── 팔 회전 ─────────────────────────────────
-    protected EnemyArmAim _armAim;
-
     // ── 외부 API ────────────────────────────────
     public float moveSpeed => _moveSpeed;
     public float patrolEdgeCheckX => _patrolEdgeCheckX;
@@ -44,13 +41,6 @@ public class RangerEnemyBTController : EnemyBTController, IMoveable
         _bb.moveable.retreatTriggerRange = _retreatTriggerRange;
         _bb.moveable.retreatDistance = _retreatDistance;
         GetComponent<EnemyCombat>()?.Initialize(_bb.playerTransform);
-    }
-
-    public override void ReInit()
-    {
-        base.ReInit();
-        _armAim=GetComponent<EnemyArmAim>();
-        _armAim.EnemyBlackBoard = _bb;
     }
 
     public Vector2 GetSlopeVelocity(float dirX, float speed, LayerMask groundLayer)

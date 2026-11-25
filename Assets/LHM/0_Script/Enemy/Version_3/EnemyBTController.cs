@@ -46,22 +46,16 @@ public class EnemyBTController : MonoBehaviour
             ReInit();
     }
 
-    protected virtual void FixedUpdate()
-    {
-        if (_bb != null&&_bb.enemyState.enabled)
-        {
-            UpdateBlackboard();
-            NodeState =_root.Evaluate(_bb);
-            _currentgauge = _bb.detectGauge; // 디버그용
-        }
-    }
-
     public virtual void ReInit()
     {
         InitBlackboad();
         _root = BuildTree();
         requireInit = false;
         _state.Init();
+
+        if (_armAim == null) _armAim = GetComponent<EnemyArmAim>();
+        if (_armAim != null) _armAim.EnemyBlackBoard = _bb;
+        if (_anim == null) _anim = GetComponentInChildren<RangerEnemyAnimation>();
     }
 
     protected virtual void OnDestroy()
@@ -73,14 +67,85 @@ public class EnemyBTController : MonoBehaviour
     {
         if (requireInit)
             ReInit();
+        EnemyManager.Register(this);
+        RefreshPause();
     }
 
     public virtual void OnDisable()
     {
-        _bb.CancelAction();
+        EnemyManager.Unregister(this);
+        _bb?.CancelAction();
         _root = null;
         _bb = null;
         requireInit = true;
+        _paused = false;
+    }
+
+    #endregion
+
+    // ────────────────────────────────────────────
+    #region EnemyManager Tick (Update 대체)
+
+    protected EnemyArmAim _armAim;
+    protected RangerEnemyAnimation _anim;
+
+    [SerializeField] private bool _behaviourEnabled = true;
+    [RuntimeOnly, SerializeField] private bool _paused; // 디버그용
+
+    /// <summary>이 적 개별 행동 on/off. 끄면 진행 중인 액션이 취소된다.</summary>
+    public bool BehaviourEnabled
+    {
+        get => _behaviourEnabled;
+        set { _behaviourEnabled = value; RefreshPause(); }
+    }
+
+    /// <summary>개별 on && 전체 on 일 때만 행동한다.</summary>
+    public bool IsBehaviourRunning => _behaviourEnabled && EnemyManager.IsGloballyActive;
+
+    /// <summary>on/off 상태가 바뀌었으면 정지/재개 처리. EnemyManager가 호출.</summary>
+    public void RefreshPause()
+    {
+        bool shouldPause = !IsBehaviourRunning;
+        if (shouldPause == _paused) return;
+        _paused = shouldPause;
+        if (_paused) OnBehaviourPaused();
+        else OnBehaviourResumed();
+    }
+
+    /// <summary>
+    /// 정지: BT 액션(UniTask)은 Tick과 별개로 돌기 때문에 반드시 취소해야 멈춘다.
+    /// 탐지 게이지 등 블랙보드 값은 유지 → 재개 시 BT가 현재 상태로 브랜치를 다시 고른다.
+    /// (스턴 중이었다면 스턴은 해제된다)
+    /// </summary>
+    protected virtual void OnBehaviourPaused()
+    {
+        if (_bb == null) return;
+        _bb.CancelAction();
+        if (_bb.rigid2D != null)
+            _bb.rigid2D.linearVelocity = new Vector2(0f, _bb.rigid2D.linearVelocity.y);
+    }
+
+    protected virtual void OnBehaviourResumed() { }
+
+    public virtual void FixedTick()
+    {
+        if (_paused || _bb == null || !_bb.enemyState.enabled) return;
+
+        UpdateBlackboard();
+        NodeState = _root.Evaluate(_bb);
+        _currentgauge = _bb.detectGauge; // 디버그용
+    }
+
+    public virtual void Tick()
+    {
+        if (!_paused && _armAim != null && _armAim.enabled) _armAim.Tick();
+        // 애니메이션은 속도 기반 표시라 정지 중에도 갱신 (멈추면 idle로 전환됨)
+        if (_anim != null && _anim.isActiveAndEnabled) _anim.Tick();
+    }
+
+    public virtual void LateTick()
+    {
+        if (!_paused && _armAim != null && _armAim.enabled) _armAim.LateTick();
     }
 
     #endregion

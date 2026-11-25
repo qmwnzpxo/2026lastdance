@@ -21,6 +21,13 @@ public class EnemyBulletPool : PersistentSingleton<EnemyBulletPool>
     private Dictionary<string, Queue<GameObject>> pools;
     private Dictionary<string, BulletEntry> entryMap;
 
+    // 현재 대여 중(활성)인 투사체 → 키
+    private readonly Dictionary<GameObject, string> activeBullets = new();
+    private readonly List<GameObject> returnBuffer = new();
+
+    /// <summary>현재 활성(대여 중)인 투사체 수</summary>
+    public int ActiveCount => activeBullets.Count;
+
 
     // ── 초기화 ──────────────────────────────────
     #region
@@ -71,10 +78,13 @@ public class EnemyBulletPool : PersistentSingleton<EnemyBulletPool>
             return null;
         }
 
-        if (queue.Count > 0)
+        // 파괴된 오브젝트는 건너뜀
+        while (queue.Count > 0)
         {
             var obj = queue.Dequeue();
+            if (obj == null) { entry.currentTotal--; continue; }
             obj.SetActive(true);
+            activeBullets[obj] = key;
             return obj;
         }
 
@@ -84,6 +94,7 @@ public class EnemyBulletPool : PersistentSingleton<EnemyBulletPool>
             // 최대치 미만이면 추가 생성
             var obj = CreateBullet(entry);
             obj.SetActive(true);
+            activeBullets[obj] = key;
             return obj;
         }
 
@@ -94,6 +105,11 @@ public class EnemyBulletPool : PersistentSingleton<EnemyBulletPool>
     // ── 반환 ────────────────────────────────────
     public void Return(string key, GameObject obj)
     {
+        if (obj == null) return;
+
+        // 중복 반환 방지: 대여 목록에 없고 이미 꺼져 있으면 이미 반환된 것
+        if (!activeBullets.Remove(obj) && !obj.activeSelf) return;
+
         if (!pools.ContainsKey(key))
         {
             Debug.LogWarning($"[EnemyBulletPool] 등록되지 않은 키: {key}");
@@ -104,6 +120,25 @@ public class EnemyBulletPool : PersistentSingleton<EnemyBulletPool>
         obj.SetActive(false);
         obj.transform.SetParent(entryMap[key].parent);
         pools[key].Enqueue(obj);
+    }
+
+    /// <summary>활성 중인 투사체를 전부 풀로 반환한다. (레드대쉬 되감기 등)</summary>
+    public void ReturnAll()
+    {
+        returnBuffer.Clear();
+        foreach (var obj in activeBullets.Keys) returnBuffer.Add(obj);
+
+        foreach (var obj in returnBuffer)
+        {
+            if (obj == null) { activeBullets.Remove(obj); continue; }
+            if (activeBullets.TryGetValue(obj, out var key))
+            {
+                var rb = obj.GetComponent<Rigidbody2D>();
+                if (rb != null) rb.linearVelocity = Vector2.zero;
+                Return(key, obj);
+            }
+        }
+        returnBuffer.Clear();
     }
 
     // ── 내부 생성 ────────────────────────────────
