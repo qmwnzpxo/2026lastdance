@@ -20,13 +20,30 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
     // 새 히트스탑을 해제/취소하지 않도록 구분한다.
     private int _version;
 
+    // 진행 중 히트스탑의 종료 시각 (Time.unscaledTime 기준). _cts != null 일 때만 유효.
+    private float _endTime;
+
+    /// <summary>
+    /// 진행 중 히트스탑의 남은 시간 (실제 시간, 초). 없으면 0.
+    /// </summary>
+    public float RemainingTime => _cts == null ? 0f : Mathf.Max(0f, _endTime - Time.unscaledTime);
+
     /// <summary>
     /// 히트스탑을 발동시키는 메서드. 피격 처리 코드에서 호출.
+    /// 진행 중 히트스탑보다 먼저 끝나는 요청은 무시하고, 늦게 끝나는 요청은 그 요청(길이·배율)으로 교체한다 (Q25).
     /// </summary>
     /// <param name="duration">히트스탑 지속 시간 (실제 시간 기준, 초). 기본값 0.08초.</param>
     /// <param name="timeScale">히트스탑 중 게임 속도 배율. 0에 가까울수록 강한 정지감. 기본값 0.05.</param>
     public void TriggerHitstop(float duration = 0.08f, float timeScale = 0.08f)
     {
+        float newEndTime = Time.unscaledTime + duration;
+
+        // 긴 쪽 유지: 진행 중인 히트스탑이 더 늦게 끝나면 짧은 새 요청은 무시
+        if (_cts != null && newEndTime <= _endTime)
+            return;
+
+        _endTime = newEndTime;
+
         // 덮어쓰기
         _cts?.Cancel();
         _cts?.Dispose();

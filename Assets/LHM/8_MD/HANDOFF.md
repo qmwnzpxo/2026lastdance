@@ -17,7 +17,7 @@
 - 브랜치: `main`
 - 기준 커밋: `d60f4f9` (T27·T28 미커밋 상태에서 착수 — 현민 승인. **diff에 T27·T28 변경 포함**, 아래 0장)
 - 커밋 상태: 현민 커밋 전 (T27·T28·T22 모두)
-- 상태: ✅ 현민 씬 테스트 통과 → 현민 커밋 · Gemini 리뷰 대기
+- 상태: ✅ T22 씬 테스트 통과·커밋(`86a0b10`) / ⚠️ T28 병합 누락 복구(12장) → 현민 컴파일·재확인 대기
 - 이전 작업: T27 `GameClock` · T28 `GameClockDriver` (씬 테스트 통과, 미커밋, Gemini 리뷰 대기)
 
 ## 0. 같은 diff에 섞인 이전 작업 (T27·T28, 미커밋)
@@ -116,6 +116,27 @@
 ## 11. 다음 할 일
 1. 현민: 커밋 (T27·T28·T22) → Gemini 리뷰 요청
 2. 새 세션에서 다음 작업 (BACKLOG 순서: T29)
+
+## 12. T28 병합 누락 복구 (2026-11-25, 커밋 후 컴파일 에러)
+- 증상: `GameClockDriver.cs(161,80): error CS1061: 'HitstopManager' does not contain a definition for 'RemainingTime'`
+- 원인: 팀원 커밋 `b3471dc`(yunjiwoo "버그 수정")가 `HitstopManager` 를 별도로 수정 — `_version` 카운터로 Q25 ①(이전 루틴
+  `finally` 가 새 히트스톱을 끊음)만 해결. 병합 때 T28 로컬 수정이 팀원 버전으로 대체되어 ② `RemainingTime`·③ 긴 쪽 유지가
+  빠졌고, `86a0b10` 에 `HitstopManager.cs` 미포함.
+- 수정: `Assets/CSH/0.Scripts/Hitstop/HitstopManager.cs` — **팀원 `_version` 구조는 그대로 두고** ②③만 다시 추가
+  - `_endTime`(unscaledTime 기준) + `public float RemainingTime` (`_cts == null` 이면 0)
+  - `TriggerHitstop`: 진행 중(`_cts != null`)이고 새 종료 시각 ≤ `_endTime` 이면 무시, 늦으면 새 요청(길이·배율)으로 교체
+  - 진행 판정: 현재 루틴 `finally`(`version == _version`)와 `OnDestroy` 가 `_cts = null` → 다음 요청은 항상 통과
+- 정적 점검: `using UnityEngine` 있음(`Mathf`·`Time`), 새 할당 없음, `UnityEngine.Object` `?.` 신규 없음. 기존
+  `CustomTimeManager.Instance?.`(OnDestroy)는 팀원·기존 줄이라 미수정.
+- 다시 확인할 씬 테스트 (T28 절차 기준, 빌더 테스트 씬):
+  1. Play → Console 컴파일 에러·NRE 없음
+  2. F2 → `GameClock` 인스펙터 HitstopManager 남은 시간 ~0.5→0, 플레이어 0.05배 슬로우 → 1배속 복귀
+  3. 플레이어 0.8초 히트스톱(H) 직후 F2 → HitstopManager 남은 시간이 0.8초 기준으로 계속 감소 (0.5로 줄지 않음)
+  4. 0.8초 히트스톱이 0.3초 이하 남았을 때 F2 → 0.5로 연장, 그 동안 0.05배
+  5. 일반 타격(0.08초) 연타 → 끝나면 1배속 복귀 (배율이 낮은 채로 남지 않음)
+- 커밋 제안: `[fix] T28 HitstopManager RemainingTime·긴 쪽 유지 복구 (b3471dc 병합 누락)` —
+  `Assets/CSH/0.Scripts/Hitstop/HitstopManager.cs`, `Assets/LHM/8_MD/HANDOFF.md`
+- 참고: CSH 파일을 팀원도 수정 중 → 이 커밋 전 팀원과 공유 권장 (같은 파일 동시 수정 충돌 방지).
 
 ## 11-1. 커밋 제안 (현민이 판단해서 직접 커밋)
 1. T27·T28 (이전 HANDOFF 제안 그대로):
