@@ -48,6 +48,14 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float wallExitMaxUpSpeed = 4f;
     private bool _wasWallSliding;
 
+    [Tooltip("벽붙기 판정을 켜기 위해 스페이스바를 눌러야 하는 최소 시간")]
+    [SerializeField] private float wallGrabHoldTime = 0.1f;
+    [Tooltip("스페이스바를 뗀 뒤 벽붙기 판정이 유지되는 시간")]
+    [SerializeField] private float wallGrabReleaseTime = 0.5f;
+    private float _spaceHoldTimer;      // 스페이스바를 누르고 있는 시간
+    private float _wallGrabReleaseTimer; // 뗀 뒤 남은 벽붙기 유지 시간
+    private bool _wallGrabActive;        // 현재 벽붙기 판정 가능 여부
+
     // ── 벽 끝 자동 등반 ──────────────────────
     [Header("벽 끝 자동 등반")]
     [SerializeField] private float _climbEdgeCheckDist = 0.6f; // 벽 상단 모서리 감지 레이 길이
@@ -147,6 +155,7 @@ public class PlayerMove : MonoBehaviour
 
         HandlePowerRun();
         HandleCeilingAttach();
+        HandleWallGrabInput();
         HandleWallSlide();
         HandleJump();
         HandleClimbEdge();
@@ -338,10 +347,43 @@ public class PlayerMove : MonoBehaviour
     // ────────────────────────────────────────
     #region 벽타기
 
+    // 스페이스바를 wallGrabHoldTime 이상 누른 순간부터 판정 ON,
+    // 누르는 동안 유지, 뗀 뒤 wallGrabReleaseTime 동안 유지 후 OFF
+    void HandleWallGrabInput()
+    {
+        float dt = CustomTime.ScaledDeltaTime(state.category);
+
+        if (Input.GetKey(KeyCode.Space))
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
+                _spaceHoldTimer = 0f;
+            _spaceHoldTimer += dt;
+
+            if (_spaceHoldTimer >= wallGrabHoldTime)
+            {
+                _wallGrabActive = true;
+                _wallGrabReleaseTimer = wallGrabReleaseTime;
+            }
+        }
+        else
+        {
+            _spaceHoldTimer = 0f;
+            if (_wallGrabActive)
+            {
+                _wallGrabReleaseTimer -= dt;
+                if (_wallGrabReleaseTimer <= 0f)
+                    _wallGrabActive = false;
+            }
+        }
+    }
+
     void HandleWallSlide()
     {
+        // 벽에 새로 붙는 순간만 스페이스 판정 창(_wallGrabActive)을 요구하고,
+        // 이미 붙어 있는 상태는 기존 조건대로 유지
         state.isWallSliding =
-            (state.isTouchingLWall || state.isTouchingRWall)
+            (_wallGrabActive || _wasWallSliding)
+            && (state.isTouchingLWall || state.isTouchingRWall)
             //&& !state.isGrounded
             && !state.isOnCeiling
             && !state.isDashing
@@ -565,7 +607,16 @@ public class PlayerMove : MonoBehaviour
         // 천장 상태에서는 localScale.y가 음수(FlipYSprite)라 회전 방향이 뒤집혀 보이므로 각도 부호를 반전
         float rotSign = state.isOnCeiling ? -1f : 1f;
 
-        if (state.isTouchingLWall && (!state.isGrounded || !state.isOnCeiling))
+        // 벽에 실제로 붙어 있을 때(또는 기존처럼 천장 상태일 때)만 벽 방향 회전
+        bool canRotateToWall = state.isWallSliding || state.isOnCeiling;
+
+        if (!canRotateToWall)
+        {
+            spriteTransform.rotation = Quaternion.Euler(0, 0, 0);
+            if (!state.isOnCeiling)
+                spriteRenderer.flipY = false;
+        }
+        else if (state.isTouchingLWall && (!state.isGrounded || !state.isOnCeiling))
         {
             spriteTransform.rotation = Quaternion.Euler(0, 0, -90 * rotSign);
             // 천장에서는 벽 슬라이드가 아니므로 isWallSlideDown이 갱신되지 않음 → 이동 방향 기반 flipX 유지
