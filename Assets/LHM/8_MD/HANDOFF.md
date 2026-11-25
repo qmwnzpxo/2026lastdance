@@ -148,3 +148,18 @@
 - `[docs] AI_RULES: 테스트 씬 생성 에디터 툴 허용` — `AI_RULES.md`, `DECISIONS.md`
 - `[feat] T26 보스 테스트 씬 생성 툴` — `New/Editor/BossTestSceneBuilder.cs` + `Editor/` 폴더·`.cs` `.meta`, `BACKLOG.md`(T26 행)
 - `[asset] 보스 테스트 씬·보스 프리팹` — `Test_Boss.unity`, `Boss.prefab` (+ `.meta`) — 현민이 만든 뒤
+
+---
+
+## 추가 작업: 보스 기획 v2 확정 (문서만, 기준 HEAD `21b72cd`)
+
+- 근거: 현민 제공 수정안 v2 + 검토 결정 16건 (추천안 그대로 확정, 2026-11-25)
+- 변경 파일: `boss.md` (v2 확정본으로 교체, 17장에 결정 기록), `README.md` (boss.md 상태), `DECISIONS.md` (1행)
+- v1 원본 정리본: `boss_system.md` (같은 내용 사본) + git 히스토리
+- 코드 변경 없음 → 정적 점검·씬 테스트 해당 없음
+- **BACKLOG 영향 (아직 반영 안 함)**: T5~T13 이동(다른 보스), T16~T18·T25 폐기(아재 → 낙섬 QTE), Q4·Q8·Q10~Q12 무효, T14·T15 최소 폭 24, T19 그로기 진입 조건 변경, T22 거리 값 재정의, 새 작업(Telegraph·Punishable·Stunned·PhaseTransition 상태, 패턴 6종, 패턴 선택기, 그로기 게이지, `GameClock` 히트스톱) → `/breakdown` 필요
+- 남은 확인: `짓밟기-Sheet` 의도(아트), 패링 구현 시점(CSH), 연섬 동작
+- `git status` 의 `ProjectSettings/EditorBuildSettings.asset`, `ProjectSettings.asset` 변경은 이번 작업과 무관 (Unity 자동 변경, 현민 판단)
+
+### 커밋 제안
+- `[docs] 보스 기획 v2 확정` — `boss.md`, `README.md`, `DECISIONS.md`, `HANDOFF.md`
