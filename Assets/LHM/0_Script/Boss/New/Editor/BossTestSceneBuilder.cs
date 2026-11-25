@@ -1,8 +1,10 @@
 using System.IO;
+using Unity.Cinemachine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnMachine.Boss;
 
 namespace UnMachine.EditorTools
 {
@@ -18,6 +20,13 @@ namespace UnMachine.EditorTools
         private const string GroundLayerName = "ground";
         private const string BuiltinSpritePath = "UI/Skin/UISprite.psd";
         private const string PlayerFieldName = "player";
+
+        // CameraFollow(CSH) 직렬화 필드 이름 — PlayerDash·BlueDash 가 Camera.main 부모의 CameraFollow 를 찾는다
+        private const string CameraFollowMainCameraField = "mainCamera";
+        private const string CameraFollowZoomField = "cmZoom";
+        private const string CameraFollowGamePlayField = "cmGamePlay";
+        private const string CameraFollowTargetField = "target";
+        private const float CameraDistanceZ = -10f;
 
         // URP 2D Global Light. 어셈블리 직접 참조 없이 만들려고 이름으로 찾는다.
         private const string Light2DTypeName =
@@ -106,7 +115,11 @@ namespace UnMachine.EditorTools
         {
             if (!ValidatePath(out string error))
             {
-                EditorUtility.DisplayDialog("테스트 씬", error, "확인");
+                if (error != null)
+                {
+                    EditorUtility.DisplayDialog("테스트 씬", error, "확인");
+                }
+
                 return;
             }
 
@@ -145,8 +158,17 @@ namespace UnMachine.EditorTools
 
             if (File.Exists(path))
             {
-                error = $"{path} 가 이미 있다. 덮어쓰지 않는다. 다른 이름을 쓰거나 기존 파일을 직접 지운다.";
-                return false;
+                // 같은 이름은 덮어쓰지 않는다 (AI_RULES 0장 2번) → "Test_Boss 1.unity" 처럼 새 이름으로 만든다
+                string unique = AssetDatabase.GenerateUniqueAssetPath(path);
+                bool accepted = EditorUtility.DisplayDialog("테스트 씬",
+                    $"{path} 가 이미 있다. 덮어쓰지 않고 새 파일로 만든다:\n{unique}", "만들기", "취소");
+                if (!accepted)
+                {
+                    return false; // error = null → 추가 대화상자 없음
+                }
+
+                path = unique;
+                _scenePath = unique;
             }
 
             string directory = Path.GetDirectoryName(path);
@@ -164,6 +186,43 @@ namespace UnMachine.EditorTools
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             // 좌표 기준: 바닥 윗면 y = 0, 방 가로 중앙 x = 0
+            CreateArena();
+            CreateMarkers(out Vector3 bossSpawn, out Vector3 playerSpawn);
+            CreateGlobalLight();
+            CreateRuntimeServices();
+
+            Transform player = InstantiatePrefab(_playerPrefab, playerSpawn);
+            Transform bossTransform = InstantiatePrefab(_bossPrefab, bossSpawn);
+            GameObject boss = bossTransform != null ? bossTransform.gameObject : null;
+
+            Vector3 cameraPosition = new Vector3(0f, _arenaHeight * 0.5f, CameraDistanceZ);
+            if (player != null)
+            {
+                CreateCameraRig(cameraPosition, player);
+            }
+            else
+            {
+                CreateCamera(null, cameraPosition); // 플레이어가 없으면 CameraFollow 없이 고정 카메라만
+            }
+
+            if (boss != null && player != null)
+            {
+                AssignPlayerReference(boss.GetComponentInChildren<BossController>(true), player);
+                AssignPlayerReference(boss.GetComponentInChildren<BossAttackPatterns>(true), player);
+            }
+
+            if (!EditorSceneManager.SaveScene(scene, _scenePath))
+            {
+                GameLog.Error(null, $"[TestScene] 저장 실패: {_scenePath}");
+                return;
+            }
+
+            GameLog.Info($"[TestScene] 생성 완료: {_scenePath} (보스 {(boss != null ? "배치" : "마커만")}, " +
+                         $"플레이어 {(player != null ? "배치" : "없음")})");
+        }
+
+        private void CreateArena()
+        {
             float halfWidth = _arenaWidth * 0.5f;
             float t = _wallThickness;
 
@@ -184,36 +243,18 @@ namespace UnMachine.EditorTools
                 new Vector2(t, _arenaHeight), groundLayer, blockSprite);
             CreateBlock(arena, "WallRight", new Vector2(halfWidth + t * 0.5f, _arenaHeight * 0.5f),
                 new Vector2(t, _arenaHeight), groundLayer, blockSprite);
+        }
 
-            // 이후 작업(T3 BossArenaConfig 등)에서 위치 기준으로 쓸 빈 마커
+        /// <summary>이후 작업(T3 BossArenaConfig 등)에서 위치 기준으로 쓸 빈 마커.</summary>
+        private void CreateMarkers(out Vector3 bossSpawn, out Vector3 playerSpawn)
+        {
+            float halfWidth = _arenaWidth * 0.5f;
             Transform markers = new GameObject("Markers").transform;
-            Vector3 bossSpawn = new Vector3(0f, _bossHeightAboveGround, 0f);
-            Vector3 playerSpawn = new Vector3(-halfWidth + _playerOffsetFromLeftWall, _playerHeightAboveGround, 0f);
+            bossSpawn = new Vector3(0f, _bossHeightAboveGround, 0f);
+            playerSpawn = new Vector3(-halfWidth + _playerOffsetFromLeftWall, _playerHeightAboveGround, 0f);
             CreateMarker(markers, "Marker_BossSpawn", bossSpawn);
             CreateMarker(markers, "Marker_PlayerSpawn", playerSpawn);
             CreateMarker(markers, "Marker_MirrorBottomCenter", new Vector3(0f, 0.5f, 0f)); // spec: boss.md 2장 2P 거울
-
-            CreateCamera(new Vector3(0f, _arenaHeight * 0.5f, -10f));
-            CreateGlobalLight();
-
-            Transform player = InstantiatePrefab(_playerPrefab, playerSpawn);
-            Transform bossTransform = InstantiatePrefab(_bossPrefab, bossSpawn);
-            GameObject boss = bossTransform != null ? bossTransform.gameObject : null;
-
-            if (boss != null && player != null)
-            {
-                AssignPlayerReference(boss.GetComponentInChildren<BossController>(true), player);
-                AssignPlayerReference(boss.GetComponentInChildren<BossAttackPatterns>(true), player);
-            }
-
-            if (!EditorSceneManager.SaveScene(scene, _scenePath))
-            {
-                GameLog.Error(null, $"[TestScene] 저장 실패: {_scenePath}");
-                return;
-            }
-
-            GameLog.Info($"[TestScene] 생성 완료: {_scenePath} (보스 {(boss != null ? "배치" : "마커만")}, " +
-                         $"플레이어 {(player != null ? "배치" : "없음")})");
         }
 
         private void CreateBlock(Transform parent, string name, Vector2 center, Vector2 size, int layer, Sprite sprite)
@@ -246,19 +287,78 @@ namespace UnMachine.EditorTools
             go.transform.position = position;
         }
 
-        private void CreateCamera(Vector3 position)
+        private float ArenaOrthoSize => _arenaHeight * 0.5f + _cameraMargin; // 방 세로 전체 + 여백
+
+        private Camera CreateCamera(Transform parent, Vector3 position)
         {
             var go = new GameObject("Main Camera");
             go.tag = "MainCamera";
+            go.transform.SetParent(parent, false);
             go.transform.position = position;
 
             var cam = go.AddComponent<Camera>();
             cam.orthographic = true;
-            cam.orthographicSize = _arenaHeight * 0.5f + _cameraMargin; // 방 세로 전체 + 여백
+            cam.orthographicSize = ArenaOrthoSize;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = _cameraBackground;
 
             go.AddComponent<AudioListener>();
+            return cam;
+        }
+
+        /// <summary>
+        /// 실제 게임 씬과 같은 카메라 구조: CameraRig(CameraFollow) ─ Main Camera(Brain) + CM_GamePlay + CM_Zoom.
+        /// PlayerDash.Awake 가 Camera.main.transform.parent 의 CameraFollow 를 찾으므로 이 구조가 필요하다.
+        /// </summary>
+        private void CreateCameraRig(Vector3 position, Transform player)
+        {
+            Transform rig = new GameObject("CameraRig").transform;
+            Camera cam = CreateCamera(rig, position);
+            cam.gameObject.AddComponent<CinemachineBrain>();
+
+            // 바닥에 선 플레이어 기준으로 방 세로 중앙이 화면 중앙에 오게
+            var offset = new Vector3(0f, _arenaHeight * 0.5f - _playerHeightAboveGround, CameraDistanceZ);
+            CinemachineCamera gamePlay = CreateVirtualCamera(rig, "CM_GamePlay", position, player, offset);
+            CinemachineCamera zoom = CreateVirtualCamera(rig, "CM_Zoom", position, player, offset);
+            zoom.gameObject.SetActive(false); // CameraFollow.Start 와 같은 초기 상태
+
+            // CameraFollow 는 마지막에 추가: 에디터에서 AddComponent 해도 Awake 는 플레이 때만 실행된다
+            var follow = rig.gameObject.AddComponent<CameraFollow>();
+            AssignReference(follow, CameraFollowMainCameraField, cam);
+            AssignReference(follow, CameraFollowZoomField, zoom);
+            AssignReference(follow, CameraFollowGamePlayField, gamePlay);
+            AssignReference(follow, CameraFollowTargetField, player);
+        }
+
+        private CinemachineCamera CreateVirtualCamera(
+            Transform parent, string name, Vector3 position, Transform target, Vector3 followOffset)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = position;
+
+            var vcam = go.AddComponent<CinemachineCamera>();
+            LensSettings lens = vcam.Lens;
+            lens.OrthographicSize = ArenaOrthoSize;
+            vcam.Lens = lens;
+            vcam.Follow = target;
+
+            // CameraFollow.SetCameraDumping·ShakeCamera·줌이 CinemachineFollow 를 GetComponent 한다
+            var follow = go.AddComponent<CinemachineFollow>();
+            follow.FollowOffset = followOffset;
+            return vcam;
+        }
+
+        /// <summary>
+        /// 플레이어·보스 코드가 쓰는 전역 매니저를 루트 오브젝트로 만든다.
+        /// essential object 프리팹은 매니저가 자식이라 DontDestroyOnLoad 경고가 나서 쓰지 않는다.
+        /// </summary>
+        private static void CreateRuntimeServices()
+        {
+            new GameObject("CustomTimeManager").AddComponent<CustomTimeManager>();
+            new GameObject("HitstopManager").AddComponent<HitstopManager>();
+            new GameObject("AudioManager").AddComponent<AudioManager>(); // 오디오 소스는 스스로 만든다
+            new GameObject("GameClock").AddComponent<GameClockDriver>(); // T28
         }
 
         private static void CreateGlobalLight()
@@ -316,19 +416,26 @@ namespace UnMachine.EditorTools
         /// <summary>대상 컴포넌트의 직렬화 필드 "player" 에 플레이어를 연결한다 (새 씬 안의 인스턴스만 수정).</summary>
         private static void AssignPlayerReference(Component target, Transform player)
         {
+            AssignReference(target, PlayerFieldName, player);
+        }
+
+        /// <summary>새 씬 안 컴포넌트의 직렬화 참조 필드를 채운다. 필드가 없으면 경고만 남긴다.</summary>
+        private static void AssignReference(Component target, string fieldName, Object value)
+        {
             if (target == null)
             {
                 return;
             }
 
             var so = new SerializedObject(target);
-            SerializedProperty prop = so.FindProperty(PlayerFieldName);
+            SerializedProperty prop = so.FindProperty(fieldName);
             if (prop == null)
             {
+                GameLog.Warn($"[TestScene] {target.GetType().Name} 에 '{fieldName}' 필드가 없다. 수동 연결 필요");
                 return;
             }
 
-            prop.objectReferenceValue = player;
+            prop.objectReferenceValue = value;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
     }

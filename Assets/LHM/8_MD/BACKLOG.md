@@ -74,9 +74,9 @@
 | T1 | 로직 | 최소 공용 기반 (IRandom·SystemRandom·GameLog·UniTask 예외 등록) | — | — | — | — | Core/IRandom.cs 외 3 | 🏁 |
 | T2 | 어댑터 | BossController 이벤트 훅 (BattleStarted·PhaseChanged·Died·InvulnerableChanged) | — | — | T1 | — | New/BossController.cs | 🏁 |
 | T26 | 에디터 툴 | 테스트 씬 생성 툴 `UnMachine/Test Scene/Boss Arena` | — | — | — | — | New/Editor/BossTestSceneBuilder.cs | 🏁 |
-| T27 | 로직 | `GameClock`: 채널 World·Player·UI, 채널 `Scale`, `HitStop(seconds)`(겹치면 긴 쪽 유지, World·Player만 0), `Tick(realDt)` → 채널별 `DeltaTime` | (T28 씬) 히트스톱 중 World·Player dt = 0·UI dt 진행, 0.2초 진행 중 0.5초 요청 → 0.5초 유지 | 프로 모션 채널 연동, 플레이어 코드 교체 | T1 | ARCH 3-1, boss.md 5장 Hit | Core/GameClock.cs, Core/ClockChannel.cs | ✅ |
-| T28 | 어댑터 | `GameClockDriver` (Q20): 매 프레임 Tick, World 채널 배율 = `CustomTimeManager.EnemyTimeScale`, `HitStop` 은 `HitstopManager.TriggerHitstop` 에도 위임 — 단 `HitstopManager` 는 새 요청 시 재시작하므로 **새 종료 시각이 현재보다 늦을 때만** 위임(긴 쪽 유지). 인스펙터 읽기 전용(채널 dt·히트스톱 남은 시간), 에디터 전용 F2 = 히트스톱 0.5초 | F2 → 0.5초 동안 인스펙터 World dt 0 + 플레이어도 정지 → 1배속 복귀. F2 연타 → 정지가 누적되지 않고 긴 쪽만. 낙섬 QTE 슬로우 중 World dt도 느려짐 | 보스 로직의 dt 전환(T31~) | T27 | ARCH 3-1 | Gimmick/GameClockDriver.cs | ✅ |
-| T22 | 어댑터 | (수정) 50% 경계만: `GetCurrentPhase` `>= 0.5f` → 1P, 체력바 표시도 동일 | HP 250 → 1P 유지, 249 → 2P 전환 1회 | 반복 방지(→T37), 드론 제한(→T50), 거리(→T37) | — | 5장 "HP 50% 최초 하회" | New/BossController.cs, New/BossHealthBar.cs | ✅ |
+| T27 | 로직 | `GameClock`: 채널 World·Player·UI, 채널 `Scale`, `HitStop(seconds)`(겹치면 긴 쪽 유지, World·Player만 0), `Tick(realDt)` → 채널별 `DeltaTime` | (T28 씬) 히트스톱 중 World·Player dt = 0·UI dt 진행, 0.2초 진행 중 0.5초 요청 → 0.5초 유지 | 프로 모션 채널 연동, 플레이어 코드 교체 | T1 | ARCH 3-1, boss.md 5장 Hit | Core/GameClock.cs, Core/ClockChannel.cs | 👀 |
+| T28 | 어댑터 | `GameClockDriver` (Q20·Q25): 매 프레임 Tick, World 채널 배율 = `CustomTimeManager.EnemyTimeScale`, `HitStop` 은 `HitstopManager.TriggerHitstop(seconds, 0.05)` 에도 위임(배율 0.05 = CSH Light 프리셋과 동일, Driver 인스펙터 필드). **(CSH 수정, Q25)** `HitstopManager`: ① `finally` 에서 자기 CTS만 정리(다음 요청 CTS 취소·배율 복구 금지) ② `RemainingTime`(실제 초) 공개 ③ 겹치면 **종료 시각이 늦은 쪽 유지**(짧은 새 요청은 무시, 긴 요청은 연장) — 플레이어 기존 히트스톱에도 동일 적용. 인스펙터 읽기 전용(채널 dt·GameClock/HitstopManager 남은 시간), 에디터 전용 F2 = 히트스톱 0.5초 | F2 → 0.5초 동안 인스펙터 World dt 0 + 플레이어 0.05배 슬로우 → 1배속 복귀. F2 연타 → 정지가 누적되지 않고 긴 쪽만. 플레이어 공격 히트스톱(0.8초) 중 F2 → 0.8초가 잘리지 않음(HitstopManager 남은 시간 확인). 낙섬 QTE 슬로우 중 World dt도 느려짐 | 보스 로직의 dt 전환(T31~), `TimeScaleReceiver` 로그 정리 | T27 | ARCH 3-1, Q20·Q25 | Gimmick/GameClockDriver.cs, CSH/0.Scripts/Hitstop/HitstopManager.cs(수정) | 👀 |
+| T22 | 어댑터 | (수정) 50% 경계만: `GetCurrentPhase` `>= 0.5f` → 1P, 체력바 표시도 동일 | HP 250 → 1P 유지, 249 → 2P 전환 1회 | 반복 방지(→T37), 드론 제한(→T50), 거리(→T37) | — | 5장 "HP 50% 최초 하회" | New/BossController.cs, New/BossHealthBar.cs | 👀 |
 | T23 | 어댑터 | (유지) 회수 누락 보강: AirBurst·Bounce 파편을 기존 파편 풀로, 에너지탄 회수 경로 → 전환·사망 시 함께 회수 | 곡사 AirBurst/Bounce 직후 F1 → 파편 전부 사라짐, 에너지탄 비행 중 보스 사망 → 사라짐 | 새 패턴 회수(각 패턴 작업) | T2 | 6장 P4 탄종·P6, 8장 전환 1번 | New/HowitzerCannonball.cs, New/ConductorDrone.cs, New/EnergyBullet.cs, New/BossController.cs | ✅ |
 
 #### B-1. 상태 흐름 (Telegraph · Punishable · Stunned · Groggy · PhaseTransition)
@@ -176,11 +176,12 @@ T27→T28 → T22 → T29→T30→T31→T32→T33 → T37→T38 → T41→T42(P3
 | Q | 쟁점 | 결정 | 반영 작업 |
 |---|---|---|---|
 | Q19 | 기존 코루틴 패턴(`BossAttackPatterns`) 교체 / 공존 | **C. 단계 교체** — 새 FSM·선택기·패턴은 UniTask로 새로, 미구현 패턴은 `LegacyPatternBridge` 로 임시 호출, 패턴 완성마다 Registry 매핑 교체, `useFlowV2` 토글로 기존 동작 복귀 가능, 마지막에 레거시 제거 | T31·T38·T68·T69 |
-| Q20 | `GameClock` 신규 / 기존 시간 체계 연결 | Core `GameClock`(ARCH 3-1) 신규 + 어댑터가 World 배율을 `CustomTimeManager.EnemyTimeScale` 에서 읽고 `HitStop` 은 `HitstopManager.TriggerHitstop` 에도 위임 → 보스 히트스톱 때 플레이어도 정지, 낙섬 QTE 슬로우가 보스에도 걸림 | T27·T28 |
+| Q20 | `GameClock` 신규 / 기존 시간 체계 연결 | Core `GameClock`(ARCH 3-1) 신규 + 어댑터가 World 배율을 `CustomTimeManager.EnemyTimeScale` 에서 읽고 `HitStop` 은 `HitstopManager.TriggerHitstop` 에도 위임 → 보스 히트스톱 때 플레이어도 0.05배 슬로우(Q25), 낙섬 QTE 슬로우가 보스에도 걸림 | T27·T28 |
 | Q21 | 피해 출처(일섬 / 일반 / 낙섬) 구분 | **A.** `IHitSourceReceiver.OnHitBy(HitSource)` 신설, CSH `PlayerDash`·`PlayerCombat` 에 1~3줄 호출 추가 (**CSH 수정 허용**) | T70·T61·T62·T65 |
 | Q22 | 낙섬 QTE 형식 | **A. 보스 전용 타이밍 바** — Groggy 보스가 낙섬(`HitSource.BlueFall`)에 맞는 순간 보스 쪽에서 바 표시. 기존 BlueDash QTE·낙하는 그대로 (CSH QTE 수정 없음) | T64·T65 |
 | Q23 | QTE 데미지에 Groggy ×1.5 적용 | **미적용** — Perfect 60 / Normal 30 고정 | T65 |
 | Q24 | P4 발사 중 반격 틈 = Punishable(×1.2)? | **아니다** — 발사 중 Attacking(×1.0), 발사 후 Punishable 0초. 6장 "반격 틈"은 "보스가 제자리라 때릴 수 있다"로 해석 | T47 |
+| Q25 | `HitstopManager` 겹침 처리 (2026-11-25 추가) | **A. CSH `HitstopManager` 수정 허용** — 기존 코드는 새 요청 시 이전 루틴의 `finally` 가 다음 프레임에 새 요청 CTS를 취소·배율을 복구해 늦게 온 히트스톱이 ~1프레임에 끊길 수 있고, 남은 시간 API가 없어 "긴 쪽 유지"를 보스 쪽에서 판단할 수 없음 → `finally` 자기 CTS만 정리 + `RemainingTime` 공개 + 긴 쪽 유지. 보스 위임 배율 **0.05** (CSH Light 프리셋과 동일, 완전 정지 아님) | T28 |
 
 **기획서에 없는 수치** — 답이 없으면 아래 추천값을 SO 초기값으로 시작하고 작업에 〔임시값〕으로 표시
 - C3 마지막 착지 "긴 반격 틈": 1.8초 (P1 틈 1.2 × 1.5)

@@ -976,11 +976,24 @@ public class BossController : MonoBehaviour, IDamageable
 
 
     /// <summary>
+    /// 2페이즈 경계 HP 비율 (boss.md 5장 "HP 50% 최초 하회"). 정확히 50%는 1페이즈.
+    /// </summary>
+    public const float Phase2HpRatio = 0.5f;
+
+    /// <summary>
+    /// HP 비율 → 페이즈. 비율 >= 50% 이면 1, 미만이면 2. 체력바 표시도 이 함수를 쓴다.
+    /// </summary>
+    public static int PhaseForRatio(float hpRatio)
+    {
+        return hpRatio >= Phase2HpRatio ? 1 : 2;
+    }
+
+    /// <summary>
     /// 현재 페이즈 계산
     /// </summary>
     public int GetCurrentPhase()
     {
-        return (currentHP / maxHP > 0.5f) ? 1 : 2;
+        return PhaseForRatio(currentHP / maxHP);
     }
 
     /// <summary>
@@ -1032,6 +1045,9 @@ public class BossController : MonoBehaviour, IDamageable
         FacePlayer();
 
 #if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.F6))
+            DebugSetHpToPhaseBoundary();
+
         if (Input.GetKeyDown(KeyCode.F1))
         {
             float targetHP = maxHP * 0.49f;
@@ -1096,7 +1112,26 @@ public class BossController : MonoBehaviour, IDamageable
 #endif
     }
 
+#if UNITY_EDITOR
+    /// <summary>
+    /// [디버그 F6] HP를 정확히 경계값(maxHP × 50%)으로 설정. 페이즈 전환은 하지 않는다.
+    /// 이 상태에서 1P 유지를 확인한 뒤, 실제 타격으로 TakeDamage 경로의 2P 전환을 확인한다.
+    /// </summary>
+    private void DebugSetHpToPhaseBoundary()
+    {
+        currentHP = maxHP * Phase2HpRatio;
 
+        if (damageHandler != null)
+            damageHandler.SetHP(currentHP / maxHP);
+
+        if (healthBar != null)
+            healthBar.UpdateHealth(currentHP);
+
+        GameLog.Info(
+            $"[Debug] F6: 보스 HP {currentHP:F0}/{maxHP:F0} (경계) → 계산 페이즈 {GetCurrentPhase()}, 현재 {currentPhase}",
+            this);
+    }
+#endif
 
     /// <summary>
     /// 피격 처리

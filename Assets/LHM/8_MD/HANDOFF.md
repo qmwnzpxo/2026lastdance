@@ -8,158 +8,122 @@
 ---
 
 ## 기본 정보
-- 작업 제목: BossController 이벤트 훅 (BattleStarted·PhaseChanged·Died·InvulnerableChanged)
-- BACKLOG 작업 ID: T2
-- 기획서 근거: boss.md 5장(상태), 6-1(등장), 10-1(페이즈 전환), 10-2(사망), 12장(무적 표시)
+- 작업 제목: 50% 페이즈 경계 `>= 0.5f` (정확히 50% = 1P)
+- BACKLOG 작업 ID: T22
+- 기획서 근거: boss.md 5장 "HP 50% 최초 하회 → PhaseTransition", 페이즈 전환 절(240행)
 - 작성자: Claude
 - 작성 일시: 2026-11-25
 - 모드: 일반
 - 브랜치: `main`
-- 기준 커밋: `778fca9`
-- 커밋 상태: 현민 커밋 전
-- 상태: 🎮 현민 씬 테스트 대기
-- 이전 작업: T1 — 현민 씬 테스트 통과, 커밋 `778fca9`
+- 기준 커밋: `d60f4f9` (T27·T28 미커밋 상태에서 착수 — 현민 승인. **diff에 T27·T28 변경 포함**, 아래 0장)
+- 커밋 상태: 현민 커밋 전 (T27·T28·T22 모두)
+- 상태: ✅ 현민 씬 테스트 통과 → 현민 커밋 · Gemini 리뷰 대기
+- 이전 작업: T27 `GameClock` · T28 `GameClockDriver` (씬 테스트 통과, 미커밋, Gemini 리뷰 대기)
+
+## 0. 같은 diff에 섞인 이전 작업 (T27·T28, 미커밋)
+리뷰어는 기준 커밋 이후 diff에서 아래 파일을 **T27·T28** 로 보고, T22는 2장 두 파일만 본다.
+- T27·T28 파일: `New/Core/GameClock.cs`, `New/Core/ClockChannel.cs`, `New/Gimmick/GameClockDriver.cs`,
+  `CSH/0.Scripts/Hitstop/HitstopManager.cs`, `New/Editor/BossTestSceneBuilder.cs`, `DECISIONS.md`
+- T28 리뷰 요청 (이전 HANDOFF 9장): `HitstopManager` `finally` 의 `_cts == ownCts` 판정이 교체·완료·OnDestroy 세 경로에서
+  맞는지 / Driver 정적 `s_active` 와 이벤트 구독 해제 순서(도메인 리로드 끔 포함) / T27 정적 `GameClock` + `Reset` 의존,
+  부분 프레임 정지 계산
+- T28 열린 질문: Player 채널 `PlayerTimeScale` 동기화 유지 여부 (기본 유지)
+- 에디터가 바꾼 파일 (현민 판단): `Test_Boss.unity`(+`.meta`), `Hovl Studio/.../Screen microcircuit.prefab`,
+  `ProjectSettings/ShaderGraphSettings.asset`
 
 ## 1. 목표
-새 기믹 층(T3 Director, T21 체력바)이 보스 생애주기를 알 수 있게 BossController에 알림만 추가한다. 기존 FSM·코루틴 흐름은 바꾸지 않는다.
+보스 HP가 **정확히 50%일 때는 1페이즈 유지**, 50% 미만으로 처음 내려갈 때 2페이즈로 1회 전환 (boss.md "최초 하회").
+체력바 PHASE 표시도 같은 기준을 쓴다.
 
 ## 2. 변경 파일
 | 파일 | 계층 | 변경 내용 |
 |---|---|---|
-| `Assets/LHM/0_Script/Boss/New/BossController.cs` | Runtime | +76줄, 삭제 0. `using UnMachine;`, 이벤트 4개 + `IsInvulnerable`, 호출 지점 4곳, private 헬퍼 3개(`NotifyPhaseChanged`, `ComputeInvulnerable`, `UpdateInvulnerableNotification`) |
-| `Assets/LHM/8_MD/HANDOFF.md`, `BACKLOG.md` | docs | 본 문서, T1 🏁 / T2 🎮 |
-
-호출 지점:
-| 이벤트 | 위치 | 시점 |
-|---|---|---|
-| `BattleStarted` | `AppearingSequence` 끝 | BGM 재생 후, `ChangeState(Idle)` 직전 |
-| `PhaseChanged(int)` | `TakeDamage` 전환 블록, 에디터 F1 블록 | 정리(패턴 중단·발사체 회수·이펙트) 후, `ChangeState(Idle)` 직전 |
-| `Died` | `ChangeState` | Dead 최초 진입 1회 (`_hasDied` 플래그) |
-| `InvulnerableChanged(bool)` | `ChangeState` | 무적 표시 여부가 바뀔 때만. 현재 기준 = `Appearing` 상태 |
+| `Assets/LHM/0_Script/Boss/New/BossController.cs` | Runtime 어댑터 (+33줄) | `public const float Phase2HpRatio = 0.5f`, `public static int PhaseForRatio(float hpRatio)` (`>=` → 1, 미만 → 2). `GetCurrentPhase` 가 이걸 호출. 에디터 전용 **F6** `DebugSetHpToPhaseBoundary()` — HP를 `maxHP × 0.5` 로 설정(DamageHandler·체력바 동기화, 전환 안 함) + `GameLog` 로 계산/현재 페이즈 출력 |
+| `Assets/LHM/0_Script/Boss/New/BossHealthBar.cs` | Runtime UI (1줄) | 자체 `> 0.5f` 삭제 → `BossController.PhaseForRatio(currentHP / maxHP)` |
+| `Assets/LHM/8_MD/HANDOFF.md`, `BACKLOG.md` | docs | 본 문서, T22 ✅ → 🎮 |
 
 ## 3. 동작 변화와 리스크
-- 동작 변화: 게임플레이 변화 없음. Console에 `[Boss] …` GameLog 4종 추가.
+- 동작 변화:
+  - HP 비율이 **정확히 0.5** 일 때 이전엔 2P → 이제 1P. 그 외 값은 동일.
+  - 예) maxHP 500: 250 → 1P 유지, 249(또는 그 미만) → 2P. 전환 1회 보장은 기존 `hasPhaseTransitioned` 그대로.
+  - 체력바 PHASE 표시가 컨트롤러와 같은 함수 사용 → 경계에서 표시·실제 페이즈 불일치 없음.
+- 설계 선택:
+  - 기준값을 한 곳(`BossController.Phase2HpRatio`)에 둠 → 체력바가 따로 0.5를 갖지 않음 (DRY).
+  - 50%는 기획서 고정 규칙(튜닝 값 아님)이라 Config SO 가 아닌 `const`. 튜닝 필요하면 질문 바람.
+  - Core 파일 신설 대신 `BossController` 정적 함수 — BACKLOG 예상 파일 2개 범위 유지. T31 이후 FSM이 Core로 가면 그때 이동 검토.
+  - 디버그 키 **F6**: BACKLOG가 F1(전환)·F2(히트스톱)·F3/F4(T31 Stunned·Groggy)·F5(그로기 +25)를 이미 예약.
 - 리스크:
-  - `IsInvulnerable` 은 **0.2초 피격 무적을 포함하지 않는다** (Q4: 자물쇠 안 띄움). 실제 피해 거부 여부와 다를 수 있음 → 이름 그대로 "표시용 무적"으로 쓸 것. T19에서 2페이즈 쉴드를 `ComputeInvulnerable()` 에 추가.
-  - `_isInvulnerableNotified` 초기값 false → `Start` 에서 `ChangeState(Appearing)` 시 true 알림 1회. `Awake`~`Start` 사이 구독자는 이벤트를 받고, 그 뒤 구독자는 `IsInvulnerable` 을 먼저 읽어야 함(주석 명시).
-  - 한 번의 피격으로 전환과 사망이 동시에 일어나면 `PhaseChanged(2)` → `Died` 순서로 둘 다 발생 (의도된 순서).
-  - 에디터 F1 경로는 기존 코드대로 `ClearAllActiveProjectiles()` 를 호출하지 않음 (기존 차이 유지, 범위 밖).
-  - 구독자는 `OnDisable/OnDestroy` 에서 해제 필요 (T3에서 준수).
+  - F6 은 상태 체크 없이 HP만 씀 (F1과 같은 방식). **2P 전환 후 F6** 을 누르면 체력바는 PHASE 1 표시, 컨트롤러는 2P 유지(전환은 1회만) → 디버그 전용 불일치, 실제 게임엔 회복 없음.
+  - 체력바 **색상**(`UpdateHealthColor`)의 `> 0.5f` 는 페이즈가 아닌 색 구간이라 그대로 둠 → 정확히 50%에서 노랑 + PHASE 1. 맞추길 원하면 질문 바람.
+  - 부동소수: `maxHP × 0.5 / maxHP` 는 정확히 0.5 (2의 거듭제곱 곱) → F6 경계 재현 안정적. 일반 타격 누적으로 정확히 250에 도달하는 경우도 정수 피해면 정확.
 
 ## 4. 정적 점검 (Claude — 실행 아님)
 | 항목 | 결과 |
 |---|---|
-| 컴파일 가능성 자체 점검 | 문제 없음으로 판단. `using System;` 을 넣지 않고 `System.Action` 전체 이름 사용(UnityEngine `Object`/`Random` 모호성 회피). `GameLog.Info(string, Object)` 에 `this` 전달. 네임스페이스 `UnMachine` 에는 `GameLog` 만 있어 충돌 없음 |
-| unity-guard | 문제 없음. 델리게이트에 `?.Invoke` 는 UnityEngine.Object 가 아니므로 허용. 새 코루틴·Find·할당 없음(문자열 보간은 이벤트 발생 시 1회, 매 프레임 아님) |
-| spec-check | ✅ 10-1 "전환 1회만" = 기존 `hasPhaseTransitioned` 블록 안에서만 알림 / ✅ 10-2 사망 1회 / ✅ 6-1 "Appearing 동안 완전 무적" = `IsInvulnerable` true / ➖ 12장 자물쇠 표시는 T21 |
+| 컴파일 가능성 자체 점검 | 문제 없음으로 판단. `BossController`·`BossHealthBar` 둘 다 전역 네임스페이스, asmdef 없음(Assembly-CSharp). `Old_Stage2/BossController.cs` 는 전체 주석 → 이름 충돌 없음(grep). `GameLog.Info(string, Object)` 는 같은 파일 `NotifyPhaseChanged` 와 같은 형태, `using UnMachine` 있음. `damageHandler.SetHP(float)` 존재(`DamageHandler.cs:147`, 클램프 + `OnHPChanged`). 추가 줄 120자 이하(PowerShell 문자 수 확인) |
+| unity-guard | 문제 없음. 새 코루틴·`async`·`Find*`·`?.` 없음. `Update` 추가분은 키 체크만(할당 없음, 문자열 보간은 F6 경로만). 디버그 코드 `#if UNITY_EDITOR`. 로그 `GameLog`. `Input.GetKeyDown` 은 기존 F1과 같은 구 입력 API(`activeInputHandler` Both) |
+| spec-check | ✅ boss.md 5장 "HP 50% 최초 하회" — 50%는 하회 아님 → 1P, 미만 → 2P, 1회 / ✅ BACKLOG T22 "체력바 표시도 동일" / ➖ 반복 방지(T37)·드론 제한(T50)·거리(T37) 범위 밖, 미수정 |
 
 ## 5. 에디터 작업 (현민)
-없음.
+1. Unity 열기 → Console 컴파일 에러 0 확인. (새 파일 없음 → `.meta` 생성 없음)
+2. 그 외 없음.
 
 ## 5-1. 씬 테스트 절차 (현민)
-준비: 보스가 있는 씬(`LHM.unity`) 열기. Console의 Collapse는 **끄기**(횟수 확인용).
+**준비**: 빌더로 만든 보스 테스트 씬(T28에서 쓴 씬)에서 Play. 보스 등장(Appearing) 끝나고 전투 시작까지 대기. **키 입력 전 Game 뷰 클릭.**
+- 테스트 씬에는 `BossHealthBar` 가 없음 → 컨트롤러 페이즈는 **Console 로그**로 확인. PHASE 표시는 마지막 항목에서 `LHM.unity` 로 확인.
 
-| # | 조작 | 기대 결과 | 결과 (현민) |
+**조작 → 기대 결과**
+| # | 조작 | 기대 결과 | 근거 |
 |---|---|---|---|
-| 1 | Play | 시작 직후 `[Boss] InvulnerableChanged → True` 1회 | ⬜ |
-| 2 | 낙하·착지 대기 (약 3초) | `[Boss] BattleStarted` 1회 → 바로 `[Boss] InvulnerableChanged → False` 1회 (spec 6-1) | ⬜ |
-| 3 | F1 | `[Boss] PhaseChanged → 2` 1회 + 기존 `[Debug] F1: 2페이즈 전환 완료` | ⬜ |
-| 4 | F1 다시 여러 번 | `PhaseChanged` 추가 출력 없음 (spec 10-1 전환 1회) | ⬜ |
-| 5 | Play 재시작 후 보스를 공격해 체력 50% 미만으로 | `[Boss] PhaseChanged → 2` 1회 | ⬜ |
-| 6 | 보스 처치 | `[Boss] Died` 1회, 2초 뒤 보스 비활성 (spec 10-2) | ⬜ |
+| 1 | F6 | Console `[Debug] F6: 보스 HP 250/500 (경계) → 계산 페이즈 1, 현재 1` (maxHP가 500이 아니면 그 절반). `[Boss] PhaseChanged` 로그 **없음**. 보스는 1P 패턴·휴식 2초 계속 | 5장 "50% 최초 하회" (정확히 50%는 하회 아님) |
+| 2 | 1번 직후 보스를 일반 공격 1회 적중 | `[Boss] PhaseChanged → 2` **1회**, 2P 전환 연출(기존 화면 효과) → 2P 패턴(드론 포함), 휴식 1초 | 5장, T22 "249 → 2P 전환 1회" |
+| 3 | 2P에서 계속 공격 | `PhaseChanged` 추가로 안 나옴 | 전환 1회 |
+| 4 | Play 재시작 → F1 | 기존과 같음: HP 49% → 즉시 2P 전환 + `PhaseChanged → 2` 1회 | 회귀 확인 |
+| 5 | `LHM.unity` 에서 보스전 시작 → F6 | 체력바 `PHASE 1`, 슬라이더 절반, 텍스트 `250 / 500`. 이어서 공격 1회 → `PHASE 2` 로 바뀌고 깜빡임 3회 | T22 "체력바 표시도 동일" |
 
-- 경계 상황:
-  - 처치 테스트가 오래 걸리면 인스펙터에서 BossController `Max HP` 를 임시로 10 정도로 낮춰서 확인 → **테스트 후 500으로 되돌리기** (씬 저장 주의)
-  - 5·6을 한 방에: Max HP를 낮춘 상태에서 한 번에 50% 아래 + 0 이하가 되면 `PhaseChanged → 2` 다음 `Died` 순서로 각 1회
-  - 등장 중(1~2 사이) 공격 → 피해 0, 로그 변화 없음
-- 디버그 표시: GameLog 로그 (Console)
-- Console에 나오면 안 되는 것: `Died` 2회 이상, `PhaseChanged` 2회 이상, `NullReferenceException`, `CS0104` 모호성 에러
+**경계 상황**
+- 1번 상태에서 피격 무적 중 추가 타격 → HP 그대로, 1P 유지.
+- F6 을 2번 연속 → 두 번 다 `계산 페이즈 1, 현재 1`, 전환 없음.
+- (디버그 전용, 3장 리스크) 2P 전환 후 F6 → 로그 `계산 페이즈 1, 현재 2`, 컨트롤러 2P 유지. 정상.
+
+**Console에 나오면 안 되는 것**: `NullReferenceException`(BossController·BossHealthBar·DamageHandler), `PhaseChanged → 2` 2회 이상, F6 직후 `PhaseChanged`.
 
 ## 5-2. 현민 씬 테스트 결과
-- 결과: 대기
+- 1차 (2026-11-25): **1~5 통과** (현민 보고). 경계 상황 항목은 별도 보고 없음.
 
 ## 6. 기획서와 다르게 한 점
 | 기획서 | 구현 | 이유 |
 |---|---|---|
-| — | 없음 | — |
+| BACKLOG T22 디버그 언급 없음 | 에디터 전용 F6 추가 | AI_RULES 6장 "체력 정확히 50%" 경계 확인용. F1은 49%라 경계 재현 불가 |
 
 ## 7. 결정 사항
-- "표시용 무적"(`IsInvulnerable`)과 "피해 거부"는 분리. 피격 0.2초 무적은 표시 대상 아님 (BACKLOG Q4).
-- 이벤트 판정 기준은 `ComputeInvulnerable()` 한 곳에만 둔다.
+- 페이즈 경계 단일 원본 = `BossController.PhaseForRatio` / `Phase2HpRatio` (const, Config 아님).
+- 디버그 키 F6 = HP 경계 설정 (F1~F5 BACKLOG 예약).
 
 ## 8. 알려진 문제 / 미완료
-- 기존 HP 50% 경계 버그(`> 0.5f` → HP 250에서 2P)는 T22에서 수정. 이번 이벤트는 기존 판정을 그대로 따름.
+- 체력바 색상 경계 `> 0.5f` 는 그대로 (3장).
+- T33(PhaseTransition 상태)에서 전환 경로가 바뀌면 `TakeDamage`·F1 블록의 `GetCurrentPhase` 호출부는 그대로 재사용 가능.
 
 ## 9. 리뷰어에게 요청
-- 호출 지점 순서(정리 후 → 알림 → Idle)가 T3 Director의 "이전 기믹 회수 후 다음 기믹 시작"에 맞는지
-- `_hasDied` 와 기존 `ChangeState` Dead 가드의 중복 여부
+- `PhaseForRatio` 를 `BossController` 정적 함수로 둔 것(Core 미분리)이 T22 범위에서 적절한지.
+- F6 디버그가 `damageHandler.SetHP` 를 호출해 `OnHPChanged` 를 내보내는 것이 다른 구독자(SYS `BossHealthBarBridge` 등)에 부작용 없는지.
+- (0장) T27·T28 리뷰 요청 항목.
 
 ## 10. 질문 (현민 답변 필요)
-- 없음 (Q18은 T19 착수 전까지)
+- 체력바 색상 경계도 `>= 0.5f` 로 맞출지 (기본: 그대로).
+- (T28) Player 채널 동기화 유지 여부 (기본 유지).
 
 ## 11. 다음 할 일
-1. 현민 씬 테스트 → 커밋
-2. 새 세션에서 `/task T3` (BossArenaDirector + IBossGimmick + BossArenaConfig)
+1. 현민: 커밋 (T27·T28·T22) → Gemini 리뷰 요청
+2. 새 세션에서 다음 작업 (BACKLOG 순서: T29)
 
 ## 11-1. 커밋 제안 (현민이 판단해서 직접 커밋)
-- 메시지: `[feat] T2 BossController 이벤트 훅 추가`
-- 포함할 파일: `Assets/LHM/0_Script/Boss/New/BossController.cs`, `Assets/LHM/8_MD/HANDOFF.md`, `Assets/LHM/8_MD/BACKLOG.md` (새 `.meta` 없음)
-
-## 12. 리뷰 대응
-(리뷰 반영 시 작성)
-
-## 13. 규칙 변경 제안
-- 없음
-
----
-
-## 추가 작업: T26 테스트 씬 생성 툴 (T2와 같은 기준 커밋 `778fca9`, 별도 커밋 권장)
-
-- 근거: 현민 요청 + AI_RULES 0장 2번 예외(2026-11-25 추가, DECISIONS 기록)
-- 변경 파일: `Assets/LHM/0_Script/Boss/New/Editor/BossTestSceneBuilder.cs` (신규, Editor 폴더 → 에디터 전용), `AI_RULES.md`, `DECISIONS.md`, `BACKLOG.md`(T26 행)
-- 동작: 메뉴 `UnMachine/Test Scene/Boss Arena` → 창에서 [테스트 씬 만들기] → `Assets/LHM/Test_Boss.unity` 새로 생성·저장
-  - 바닥 윗면 y=0, 방 중앙 x=0. 40×30 방 = Ground·Ceiling·WallLeft·WallRight (BoxCollider2D + 내장 UISprite, `ground` 레이어)
-  - Main Camera(직교, 크기 = 세로/2 + 여백 2), Global Light 2D(모든 Sorting Layer), 마커 3개(BossSpawn·PlayerSpawn·MirrorBottomCenter)
-  - 플레이어 프리팹 기본값 `Assets/CSH/8.Prefabs/Player/Player.prefab`, 보스 프리팹은 지정 시 배치 + BossController/BossAttackPatterns 의 `player` 필드 연결
-- 안전장치: 파일명 `Test_` 강제, 같은 경로 파일 있으면 중단(덮어쓰기 없음), 현재 씬 변경은 저장 여부를 물음, 기존 씬은 열거나 저장하지 않음
-- 리스크:
-  - **보스 프리팹이 프로젝트에 없음** → 지정 안 하면 보스 자리에 마커만 생김 (아래 에디터 작업 1)
-  - 보스를 프리팹으로 만들면 씬 오브젝트 참조(체력바 Canvas 등)는 프리팹에서 빠짐 → 테스트 씬에서 체력바 없음(BossController는 null 체크함). 필요하면 체력바 Canvas를 수동 추가
-  - 플레이어 프리팹이 다른 씬 매니저(UI·GameManager 등)를 기대하면 Play 시 에러 가능 → Console 확인
-  - `Light2D` 는 타입 이름으로 찾음(URP 직접 참조 없음). 못 찾으면 경고 후 생략 → 화면이 어두우면 Global Light 2D 수동 추가
-- 정적 점검: 컴파일 가능성 — `EditorSceneManager.NewScene/SaveScene/SaveCurrentModifiedScenesIfUserWantsTo`, `PrefabUtility.InstantiatePrefab`, `AssetDatabase.GetBuiltinExtraResource`, `SortingLayer.layers` 사용, 문제 없음으로 판단 / unity-guard — 런타임 코드 아님, Find 없음, 기존 씬 저장 없음 / spec-check — 방 40×30 ✅(boss.md 2장)
-
-### 에디터 작업 (현민)
-1. (보스도 배치하려면) `LHM.unity` 를 열고 Hierarchy 의 Boss 오브젝트를 `Assets/LHM/2_Prefabs/` 로 드래그 → Original Prefab → `Boss.prefab`. LHM.unity 는 저장 여부를 직접 판단
-2. 메뉴 `UnMachine > Test Scene > Boss Arena` → 창에서 보스 프리팹 칸에 `Boss.prefab` 지정(플레이어는 자동) → [테스트 씬 만들기]
-3. 생성된 `Test_Boss.unity` 가 열림. 처치 테스트용으로 Boss 의 `Max HP` 를 낮추려면 이 씬에서만 변경
-
-### 씬 테스트 (현민)
-| # | 조작 | 기대 결과 | 결과 |
-|---|---|---|---|
-| 1 | 메뉴 실행 → 만들기 | Console `[TestScene] 생성 완료: Assets/LHM/Test_Boss.unity (보스 배치, 플레이어 배치)`, 씬 뷰에 회색 방·마커 | ⬜ |
-| 2 | 같은 이름으로 다시 만들기 | "이미 있다. 덮어쓰지 않는다" 대화상자, 파일 변화 없음 | ⬜ |
-| 3 | Test_Boss Play | 플레이어가 바닥에 서고 좌우로 이동·점프, 벽·천장에 막힘, 화면이 어둡지 않음 | ⬜ |
-| 4 | 그대로 대기 | 보스가 상공에서 낙하·착지 → T2 로그(`InvulnerableChanged`/`BattleStarted`) 출력, 보스가 플레이어를 향해 공격 | ⬜ |
-
-- Console에 나오면 안 되는 것: `NullReferenceException`(특히 보스 `player` 관련), "Light2D 타입을 찾지 못해" 경고
-
-### 커밋 제안
-- `[docs] AI_RULES: 테스트 씬 생성 에디터 툴 허용` — `AI_RULES.md`, `DECISIONS.md`
-- `[feat] T26 보스 테스트 씬 생성 툴` — `New/Editor/BossTestSceneBuilder.cs` + `Editor/` 폴더·`.cs` `.meta`, `BACKLOG.md`(T26 행)
-- `[asset] 보스 테스트 씬·보스 프리팹` — `Test_Boss.unity`, `Boss.prefab` (+ `.meta`) — 현민이 만든 뒤
-
----
-
-## 추가 작업: 보스 기획 v2 확정 (문서만, 기준 HEAD `21b72cd`)
-
-- 근거: 현민 제공 수정안 v2 + 검토 결정 16건 (추천안 그대로 확정, 2026-11-25)
-- 변경 파일: `boss.md` (v2 확정본으로 교체, 17장에 결정 기록), `README.md` (boss.md 상태), `DECISIONS.md` (1행)
-- v1 원본 정리본: `boss_system.md` (같은 내용 사본) + git 히스토리
-- 코드 변경 없음 → 정적 점검·씬 테스트 해당 없음
-- **BACKLOG 영향 (아직 반영 안 함)**: T5~T13 이동(다른 보스), T16~T18·T25 폐기(아재 → 낙섬 QTE), Q4·Q8·Q10~Q12 무효, T14·T15 최소 폭 24, T19 그로기 진입 조건 변경, T22 거리 값 재정의, 새 작업(Telegraph·Punishable·Stunned·PhaseTransition 상태, 패턴 6종, 패턴 선택기, 그로기 게이지, `GameClock` 히트스톱) → `/breakdown` 필요
-- 남은 확인: `짓밟기-Sheet` 의도(아트), 패링 구현 시점(CSH), 연섬 동작
-- `git status` 의 `ProjectSettings/EditorBuildSettings.asset`, `ProjectSettings.asset` 변경은 이번 작업과 무관 (Unity 자동 변경, 현민 판단)
-
-### 커밋 제안
-- `[docs] 보스 기획 v2 확정` — `boss.md`, `README.md`, `DECISIONS.md`, `HANDOFF.md`
+1. T27·T28 (이전 HANDOFF 제안 그대로):
+   - `[feat] T27 GameClock 시간 채널·히트스톱 (Core)` — `Assets/LHM/0_Script/Boss/New/Core/GameClock.cs`, `ClockChannel.cs` (+ `.meta` 함께)
+   - `[feat] T28 GameClockDriver, HitstopManager 겹침 수정 (Q25)` — `Assets/LHM/0_Script/Boss/New/Gimmick/GameClockDriver.cs` (+ `.meta`), `Assets/CSH/0.Scripts/Hitstop/HitstopManager.cs`, `Assets/LHM/8_MD/DECISIONS.md`
+   - `[chore] 테스트 씬 빌더: 매니저·카메라 리그·GameClock 포함` — `Assets/LHM/0_Script/Boss/New/Editor/BossTestSceneBuilder.cs`
+2. T22: `[fix] T22 페이즈 경계 50% 포함 1P (>= 0.5f), 체력바 동일 기준` —
+   `Assets/LHM/0_Script/Boss/New/BossController.cs`, `Assets/LHM/0_Script/Boss/New/BossHealthBar.cs`,
+   `Assets/LHM/8_MD/HANDOFF.md`, `Assets/LHM/8_MD/BACKLOG.md` (새 파일 없음 → `.meta` 없음)
+- `HANDOFF.md`·`BACKLOG.md` 는 T27·T28·T22 내용이 한 파일에 섞여 있음 → 마지막 커밋(T22)에 넣거나 한 번에 커밋.
+- `Test_Boss.unity`·`Screen microcircuit.prefab`·`ShaderGraphSettings.asset` 은 에디터 자동 변경 → 현민 판단 (`[asset]` 분리 또는 되돌리기).

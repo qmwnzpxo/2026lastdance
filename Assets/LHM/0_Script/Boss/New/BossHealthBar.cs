@@ -81,7 +81,7 @@ public class BossHealthBar : MonoBehaviour
         UpdateHealthColor();
 
         // 페이즈 재계산
-        int newPhase = (currentHP / maxHP > 0.5f) ? 1 : 2;
+        int newPhase = BossController.PhaseForRatio(currentHP / maxHP);
         if (newPhase != currentPhase)
         {
             UpdatePhase(newPhase);
