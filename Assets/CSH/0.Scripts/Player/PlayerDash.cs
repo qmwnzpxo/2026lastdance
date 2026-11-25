@@ -127,15 +127,14 @@ public partial class PlayerDash : MonoBehaviour
 
     void Update()
     {
-        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null)
-        {
-            return;
-        }
+        if (UpdateDialogueState()) return;
         HandleDash();
     }
 
      void FixedUpdate()
     {
+        if (UpdateDialogueState()) return;
+
         if (_blueFalling)
         {
             return;
@@ -185,6 +184,50 @@ public partial class PlayerDash : MonoBehaviour
         CtsFree();
     }
 
+    // ── 대화 상태 ────────────────────────────
+    private bool _inDialogue;
+
+    /// <summary>대화 상태를 갱신하고, 대화 중이면 true. 진입하는 순간 진행 중인 대시를 끊는다.</summary>
+    private bool UpdateDialogueState()
+    {
+        bool playing = DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null;
+        if (playing && !_inDialogue)
+            CancelAllDashes();
+        _inDialogue = playing;
+        return playing;
+    }
+
+    /// <summary>
+    /// 진행 중인 모든 대시(핑크/빨강/초록/파랑)를 즉시 중단한다.
+    /// 빨강 칩 녹화·재생은 각 루틴의 finally에서 물리·색상·타임스케일이 복구된다.
+    /// </summary>
+    public void CancelAllDashes()
+    {
+        // 파랑 QTE는 중력을 건드리지 않으므로 제외 (슬로우는 CtsFree에서 초기화)
+        bool wasDashing = state.isDashing || _blueFalling || _greenDashing || _greenComboStep > 0;
+
+        CtsFree(); // 모든 대시 CTS 취소 + 타임스케일 초기화
+
+        state.dashBuffered = false;
+        _blueDashSecondInput = false;
+        _greenDashBuffered = false;
+
+        if (!wasDashing) return;
+
+        // 대시가 0으로 만든 중력·카메라 등을 즉시 복구
+        state.isDashing = false;
+        _blueFalling = false;
+        _greenDashing = false;
+        _greenComboStep = 0;
+        if (ani != null) ani.ResetCombo();
+
+        state.NotifyDashStopped();
+        playerMove.RestoreGravity();
+        cameraFollow.SetCameraDumping(originalCameraDumping);
+        if (line != null) line.enabled = false;
+        rb.linearVelocity = Vector2.zero;
+    }
+
     void OnDisable()
     {
         CtsFree();
@@ -220,15 +263,21 @@ public partial class PlayerDash : MonoBehaviour
 
             if (state.isRedDashRecording || state.isRedDashPlaying) return;
 
-            playerMove.ResetWallState();
-            ani.Dash();
-
             // 대시 중 입력 → 버퍼
             if (state.isDashing)
             {
+                playerMove.ResetWallState();
+                ani.Dash();
                 state.dashBuffered = true;
                 return;
             }
+
+            // 게이지 부족이면 모션·벽 상태 해제 없이 무시
+            // (이전엔 게이지 확인 전에 ani.Dash()가 재생돼 공격 모션만 반복됐음)
+            if (state.DashGauge < state.DashCost) return;
+
+            playerMove.ResetWallState();
+            ani.Dash();
 
             // ─── 칩별 분기 ───────────────────
             switch (state.currentChip)
@@ -279,7 +328,7 @@ public partial class PlayerDash : MonoBehaviour
         Vector2 origin = (Vector2)transform.position;
         Vector2 rayOrigin = origin + dashDirection * 0.05f;
 
-        RaycastHit2D groundHit = Physics2D.Raycast(
+        RaycastHit2D groundHit = SolidPhysics.Raycast(
             origin, dashDirection, dashRange, playerMove.GroundLayer);
 
         await CustomTime.WaitForScaledSeconds(0.06f, state.category, cts);

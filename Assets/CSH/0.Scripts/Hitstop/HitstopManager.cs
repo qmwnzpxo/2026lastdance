@@ -16,6 +16,10 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
     // 히트스탑 도중 새 히트스탑이 요청되면 이전 작업을 취소하고 새로 시작한다.
     private CancellationTokenSource _cts;
 
+    // 현재 유효한 히트스탑 번호. 덮어쓰기된 이전 루틴의 finally가
+    // 새 히트스탑을 해제/취소하지 않도록 구분한다.
+    private int _version;
+
     /// <summary>
     /// 히트스탑을 발동시키는 메서드. 피격 처리 코드에서 호출.
     /// </summary>
@@ -34,14 +38,14 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
         // Forget() : 반환값(UniTask)을 사용하지 않겠다는 의미.
         //            await 없이 "발사 후 망각(fire-and-forget)" 방식으로 실행.
         //            내부적으로 예외는 UniTaskScheduler가 처리.
-        HitstopRoutine(duration, timeScale, _cts.Token).Forget();
+        HitstopRoutine(duration, timeScale, ++_version, _cts.Token).Forget();
     }
 
     /// <summary>
     /// 실제 히트스탑 동작을 수행하는 비동기 메서드.
     /// UniTaskVoid : 반환값이 없는 UniTask. async void 대신 사용 (예외 처리가 더 안전).
     /// </summary>
-    private async UniTaskVoid HitstopRoutine(float duration, float timeScale, CancellationToken ct)
+    private async UniTaskVoid HitstopRoutine(float duration, float timeScale, int version, CancellationToken ct)
     {
         var mgr = CustomTimeManager.Instance;
 
@@ -65,9 +69,14 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
             // try가 정상 완료되든, catch로 취소되든 finally는 "반드시" 실행된다.
             // 코루틴(StopCoroutine)은 이 보장이 없어서 timeScale이 낮은 채로
             // 게임이 굳어버리는 버그가 생길 수 있다. UniTask는 이를 구조적으로 방지.
-            mgr.ResetHitstopMultiplier();
-
-            _cts?.Cancel();
+            // 덮어쓰기된(이전) 루틴이면 아무것도 하지 않는다.
+            // (이전엔 여기서 새 히트스탑까지 해제·취소해 버렸음)
+            if (version == _version)
+            {
+                mgr.ResetHitstopMultiplier();
+                _cts?.Dispose();
+                _cts = null;
+            }
         }
     }
 
@@ -82,8 +91,10 @@ public class HitstopManager : PersistentSingleton<HitstopManager>
     {
         // 오브젝트가 파괴될 때 (씬 전환, 게임 종료 등)
         // 진행 중인 비동기 작업을 취소하고 timeScale을 정상으로 복구
+        _version++; // 진행 중 루틴의 finally가 정리된 _cts를 건드리지 않도록
         _cts?.Cancel();
         _cts?.Dispose();
+        _cts = null;
         CustomTimeManager.Instance?.ResetHitstopMultiplier();
     }
 }

@@ -18,7 +18,7 @@ public partial class PlayerDash : MonoBehaviour
             dashDirection = snappedDir;
 
             Vector2 origin = (Vector2)transform.position + dashDirection * 0.05f;
-            RaycastHit2D groundHit = Physics2D.Raycast(
+            RaycastHit2D groundHit = SolidPhysics.Raycast(
                 origin, dashDirection, dashRange, playerMove.GroundLayer);
             dashTargetPosition = groundHit.collider != null
                 ? groundHit.point
@@ -132,7 +132,7 @@ public partial class PlayerDash : MonoBehaviour
             step + 0.1f,
             playerMove.GroundLayer);
         */
-        hit = Physics2D.CircleCast(cur, GetComponent<CircleCollider2D>().radius, Vector2.down, step + 0.1f, playerMove.GroundLayer);
+        hit = SolidPhysics.CircleCast(cur, GetComponent<CircleCollider2D>().radius, Vector2.down, step + 0.1f, playerMove.GroundLayer);
 
         if (hit.collider != null)
         {

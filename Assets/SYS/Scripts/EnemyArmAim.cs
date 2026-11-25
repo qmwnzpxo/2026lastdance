@@ -96,6 +96,13 @@ public class EnemyArmAim : MonoBehaviour
         else
         {
             // 플레이어를 안 볼 때 (순찰 중이거나, 벽 뒤에 있을 때)
+            // 이동 방향으로 몸을 돌린다 (벽 뒤 추격 시 반대를 보고 걷는 문워크 방지)
+            if (_enemyBB.rigid2D != null)
+            {
+                float vx = _enemyBB.rigid2D.linearVelocity.x;
+                if (Mathf.Abs(vx) > 0.1f) SetFacing(vx > 0f);
+            }
+
             // 기괴한 -99도 대신, 현재 몸이 바라보는 방향(정면)을 바라보게 합니다.
             targetWorldAngle = _isFacingRight ? -99f : 99f;
         }

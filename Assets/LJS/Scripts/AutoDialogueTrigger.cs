@@ -48,6 +48,9 @@ public class AutoDialogueTrigger : MonoBehaviour
                 rb.linearVelocity = Vector2.zero;
             }
 
+            // 3. 카메라를 댐핑 없이 즉시 플레이어 위치로
+            CameraFollow.SnapMainToTarget();
+
             Debug.Log($"[AutoDialogueTrigger] 대화 완료 후 플레이어를 {_teleportPoint.name} 위치로 순간이동 시켰습니다.");
         }
 

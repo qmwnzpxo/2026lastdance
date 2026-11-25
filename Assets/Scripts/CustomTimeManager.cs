@@ -116,14 +116,24 @@ public class CustomTimeManager : PersistentSingleton<CustomTimeManager>
     {
         //ApplyScale(ref _hitstopMultiplier, multiplier, OnPlayerTimeScaleChanged);
 
+        bool wasActive = IsHitstopActive;
         _hitstopMultiplier = Mathf.Max(0f, multiplier);
         // 세 카테고리 모두 이벤트 발행 (hitstop은 전체에 영향)
         OnPlayerTimeScaleChanged?.Invoke(PlayerTimeScale);
         OnEnemyTimeScaleChanged?.Invoke(EnemyTimeScale);
         OnCloneTimeScaleChanged?.Invoke(GhostTimeScale);
+
+        if (wasActive != IsHitstopActive)
+            OnHitstopStateChanged?.Invoke(IsHitstopActive);
     }
 
     public void ResetHitstopMultiplier() => SetHitstopMultiplier(1f);
+
+    /// <summary>히트스탑 진행 중 여부</summary>
+    public bool IsHitstopActive => _hitstopMultiplier < 1f;
+
+    /// <summary>히트스탑 시작(true)/종료(false) 시 1회 발행. TimeScaleReceiver가 Rigidbody 정지/복원에 사용.</summary>
+    public event Action<bool> OnHitstopStateChanged;
 
     #endregion
 

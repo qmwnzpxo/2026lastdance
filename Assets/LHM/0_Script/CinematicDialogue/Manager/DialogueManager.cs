@@ -385,6 +385,9 @@ namespace DialogSystem.CinematicDialogue
                 {
                     _cinemachineCameraObject.SetActive(true);
                 }
+
+                // 가상 카메라가 대화 전 상태에서 댐핑으로 끌려오지 않도록 즉시 스냅
+                CameraFollow.SnapMainToTarget();
             }
 
             _playerTransform = null;

@@ -55,6 +55,10 @@ public class EnergyBullet : MonoBehaviour
         // 초기 스케일 설정
         transform.localScale = Vector3.one * currentSize;
 
+        // 진행 방향으로 회전 (스프라이트 기본 방향 = +x 기준)
+        transform.rotation = Quaternion.Euler(0f, 0f,
+            Mathf.Atan2(moveDirection.y, moveDirection.x) * Mathf.Rad2Deg);
+
         // rb2d가 있으면 velocity로 이동
         if (rb2d != null)
         {

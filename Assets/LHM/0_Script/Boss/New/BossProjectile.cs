@@ -111,6 +111,7 @@ public class BossProjectile : MonoBehaviour
         // 방향 저장 및 스케일 초기화
         facingDirectionX = direction.x >= 0f ? -1f : 1f;
         transform.localScale = new Vector3(facingDirectionX * 5f, 5f, 5f);
+        ApplyAimRotation(direction);
 
         if (rb2d != null)
         {
@@ -142,6 +143,7 @@ public class BossProjectile : MonoBehaviour
         instanceMaxScale = maxScale * scaleMultiplier;
         instanceGrowthRate = growthRate * scaleMultiplier;
         transform.localScale = new Vector3(facingDirectionX * currentScale, currentScale, currentScale);
+        ApplyAimRotation(direction);
 
         if (rb2d != null)
         {
@@ -153,6 +155,18 @@ public class BossProjectile : MonoBehaviour
     }
 
 
+
+    /// <summary>
+    /// 진행 방향으로 탄을 기울인다. (이전엔 스케일 좌우 반전만 해서 항상 수평으로 날아갔음)
+    /// 좌우는 localScale.x 부호로 이미 뒤집혀 있으므로, 뒤집힌 기준에서의 각도만 준다.
+    /// </summary>
+    private void ApplyAimRotation(Vector3 direction)
+    {
+        if (direction.sqrMagnitude < 0.0001f) return;
+        float s = direction.x >= 0f ? 1f : -1f;
+        float angle = Mathf.Atan2(direction.y * s, direction.x * s) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0f, 0f, angle);
+    }
 
     /// <summary>
     /// 대포탄 초기화 (포물선 탄도)

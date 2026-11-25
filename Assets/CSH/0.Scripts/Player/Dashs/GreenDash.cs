@@ -77,7 +77,7 @@ public partial class PlayerDash : MonoBehaviour
         Vector2 start = rb.position;
         Vector2 target = start + dashDirection * greenDashRange;
 
-        RaycastHit2D groundHit = Physics2D.Raycast(
+        RaycastHit2D groundHit = SolidPhysics.Raycast(
             start + dashDirection * 0.05f, dashDirection, greenDashRange, playerMove.GroundLayer);
         if (groundHit.collider != null)
             target = groundHit.point;
@@ -127,7 +127,7 @@ public partial class PlayerDash : MonoBehaviour
             traveled += greenDashSpeed * timeManager.PlayerFixedDeltaTime;
 
             // 벽 충돌 시 돌진 중단
-            Collider2D wallHit = Physics2D.OverlapBox(
+            Collider2D wallHit = SolidPhysics.OverlapBox(
                 rb.position, dashBoxSize, 0f, playerMove.GroundLayer);
             if (wallHit != null) break;
 

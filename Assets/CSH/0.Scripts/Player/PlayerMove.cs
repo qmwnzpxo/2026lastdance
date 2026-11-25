@@ -35,11 +35,18 @@ public class PlayerMove : MonoBehaviour
     [Header("벽타기")]
     [SerializeField] private Transform wallCheck;
     [SerializeField] private float wallCheckDistance = 0.52f;
+    [Tooltip("wallCheck 기준 아래 보조 레이 높이 오프셋 (발~무릎 높이 벽 감지용, 음수 = 아래)")]
+    [SerializeField] private float wallCheckLowOffset = -0.35f;
+    [Tooltip("이 값보다 벽 법선 x 성분이 커야 벽으로 인정 (경사면 오인 방지)")]
+    [SerializeField, Range(0f, 1f)] private float wallNormalMinX = 0.7f;
     [SerializeField] private float wallSlideSpeed = 2.5f;
     [SerializeField] private float wallSlideSpeedUp = -15f;
     [SerializeField] private float wallSlideSpeedDown = 10f;
     [SerializeField] private float wallJumpForceX = 6f;
     [SerializeField] private float wallJumpForceY = 12f;
+    [Tooltip("벽 오르기 중 벽에서 떨어질 때 남길 수 있는 최대 상승 속도 (솟구침 방지)")]
+    [SerializeField] private float wallExitMaxUpSpeed = 4f;
+    private bool _wasWallSliding;
 
     // ── 벽 끝 자동 등반 ──────────────────────
     [Header("벽 끝 자동 등반")]
@@ -128,11 +135,8 @@ public class PlayerMove : MonoBehaviour
 
     private void Update()
     {
-        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null)
-        {
-            Debug.LogWarning($"[PlayerMove] DialogueManager is active but PlaybackCts is null. Skipping Update.");
-            return;
-        }
+        if (UpdateDialogueState()) return;
+
         moveInput = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
@@ -151,6 +155,13 @@ public class PlayerMove : MonoBehaviour
 
     void FixedUpdate()
     {
+        // 대화 중: 입력 없이 수평 정지, 중력만 작용 (공중이면 착지)
+        if (UpdateDialogueState())
+        {
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            return;
+        }
+
         bool skipAutoFlip = state.isAttacking || state.isDashing;
 
         if (!skipAutoFlip)
@@ -184,23 +195,69 @@ public class PlayerMove : MonoBehaviour
     #endregion
 
     // ────────────────────────────────────────
+    #region 대화 상태
+
+    private bool _inDialogue;
+
+    private static bool IsDialoguePlaying =>
+        DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null;
+
+    /// <summary>대화 상태를 갱신하고, 대화 중이면 true. 진입하는 순간 입력·물리를 초기화한다.</summary>
+    private bool UpdateDialogueState()
+    {
+        bool playing = IsDialoguePlaying;
+        if (playing && !_inDialogue)
+            OnEnterDialogue();
+        _inDialogue = playing;
+        return playing;
+    }
+
+    private void OnEnterDialogue()
+    {
+        // 입력 초기화 (마지막 입력이 남아 계속 걷는 것 방지)
+        moveInput = 0f;
+        verticalInput = 0f;
+        state.isPowerRun = false;
+
+        // 물리 초기화 (벽등반·벽타기 상태와 중력은 유지)
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+
+        ani.Run_off();
+        ani.Power_Run_off();
+    }
+
+    #endregion
+
+    // ────────────────────────────────────────
     #region 물리 체크
     void CheckGround()
     {
-        state.isGrounded = Physics2D.OverlapBox(groundCheck.position, groundCheckSize, 0f, walkableLayer);
+        state.isGrounded = SolidPhysics.OverlapBox(groundCheck.position, groundCheckSize, 0f, walkableLayer);
     }
 
     void CheckCeiling()
     {
-        isTouchingCeiling = Physics2D.OverlapBox(ceilingCheck.position, ceilingCheckSize, 0f, groundLayer);
+        isTouchingCeiling = SolidPhysics.OverlapBox(ceilingCheck.position, ceilingCheckSize, 0f, groundLayer);
         ani.IsGrounded();
     }
     void CheckWall()
     {
-        state.isTouchingLWall = Physics2D.Raycast(
-            wallCheck.position, Vector2.left, wallCheckDistance, groundLayer);
-        state.isTouchingRWall = Physics2D.Raycast(
-            wallCheck.position, Vector2.right, wallCheckDistance, groundLayer);
+        // 기존 레이 + 발~무릎 높이 보조 레이. 둘 중 하나라도 벽이면 벽으로 판정
+        Vector2 top = wallCheck.position;
+        Vector2 low = top + Vector2.up * wallCheckLowOffset;
+
+        state.isTouchingLWall = IsWallHit(top, Vector2.left) || IsWallHit(low, Vector2.left);
+        state.isTouchingRWall = IsWallHit(top, Vector2.right) || IsWallHit(low, Vector2.right);
+    }
+
+    bool IsWallHit(Vector2 origin, Vector2 dir)
+    {
+        RaycastHit2D hit = SolidPhysics.Raycast(origin, dir, wallCheckDistance, groundLayer);
+        // 경사면이 낮은 레이에 걸려 벽으로 오인되지 않도록 거의 수직인 면만 인정
+        // distance 0 = 레이 시작점이 이미 콜라이더 안(바닥 속 등) → 벽 아님
+        return hit.collider != null && hit.distance > 0f
+            && Mathf.Abs(hit.normal.x) >= wallNormalMinX;
     }
 
     #endregion
@@ -239,6 +296,8 @@ public class PlayerMove : MonoBehaviour
     void ApplyWallSlide()
     {
         if (!state.isWallSliding) return;
+        // 벽 점프 직후엔 벽 점프 속도를 유지 (벽 오르기 속도로 덮어쓰면 그대로 하늘로 솟구침)
+        if (state.isWallJumping) return;
 
         bool pressingTowardWall   = (state.isTouchingLWall && moveInput < -0.1f)
                                   ||(state.isTouchingRWall && moveInput >  0.1f);
@@ -290,7 +349,7 @@ public class PlayerMove : MonoBehaviour
         if(state.isWallSliding)
         {
             rb.gravityScale = 0f;
-            if (verticalInput == 0 && moveInput == 0)
+            if (verticalInput == 0 && moveInput == 0 && !state.isWallJumping)
             {
                 rb.linearVelocityY = 0f;
             }
@@ -298,7 +357,16 @@ public class PlayerMove : MonoBehaviour
         else
         {
             RestoreGravity();
+
+            // 벽 오르기(빠른 상승 속도) 중 벽에서 떨어지면 그 속도가 공중에 남아 솟구친다 → 상한 적용.
+            // 벽 점프·자동 등반은 자체 속도를 쓰므로 제외
+            if (_wasWallSliding && !state.isWallJumping && !isClimbing
+                && rb.linearVelocityY > wallExitMaxUpSpeed)
+            {
+                rb.linearVelocityY = wallExitMaxUpSpeed;
+            }
         }
+        _wasWallSliding = state.isWallSliding;
     }
 
     #endregion
@@ -333,16 +401,16 @@ public class PlayerMove : MonoBehaviour
 
         // 허리 높이(현재 위치)에서 벽 방향으로 쏴서 벽이 있는지 확인
         Vector2 midOrigin = origin + Vector2.up * (-_climbEdgeCheckDist/2f);
-        RaycastHit2D midHit = Physics2D.Raycast(
+        RaycastHit2D midHit = SolidPhysics.Raycast(
             midOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
 
         // 머리 위(_climbEdgeCheckDist만큼) 높이에서 같은 방향으로 쏴서 벽이 없으면 모서리
         Vector2 topOrigin = origin + Vector2.up * _climbEdgeCheckDist;
-        RaycastHit2D topHit = Physics2D.Raycast(
+        RaycastHit2D topHit = SolidPhysics.Raycast(
             topOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
 
         Vector2 botOrigin = origin + Vector2.up * (-_climbEdgeCheckDist / 0.9f);
-        RaycastHit2D botHit = Physics2D.Raycast(
+        RaycastHit2D botHit = SolidPhysics.Raycast(
             botOrigin, new Vector2(dirX, 0f), wallCheckDistance + 0.1f, groundLayer);
 
         // 허리는 막혀있고, 머리 위는 뚫려있으면 → 모서리 감지
@@ -536,11 +604,17 @@ public class PlayerMove : MonoBehaviour
             if (Mathf.Abs(moveInput) > 0f)
             {
                 ani.Run_on();
-                if (Input.GetKey(KeyCode.LeftShift))
+                if (state.isPowerRun)
                     ani.Power_Run_on();
                 else ani.Power_Run_off();
             }
-            if (Mathf.Abs(rb.linearVelocityX) <= 0.01) ani.Run_off();
+            // 멈추면 달리기·파워런 둘 다 끈다
+            // (A/D를 Shift보다 먼저 떼면 Power_Run_off가 호출되지 않아 모션이 고정되던 문제)
+            if (Mathf.Abs(rb.linearVelocityX) <= 0.01)
+            {
+                ani.Run_off();
+                ani.Power_Run_off();
+            }
         }
         else if ((verticalInput != 0f||moveInput != 0f) && state.isWallSliding)
         {
@@ -613,6 +687,11 @@ public class PlayerMove : MonoBehaviour
             Gizmos.color = Color.red;
             Gizmos.DrawRay(wallCheck.position, Vector2.right * wallCheckDistance);
             Gizmos.DrawRay(wallCheck.position, Vector2.left * wallCheckDistance);
+            // 발~무릎 보조 레이
+            Gizmos.color = new Color(1f, 0.4f, 0.4f);
+            Vector3 low = wallCheck.position + Vector3.up * wallCheckLowOffset;
+            Gizmos.DrawRay(low, Vector2.right * wallCheckDistance);
+            Gizmos.DrawRay(low, Vector2.left * wallCheckDistance);
             Gizmos.color = Color.blue;
             Gizmos.DrawRay(wallCheck.position + Vector3.up * (-_climbEdgeCheckDist / 0.9f), Vector2.right * wallCheckDistance);
             Gizmos.color = Color.green;

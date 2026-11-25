@@ -48,6 +48,9 @@ public class EnemyBTController : MonoBehaviour
 
     public virtual void ReInit()
     {
+        // 기존 블랙보드에서 돌던 액션(UniTask)을 먼저 끊는다.
+        // 안 끊으면 옛 토큰으로 계속 돌다가 오브젝트 파괴 후 MissingReferenceException 발생.
+        _bb?.CancelAction();
         InitBlackboad();
         _root = BuildTree();
         requireInit = false;
