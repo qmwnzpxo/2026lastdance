@@ -190,7 +190,7 @@ public class BossController : MonoBehaviour, IDamageable
     /// </summary>
     public event System.Action<bool> InvulnerableChanged;
 
-    /// <summary>현재 무적(자물쇠 표시 대상) 여부. 지금은 등장 중만 true. (T19에서 2페이즈 쉴드 추가 예정)</summary>
+    /// <summary>현재 무적(자물쇠 표시 대상) 여부. 등장 중·(v2) 페이즈 전환 중 true. (T19에서 2페이즈 쉴드 추가 예정)</summary>
     public bool IsInvulnerable => ComputeInvulnerable();
 
     // 마지막으로 알린 값 (변화 감지용). false로 시작해서 Start의 Appearing 진입 때 true 알림이 1회 나간다.
@@ -1081,6 +1081,13 @@ public class BossController : MonoBehaviour, IDamageable
 
             Debug.Log($"[Debug] F1: 보스 HP를 {targetHP:F0} (49%)로 강제 설정 → 2페이즈 전환 유도");
 
+            // v2: TakeDamage 와 같은 경로 (BossFlowMachine PhaseTransition, Groggy 면 보류) — T33
+            if (_isFlowV2Active)
+            {
+                TryRequestFlowPhaseTransition();
+                return;
+            }
+
             // 페이즈 전환 트리거 (이미 Attacking 중이라면 즉시 전환)
             int newPhase = GetCurrentPhase();
             if (newPhase != currentPhase && !hasPhaseTransitioned)
@@ -1102,29 +1109,7 @@ public class BossController : MonoBehaviour, IDamageable
                 CancelHitInvincibility();
                 StopAllCoroutines();
 
-                if (phaseTransitionEffect != null)
-                {
-                    GameObject fx = Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
-                    
-                    // 카메라 자식으로 들어가되 월드 Z가 0.16f로 유지되도록 카메라 Z 기반 fallbackDistance 동적 계산
-                    Hovl.HS_ScreenEffect hsEffect = fx.GetComponent<Hovl.HS_ScreenEffect>();
-                    if (hsEffect != null)
-                    {
-                        Camera cam = Camera.main;
-                        float camZ = cam != null ? cam.transform.position.z : -10f;
-                        hsEffect.snapOnStart = true;
-                        hsEffect.parentToCameraOnStart = true;
-                        hsEffect.fallbackDistance = 0.16f - camZ;
-                    }
-
-                    Vector3 pos = fx.transform.position;
-                    pos.z = 0.16f;
-                    fx.transform.position = pos;
-                }
-
-
-
-
+                SpawnPhaseTransitionEffect();
 
                 NotifyPhaseChanged();
 
@@ -1204,7 +1189,12 @@ public class BossController : MonoBehaviour, IDamageable
 
         // 페이즈 재계산
         int newPhase = GetCurrentPhase();
-        if (newPhase != currentPhase && !hasPhaseTransitioned)
+        if (_isFlowV2Active)
+        {
+            // v2: 정리·무적·2P 시작은 BossFlowMachine PhaseTransition 이 맡는다 (T33, spec: boss.md 8장)
+            TryRequestFlowPhaseTransition();
+        }
+        else if (newPhase != currentPhase && !hasPhaseTransitioned)
         {
             currentPhase = newPhase;
             hasPhaseTransitioned = true;
@@ -1232,34 +1222,12 @@ public class BossController : MonoBehaviour, IDamageable
             ClearAllActiveProjectiles();
 
             // 4) 페이즈 전환 이펙트
-            if (phaseTransitionEffect != null)
-            {
-                GameObject fx = Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
-                
-                // 카메라 자식으로 들어가되 월드 Z가 0.16f로 유지되도록 카메라 Z 기반 fallbackDistance 동적 계산
-                Hovl.HS_ScreenEffect hsEffect = fx.GetComponent<Hovl.HS_ScreenEffect>();
-                if (hsEffect != null)
-                {
-                    Camera cam = Camera.main;
-                    float camZ = cam != null ? cam.transform.position.z : -10f;
-                    hsEffect.snapOnStart = true;
-                    hsEffect.parentToCameraOnStart = true;
-                    hsEffect.fallbackDistance = 0.16f - camZ;
-                }
-
-                Vector3 pos = fx.transform.position;
-                pos.z = 0.16f;
-                fx.transform.position = pos;
-            }
-
-
-
-
+            SpawnPhaseTransitionEffect();
 
             // 페이즈 전환 알림 (정리 완료 후, 새 루프 시작 전 — 구독자가 이전 페이즈 기믹을 회수하고 다음 기믹을 시작)
             NotifyPhaseChanged();
 
-            // 5) 새 상태 시작 (v2 면 Driver 가 2페이즈로 루프 재시작 — T33 에서 PhaseTransition 경로로 교체)
+            // 5) 새 상태 시작 (레거시 Idle 코루틴. v2 는 위 분기에서 처리)
             StartBattleLoop();
         }
 
@@ -1412,7 +1380,7 @@ public class BossController : MonoBehaviour, IDamageable
     }
 
     /// <summary>
-    /// 페이즈 전환 알림. 전환 블록(TakeDamage, 에디터 F1)에서 currentPhase 갱신 후 호출한다.
+    /// 페이즈 전환 알림. 레거시 전환 블록(TakeDamage, 에디터 F1) 또는 v2 ApplyFlowPhase 에서 currentPhase 갱신 후 호출한다.
     /// </summary>
     private void NotifyPhaseChanged()
     {
@@ -1447,6 +1415,87 @@ public class BossController : MonoBehaviour, IDamageable
         ChangeState(state);
     }
 
+    /// <summary>
+    /// (useFlowV2) HP 가 50% 아래로 처음 내려갔으면 Driver 에 페이즈 전환을 요청한다 (1회). Groggy 중이면 Driver 가 보류한다.
+    /// spec: boss.md 8장 전환 1 "HP 50% 최초 하회"
+    /// </summary>
+    private void TryRequestFlowPhaseTransition()
+    {
+        if (hasPhaseTransitioned || GetCurrentPhase() != 2)
+            return;
+
+        // 받아들여졌을 때만 1회 소진 (루프 시작 전·Dead 로 거절되면 다음 판정에서 다시 시도)
+        if (_flowDriver.RequestPhaseTransition())
+            hasPhaseTransitioned = true;
+    }
+
+    /// <summary>
+    /// (useFlowV2) PhaseTransition 진입 시 BossFlowDriver 가 호출한다. 패턴 강제 종료·발사체 회수·부스터 끄기·
+    /// 피격 깜빡임 해제·기존 전환 이펙트. 무적은 상태값(PhaseTransition)으로 <see cref="ComputeInvulnerable"/> 가 판정한다.
+    /// spec: boss.md 8장 전환 2 "진행 중 패턴 중단, 화면의 탄 제거, 완전 무적"
+    /// </summary>
+    public void EnterFlowPhaseTransition()
+    {
+        if (!_isFlowV2Active)
+        {
+            GameLog.Warn("[Boss] useFlowV2 가 꺼져 있는데 EnterFlowPhaseTransition 호출 → 무시", this);
+            return;
+        }
+
+        if (attackPatterns != null)
+            attackPatterns.ForceStopAllPatterns(); // Charge 관성·facing lock 포함 정리
+
+        SetBoosterActive(false);
+        CancelHitInvincibility();
+        ClearAllActiveProjectiles();
+        SpawnPhaseTransitionEffect(); // 기존 화면 이펙트 유지. 역재생·증기·틴트는 T34
+
+        GameLog.Info("[Boss] PhaseTransition 진입: 패턴 중단·발사체 회수·무적", this);
+    }
+
+    /// <summary>
+    /// (useFlowV2) BossFlowMachine 의 페이즈가 바뀌면(PhaseTransition 종료) Driver 가 호출한다 → PhaseChanged 알림.
+    /// 호출 직후 Driver 가 새 페이즈로 Idle → 다음 패턴을 시작한다 (기존 "알림 후 새 루프" 순서 유지).
+    /// </summary>
+    public void ApplyFlowPhase(int phase)
+    {
+        if (!_isFlowV2Active)
+        {
+            GameLog.Warn($"[Boss] useFlowV2 가 꺼져 있는데 ApplyFlowPhase({phase}) 호출 → 무시", this);
+            return;
+        }
+
+        if (phase == currentPhase)
+            return;
+
+        currentPhase = phase;
+        NotifyPhaseChanged();
+    }
+
+    /// <summary>페이즈 전환 화면 이펙트 생성 (레거시·v2 공용). 카메라 자식으로 붙고 월드 Z 0.16 유지.</summary>
+    private void SpawnPhaseTransitionEffect()
+    {
+        if (phaseTransitionEffect == null)
+            return;
+
+        GameObject fx = Instantiate(phaseTransitionEffect, transform.position, Quaternion.identity);
+
+        // 카메라 자식으로 들어가되 월드 Z가 0.16f로 유지되도록 카메라 Z 기반 fallbackDistance 동적 계산
+        Hovl.HS_ScreenEffect hsEffect = fx.GetComponent<Hovl.HS_ScreenEffect>();
+        if (hsEffect != null)
+        {
+            Camera cam = Camera.main;
+            float camZ = cam != null ? cam.transform.position.z : -10f;
+            hsEffect.snapOnStart = true;
+            hsEffect.parentToCameraOnStart = true;
+            hsEffect.fallbackDistance = 0.16f - camZ;
+        }
+
+        Vector3 pos = fx.transform.position;
+        pos.z = 0.16f;
+        fx.transform.position = pos;
+    }
+
     /// <summary>v2 에서 기존 3상태(Idle·Attacking·Resting) 외에 피격을 받는 상태. PhaseTransition 은 제외 (T33 무적).</summary>
     private static bool IsFlowV2DamageableState(BossState state)
     {
@@ -1459,7 +1508,9 @@ public class BossController : MonoBehaviour, IDamageable
     /// <summary>무적 표시 대상 판정의 단일 기준. T19에서 2페이즈 쉴드 조건을 여기에 더한다.</summary>
     private bool ComputeInvulnerable()
     {
-        return currentState == BossState.Appearing;
+        // spec: boss.md 8장 전환 2 "완전 무적" (v2 PhaseTransition — 피격 판정에서도 제외됨, T33)
+        return currentState == BossState.Appearing
+            || currentState == BossState.PhaseTransition;
     }
 
     /// <summary>

@@ -124,7 +124,7 @@ namespace UnMachine.Boss
 
         /// <summary>
         /// 루프를 (다시) 시작한다: 실행 중 패턴 취소 → 새 상태 머신(지정 페이즈) → Idle → 다음 패턴 Begin.
-        /// 전투 시작과 페이즈 전환 직후(T33 전까지 임시) BossController 가 호출한다.
+        /// 전투 시작 때 BossController 가 호출한다. 페이즈 전환은 <see cref="RequestPhaseTransition"/> (T33).
         /// </summary>
         /// <param name="phase">1 또는 2.</param>
         public void StartLoop(int phase)
@@ -142,11 +142,34 @@ namespace UnMachine.Boss
             _machine = new BossFlowMachine(_settings);
             _machine.StateChanged += OnStateChanged;
             _machine.SetPhase(phase);
+            // SetPhase 뒤에 구독 → 시작 페이즈는 다시 알리지 않는다 (BossController 가 이미 알고 있음).
+            _machine.PhaseChanged += OnPhaseChanged;
             _isRunning = true;
 
             GameLog.Info($"[BossFlowDriver] 루프 시작 (페이즈 {phase})", this);
             _boss.ApplyFlowState(BossState.Idle);
             BeginNextPattern();
+        }
+
+        /// <summary>
+        /// 페이즈 전환을 요청한다 (HP 50% 최초 하회, 디버그 F1). Groggy 중이면 끝난 뒤로 보류된다.
+        /// spec: boss.md 5장·8장 전환 1
+        /// </summary>
+        /// <returns>받아들여졌으면(즉시 진입 또는 보류) true. 루프 전·이미 요청함·Dead 면 false.</returns>
+        public bool RequestPhaseTransition()
+        {
+            if (!_isRunning)
+            {
+                GameLog.Warn("[BossFlowDriver] 루프가 돌지 않을 때 RequestPhaseTransition 호출 → 무시", this);
+                return false;
+            }
+
+            bool isAccepted = _machine.RequestPhaseTransition();
+            GameLog.Info(
+                $"[BossFlowDriver] 페이즈 전환 요청 → {isAccepted} " +
+                $"(상태 {_machine.State}, 보류 {_machine.IsPhaseTransitionPending})",
+                this);
+            return isAccepted;
         }
 
         private void Update()
@@ -232,7 +255,18 @@ namespace UnMachine.Boss
                 case BossFlowState.Resting:
                     _locomotion.Begin();
                     break;
+                case BossFlowState.PhaseTransition:
+                    // Telegraph 에서 끊기면 위 Attacking 정리를 거치지 않으므로 여기서도 취소 (중복 호출 안전).
+                    CancelPattern();
+                    _boss.EnterFlowPhaseTransition();
+                    break;
             }
+        }
+
+        /// <summary>PhaseTransition 이 끝나 페이즈가 바뀌면 BossController 에 알린다 (Idle 진입 직전에 호출됨).</summary>
+        private void OnPhaseChanged(int phase)
+        {
+            _boss.ApplyFlowPhase(phase);
         }
 
         private void BeginNextPattern()
@@ -306,6 +340,7 @@ namespace UnMachine.Boss
             }
 
             _machine.StateChanged -= OnStateChanged;
+            _machine.PhaseChanged -= OnPhaseChanged;
             _machine = null;
             _isRunning = false;
         }
