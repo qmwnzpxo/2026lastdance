@@ -8,135 +8,112 @@
 ---
 
 ## 기본 정보
-- 작업 제목: PhaseTransition 상태 연결 (v2 흐름)
-- BACKLOG 작업 ID: T33
-- 기획서 근거: boss.md 5장(PhaseTransition 완전 무적)·8장 전환 1(HP 50% 최초 하회, 1회, Groggy 보류)·17장 #13·#14
+- 작업 제목: 패턴 선택기 Core (`PatternSelector`·`DistanceBandTracker`·`PatternTableConfig`)
+- BACKLOG 작업 ID: T37
+- 기획서 근거: boss.md 11장(거리 구간·후보 표·체류 보정·반복 방지), 6장 P6(대체 P5), 17장 #8·#10
 - 작성자: Claude
 - 작성 일시: 2026-11-26
 - 모드: 일반
 - 브랜치: `main`
-- 기준 커밋: `42cd5dd` (T33 착수 시 기록)
-- 커밋 상태: 미커밋 (코드 변경 있음)
-- 상태: 🎮 현민 씬 테스트 대기
-- 이전 작업: T32 — 커밋됨(`42cd5dd`). 1차 로그 확인(Driver·Locomotion 정상, 예외 0). 걷기 자체는 현민 눈 확인 항목. Gemini 리뷰 전
+- 기준 커밋: `9828d2b` (T37 착수 시 기록)
+- 커밋 상태: 미커밋 (새 파일 7개 + docs)
+- 상태: 🎮 현민 확인 대기 (컴파일·SO 에셋 생성만. 선택 동작은 T38 씬에서 확인)
+- 이전 작업: T33 — 커밋됨(`9828d2b`). 1차 로그 확인 통과 항목 있음. Gemini 리뷰 전
 
 ## 0. 이전 작업 리뷰 범위 (Gemini)
-- T32 는 `git diff 4b49e82 42cd5dd` (요청 사항은 `42cd5dd` 의 HANDOFF 9장).
-- T31 은 `git diff 82d87de 4b49e82`, T29·T30 은 `git diff ae589ab 82d87de`, T27·T28·T22 는 `git diff d60f4f9 ae589ab`.
+- T33 은 `git diff 42cd5dd 9828d2b` (요청 사항은 `9828d2b` 의 HANDOFF 9장).
+- T32 는 `git diff 4b49e82 42cd5dd`, T31 은 `git diff 82d87de 4b49e82`, T29·T30 은 `git diff ae589ab 82d87de`, T27·T28·T22 는 `git diff d60f4f9 ae589ab`.
 
 ## 1. 목표
-- v2 흐름(`useFlowV2` On)에서 HP 50% 최초 하회 → `BossFlowMachine.RequestPhaseTransition` (Groggy 면 보류) → PhaseTransition 동안 패턴 중단·발사체 회수·완전 무적 → Config 시간(1.5초) 뒤 2P Idle + `PhaseChanged(2)`.
-- 디버그 F1 도 같은 경로. 전환은 1회.
-- 범위 밖: 역재생·증기·붉은 틴트·흔들림(T34), 체력바 자물쇠 표시(T21), Animator State 12(T36). 토글 Off 는 레거시 그대로.
+- 거리 구간(근 x<5 / 중 5≤x<20 / 원 x≥20) × 페이즈별 가중치로 다음 선택 단위(P1~P6·C1~C4)를 고르는 **순수 로직**.
+- 체류 보정(같은 구간 3초 이상 → 근:P1, 원:P2 ×2), 반복 방지(같은 단위 2연속이면 다음엔 제외, 콤보 = 단위 1), 사용 불가 대체(P6 → P5), `IRandom` 주입.
+- 범위 밖: Driver 연결·PatternRegistry·디버그 표시·강제 선택(T38), 콤보 실행(T55~). **기존 파일은 하나도 안 건드림** → 게임 동작 변화 없음.
 
-## 2. 변경 파일
-| 파일 | 계층 | 변경 내용 |
+## 2. 변경 파일 (전부 새 파일)
+| 파일 | 계층 | 내용 |
 |---|---|---|
-| `Assets/LHM/0_Script/Boss/New/BossController.cs` | Runtime | `TakeDamage`·F1: v2 면 레거시 전환 블록 대신 `TryRequestFlowPhaseTransition()` (HP < 50% && 미전환 → Driver 요청, 받아들여졌을 때만 `hasPhaseTransitioned = true`). 새 public `EnterFlowPhaseTransition()`(ForceStopAllPatterns·부스터 끔·피격 깜빡임 해제·`ClearAllActiveProjectiles`·기존 전환 이펙트), `ApplyFlowPhase(int)`(currentPhase 갱신 → `PhaseChanged`). `ComputeInvulnerable` 에 PhaseTransition 추가. 중복이던 전환 이펙트 코드 → `SpawnPhaseTransitionEffect()` (레거시 TakeDamage·F1 도 이걸 호출, 동작 동일) |
-| `Assets/LHM/0_Script/Boss/New/Gimmick/BossFlowDriver.cs` | Runtime (+30) | public `RequestPhaseTransition()` (루프 중만, 결과 로그). PhaseTransition 진입 시 `CancelPattern` + `_boss.EnterFlowPhaseTransition()`. 머신 `PhaseChanged` 구독(SetPhase 뒤) → `_boss.ApplyFlowPhase`, `ReleaseMachine` 에서 해제 |
-| `Assets/LHM/8_MD/HANDOFF.md`, `BACKLOG.md` | docs | 본 문서, T33 → 🎮 |
+| `Assets/LHM/0_Script/Boss/New/Core/SelectionUnit.cs` | Core | enum P1~P6, C1~C4 (직렬화 값 — 끝에만 추가) |
+| `Assets/LHM/0_Script/Boss/New/Core/DistanceBand.cs` | Core | enum Near / Mid / Far |
+| `Assets/LHM/0_Script/Boss/New/Core/PatternWeight.cs` | Core | readonly struct (단위, 가중치 ≥ 0) |
+| `Assets/LHM/0_Script/Boss/New/Core/DistanceBandTracker.cs` | Core | `Classify(|dx|)`, `Update(|dx|, dt)` → `Band`·`DwellSeconds`(구간 바뀐 프레임 0), `Reset()` |
+| `Assets/LHM/0_Script/Boss/New/Core/PatternTable.cs` | Core | 페이즈(1·2) × 구간 6개 목록 + 체류 3초·×2. 생성 시 검증(빈/전부 0/단위 중복 → `ArgumentException`)·복사 |
+| `Assets/LHM/0_Script/Boss/New/Core/PatternSelector.cs` | Core | `TrySelect(phase, band, dwell, out unit)`, `ResetHistory()`, 디버그용 `LastCandidates`·`LastDwellBonusApplied`·`LastWasSubstituted`·`LastSourceUnit`·`LastRepeatBanRelaxed`·`TryGetBannedUnit` |
+| `Assets/LHM/0_Script/Boss/New/Gimmick/PatternTableConfig.cs` | Runtime (SO) | 11장 표 초기값, 거리 5/20, 체류 3/×2, `ToTable()`, `CreateDistanceBandTracker()`. 메뉴 `UnMachine/Config/Pattern Table` |
+| `Assets/LHM/8_MD/HANDOFF.md`, `BACKLOG.md` | docs | 본 문서, T37 → 🎮 |
 
-- Core(`BossFlowMachine`)는 **수정 없음**: 전환·보류·1회 제한·`PhaseChanged`·`PhaseTransitionSeconds` 는 T30 에 이미 있음.
-- 테스트 씬 툴(`BossTestSceneBuilder`)은 **수정 없음**: 새 참조·필드가 없다. T31 메뉴 그대로 쓰면 된다.
+- 파일 수 7개: BACKLOG 4개 → "파일 하나에 public 타입 하나" 때문에 enum·struct 분리 (현민 승인 2026-11-26).
+- 테스트 씬 툴(`BossTestSceneBuilder`) **수정 없음**: 씬에 붙일 컴포넌트가 없다. T38 에서 선택기 연결과 함께 갱신(필요하면 `PatternTableConfig` 에셋 자동 생성 포함).
 
 ## 3. 동작 변화와 리스크
-- **토글 Off**: 변화 없음 (전환 이펙트 코드만 helper 로 옮김, 호출 순서 동일).
-- **토글 On** 흐름:
-  1. 피격으로 HP < 250 → Driver 요청 → 상태 `PhaseTransition` (라벨 `PhaseTransition 1.50s`).
-  2. 진입 순간: 패턴 CTS 취소 + `ForceStopAllPatterns`(돌진 관성 포함), 발사체 회수, 부스터 끔, 피격 깜빡임 해제, 기존 화면 이펙트 1회. `InvulnerableChanged → True`.
-  3. 전환 중: 피격 무시 (`TakeDamage` 상태 필터에서 제외 — 피해 로그 안 나옴). F3·F4 거절. 걷기 멈춤.
-  4. 1.5초 뒤: `PhaseChanged → 2` (Director 등 구독자) → Idle → 다음 패턴. `InvulnerableChanged → False`. 2P Resting 0.8초, 반격 틈 ×0.8.
-  - Groggy 중 하회: 요청은 보류(인스펙터 `Debug Phase Transition Pending` ✔) → Groggy 4초 끝난 직후 PhaseTransition.
-  - 같은 타격으로 HP ≤ 0: PhaseTransition 진입 후 바로 Dead (Dead 최우선).
-- 설계 선택:
-  - v2 의 `PhaseChanged` 는 **전환이 끝날 때** 1회 (BACKLOG T33 "Config 시간 뒤 2P Idle + PhaseChanged(2)"). 레거시는 하회 즉시 알림 → v2 에서는 Director 의 2P 기믹이 1.5초 늦게 시작.
-  - `currentPhase` 도 전환 끝날 때 2 로 바뀜. `GetCurrentPhase()`(HP 계산)는 하회 즉시 2.
-  - 무적은 별도 플래그 없이 상태값 하나로 판정 (`ComputeInvulnerable` 단일 기준 유지).
-  - v2 에서는 `StopAllCoroutines` 를 부르지 않음 (레거시 상태 코루틴이 없고, 드론 상승 등 다른 코루틴을 끊지 않게).
+- **게임 동작 변화 없음** (아무도 호출하지 않음).
+- `TrySelect` 순서: 표 가중치 → 체류 보정(원본 단위 기준) → 사용 불가면 대체(P6 → P5, 대체도 불가면 제외) → 반복 방지(**대체 후 단위** 기준) → `Value01 × 합계` 누적 추첨 → 기록.
+  - 반복 금지 때문에 후보가 0개면 반복 방지를 풀고 다시 고름 (`LastRepeatBanRelaxed`). 그래도 0개(전부 사용 불가)면 `false`, 기록 안 바뀜.
+  - 같은 구간에 P5 가 이미 있고 P6 이 P5 로 대체되면 후보 목록에 P5 가 두 줄 → 사실상 확률 합산 (2P 중거리: P5 3 + 1).
+- 결정성: 같은 시드 `SystemRandom(seed)` + 같은 입력 순서 → 같은 선택 순서. 체류 시간은 어댑터가 World dt 로 넣음.
+- 할당: 후보 리스트 재사용. `TrySelect` 는 패턴마다 1회 (매 프레임 아님). `Update(dx, dt)` 는 할당 없음.
 - 리스크:
-  - **회수 안 되는 탄**: `ClearAllActiveProjectiles` 는 캐논볼·총알·경고 마커만 추적. AirBurst·Bounce 펠릿은 추적 리스트가 없어 남을 수 있음 (레거시도 같음).
-  - **체력바 자물쇠 없음**: 표시(T21) 전이라 무적은 Console `[Boss] InvulnerableChanged → True` 와 피해 로그 부재로만 확인.
-  - **Animator State 12 없음 (T36)**: `SetInteger("State", 12)` 는 전이가 없어 직전 애니가 유지될 수 있음.
-  - F1 은 `damageHandler.SetHP` 를 안 부름 (기존 F1 그대로) → DamageHandler 쪽 HP UI 는 다음 피격 때 맞춰짐.
+  - SO 인스펙터에서 목록을 비우거나 가중치를 전부 0 으로 두면 `ToTable()` 이 예외 → T38 어댑터에서 `GameLog.Error` 후 비활성 처리 예정.
+  - 1페이즈 표에 콤보·P6 를 넣어도 막지 않음 (표 그대로 사용).
 
 ## 4. 정적 점검 (Claude — 실행 아님)
 | 항목 | 결과 |
 |---|---|
-| 컴파일 가능성 자체 점검 | 문제 없음으로 판단. `BossFlowMachine.RequestPhaseTransition()`·`PhaseChanged`·`IsPhaseTransitionPending`(public, T30). `GameLog.Info/Warn(string, Object)` 시그니처 확인. `SetBoosterActive(bool)`·`CancelHitInvincibility`·`ClearAllActiveProjectiles` 기존 메서드. 새 줄 120자 이하 (PowerShell 글자 수 확인. 899줄 128자는 기존 코드) |
-| unity-guard | 문제 없음. 새 코루틴·async 없음. `Time.*` 신규 사용 없음. `UnityEngine.Object` 에 `?.`·`??` 없음 (`attackPatterns != null`). 새 이벤트 구독(`PhaseChanged`)은 `ReleaseMachine` 에서 해제. `Debug.Log` 신규 없음 (`GameLog`). 기존 이펙트 코드의 `fx.GetComponent`·`Camera.main` 은 이동만 (Update 경로 아님, 전환 1회) |
-| spec-check | ✅ 8장 "HP 50% 최초 하회, 1회" (`< 0.5`, 정확히 50% 는 1P) / ✅ 8장 "Groggy 중이면 끝난 직후" (T30 머신) / ✅ 8장 1 "진행 중 패턴·발사체 정리" / ✅ 5장·8장 "완전 무적" / ⚠️ 전환 시간 1.5초 기획서 값 없음 (Config 〔임시값〕) / ➖ 8장 2·3 연출 T34, 15장 자물쇠 T21 |
+| 컴파일 가능성 자체 점검 | 문제 없음으로 판단. asmdef 없음(전부 Assembly-CSharp) → `BossFlowMachine.RequireNonNegativeFinite`(internal) 접근 가능. `UnMachine.Core.Boss` 에서 상위 `UnMachine.Core.IRandom` 해석. 같은 이름 타입 기존에 없음(Grep). `Array.Empty`·`?? throw`·`out var` 계열 C# 9 범위. SO 의 `[Serializable] private struct Entry` + 배열 필드 초기값 → 새 에셋 생성 시 기본값 들어감. 120자 초과 줄 없음(PowerShell 글자 수) |
+| unity-guard | 문제 없음. Core 파일 `UnityEngine` 참조 0. `UnityEngine.Random`·`Time`·`Debug.Log`·코루틴·async 없음. `public` 필드 없음(`[SerializeField] private`). 문자열 보간은 예외 메시지·`ToString` 만 |
+| spec-check | ✅ 11장 거리 5/20 (경계값은 바깥 구간: 5 → 중, 20 → 원) / ✅ 1P 표 P3(5) P1(3) P2(1) · P5(4) P1(3) P2(3) · P2(5) P4(3) P5(2) / ✅ 2P 표 11장 값 그대로 (〔임시값〕 표시) / ✅ 체류 3초 이상 ×2, 근→P1·원→P2 / ✅ 반복 방지 2연속 → 제외, 콤보 = 단위 1 (17장 #10) / ✅ P6 → P5 대체 (6장 P6, BACKLOG T37) |
 
 ## 5. 에디터 작업 (현민)
-**빠른 방법 (테스트 씬 툴, T31 그대로)**
-1. Unity Console 컴파일 에러 0 확인 (새 파일 없음 → 새 `.meta` 없음).
-2. 메뉴 `UnMachine > Test Scene > Boss Arena (기본값으로 바로 생성)` → 새 `Test_Boss N.unity` → Console `[TestScene] 생성 완료: … v2 흐름 On` 확인.
-   - 이미 만든 T31/T32 테스트 씬을 그대로 써도 된다 (추가 연결 없음).
-3. (선택) `BossFlowConfig.asset` 인스펙터 페이즈 전환 시간 1.5 확인.
+1. Unity Console 컴파일 에러 0 확인 → 새 `.cs` 7개의 `.meta` 생성됨.
+2. (선택, T38 전에 미리) Project 창 원하는 Config 폴더에서 우클릭 → `Create > UnMachine > Config > Pattern Table` → `PatternTableConfig.asset`.
+   - T38 테스트 씬 툴이 에셋이 없으면 만들게 할 예정이라 지금 안 만들어도 된다.
 
-**수동 방법**: T31 수동 연결이 돼 있는 씬이면 추가 작업 없음.
-
-## 5-1. 씬 테스트 절차 (현민)
-**준비**: 위 에디터 작업, Game 뷰 + Console, 보스 `BossFlowDriver` 인스펙터 "읽기 전용 표시"(`Debug State`·`Debug Phase`·`Debug Phase Transition Pending`) 보이게.
+## 5-1. 확인 절차 (현민)
+> 선택기 동작(시드 재현, 체류 ×2 표시, 3연속 0회)은 BACKLOG 완료 기준대로 **T38 씬**에서 확인한다. 이번엔 아래만.
 
 | # | 조작 | 기대 결과 | 근거 |
 |---|---|---|---|
-| 1 | 착지 후 루프 중 F6 (HP 250 = 정확히 50%) | 전환 없음, 라벨 `P1` 유지 | 8장 "50% 하회" |
-| 2 | 이어서 보스 1타 | 라벨 `PhaseTransition 1.50s` 카운트다운, Console `페이즈 전환 요청 → True`, `PhaseTransition 진입`, `InvulnerableChanged → True`, 기존 화면 이펙트 1회 | 8장 전환 1·2 |
-| 3 | 전환 중 계속 공격 | 피해 로그(`[Boss] 피해 …`) 안 나옴, HP 그대로 | 5장 완전 무적 |
-| 4 | Howitzer·Machinegun 탄이 떠 있을 때 F1 | 캐논볼·총알·경고 마커 즉시 사라짐, 진행 중 패턴 멈춤 (돌진이면 미끄러짐 없음) | 8장 1 |
-| 5 | 1.5초 대기 | `PhaseChanged → 2`, `InvulnerableChanged → False`, 라벨 `P2`, 다음 패턴 Telegraph 시작, 이후 Resting `0.80s` | 8장, 5장 |
-| 6 | 2P 에서 계속 공격 / F1 다시 | 전환 다시 안 일어남 (로그 없음) | 8장 1회 |
-| 7 | 새 플레이: F4 (Groggy 4초) 중 F1 | `요청 → True (상태 Groggy, 보류 True)`, Groggy 끝까지 유지 → 끝난 직후 PhaseTransition → 2P | 17장 #13 |
-| 8 | 새 플레이: Resting 중 F1 | 걷기 즉시 멈춤 → PhaseTransition | T32 연동 |
-| 9 | 새 플레이: Telegraph 중 F1 | 패턴 시작 안 하고 PhaseTransition, 끝난 뒤 정상 루프 | 인터럽트 |
-| 10 | 전환 중 F3 / F4 | `EnterStunned → False` / `EnterGroggy → False`, 전환 유지 | 5장 우선순위 |
-| 11 | 토글 Off 씬(기존 씬)에서 F1 | 기존처럼 즉시 2P 전환 (레거시 동작 그대로) | 회귀 확인 |
+| 1 | 에디터 포커스 → 컴파일 | Console 에러 0, 경고 중 새 파일 이름 없음 | — |
+| 2 | 위 2번으로 에셋 생성 → 인스펙터 | 거리 5 / 20, 체류 3 / 2, 1페이즈 3목록·2페이즈 3목록이 11장 표와 같음 (단위 드롭다운 P1~C4) | 11장 |
+| 3 | 원거리 하한을 3 으로 입력 | 근거리 상한(5)으로 자동 보정 | OnValidate |
+| 4 | 기존 Test_Boss 씬 플레이 (선택) | T33 과 같은 동작 (변화 없음) | 회귀 |
 
-**경계 상황**
-- HP 251 에서 큰 한 방으로 0 이하 → PhaseTransition 로그 뒤 바로 Dead·사망 연출 (2P 로 가지 않음).
-- 전환 직전 피격 깜빡임 중 → 전환 진입 때 깜빡임 멈추고 스프라이트 보임.
-- 전환이 끝나는 프레임에 공격 → 피해 들어가도 됨 (Idle).
+**Console 에 나오면 안 되는 것**: `CS` 컴파일 에러, `The type or namespace name 'SelectionUnit'…`, SO 직렬화 경고(`Serialization depth`).
 
-**Console 에 나오면 안 되는 것**: `InvalidOperationException`(Begin/NotifyAttackEnded 상태 오류), `NullReferenceException`, `[Boss] useFlowV2 가 꺼져 있는데 …`, 전투 중 `루프가 돌지 않을 때 RequestPhaseTransition`, `PhaseChanged → 2` 두 번.
-
-## 5-2. 현민 씬 테스트 결과
-- 2026-11-26 1차 (Editor.log 13:34 기준, Claude 로그 확인). 컴파일 성공(`Tundra build success`) → 테스트 씬 툴로 `Test_Boss.unity` 생성(v2 On) → 플레이 1회. 이 씬 보스 maxHP 250 → 경계 125.
-  - ✅ #1: F6 → `HP 125/250 (경계) → 계산 페이즈 1` , 전환 없음.
-  - ✅ #2: Resting 중 1타(124) → `InvulnerableChanged → True` → `발사체 회수` → `PhaseTransition 진입` → `요청 → True (보류 False)`.
-  - ✅ #5: `PhaseChanged → 2` 1회 → `InvulnerableChanged → False` → 다음 패턴(MachinegunBurst) 시작. 알림 → 루프 순서 정상. (1.5초·Resting 0.8초 길이는 로그로 확인 불가)
-  - ✅ #6: 2P 에서 F1 2회 → 전환·`PhaseChanged` 재발생 없음.
-  - ✅ 2P 에서 F4 Groggy 진입·Howitzer 중단, Punishable ×1.2 피해 정상.
-  - ✅ 예외 0건 (`InvalidOperationException`·`NullReferenceException` 없음).
-  - ⚠️ Animator 경고 `Parameter 'State'/'stopHowitzer'/'AttackStart' does not exist` 39건 — T32 플레이(42건)·그 이전에도 있던 테스트 씬 보스 Animator 문제. T33 원인 아님 (T36 Animator 작업 때 확인).
-  - ➖ #3 전환 중 공격: 그 사이 피해 로그 0건이지만 실제로 공격했는지 로그로 모름 → 현민 확인.
-  - ➖ #4(탄 떠 있을 때 전환)·#7(Groggy 중 하회 보류)·#8~#11·경계 상황 이번 회차 없음.
+## 5-2. 현민 확인 결과
+- (대기)
 
 ## 6. 기획서와 다르게 한 점
 | 기획서 / BACKLOG | 구현 | 이유 |
 |---|---|---|
-| (명시 없음) 전환 시간 | 1.5초 (`BossFlowConfig`, T30 〔임시값〕) | 연출(T34) 길이에 맞춰 튜닝 |
-| 레거시: 하회 즉시 `PhaseChanged` | v2: 전환 끝날 때 `PhaseChanged` | BACKLOG T33, 8장 4 "→ 2페이즈 루프" 순서 |
+| BACKLOG 파일 4개 | 7개 (enum·struct 분리) | AI_RULES 3장 "파일 하나에 public 타입 하나", 현민 승인 |
+| (명시 없음) 반복 방지로 후보가 0개 | 반복 허용 | 보스가 멈추지 않게. v1 "2연속 허용, 3번째 교체"와 충돌 없음 (후보 ≥ 2 면 3연속 0회 보장) |
+| (명시 없음) 반복 방지 판정 단위 | 대체 후 단위 | P6 → P5 대체가 끼어도 같은 패턴 3연속 금지 |
 
 ## 7. 결정 사항
-- v2 전환 정리(패턴·탄·부스터·깜빡임)는 BossController `EnterFlowPhaseTransition` 한 곳, 호출은 Driver 의 PhaseTransition 진입 한 곳.
-- 무적 판정은 상태값(`PhaseTransition`)만으로 — 별도 플래그 없음.
+- Core 는 SO 를 모른다: `PatternTableConfig.ToTable()` → `PatternTable`, `CreateDistanceBandTracker()` → `DistanceBandTracker`.
+- 사용 가능 판정은 생성 시 `Func<SelectionUnit, bool>` 한 번 주입 (T38·T50 에서 드론 수로 P6 판정).
+- 체류 보정·대체 규칙은 기획서 고정 규칙이라 Core 상수 매핑 (`TryGetDwellEscapeUnit`, `TryGetSubstitute`), 수치(3초·×2·5·20)는 SO.
 
 ## 8. 알려진 문제 / 미완료
-- 전환 연출 = T34, 자물쇠 = T21, Animator 8~12 = T36, 걷기 애니 = T54, 선택기 = T38, 벽 충돌 Stunned = T44.
+- 선택기 연결·디버그 표시·강제 선택 = T38, 콤보 실행 = T55~, P6 드론 판정 = T50.
+- (T33 에서 이어짐) 전환 연출 T34, 자물쇠 T21, Animator 8~12 T36.
 
 ## 9. 리뷰어에게 요청
-- `TryRequestFlowPhaseTransition` 이 `hasPhaseTransitioned` 를 요청 수락 시에만 세우는 것 (거절 시 재시도) 이 맞는지.
-- PhaseTransition 진입 시 Driver 의 `CancelPattern` → `EnterFlowPhaseTransition` → (같은 타격) `ChangeState(Dead)` 순서.
-- `PhaseChanged` 구독을 `SetPhase` 뒤에 두어 시작 페이즈를 다시 알리지 않는 방식.
-- `SpawnPhaseTransitionEffect` 추출로 레거시 동작이 바뀌지 않았는지.
-- (0장) T32 이전 범위.
+- 반복 방지를 **대체 후 단위**로 세는 것, 후보 0개면 반복을 허용하는 것.
+- 체류 보정을 대체 전 원본 단위에 붙이는 것 (P1·P2 는 대체 대상이 아니라 현재 차이 없음).
+- `DistanceBandTracker` 가 구간이 바뀐 프레임의 dt 를 체류에 넣지 않는 것.
+- `PatternTable` 검증 범위(빈 목록·전부 0·단위 중복)가 적절한지.
+- (0장) T33 이전 범위.
 
 ## 9-1. 규칙 변경 제안 (현민 판단, T31 에서 이어짐)
 - AI_RULES 0장 2번 예외에 추가: "테스트 씬 툴은 필요한 **Config SO 가 프로젝트에 없을 때만** 기본값으로 **새 `.asset`** 을 만들 수 있다 (기존 에셋 수정·덮어쓰기 금지)."
 - 작업 절차에 추가: "씬 테스트가 필요한 작업은 `BossTestSceneBuilder`(테스트 씬 툴)도 함께 갱신해, 메뉴 한 번으로 그 작업을 테스트할 수 있는 새 Test_* 씬이 나오게 한다." (현민 요청 2026-11-26)
 
 ## 10. 질문 (현민 답변 필요)
-- (T33) AirBurst·Bounce 펠릿이 전환 때 남으면 추적·회수를 추가할지 (기본: 그대로, 보이면 별도 작업).
+- (T37) 반복 방지로 후보가 하나도 안 남으면 반복 허용 — 괜찮은지 (기본: 허용).
+- (T37) 2P 중거리처럼 P6 가 P5 로 대체되면 P5 확률이 합산됨 (3+1) — 괜찮은지 (기본: 합산).
+- (T37) 페이즈 전환 때 반복 방지 기록을 지울지 (기본: 유지 — 1P 마지막 2개가 2P 첫 선택에 영향).
+- (T33) AirBurst·Bounce 펠릿이 전환 때 남으면 추적·회수를 추가할지 (기본: 그대로).
 - (T33) 2P 기믹 시작(`PhaseChanged`)이 전환 끝(1.5초 뒤)이어도 괜찮은지 (기본: 끝날 때).
 - (T32) 정지 거리 1.5 유지? 기획서 4장 표에 넣을지 (기본: Config 1.5 유지).
 - (T32) 2P Resting 이동도 걷기(속도 3)로 충분한지 (기본: 걷기).
@@ -146,12 +123,17 @@
 - (T31) 패턴이 Stunned·Groggy 로 끊길 때 이미 쏜 발사체를 남길지 지울지 (기본: 그대로).
 
 ## 11. 다음 할 일
-1. 현민: 컴파일 확인 → 에디터 작업 → 씬 테스트 (5-1) → 결과 알려주기 → 커밋 → Gemini 리뷰
-2. 다음 작업: T37 (BACKLOG 순서) 또는 T34 (전환 연출) — 새 세션 권장
+1. 현민: 컴파일 확인 → (선택) 에셋 생성·인스펙터 확인 → 커밋 → Gemini 리뷰
+2. 다음 작업: T38 (선택기 연결 + 디버그 표시 + 테스트 씬 툴 갱신) — 새 세션 권장
 
 ## 11-1. 커밋 제안 (현민이 판단해서 직접 커밋)
-- `[feat] T33 PhaseTransition 상태 연결: 50% 하회 전환 요청·패턴/탄 정리·전환 무적` —
-  `Assets/LHM/0_Script/Boss/New/BossController.cs`,
-  `Assets/LHM/0_Script/Boss/New/Gimmick/BossFlowDriver.cs`,
+- `[feat] T37 패턴 선택기 Core: 거리 구간·체류 보정·반복 방지·P6 대체 + PatternTableConfig` —
+  `Assets/LHM/0_Script/Boss/New/Core/SelectionUnit.cs`,
+  `Assets/LHM/0_Script/Boss/New/Core/DistanceBand.cs`,
+  `Assets/LHM/0_Script/Boss/New/Core/PatternWeight.cs`,
+  `Assets/LHM/0_Script/Boss/New/Core/DistanceBandTracker.cs`,
+  `Assets/LHM/0_Script/Boss/New/Core/PatternTable.cs`,
+  `Assets/LHM/0_Script/Boss/New/Core/PatternSelector.cs`,
+  `Assets/LHM/0_Script/Boss/New/Gimmick/PatternTableConfig.cs`,
   `Assets/LHM/8_MD/HANDOFF.md`, `Assets/LHM/8_MD/BACKLOG.md`
-- 새 파일 없음 → 새 `.meta` 없음.
+- **새 `.cs` 7개의 `.meta` 함께 커밋** (에디터 열면 Unity가 생성). 에셋을 만들었으면 `PatternTableConfig.asset` + `.meta` 도.
