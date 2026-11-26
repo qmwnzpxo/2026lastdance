@@ -1,4 +1,4 @@
-using DialogSystem.CinematicDialogue;
+﻿using DialogSystem.CinematicDialogue;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -10,6 +10,8 @@ public class MurderBoard : MonoBehaviour
     [Header("Yes 버튼 시 실행할 대화 트리거")]
     public NpcDialogueTrigger targetDialogue;
 
+    public GameObject Interactions;
+
     private bool isPlayerInRange = false;
     private Transform cachedPlayerTransform;
 
@@ -19,6 +21,7 @@ public class MurderBoard : MonoBehaviour
         if (chapterUIPanel != null)
         {
             chapterUIPanel.SetActive(false);
+            Interactions.SetActive(false);
         }
     }
 
@@ -44,6 +47,7 @@ public class MurderBoard : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
+            Interactions.SetActive(true);
             cachedPlayerTransform = other.transform; // 플레이어 접근 기억
         }
     }
@@ -53,6 +57,7 @@ public class MurderBoard : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = false;
+            Interactions.SetActive(false);
             cachedPlayerTransform = null; // 플레이어 비접근시 기억 삭제
             // 플레이어가 머더보드에서 멀어지면 열려있던 UI도 자동으로 닫아줍니다.
             if (chapterUIPanel != null)

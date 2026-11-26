@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI; 
 using System.Collections; 
 
@@ -14,6 +14,11 @@ public class Cam_FadeOutManager : MonoBehaviour
     public float fadeDuration = 2.0f;
 
     private Coroutine _fadeCoroutine;
+
+    private void Awake()
+    {
+        PlayFadeEffect();
+    }
 
     public void PlayFadeEffect()
     {
