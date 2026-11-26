@@ -54,15 +54,19 @@ public partial class PlayerDash : MonoBehaviour
         Color originalColor = playerSprite.color;
         playerSprite.color = new Color(1f, 0.3f, 0.3f, 0.7f);
 
-        // 타임 스케일 설정 (본체 1.2배 가속, 적 0.1배 슬로우)
+        // 타임 스케일 설정 (기록: 본체 RedRecordPlayerScale, 적 RedRecordEnemyScale)
         CaptureEnemySnapshots();
         CaptureLockdownSnapshots();
 
         var tmg = CustomTimeManager.Instance;
-        tmg.SetPlayerTimeScale(1.2f);
-        tmg.SetEnemyTimeScale(0.1f);
+        ReleaseRedTimeScale(); // 이전 레드대시 요청이 남아 있으면 정리
+        var hPlayer = _redTimePlayer = tmg.Request(TimeCategory.Player, RedRecordPlayerScale, tag: "RedDash");
+        var hEnemy = _redTimeEnemy = tmg.Request(TimeCategory.Enemy, RedRecordEnemyScale, tag: "RedDash");
 
+        // recordTimer: 플레이어 시간(배율 적용) 기준 타임스탬프 → 속도 1 기준 행동 시간
+        // recordElapsed: 실시간 기준 기록 길이 제한
         float recordTimer = 0f;
+        float recordElapsed = 0f;
         float recordInterval = 1f / redRecordFPS;
         float nextRecordTime = 0f;
 
@@ -84,17 +88,21 @@ public partial class PlayerDash : MonoBehaviour
         combat.OnAttackInput += RecordAttack;
         try
         {
-            while (recordTimer < redRecordDuration && !ct.IsCancellationRequested)
+            while (recordElapsed < redRecordDuration && !ct.IsCancellationRequested)
             {
-                recordTimer += Time.fixedUnscaledDeltaTime;
+                recordElapsed += Time.fixedUnscaledDeltaTime;
+                recordTimer += tmg.PlayerFixedDeltaTime;
 
                 // 이동 프레임 기록
                 if (recordTimer >= nextRecordTime)
                 {
                     bool running = Mathf.Abs(Input.GetAxis("Horizontal")) > 0f
                         || Mathf.Abs(rb.linearVelocityX) > 0.01f;
+                    // 벽에서는 W/S뿐 아니라 A/D로도 오르내리므로 둘 다 이동으로 기록
+                    // (PlayerMove.Ani_Run과 같은 기준. 이전엔 A/D 이동이 '정지'로 기록돼 재생 때 선 자세로 고정)
                     if (state.isWallSliding)
-                        running = Input.GetAxisRaw("Vertical") != 0f;
+                        running = Input.GetAxisRaw("Vertical") != 0f
+                               || Input.GetAxisRaw("Horizontal") != 0f;
 
                     moveRecords.Add(new GhostMoveData
                     {
@@ -129,10 +137,15 @@ public partial class PlayerDash : MonoBehaviour
 
 
             // 재생 페이즈
-            await PlaybackRoutine(ct);
+            await PlaybackRoutine(ct, hPlayer, hEnemy, recordTimer);
         }
         finally
         {
+            // 녹화 중 취소돼도 배율이 남지 않게 해제 (재생 끝에서 이미 해제됐으면 무시됨)
+            // 지역 복사본이라 그 사이 시작된 새 레드대시 요청은 건드리지 않음
+            tmg.Release(ref hPlayer);
+            tmg.Release(ref hEnemy);
+
             // CTS 취소든 정상 완료든 반드시 구독 해제
             combat.OnAttackInput -= RecordAttack;
             state.isRedDashRecording = false;
@@ -141,7 +154,20 @@ public partial class PlayerDash : MonoBehaviour
         }
     }
 
-    private async UniTask PlaybackRoutine(CancellationToken ct)
+    // 레드대시 배율 요청 (CtsFree에서 즉시 해제하기 위해 보관)
+    private CustomTimeManager.Handle _redTimePlayer;
+    private CustomTimeManager.Handle _redTimeEnemy;
+
+    private void ReleaseRedTimeScale()
+    {
+        var tmg = CustomTimeManager.Instance;
+        if (tmg == null) return;
+        tmg.Release(ref _redTimePlayer);
+        tmg.Release(ref _redTimeEnemy);
+    }
+
+    private async UniTask PlaybackRoutine(CancellationToken ct,
+        CustomTimeManager.Handle hPlayer, CustomTimeManager.Handle hEnemy, float recordLength)
     {
         state.isRedDashPlaying = true;
         state.StartImmunity(0.08f);
@@ -153,13 +179,19 @@ public partial class PlayerDash : MonoBehaviour
         FreezePhysicsForPlayback();
 
         var tmg = CustomTimeManager.Instance;
-        tmg.SetPlayerTimeScale(1.2f);
-        tmg.SetEnemyTimeScale(0.8f);
+        // 재생: 본체 RedPlaybackPlayerScale, 적 RedPlaybackEnemyScale
+        tmg.SetScale(hPlayer, RedPlaybackPlayerScale);
+        tmg.SetScale(hEnemy, RedPlaybackEnemyScale);
+
+        // 공격 중엔 재생을 늦춤. 적도 같은 비율로 늦춰서 플레이어:적 비율 유지
+        float slowRatio = RedPlaybackPlayerScale > 0f ? redPlaybackAttackScale / RedPlaybackPlayerScale : 1f;
+        bool slowed = false;
 
         if (combat == null)
             combat = GetComponent<PlayerCombat>();
 
         float replayTimer = 0f;
+        float replayElapsed = 0f; // 실시간 경과 (시작 무적 0.08초와 같은 기준)
         int moveIndex = 0;
         int eventIndex = 0;
 
@@ -168,10 +200,23 @@ public partial class PlayerDash : MonoBehaviour
 
         try
         {
-            while (replayTimer < redRecordDuration && !ct.IsCancellationRequested)
+            while (replayTimer < recordLength && !ct.IsCancellationRequested)
             {
-                if (replayTimer > 0.08f && state.isHit) break;
+                // 시작 무적(StartImmunity 0.08초)도 isHit을 켜므로, 실시간 기준으로 그 구간은 피격 판정에서 제외
+                // (replayTimer는 재생 배율로 빨리 흘러 첫 프레임에 0.08을 넘어버려 재생이 바로 끊겼음)
+                if (replayElapsed > 0.08f && state.isHit) break;
 
+                // 공격 시작/종료 시점에만 배율 전환
+                if (state.isAttacking != slowed)
+                {
+                    slowed = state.isAttacking;
+                    float r = slowed ? slowRatio : 1f;
+                    tmg.SetScale(hPlayer, RedPlaybackPlayerScale * r);
+                    tmg.SetScale(hEnemy, RedPlaybackEnemyScale * r);
+                }
+
+                replayElapsed += Time.fixedUnscaledDeltaTime;
+                // 기록과 같은 플레이어 시간 기준 → 속도 1 기준 행동을 RedPlaybackPlayerScale배 빠르게 재생
                 replayTimer += tmg.PlayerFixedDeltaTime;
 
                 while (moveIndex < moveRecords.Count - 1
@@ -189,7 +234,8 @@ public partial class PlayerDash : MonoBehaviour
                     playerMove.SpriteTransform.localScale = m.spriteScale;
                     playerMove.SpriteTransform.rotation = m.spriteRotation;
 
-                    if (m.isRunning)
+                    // 공격 중엔 Run을 꺼야 공격 모션으로 전이됨 (PlayerMove.Ani_Run과 같은 규칙)
+                    if (m.isRunning && !state.isAttacking)
                     {
                         ani.Run_on();
                         if (m.isPowerRunning) ani.Power_Run_on();
@@ -239,8 +285,8 @@ public partial class PlayerDash : MonoBehaviour
             ani.Run_off();
             ani.Power_Run_off();
 
-            tmg.SetPlayerTimeScale(1f);
-            tmg.SetEnemyTimeScale(1f);
+            tmg.Release(ref hPlayer);
+            tmg.Release(ref hEnemy);
         }
     }
 

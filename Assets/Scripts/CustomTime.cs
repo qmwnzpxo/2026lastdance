@@ -22,7 +22,7 @@ public static class CustomTime
             if (canceled) return;
 
             // 배율이 0이면 elapsed가 증가하지 않아 자연스럽게 정지
-            elapsed += mgr.GetFixedDeltaTime(cat);
+            elapsed += mgr != null ? mgr.GetFixedDeltaTime(cat) : UnityEngine.Time.fixedUnscaledDeltaTime;
         }
     }
     public static async UniTask WaitForScaledSeconds(float duration, TimeCategory cat, CancellationTokenSource cts)

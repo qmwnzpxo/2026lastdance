@@ -25,6 +25,18 @@ public partial class PlayerDash : MonoBehaviour
     [Header("빨강 칩 - 프로-모션")]
     [SerializeField] private float redRecordDuration = 5f;
     [SerializeField] private float redRecordFPS = 30f;
+    [Tooltip("플레이어:적 속도 비율.\n기록: 플레이어 1 기준 → 적 1/비율\n재생: 적 redPlaybackEnemyScale 기준 → 플레이어 그 값 × 비율")]
+    [SerializeField] private float redSpeedRatio = 4f;
+    [Tooltip("재생 중 적 기준 배율 (플레이어는 이 값 × redSpeedRatio)")]
+    [SerializeField] private float redPlaybackEnemyScale = 0.75f;
+    [Tooltip("재생 중 공격하는 동안의 플레이어 배율. 적도 같은 비율로 늦춰짐 (예: 3→1.5이면 적 0.75→0.375)")]
+    [SerializeField] private float redPlaybackAttackScale = 1.5f;
+
+    // 기록: 플레이어 1 기준 / 재생: 적 redPlaybackEnemyScale 기준
+    private float RedRecordPlayerScale => 1f;
+    private float RedRecordEnemyScale => redSpeedRatio > 0f ? 1f / redSpeedRatio : 1f;
+    private float RedPlaybackPlayerScale => redPlaybackEnemyScale * redSpeedRatio;
+    private float RedPlaybackEnemyScale => redPlaybackEnemyScale;
     private List<GhostMoveData> moveRecords = new List<GhostMoveData>();
     private List<GhostEventData> eventRecords = new List<GhostEventData>();
     private List<EnemySnapshotData> enemySnapshots = new List<EnemySnapshotData>();
@@ -170,7 +182,9 @@ public partial class PlayerDash : MonoBehaviour
 
             if (CustomTimeManager.Instance != null)
             {
-                CustomTimeManager.Instance.ResetAll();
+                // 대시가 건 배율 요청만 해제 (ResetAll은 다른 시스템의 요청까지 지움)
+                ReleaseBlueTimeScale();
+                ReleaseRedTimeScale();
                 CustomTimeManager.Instance.ResetHitstopMultiplier();
             }
         }
@@ -295,7 +309,10 @@ public partial class PlayerDash : MonoBehaviour
             if (state.DashGauge < state.DashCost) return;
 
             playerMove.ResetWallState();
-            ani.Dash();
+            // 파랑은 ExecuteBlueDash에서 isDash_Blue를 따로 건다.
+            // 여기서 ani.Dash()까지 부르면 isDash_Pink 트리거가 같이 걸려 낙섬 모션이 핑크 모션과 섞여 깨짐
+            if (state.currentChip != PlayerChip.blue)
+                ani.Dash();
 
             // ─── 칩별 분기 ───────────────────
             switch (state.currentChip)

@@ -53,7 +53,29 @@ public class PlayerAnimation : MonoBehaviour
     public void Power_Run_off() { if (HasAnimator()) ani.SetBool("isPowerfulRun", false); }
     public void Jump_on() { if (HasAnimator()) ani.SetBool("isJump", true); }
     public void Jump_off() { if (HasAnimator()) ani.SetBool("isJump", false); }
-    public void Attack(float amount = 1f) { if (HasAnimator()) { ani.SetTrigger("isAttack"); ani.speed *= amount; } }
+    public void Attack(float amount = 1f)
+    {
+        if (!HasAnimator()) return;
+
+        // 공격 모션이 아직 재생 중일 때 트리거를 걸면, Attack 상태엔 isAttack 전이가 없어서
+        // 트리거가 남아 있다가 모션이 끝난 뒤 한 번 더 휘두름(연타 멈춰도 한 발 더 나가는 문제).
+        // → 이미 공격 모션 중이면 트리거 대신 그 모션을 처음부터 다시 재생
+        var cur = ani.GetCurrentAnimatorStateInfo(0);
+        var next = ani.GetNextAnimatorStateInfo(0);
+        if (IsAttackState(cur) || (ani.IsInTransition(0) && IsAttackState(next)))
+        {
+            ani.ResetTrigger("isAttack");
+            int hash = ani.IsInTransition(0) ? next.fullPathHash : cur.fullPathHash;
+            ani.Play(hash, 0, 0f);
+        }
+        else
+        {
+            ani.SetTrigger("isAttack");
+        }
+        ani.speed *= amount;
+    }
+
+    bool IsAttackState(AnimatorStateInfo info) => info.IsName("Attack") || info.IsName("Attack_Air");
     public void Attack_flash() { if (HasAnimator()) ani.SetTrigger("isAttackFlash"); }
 
     public void Dash(int greenCombo = 1)

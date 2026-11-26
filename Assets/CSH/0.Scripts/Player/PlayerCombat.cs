@@ -103,7 +103,9 @@ public class PlayerCombat : MonoBehaviour
         if (state.isRedDashRecording)
         {
             OnAttackInput?.Invoke(attackTransform.rotation);
-            ani.Attack();
+            // 판정 없이 모션만 실행. isAttacking을 켜야 PlayerMove가 Run을 꺼서
+            // 이동 중에도 공격 모션으로 전이됨 (ani.Attack()만 부르면 멈출 때까지 공격 모션이 안 나옴)
+            PerformAttack(applyHit: false).Forget();
             return;
         }
 
@@ -114,18 +116,14 @@ public class PlayerCombat : MonoBehaviour
         // 피벗 강제 회전
         attackTransform.rotation = attackRotation;
         playerMove.SetFacingRight(attackTransform.right.x >= 0f);
-        ani.Attack();
-
-        Vector2 attackPos = (Vector2)attackTransform.position
-                          + (Vector2)attackTransform.right * attackBoxDistance;
-
+        // ani.Attack()은 PerformAttack 안에서 호출됨 (여기서도 부르면 트리거가 두 번 걸려 재생 때 한 번 더 휘두름)
 
         PerformAttack().Forget();
         //ExecuteAttackBox(attackPos);
         //_hitEnemiesInAttack.Clear(); // 다음 연타를 위해 바로 클리어
     }
 
-    private async UniTaskVoid PerformAttack()
+    private async UniTaskVoid PerformAttack(bool applyHit = true)
     {
         state.isAttacking = true;
         playerMove.SetFacingRight(attackTransform.right.x >= 0f);
@@ -145,7 +143,7 @@ public class PlayerCombat : MonoBehaviour
                     float elapsed = 0f;
                     while (elapsed < attackSecondHitDelay/attackRepeatTime)
                     {
-                        ExecuteAttackBox(attackPos, i);
+                        if (applyHit) ExecuteAttackBox(attackPos, i);
 
                         await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
                         elapsed += timeManager.PlayerFixedDeltaTime * AttackSpeed;
@@ -159,7 +157,7 @@ public class PlayerCombat : MonoBehaviour
                 float elapsed = 0f;
                 while (elapsed < attackActiveDuration)
                 {
-                    ExecuteAttackBox(attackPos);
+                    if (applyHit) ExecuteAttackBox(attackPos);
 
                     await UniTask.WaitForFixedUpdate(cancellationToken: this.destroyCancellationToken);
                     elapsed += timeManager.PlayerFixedDeltaTime * AttackSpeed;

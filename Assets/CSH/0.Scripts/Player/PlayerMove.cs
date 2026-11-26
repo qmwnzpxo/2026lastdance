@@ -718,6 +718,14 @@ public class PlayerMove : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.P))
             state.TakeDamage(0f);
     }
+    // 벽(±90° 회전)·천장(상하 반전) 자세를 기본 자세로 되돌린다.
+    // 대시 중엔 FixedUpdate가 RotateSprite를 건너뛰므로, 대시 시작 시 직접 호출해야 함
+    public void ResetSpritePose()
+    {
+        if (spriteTransform == null) return;
+        spriteTransform.rotation = Quaternion.identity;
+        spriteTransform.localScale = normalSpriteScale;
+    }
     public void SetFacingRight(bool facingRight)
     {
         _lastFacingRight = facingRight;
