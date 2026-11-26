@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UnMachine.Core;
+using UnityEngine;
 using UnMachine.Core.Boss;
 
 namespace UnMachine.Boss
@@ -24,7 +24,7 @@ namespace UnMachine.Boss
         /// <param name="patterns">레거시 패턴 실행기. 코루틴도 여기서 돌린다 (ForceStopAllPatterns 로 함께 멈추게).</param>
         /// <param name="pattern">실행할 레거시 패턴.</param>
         /// <param name="timing">예고·반격 틈.</param>
-        /// <param name="timeoutSeconds">이 시간(World 채널) 안에 끝나지 않으면 강제 종료한다. 0보다 커야 한다.</param>
+        /// <param name="timeoutSeconds">이 시간(레거시와 같은 Time.deltaTime 기준) 안에 끝나지 않으면 강제 종료한다. 0보다 커야 한다.</param>
         public LegacyPatternBridge(
             BossAttackPatterns patterns,
             AttackPattern pattern,
@@ -76,7 +76,9 @@ namespace UnMachine.Boss
                 while (!handle.IsDone)
                 {
                     await UniTask.Yield(PlayerLoopTiming.Update, ct);
-                    elapsed += GameClock.World.DeltaTime;
+                    // 레거시 패턴은 WaitForSeconds(Time.deltaTime, maximumDeltaTime 상한)로 흐른다 → 같은 시계로 잰다.
+                    // World 채널(unscaledDeltaTime, 상한 없음)로 재면 에디터 프레임 정지 때 정상 패턴도 타임아웃된다.
+                    elapsed += Time.deltaTime; // guard-allow: 레거시 패턴과 같은 시계
 
                     if (elapsed > _timeoutSeconds)
                     {

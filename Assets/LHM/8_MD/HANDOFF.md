@@ -17,7 +17,7 @@
 - 브랜치: `main`
 - 기준 커밋: `82d87de` (T31 착수 시 기록. 이후 `9a71a8c` 는 `.meta` 3개 + HANDOFF 만 바뀐 현민 커밋 → Gemini diff 는 `82d87de..` 기준)
 - 커밋 상태: 미커밋 (코드 변경 있음)
-- 상태: 🎮 현민 씬 테스트 대기
+- 상태: 🎮 씬 테스트 대부분 통과 (5-2 요약, #3·#12 남음) → 남은 변경 커밋 후 Gemini 리뷰
 - 이전 작업: T29·T30 — 커밋됨(`82d87de`, `.meta` 는 `9a71a8c`). 씬 테스트는 이번 T31 절차로 함께 확인
 
 ## 0. 이전 작업 리뷰 범위 (Gemini)
@@ -77,17 +77,17 @@
 | spec-check | ✅ 4장 배율 1.0/1.2/1.5 (Config) / ✅ 5장 흐름·Dead 최우선 / ✅ 6장 반격 틈 P3 0.9·P5 0.6·P2 0.6 / ✅ DECISIONS ⑥ P4 틈 없음 / ✅ 9장 최소 예고 0.4 (Config) / ⚠️ 레거시 예고 0.4 는 기획서 패턴별 예고값 아님 (레거시 자체 예비동작 존재, 최소값만) / ➖ P2 벽 충돌 Stunned(T44), 전환(T33) |
 
 ## 5. 에디터 작업 (현민)
+**빠른 방법 (테스트 씬 툴, 추가 수정)**
 1. Unity Console 컴파일 에러 0 확인. 새 `.meta` 3개 생성 확인 (`IBossPattern`·`LegacyPatternBridge`·`BossFlowDriver`).
-2. (T30 에서 안 했으면) `Create > UnMachine > Config > Boss Flow` 로 `BossFlowConfig` 에셋 생성, 초기값 확인.
-3. `Test_Boss` 씬 → 보스 오브젝트(BossController 있는 것) 선택 → `Add Component > BossFlowDriver`.
-4. BossFlowDriver 인스펙터:
-   - `Config` ← `BossFlowConfig` 에셋
-   - `Boss` ← 같은 오브젝트의 BossController
-   - `Attack Patterns` ← BossController 의 `Attack Patterns` 필드에 연결된 것과 같은 BossAttackPatterns
-   - `Legacy Cycle` 4개 항목 값 확인 (위 3장 표)
-5. BossController 인스펙터 → `v2 흐름` 헤더: `Flow Driver` ← 방금 추가한 BossFlowDriver, `Use Flow V2` 체크.
-6. 씬에 `GameClockDriver` 가 있는지 확인 (없으면 빈 오브젝트에 추가 — 없으면 v2 루프가 Telegraph 에서 멈춤).
-7. 씬 저장 (토글 Off 테스트는 체크만 끄면 됨).
+2. 메뉴 `UnMachine > Test Scene > Boss Arena (기본값으로 바로 생성)` 클릭.
+   - `Test_Boss.unity` 가 이미 있으면 덮어쓰지 않고 `Test_Boss 1.unity` 등 새 이름을 묻는다 → "만들기".
+   - 자동으로 하는 일: 보스룸·카메라·GameClockDriver 등 배치, `Boss.prefab`·`Player.prefab` 배치, 보스 인스턴스에 `BossFlowDriver` 추가·Config/Boss/AttackPatterns 연결, BossController `Flow Driver` 연결·`Use Flow V2` On.
+   - Config: 프로젝트의 `BossFlowConfig` 를 찾아 쓰고, **없으면 `Assets/LHM/3_ScriptableObject/BossFlowConfig.asset` 를 새로 만든다** (Console `[TestScene] BossFlowConfig 새로 생성`).
+   - Console 마지막 줄 `[TestScene] 생성 완료: … v2 흐름 On` 확인.
+3. 생성된 씬에서 바로 플레이. 토글 Off 테스트는 보스 BossController 의 `Use Flow V2` 체크만 끄면 됨.
+4. 옵션을 바꾸려면 `UnMachine > Test Scene > Boss Arena` 창 → "보스 v2 흐름 (T31)" 섹션 (토글·Config 지정).
+
+**수동 방법 (기존 씬에 붙일 때)**: 보스에 `BossFlowDriver` 추가 → Config·Boss·Attack Patterns 연결 → BossController `Flow Driver` 연결 + `Use Flow V2` 체크 → 씬에 `GameClockDriver` 확인 → 저장. **플레이 모드 밖에서** 할 것.
 
 ## 5-1. 씬 테스트 절차 (현민)
 **준비**: 위 에디터 작업 완료, Game 뷰 + Console 열기, BossFlowDriver 인스펙터 "읽기 전용 표시" 보이게.
@@ -116,7 +116,57 @@
 **Console 에 나오면 안 되는 것**: `InvalidOperationException`(Begin/NotifyAttackEnded), `ArgumentOutOfRangeException`, `NullReferenceException`, `[LegacyPatternBridge] … 타임아웃` (정상 패턴은 10초 안에 끝나야 함).
 
 ## 5-2. 현민 씬 테스트 결과
-- (현민 확인 필요)
+- 2026-11-26 1차 (Editor.log 12:31 기준, Claude 로그 확인):
+  - ❌ **v2 루프 미동작** — `[BossFlowDriver] Config·BossController·BossAttackPatterns 참조 누락 → 비활성화` →
+    `[Boss] useFlowV2 On 이지만 … 기존 흐름으로 동작`. `BossFlowConfig` 에셋이 프로젝트에 없음 (`.asset` 검색 0건) → `_config` 누락으로 판단.
+    씬 파일에도 Driver 가 아직 저장돼 있지 않음.
+  - 근거: `루프 시작` 로그 없음, `[Boss] 피해 × …` 로그 없음, BT 전용 동작(연속 대체, MachinegunRapid·DroneSpawn) 출력.
+  - ✅ (부수 확인) Driver 준비 실패 시 폴백 = 기존 흐름: 등장 → 패턴 순환 → F6 경계 → 1타 전환 `PhaseChanged → 2` → 2P 패턴 → `Died` 까지 예외 없음.
+  - 재확인 필요: 5장 2번(Config 에셋 생성)·4번 연결 후 5-1 #1~#12 전체.
+- 2026-11-26 2차 (테스트 씬 툴로 만든 씬, Editor.log 12:44 기준, Claude 로그 확인). 상태 전이 로그는 없어서
+  `Animator 'State' 파라미터 없음` 경고(Telegraph·Punishable·Resting·Stunned·Groggy 진입마다 1회)로 간접 추적:
+  | # | 결과 | 근거 (로그) |
+  |---|---|---|
+  | 1 | ✅ | `[BossFlowDriver] 루프 시작 (페이즈 1)`, 순서 Stomp → MachinegunBurst → Howitzer → Charge |
+  | 2 | ✅ | 각 패턴 `패턴 실행 시작/완료` |
+  | 3 | ➖ | 미실시 (예고 0.2 변경) |
+  | 4 | ✅ | Howitzer 뒤 경고 2개(Resting·Telegraph) — Punishable 건너뜀. 다른 패턴 뒤는 3개 |
+  | 5 | ➖ | Punishable 중 피격 로그 없음 → **미확인** |
+  | 6 | ✅ | `× 1.00` (Attacking·Resting·Telegraph) |
+  | 7 | ✅ | Charge 중 F3 → `EnterStunned → True`, 같은 프레임 `ForceStopAllPatterns`, 이후 Resting → Telegraph |
+  | 8 | ✅ | F4 → `EnterGroggy → True`, `× 1.50 (Groggy)` 6회 |
+  | 9 | ✅ | Stunned 중 F3 → `EnterStunned → False` |
+  | 10 | ✅ | F6 후 1타 → `PhaseChanged → 2` → `루프 시작 (페이즈 2)` (휴식 0.8 은 로그로 확인 불가) |
+  | 11 | ✅ | Attacking(Howitzer) 중 사망 → `Died` → 사망 정리, 이후 패턴 시작 없음 |
+  | 12 | ➖ | 이번 회차 미실시 (1차 폴백 실행이 기존 흐름과 같게 동작) |
+  - Console 예외(`InvalidOperationException`·`NullReferenceException` 등) 0건.
+  - ❌ **Howitzer 타임아웃** 1회: `[LegacyPatternBridge] Howitzer 타임아웃(10.0초) → 강제 종료` (정상 소요 약 6.8초).
+    추정 원인: 타임아웃을 World 채널(`unscaledDeltaTime`, 상한 없음)로 쟀고 레거시는 `WaitForSeconds`(`Time.deltaTime`, 상한 있음) →
+    에디터 프레임 정지가 타임아웃 쪽에만 쌓임. **수정**: Bridge 타임아웃을 `Time.deltaTime` 으로 (`// guard-allow: 레거시 패턴과 같은 시계`).
+    → 재확인: Howitzer 가 `모든 포탄 낙하 완료` → `패턴 실행 완료` 로 끝나는지.
+  - ❌ **테스트 씬 툴이 기존 `Test_Boss.unity` 를 덮어씀** (AI_RULES 0장 2번 위반). 로그: 열린 Test_Boss 저장(17800) 직후 같은 경로·같은 GUID 로 새 씬 저장.
+    추정 원인: `File.Exists` 상대 경로가 프로세스 현재 폴더 기준. **수정**: `AssetExists`(AssetDatabase + 프로젝트 기준 절대 경로)로 확인.
+    → 현민: 원래 씬이 필요하면 `git checkout -- Assets/LHM/Test_Boss.unity` 로 되돌리기 (커밋본 = `82d87de`, 손으로 붙인 Driver 는 미커밋이라 없음).
+    → 재확인: 툴을 다시 실행하면 `Test_Boss 1.unity` 로 만들겠다는 대화상자가 나오는지.
+  - 참고 (기존 문제, T31 무관): `Parameter 'State'/'AttackStart'/'stopHowitzer' does not exist` 경고는 레거시 실행에서도 같이 나옴 (Animator 에 파라미터 없음, T36 에서 정리).
+- 2026-11-26 3차 (수정 컴파일 후, 씬은 재생성 안 함 — `Test_Boss.unity` 12:43 그대로, Editor.log 12:49 기준):
+  - ✅ #5 Punishable 피격 `× 1.20 = 6.0` 4회. ✅ #6 `× 1.00` (Telegraph·Attacking·Resting).
+  - ✅ #7·#8 Howitzer(Attacking) 중 F4 → Groggy, 패턴 즉시 정지. Resting 중 F4 → Groggy, Resting 중 F3 → Stunned. ✅ #9 Groggy 중 F3 → False.
+  - ✅ #10 F6 후 1타 → `PhaseChanged → 2` → `루프 시작 (페이즈 2)`. 예외 0건, Bridge 타임아웃 0건.
+  - ➖ Howitzer 끝까지 실행된 회차 없음 (1회는 F4 로 중단, 1회는 플레이 종료 시점) → **타임아웃 수정 재확인 남음**.
+  - ➖ 테스트 씬 툴 재실행 안 함 → **덮어쓰기 방지 재확인 남음**.
+  - 관찰: Howitzer 를 인터럽트하면 떠 있던 포탄은 회수되지 않고 포탄 자체 Waiting 타임아웃으로 풀에 돌아감 (`[HowitzerCannonball] Waiting 타임아웃` 3회).
+    `ForceStopAllPatterns` 는 발사체를 회수하지 않음 (레거시 동작 그대로). Stunned·Groggy 때 발사체를 지울지는 기획 판단 → 10장 질문.
+- 2026-11-26 4차 (Editor.log 12:52 기준, 씬 재생성 안 함):
+  - ✅ Telegraph(Stomp) 중 F4 → Groggy, Resting 중 F3 → Stunned, Howitzer 중 F4 → Groggy(패턴 정지), Charge 중 F3 → Stunned(패턴 정지). 예외 0건, Bridge 타임아웃 0건.
+  - 관찰: 인터럽트된 패턴은 다시 하지 않고 순환의 다음 패턴으로 넘어감 (Stomp 예고 중 Groggy → 다음은 MachinegunBurst). `Begin` 때 순번이 이미 넘어가는 설계 그대로 — T38 선택기에서 다시 정함.
+  - ➖ Howitzer 이번에도 F4 로 중단 → 타임아웃 수정 재확인 여전히 남음. 테스트 씬 툴 재실행도 남음.
+- 2026-11-26 5차 (Editor.log 12:58 기준):
+  - ✅ **덮어쓰기 방지**: 툴 실행 → `Test_Boss 1.unity` 새로 생성 (새 GUID), `Test_Boss.unity` 는 12:43 그대로.
+  - ✅ **Howitzer 타임아웃 수정**: Howitzer 2회 모두 `포탄 낙하 시작` → `모든 포탄 낙하 완료` → `패턴 실행 완료`, Bridge 타임아웃 0건.
+  - ✅ 순환 2바퀴 (Stomp → MachinegunBurst → Howitzer → Charge → Stomp …), Punishable `× 1.20`. 예외 0건.
+  - 관찰 (기존 툴 코드, T31 무관): `[TestScene] Light2D 타입을 찾지 못해 Global Light 2D 를 만들지 않았다` — 새 씬이 어둡게 보이면 수동 추가.
+- **요약**: 5-1 #1·#2·#4~#11 통과. 남은 것 #3(예고 0.2 → 0.4 유지), #12(토글 Off) — 현민 판단으로 생략 가능.
 
 ## 6. 기획서와 다르게 한 점
 | 기획서 / BACKLOG | 구현 | 이유 |
@@ -141,17 +191,41 @@
 - 2P 전환을 새 머신 생성으로 처리한 임시 방식.
 - (0장) T29·T30·T27·T28·T22 리뷰 범위.
 
+## 9-1. 추가 변경 — 테스트 씬 툴 (현민 요청 2026-11-26 "매번 업데이트할 때마다 툴로")
+| 파일 | 변경 |
+|---|---|
+| `Assets/LHM/0_Script/Boss/New/Editor/BossTestSceneBuilder.cs` | 기본 보스 프리팹(`Assets/LHM/2_Prefabs/Boss.prefab`) 자동 지정, "보스 v2 흐름" 섹션(토글 기본 On·Config 지정), `SetupFlowV2`(새 씬 보스 인스턴스에 Driver 추가·참조·토글), `ResolveFlowConfig`(지정 → 검색 → 없으면 새로 생성), `AssignBool`, 메뉴 `Boss Arena (기본값으로 바로 생성)` |
+- 프리팹 원본은 수정하지 않는다 (새 씬의 인스턴스 오버라이드만). 기존 씬은 열지 않음, 같은 이름 씬은 새 이름으로.
+- ⚠️ **규칙 확인 필요**: Config 에셋이 하나도 없을 때 `AssetDatabase.CreateAsset` 으로 **새 `.asset`** 을 만든다 (기존 에셋 덮어쓰기 없음, `GenerateUniqueAssetPath`). AI_RULES 0장 2번 예외는 "새 Test_* 씬"만 명시 → 아래 규칙 변경 제안.
+- 정적 점검: 줄 120자 이하, `[MenuItem]`·`CreateInstance`·`DestroyImmediate`·`AssetDatabase.FindAssets/CreateAsset/GenerateUniqueAssetPath`·`SerializedPropertyType.Boolean` 사용. 직렬화 필드 이름(`_config`·`_boss`·`_attackPatterns`·`_useFlowV2`·`_flowDriver`)은 상수 — 이름이 바뀌면 경고 로그로 드러남.
+
+## 9-2. 규칙 변경 제안 (현민 판단)
+- AI_RULES 0장 2번 예외에 추가: "테스트 씬 툴은 필요한 **Config SO 가 프로젝트에 없을 때만** 기본값으로 **새 `.asset`** 을 만들 수 있다 (기존 에셋 수정·덮어쓰기 금지)."
+- 작업 절차에 추가: "씬 테스트가 필요한 작업은 `BossTestSceneBuilder`(테스트 씬 툴)도 함께 갱신해, 메뉴 한 번으로 그 작업을 테스트할 수 있는 새 Test_* 씬이 나오게 한다." (현민 요청 2026-11-26)
+
 ## 10. 질문 (현민 답변 필요)
 - (T22) 체력바 색상 경계도 `>= 0.5f` 로 맞출지 (기본: 그대로).
 - (T28) Player 채널 동기화 유지 여부 (기본 유지).
+- (T28, 2차 테스트에서 발견) `GameClockDriver` 가 `Time.unscaledDeltaTime` 을 상한 없이 `GameClock.Tick` 에 넘긴다 → 에디터·로딩 프레임 정지 한 번에 FSM 타이머(예고·틈·휴식)가 통째로 건너뛰어질 수 있음.
+  `Math.Min(unscaledDeltaTime, Time.maximumDeltaTime)` 로 상한을 둘지 (기본: 이번 작업 범위 밖이라 그대로, 승인 시 `[경량]` 으로 1줄 수정).
+- (T31 3차 관찰) 패턴이 Stunned·Groggy 로 끊길 때 이미 쏜 발사체(곡사 포탄 등)를 남길지 지울지. 지금은 남음 (포탄은 자체 타임아웃으로 회수).
+  기획서에 명시 없음 (전환·사망 때만 회수, T33). 기본: 그대로.
 
 ## 11. 다음 할 일
 1. 현민: 컴파일 확인 → 에디터 작업 → 씬 테스트 (5-1) → 결과 알려주기 → 커밋 → Gemini 리뷰
 2. 다음 작업: T32 (Resting 걷기) — 새 세션 권장
 
 ## 11-1. 커밋 제안 (현민이 판단해서 직접 커밋)
-- 코드: `[feat] T31 BossFlowDriver + BossController useFlowV2 연결, LegacyPatternBridge` —
+- **(현재) T31 본체는 `c343e0e` 로 커밋됨.** 남은 변경:
+  - `[fix] T31 씬 테스트 반영: Bridge 타임아웃 시계, 테스트 씬 툴 v2 자동 연결·덮어쓰기 방지` —
+    `Assets/LHM/0_Script/Boss/New/Gimmick/LegacyPatternBridge.cs`, `Gimmick/BossFlowDriver.cs`(툴팁),
+    `Assets/LHM/0_Script/Boss/New/Editor/BossTestSceneBuilder.cs`, `Assets/LHM/8_MD/HANDOFF.md`
+  - `[asset] BossFlowConfig 에셋` — `Assets/LHM/3_ScriptableObject/BossFlowConfig.asset` (+ `.meta`)
+  - `Assets/LHM/Test_Boss.unity` — 툴이 덮어쓴 것. 되돌릴지(`git checkout`) 새 내용으로 `[asset]` 커밋할지 현민 판단.
+- (이전 제안, 참고) 코드: `[feat] T31 BossFlowDriver + BossController useFlowV2 연결, LegacyPatternBridge` —
   `Assets/LHM/0_Script/Boss/New/Gimmick/BossFlowDriver.cs`, `IBossPattern.cs`, `LegacyPatternBridge.cs`
   (**`.meta` 3개 함께 커밋**), `Assets/LHM/0_Script/Boss/New/BossController.cs`,
+  `Assets/LHM/0_Script/Boss/New/Editor/BossTestSceneBuilder.cs`,
   `Assets/LHM/8_MD/HANDOFF.md`, `Assets/LHM/8_MD/BACKLOG.md`
+  (툴만 따로 나누려면 `[chore] 테스트 씬 툴에 v2 흐름 자동 연결` — `BossTestSceneBuilder.cs`)
 - 씬: `Assets/LHM/Test_Boss.unity` (Driver 추가·참조 연결·토글) + `BossFlowConfig.asset`(+`.meta`, 아직 안 했으면) → `[asset] Test_Boss 보스에 BossFlowDriver 연결` 별도 커밋 권장.

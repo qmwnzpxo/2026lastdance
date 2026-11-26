@@ -15,7 +15,17 @@ namespace UnMachine.EditorTools
     public sealed class BossTestSceneBuilder : EditorWindow
     {
         private const string MenuPath = "UnMachine/Test Scene/Boss Arena";
+        private const string QuickMenuPath = "UnMachine/Test Scene/Boss Arena (기본값으로 바로 생성)";
         private const string DefaultPlayerPrefabPath = "Assets/CSH/8.Prefabs/Player/Player.prefab";
+        private const string DefaultBossPrefabPath = "Assets/LHM/2_Prefabs/Boss.prefab";
+
+        // v2 흐름 (T31): 프로젝트에 BossFlowConfig 가 하나도 없을 때만 여기에 새로 만든다 (기존 에셋은 덮어쓰지 않음)
+        private const string DefaultFlowConfigPath = "Assets/LHM/3_ScriptableObject/BossFlowConfig.asset";
+        private const string FlowDriverConfigField = "_config";
+        private const string FlowDriverBossField = "_boss";
+        private const string FlowDriverPatternsField = "_attackPatterns";
+        private const string BossUseFlowV2Field = "_useFlowV2";
+        private const string BossFlowDriverField = "_flowDriver";
         private const string RequiredFilePrefix = "Test_";
         private const string GroundLayerName = "ground";
         private const string BuiltinSpritePath = "UI/Skin/UISprite.psd";
@@ -48,6 +58,8 @@ namespace UnMachine.EditorTools
         [SerializeField] private float _cameraMargin = 2f;
         [SerializeField] private Color _blockColor = new Color(0.35f, 0.35f, 0.4f);
         [SerializeField] private Color _cameraBackground = new Color(0.08f, 0.08f, 0.12f);
+        [SerializeField] private bool _setupFlowV2 = true;
+        [SerializeField] private BossFlowConfig _flowConfig;
 
         [MenuItem(MenuPath)]
         private static void Open()
@@ -55,11 +67,31 @@ namespace UnMachine.EditorTools
             GetWindow<BossTestSceneBuilder>("Boss Test Scene");
         }
 
+        /// <summary>창 없이 기본값(기본 프리팹·v2 On)으로 바로 만든다. 작업마다 빠른 씬 테스트용.</summary>
+        [MenuItem(QuickMenuPath)]
+        private static void QuickBuild()
+        {
+            var builder = CreateInstance<BossTestSceneBuilder>(); // OnEnable 에서 기본 프리팹을 채운다
+            try
+            {
+                builder.TryBuild();
+            }
+            finally
+            {
+                DestroyImmediate(builder);
+            }
+        }
+
         private void OnEnable()
         {
             if (_playerPrefab == null)
             {
                 _playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DefaultPlayerPrefabPath);
+            }
+
+            if (_bossPrefab == null)
+            {
+                _bossPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DefaultBossPrefabPath);
             }
         }
 
@@ -102,6 +134,22 @@ namespace UnMachine.EditorTools
             {
                 EditorGUILayout.HelpBox(
                     $"기획서 규격({SpecMinWidth}×{SpecMinHeight} 이상)보다 작다.", MessageType.Warning);
+            }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("보스 v2 흐름 (T31)", EditorStyles.boldLabel);
+            _setupFlowV2 = EditorGUILayout.Toggle("BossFlowDriver 연결 + useFlowV2 On", _setupFlowV2);
+            if (_setupFlowV2)
+            {
+                _flowConfig = (BossFlowConfig)EditorGUILayout.ObjectField(
+                    "Flow Config", _flowConfig, typeof(BossFlowConfig), false);
+                if (_flowConfig == null)
+                {
+                    EditorGUILayout.HelpBox(
+                        "비워 두면 프로젝트의 BossFlowConfig 를 찾아 쓰고, 하나도 없으면 새로 만든다:\n" +
+                        DefaultFlowConfigPath,
+                        MessageType.Info);
+                }
             }
 
             EditorGUILayout.Space();
@@ -156,7 +204,7 @@ namespace UnMachine.EditorTools
                 return false;
             }
 
-            if (File.Exists(path))
+            if (AssetExists(path))
             {
                 // 같은 이름은 덮어쓰지 않는다 (AI_RULES 0장 2번) → "Test_Boss 1.unity" 처럼 새 이름으로 만든다
                 string unique = AssetDatabase.GenerateUniqueAssetPath(path);
@@ -172,13 +220,30 @@ namespace UnMachine.EditorTools
             }
 
             string directory = Path.GetDirectoryName(path);
-            if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+            if (string.IsNullOrEmpty(directory) || !Directory.Exists(ToFullPath(directory)))
             {
                 error = $"폴더가 없다: {directory}";
                 return false;
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 에셋 경로("Assets/…")에 파일이 있는지. AssetDatabase 와 프로젝트 기준 절대 경로를 모두 확인한다.
+        /// File.Exists 에 상대 경로를 넘기면 프로세스 현재 폴더 기준이라, 그 폴더가 바뀌면 기존 씬을 못 찾고 덮어쓴다 (2026-11-26 발생).
+        /// </summary>
+        private static bool AssetExists(string assetPath)
+        {
+            string guid = AssetDatabase.AssetPathToGUID(assetPath, AssetPathToGUIDOptions.OnlyExistingAssets);
+            return !string.IsNullOrEmpty(guid) || File.Exists(ToFullPath(assetPath));
+        }
+
+        /// <summary>"Assets/…" 경로 → 프로젝트 루트 기준 절대 경로.</summary>
+        private static string ToFullPath(string assetPath)
+        {
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            return Path.GetFullPath(Path.Combine(projectRoot ?? string.Empty, assetPath));
         }
 
         private void Build()
@@ -211,6 +276,8 @@ namespace UnMachine.EditorTools
                 AssignPlayerReference(boss.GetComponentInChildren<BossAttackPatterns>(true), player);
             }
 
+            bool isFlowV2Ready = boss != null && _setupFlowV2 && SetupFlowV2(boss);
+
             if (!EditorSceneManager.SaveScene(scene, _scenePath))
             {
                 GameLog.Error(null, $"[TestScene] 저장 실패: {_scenePath}");
@@ -218,7 +285,79 @@ namespace UnMachine.EditorTools
             }
 
             GameLog.Info($"[TestScene] 생성 완료: {_scenePath} (보스 {(boss != null ? "배치" : "마커만")}, " +
-                         $"플레이어 {(player != null ? "배치" : "없음")})");
+                         $"플레이어 {(player != null ? "배치" : "없음")}, v2 흐름 {(isFlowV2Ready ? "On" : "Off")})");
+        }
+
+        /// <summary>
+        /// 새 씬의 보스 인스턴스에 BossFlowDriver 를 붙이고 참조·토글을 채운다 (T31).
+        /// 프리팹 원본은 수정하지 않는다 (씬 인스턴스 오버라이드만).
+        /// </summary>
+        /// <returns>연결을 끝냈으면 true.</returns>
+        private bool SetupFlowV2(GameObject boss)
+        {
+            BossController controller = boss.GetComponentInChildren<BossController>(true);
+            BossAttackPatterns patterns = boss.GetComponentInChildren<BossAttackPatterns>(true);
+            if (controller == null || patterns == null)
+            {
+                GameLog.Warn("[TestScene] 보스에 BossController·BossAttackPatterns 가 없어 v2 흐름을 연결하지 않았다");
+                return false;
+            }
+
+            BossFlowConfig config = ResolveFlowConfig();
+            if (config == null)
+            {
+                return false;
+            }
+
+            // 프리팹에 이미 있으면 그대로 쓴다 (나중에 프리팹에 넣는 경우 대비)
+            var driver = controller.GetComponent<BossFlowDriver>();
+            if (driver == null)
+            {
+                driver = controller.gameObject.AddComponent<BossFlowDriver>(); // 에디터에선 Awake 가 돌지 않는다
+            }
+
+            AssignReference(driver, FlowDriverConfigField, config);
+            AssignReference(driver, FlowDriverBossField, controller);
+            AssignReference(driver, FlowDriverPatternsField, patterns);
+            AssignReference(controller, BossFlowDriverField, driver);
+            AssignBool(controller, BossUseFlowV2Field, true);
+            return true;
+        }
+
+        /// <summary>지정 에셋 → 프로젝트에서 찾은 첫 BossFlowConfig → 없으면 기본 경로에 새로 만든다.</summary>
+        private BossFlowConfig ResolveFlowConfig()
+        {
+            if (_flowConfig != null)
+            {
+                return _flowConfig;
+            }
+
+            string[] guids = AssetDatabase.FindAssets("t:" + nameof(BossFlowConfig));
+            if (guids.Length > 0)
+            {
+                string foundPath = AssetDatabase.GUIDToAssetPath(guids[0]);
+                if (guids.Length > 1)
+                {
+                    GameLog.Warn($"[TestScene] BossFlowConfig 가 {guids.Length}개 → 첫 번째 사용: {foundPath}");
+                }
+
+                return AssetDatabase.LoadAssetAtPath<BossFlowConfig>(foundPath);
+            }
+
+            string directory = Path.GetDirectoryName(DefaultFlowConfigPath);
+            if (string.IsNullOrEmpty(directory) || !Directory.Exists(ToFullPath(directory)))
+            {
+                GameLog.Error(null, $"[TestScene] Config 폴더가 없어 BossFlowConfig 를 만들지 못했다: {directory}");
+                return null;
+            }
+
+            // 기본값 = BossFlowConfig 필드 초기값 (boss.md 임시 수치)
+            string path = AssetDatabase.GenerateUniqueAssetPath(DefaultFlowConfigPath);
+            var created = CreateInstance<BossFlowConfig>();
+            AssetDatabase.CreateAsset(created, path);
+            AssetDatabase.SaveAssets();
+            GameLog.Info($"[TestScene] BossFlowConfig 새로 생성: {path}");
+            return created;
         }
 
         private void CreateArena()
@@ -436,6 +575,21 @@ namespace UnMachine.EditorTools
             }
 
             prop.objectReferenceValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>새 씬 안 컴포넌트의 직렬화 bool 필드를 채운다. 필드가 없으면 경고만 남긴다.</summary>
+        private static void AssignBool(Component target, string fieldName, bool value)
+        {
+            var so = new SerializedObject(target);
+            SerializedProperty prop = so.FindProperty(fieldName);
+            if (prop == null || prop.propertyType != SerializedPropertyType.Boolean)
+            {
+                GameLog.Warn($"[TestScene] {target.GetType().Name} 에 bool '{fieldName}' 필드가 없다. 수동 설정 필요");
+                return;
+            }
+
+            prop.boolValue = value;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
     }

@@ -37,7 +37,7 @@ namespace UnMachine.Boss
             new LegacyPatternEntry(AttackPattern.Charge, 0.4f, 0.6f),          // P2 돌진: 명중 시 0.6
         };
 
-        [Tooltip("레거시 패턴이 이 시간(초, World) 안에 안 끝나면 강제 종료. 기존 BT 노드 타임아웃과 같은 값")]
+        [Tooltip("레거시 패턴이 이 시간(초, Time.deltaTime 기준) 안에 안 끝나면 강제 종료. 기존 BT 노드 타임아웃과 같은 값")]
         [SerializeField, Min(0.1f)] private float _legacyTimeoutSeconds = 10f;
 
         [Header("디버그 (에디터 전용)")]

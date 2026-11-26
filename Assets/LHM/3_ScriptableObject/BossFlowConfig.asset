@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0098a7a6ead63b24c8903c39eec1ff0e, type: 3}
+  m_Name: BossFlowConfig
+  m_EditorClassIdentifier: 
+  _restSecondsPhase1: 1.5
+  _restSecondsPhase2: 0.8
+  _minTelegraphSeconds: 0.4
+  _phase2PunishScale: 0.8
+  _stunnedSeconds: 1.5
+  _groggySeconds: 4
+  _phaseTransitionSeconds: 1.5
+  _normalDamageScale: 1
+  _vulnerableDamageScale: 1.2
+  _groggyDamageScale: 1.5
