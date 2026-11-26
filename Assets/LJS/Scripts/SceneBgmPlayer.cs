@@ -2,21 +2,27 @@ using UnityEngine;
 
 public class SceneBgmPlayer : MonoBehaviour
 {
-    [Header("ÀÌ ¾À¿¡¼­ Àç»ıÇÒ ¹è°æÀ½¾Ç")]
+    [Header("ì´ ì”¬ì—ì„œ ì¬ìƒí•  ë°°ê²½ìŒì•…")]
     public AudioClip sceneBGM;
 
-    [Header("BGM ±âº» º¼·ı")]
-    [Range(0f, 1f)] public float baseVolume = 1f; // ÀÎ½ºÆåÅÍ¿¡¼­ °î¸¶´Ù º¼·ı Á¶Àı °¡´É
+    [Header("BGM ê¸°ë³¸ ë³¼ë¥¨")]
+    [Range(0f, 1f)] public float baseVolume = 1f; // ì¸ìŠ¤í™í„°ì—ì„œ ê³¡ë§ˆë‹¤ ë³¼ë¥¨ ì¡°ì ˆ ê°€ëŠ¥
 
     void Start()
     {
+        if (AudioManager.Instance == null)
+        {
+            Debug.LogWarning("[SceneBgmPlayer] AudioManager.Instanceê°€ ì¡´ì¬í•˜ì§€ ì•Šì•„ BGMì„ ì œì–´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            return;
+        }
+
         if (sceneBGM != null)
         {
             AudioManager.Instance.PlayBGM(sceneBGM, baseVolume);
         }
         else
         {
-            // ÀÎ½ºÆåÅÍ¿¡ À½¾ÇÀÌ ºñ¾îÀÖ´Ù¸é ÇöÀç Àç»ı ÁßÀÎ À½¾ÇÀ» Á¤Áö½ÃÅµ´Ï´Ù[cite: 9].
+            // ì¸ìŠ¤í™í„°ì— ìŒì•…ì´ ë¹„ì–´ìˆë‹¤ë©´ í˜„ì¬ ì¬ìƒ ì¤‘ì¸ ìŒì•…ì„ ì •ì§€ì‹œí‚µë‹ˆë‹¤.
             AudioManager.Instance.StopBGM();
         }
     }

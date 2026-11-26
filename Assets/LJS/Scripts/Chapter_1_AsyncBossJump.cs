@@ -4,18 +4,18 @@ using System.Collections;
 
 public class Chapter_1_AsyncBossJump : MonoBehaviour
 {
-    [Header("ÀÌµ¿ÇÒ ¾ÀÀÇ Á¤È®ÇÑ ÀÌ¸§À» Àû¾îÁÖ¼¼¿ä")]
+    [Header("ì´ë™í•  ì”¬ì˜ ì •í™•í•œ ì´ë¦„ì„ ì ì–´ì£¼ì„¸ìš”")]
     public string targetSceneName;
 
-    // ÇÃ·¹ÀÌ¾î°¡ Äİ¶óÀÌ´õ ¾È¿¡¼­ ºñºñÀû°Å¸± ¶§
-    // ·ÎµùÀÌ ¼ö½Ê ¹ø °ãÃÄ¼­ ½ÇÇàµÇ´Â °ÍÀ» ¸·´Â ¾ÈÀüÀåÄ¡ÀÔ´Ï´Ù.
+    // í”Œë ˆì´ì–´ê°€ ì½œë¼ì´ë” ì•ˆì—ì„œ ë¹„ë¹„ì ê±°ë¦´ ë•Œ
+    // ë¡œë”©ì´ ìˆ˜ì‹­ ë²ˆ ê²¹ì³ì„œ ì‹¤í–‰ë˜ëŠ” ê²ƒì„ ë§‰ëŠ” ì•ˆì „ì¥ì¹˜ì…ë‹ˆë‹¤.
     private bool isLoading = false;
 
-    // À¯´ÏÆ¼ 2D ¹°¸®¿£Áø: Æ®¸®°Å¿¡ ¹«¾ğ°¡ µé¾î¿ÔÀ» ¶§ ½ÇÇà
+    // ìœ ë‹ˆí‹° 2D ë¬¼ë¦¬ì—”ì§„: íŠ¸ë¦¬ê±°ì— ë¬´ì–¸ê°€ ë“¤ì–´ì™”ì„ ë•Œ ì‹¤í–‰
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // 1. µé¾î¿Â ¹°Ã¼°¡ ÇÃ·¹ÀÌ¾îÀÌ°í
-        // 2. ÇöÀç ·Îµù ÁßÀÌ ¾Æ´Ò ¶§¸¸ ½ÇÇà
+        // 1. ë“¤ì–´ì˜¨ ë¬¼ì²´ê°€ í”Œë ˆì´ì–´ì´ê³ 
+        // 2. í˜„ì¬ ë¡œë”© ì¤‘ì´ ì•„ë‹ ë•Œë§Œ ì‹¤í–‰
         if (other.CompareTag("Player") && !isLoading)
         {
             StartCoroutine(LoadSceneAsyncCoroutine());
@@ -24,25 +24,37 @@ public class Chapter_1_AsyncBossJump : MonoBehaviour
 
     private IEnumerator LoadSceneAsyncCoroutine()
     {
-        // ·Îµù ½ÃÀÛ »óÅÂ·Î Àá±İ (Áßº¹ ½ÇÇà ¹æÁö)
+        if (string.IsNullOrWhiteSpace(targetSceneName) || !Application.CanStreamedLevelBeLoaded(targetSceneName))
+        {
+            Debug.LogError($"[Chapter_1_AsyncBossJump] '{targetSceneName}' ì”¬ì„ ì°¾ì„ ìˆ˜ ì—†ê±°ë‚˜ Build Settingsì— ë“±ë¡ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
+            yield break;
+        }
+
+        // ë¡œë”© ì‹œì‘ ìƒíƒœë¡œ ì ê¸ˆ (ì¤‘ë³µ ì‹¤í–‰ ë°©ì§€)
         isLoading = true;
-        Debug.Log($"'{targetSceneName}' ¾À ºñµ¿±â ·ÎµùÀ» ½ÃÀÛÇÕ´Ï´Ù...");
+        Debug.Log($"'{targetSceneName}' ì”¬ ë¹„ë™ê¸° ë¡œë”©ì„ ì‹œì‘í•©ë‹ˆë‹¤...");
 
-        // ¹é±×¶ó¿îµå¿¡¼­ ¾À µ¥ÀÌÅÍ¸¦ ºÒ·¯¿À±â ½ÃÀÛÇÕ´Ï´Ù.
+        // ë°±ê·¸ë¼ìš´ë“œì—ì„œ ì”¬ ë°ì´í„°ë¥¼ ë¶ˆëŸ¬ì˜¤ê¸° ì‹œì‘í•©ë‹ˆë‹¤.
         AsyncOperation operation = SceneManager.LoadSceneAsync(targetSceneName);
+        if (operation == null)
+        {
+            Debug.LogError($"[Chapter_1_AsyncBossJump] '{targetSceneName}' ì”¬ ë¹„ë™ê¸° ë¡œë“œì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.");
+            isLoading = false;
+            yield break;
+        }
 
-        // ·ÎµùÀÌ ¿Ï·áµÇ¸é ´Ù¸¥ ½ºÅ©¸³Æ®ÀÇ Çã¶ôÀ» ±â´Ù¸®Áö ¾Ê°í Áï½Ã ¾ÀÀ» ÀüÈ¯ÇÕ´Ï´Ù.
-        // (µ¶¸³ÀûÀÎ ÀÛµ¿À» À§ÇØ true·Î µÓ´Ï´Ù)
+        // ë¡œë”©ì´ ì™„ë£Œë˜ë©´ ë‹¤ë¥¸ ìŠ¤í¬ë¦½íŠ¸ì˜ í—ˆë½ì„ ê¸°ë‹¤ë¦¬ì§€ ì•Šê³  ì¦‰ì‹œ ì”¬ì„ ì „í™˜í•©ë‹ˆë‹¤.
+        // (ë…ë¦½ì ì¸ ì‘ë™ì„ ìœ„í•´ trueë¡œ ë‘¡ë‹ˆë‹¤)
         operation.allowSceneActivation = true;
 
-        // ÁøÇà »óÈ²À» À¯´ÏÆ¼ ÄÜ¼ÖÃ¢¿¡ Âï¾îÁİ´Ï´Ù. (°ÔÀÓ ·ºÀ» À¯¹ßÇÏÁö ¾Ê´Â ¹é±×¶ó¿îµå ¹İº¹¹®)
+        // ì§„í–‰ ìƒí™©ì„ ìœ ë‹ˆí‹° ì½˜ì†”ì°½ì— ì°ì–´ì¤ë‹ˆë‹¤. (ê²Œì„ ë ‰ì„ ìœ ë°œí•˜ì§€ ì•ŠëŠ” ë°±ê·¸ë¼ìš´ë“œ ë°˜ë³µë¬¸)
         while (!operation.isDone)
         {
-            // ÁøÇàµµ(0.0 ~ 1.0)¸¦ ¹éºĞÀ²·Î °è»ê
+            // ì§„í–‰ë„(0.0 ~ 1.0)ë¥¼ ë°±ë¶„ìœ¨ë¡œ ê³„ì‚°
             float progress = Mathf.Clamp01(operation.progress / 0.9f);
-            Debug.Log($"·Îµù Áß... {progress * 100}%");
+            Debug.Log($"ë¡œë”© ì¤‘... {progress * 100}%");
 
-            // ´ÙÀ½ ÇÁ·¹ÀÓ±îÁö ´ë±âÇÏ¿© ¸ŞÀÎ °ÔÀÓÀÌ ¸ØÃßÁö ¾Ê°Ô ÇÕ´Ï´Ù.
+            // ë‹¤ìŒ í”„ë ˆì„ê¹Œì§€ ëŒ€ê¸°í•˜ì—¬ ë©”ì¸ ê²Œì„ì´ ë©ˆì¶”ì§€ ì•Šê²Œ í•©ë‹ˆë‹¤.
             yield return null;
         }
     }

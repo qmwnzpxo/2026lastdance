@@ -4,20 +4,18 @@ using UnityEngine.SceneManagement;
 
 public class MurderBoard : MonoBehaviour
 {
-    [Header("¶ç¿öÁÙ Ã©ÅÍ ½ÃÀÛ UI ÆĞ³Î")]
+    [Header("ë„ì›Œì¤„ ì±•í„° ì‹œì‘ UI íŒ¨ë„")]
     public GameObject chapterUIPanel;
 
-    [Header("Yes ¹öÆ° ½Ã ½ÇÇàÇÒ ´ëÈ­ Æ®¸®°Å")]
+    [Header("Yes ë²„íŠ¼ ì‹œ ì‹¤í–‰í•  ëŒ€í™” íŠ¸ë¦¬ê±°")]
     public NpcDialogueTrigger targetDialogue;
 
     private bool isPlayerInRange = false;
     private Transform cachedPlayerTransform;
 
-    DialogueManager dialogueManager;
-
     void Start()
     {
-        // °ÔÀÓÀÌ ½ÃÀÛµÉ ¶§ UI°¡ ½Ç¼ö·Î ÄÑÁ® ÀÖ´Ù¸é ÀÚµ¿À¸·Î ²¨Áİ´Ï´Ù.
+        // ê²Œì„ì´ ì‹œì‘ë  ë•Œ UIê°€ ì‹¤ìˆ˜ë¡œ ì¼œì ¸ ìˆë‹¤ë©´ ìë™ìœ¼ë¡œ êº¼ì¤ë‹ˆë‹¤.
         if (chapterUIPanel != null)
         {
             chapterUIPanel.SetActive(false);
@@ -26,19 +24,19 @@ public class MurderBoard : MonoBehaviour
 
     void Update()
     {
-        // ¾ÈÀüÀåÄ¡
+        if (chapterUIPanel == null) return;
+
+        // ì•ˆì „ì¥ì¹˜
         bool isDialoguePlaying = DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null;
 
-        // 1. ÇÃ·¹ÀÌ¾î°¡ ±ÙÃ³¿¡ ÀÖ°í
-        // 2. FÅ°¸¦ ´­·¶À¸¸ç
-        // 3. UI°¡ ÇöÀç ²¨Á®ÀÖ´Â »óÅÂ¶ó¸é (Áßº¹ ½ÇÇà ¹æÁö)
+        // 1. í”Œë ˆì´ì–´ê°€ ê·¼ì²˜ì— ìˆê³ 
+        // 2. Fí‚¤ë¥¼ ëˆŒë €ìœ¼ë©°
+        // 3. UIê°€ í˜„ì¬ êº¼ì ¸ìˆëŠ” ìƒíƒœë¼ë©´ (ì¤‘ë³µ ì‹¤í–‰ ë°©ì§€)
         if (isPlayerInRange && Input.GetKeyDown(KeyCode.F) && !chapterUIPanel.activeSelf && !isDialoguePlaying)
         {
-            // UI¸¦ È­¸é¿¡ ³ªÅ¸³ª°Ô ÇÕ´Ï´Ù.
+            // UIë¥¼ í™”ë©´ì— ë‚˜íƒ€ë‚˜ê²Œ í•©ë‹ˆë‹¤.
             chapterUIPanel.SetActive(true);
         }
-
-        // ÇöÀç ´ëÈ­°¡ ÁøÇà ÁßÀÎÁö È®ÀÎ
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -46,7 +44,7 @@ public class MurderBoard : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = true;
-            cachedPlayerTransform = other.transform; // ÇÃ·¹ÀÌ¾î Á¢±Ù ±â¾ï
+            cachedPlayerTransform = other.transform; // í”Œë ˆì´ì–´ ì ‘ê·¼ ê¸°ì–µ
         }
     }
 
@@ -55,8 +53,8 @@ public class MurderBoard : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerInRange = false;
-            cachedPlayerTransform = null; // ÇÃ·¹ÀÌ¾î ºñÁ¢±Ù½Ã ±â¾ï »èÁ¦
-            // ÇÃ·¹ÀÌ¾î°¡ ¸Ó´õº¸µå¿¡¼­ ¸Ö¾îÁö¸é ¿­·ÁÀÖ´ø UIµµ ÀÚµ¿À¸·Î ´İ¾ÆÁİ´Ï´Ù.
+            cachedPlayerTransform = null; // í”Œë ˆì´ì–´ ë¹„ì ‘ê·¼ì‹œ ê¸°ì–µ ì‚­ì œ
+            // í”Œë ˆì´ì–´ê°€ ë¨¸ë”ë³´ë“œì—ì„œ ë©€ì–´ì§€ë©´ ì—´ë ¤ìˆë˜ UIë„ ìë™ìœ¼ë¡œ ë‹«ì•„ì¤ë‹ˆë‹¤.
             if (chapterUIPanel != null)
             {
                 chapterUIPanel.SetActive(false);
@@ -65,18 +63,18 @@ public class MurderBoard : MonoBehaviour
     }
 
     // ==========================================
-    // ¾Æ·¡´Â UI ¹öÆ°À» Å¬¸¯ÇßÀ» ¶§ ½ÇÇàµÉ ÇÔ¼öµéÀÔ´Ï´Ù.
+    // ì•„ë˜ëŠ” UI ë²„íŠ¼ì„ í´ë¦­í–ˆì„ ë•Œ ì‹¤í–‰ë  í•¨ìˆ˜ë“¤ì…ë‹ˆë‹¤.
     // ==========================================
 
     public void OnClickYes()
     {
-        Debug.Log("Ã©ÅÍ1 ½ÃÀÛ! (¿©±â¿¡ ÀÌÈÄ ±â´É Ãß°¡)");
+        Debug.Log("ì±•í„°1 ì‹œì‘! (ì—¬ê¸°ì— ì´í›„ ê¸°ëŠ¥ ì¶”ê°€)");
 
-        // UI¸¦ ´Ù½Ã ¼û±é´Ï´Ù.
-        chapterUIPanel.SetActive(false);
-
-        // TODO: ¿©±â¿¡ ¾À ÀÌµ¿, ¸ó½ºÅÍ ¼ÒÈ¯, ¹® ¿­¸² µîÀÇ ÄÚµå¸¦ ÀÛ¼ºÇÏ½Ã¸é µË´Ï´Ù.
-        //SceneManager.LoadScene("0630_Chapter_1");
+        // UIë¥¼ ë‹¤ì‹œ ìˆ¨ê¹ë‹ˆë‹¤.
+        if (chapterUIPanel != null)
+        {
+            chapterUIPanel.SetActive(false);
+        }
 
         if (targetDialogue != null && cachedPlayerTransform != null)
         {
@@ -84,15 +82,18 @@ public class MurderBoard : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("¿¬°áµÈ ´ëÈ­ Æ®¸®°Å°¡ ¾ø°Å³ª ÇÃ·¹ÀÌ¾î¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+            Debug.LogWarning("ì—°ê²°ëœ ëŒ€í™” íŠ¸ë¦¬ê±°ê°€ ì—†ê±°ë‚˜ í”Œë ˆì´ì–´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
         }
     }
 
     public void OnClickNo()
     {
-        Debug.Log("½ÃÀÛ Ãë¼Ò.");
+        Debug.Log("ì‹œì‘ ì·¨ì†Œ.");
 
-        // ¾Æ¹« ÀÏµµ ÀÏ¾î³ªÁö ¾Ê°í UI¸¸ ¼û±é´Ï´Ù.
-        chapterUIPanel.SetActive(false);
+        // ì•„ë¬´ ì¼ë„ ì¼ì–´ë‚˜ì§€ ì•Šê³  UIë§Œ ìˆ¨ê¹ë‹ˆë‹¤.
+        if (chapterUIPanel != null)
+        {
+            chapterUIPanel.SetActive(false);
+        }
     }
 }

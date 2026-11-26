@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class CharactersAudio : MonoBehaviour
 {
-    [Header("´ÜÀÏ »ç¿îµå")]
+    [Header("ë‹¨ì¼ ì‚¬ìš´ë“œ")]
     public AudioClip Run1;
     public AudioClip Run2;
     public AudioClip Run3;
@@ -12,85 +12,47 @@ public class CharactersAudio : MonoBehaviour
     public AudioClip Promotion;
     public AudioClip EnemyShot;
 
-    [Header("´ÙÁß/·£´ı »ç¿îµå ¹è¿­")]
+    [Header("ë‹¤ì¤‘/ëœë¤ ì‚¬ìš´ë“œ ë°°ì—´")]
     public AudioClip[] randomClips;
 
-    [Header("·£´ı »ç¿îµå ÇÇÄ¡ ¼¼ÆÃ")]
+    [Header("ëœë¤ ì‚¬ìš´ë“œ í”¼ì¹˜ ì„¸íŒ…")]
     public float minPitch = 0.9f;
     public float maxPitch = 1.1f;
 
-    public void Run1Event()
-    {
-        if (Run1 != null)
-        {
-            AudioManager.Instance.PlaySFX(Run1, 0.8f);
-        }
-    }
-    public void Run2Event()
-    {
-        if (Run2 != null)
-        {
-            AudioManager.Instance.PlaySFX(Run2, 0.8f);
-        }
-    }
-    public void Run3Event()
-    {
-        if (Run3 != null)
-        {
-            AudioManager.Instance.PlaySFX(Run3, 0.8f);
-        }
-    }
-    public void Run4Event()
-    {
-        if (Run4 != null)
-        {
-            AudioManager.Instance.PlaySFX(Run4, 0.8f);
-        }
-    }
-    public void FlashEvent()
-    {
-        if (Flash != null)
-        {
-            AudioManager.Instance.PlaySFX(Flash, 1.0f);
-        }
-    }
-    public void DownFlashEvent()
-    {
-        if (DownFlash != null)
-        {
-            AudioManager.Instance.PlaySFX(DownFlash, 1.0f);
-        }
-    }
-    public void PromotionEvent()
+    public void Run1Event() => PlayClip(Run1, 0.8f);
+    public void Run2Event() => PlayClip(Run2, 0.8f);
+    public void Run3Event() => PlayClip(Run3, 0.8f);
+    public void Run4Event() => PlayClip(Run4, 0.8f);
+    public void FlashEvent() => PlayClip(Flash, 1.0f);
+    public void DownFlashEvent() => PlayClip(DownFlash, 1.0f);
+    public void PromotionEvent() => PlayClip(Promotion, 1.0f);
+    public void EnemyShotEvent() => PlayClip(EnemyShot, 1.0f);
 
-    {
-        if (Promotion != null)
-        {
-            AudioManager.Instance.PlaySFX(Promotion, 1.0f);
-        }
-    }
-    public void EnemyShotEvent()
-    {
-        if (EnemyShot != null)
-        {
-            AudioManager.Instance.PlaySFX(EnemyShot, 1.0f);
-        }
-    }
-    
     public void PlayRandomSoundEvent()
     {
-        // 1. ¹è¿­ ÀÚÃ¼¸¦ ¾È ¾²°Å³ª(Length == 0), ºñ¿öµ×´Ù¸é ¾Æ¹« ÀÏµµ ÇÏÁö ¾Ê°í Á¶¿ëÈ÷ Á¾·áÇÕ´Ï´Ù.
+        // 1. ë°°ì—´ ìì²´ë¥¼ ì•ˆ ì“°ê±°ë‚˜(Length == 0), ë¹„ì›Œë’€ë‹¤ë©´ ì•„ë¬´ ì¼ë„ í•˜ì§€ ì•Šê³  ì¡°ìš©íˆ ì¢…ë£Œí•©ë‹ˆë‹¤.
         if (randomClips == null || randomClips.Length == 0) return;
 
-        // 2. µî·ÏµÈ »ç¿îµå Áß ÇÏ³ª¸¦ ¹«ÀÛÀ§·Î °í¸¨´Ï´Ù.
+        // 2. ë“±ë¡ëœ ì‚¬ìš´ë“œ ì¤‘ í•˜ë‚˜ë¥¼ ë¬´ì‘ìœ„ë¡œ ê³ ë¦…ë‹ˆë‹¤.
         int randomIndex = Random.Range(0, randomClips.Length);
         AudioClip selectedClip = randomClips[randomIndex];
 
-        // 3. »ÌÈù Å¬¸³ÀÌ ºñ¾îÀÖÁö ¾Ê´Ù¸é ÇÇÄ¡¸¦ ¼¯¾î¼­ Àç»ıÇÕ´Ï´Ù.
-        if (selectedClip != null)
+        // 3. ë½‘íŒ í´ë¦½ì´ ë¹„ì–´ìˆì§€ ì•Šë‹¤ë©´ í”¼ì¹˜ë¥¼ ì„ì–´ì„œ ì¬ìƒí•©ë‹ˆë‹¤.
+        float min = Mathf.Min(minPitch, maxPitch);
+        float max = Mathf.Max(minPitch, maxPitch);
+        PlayClip(selectedClip, 1.0f, Random.Range(min, max));
+    }
+
+    private void PlayClip(AudioClip clip, float volume, float pitch = 1f)
+    {
+        if (clip == null) return;
+
+        if (AudioManager.Instance == null)
         {
-            float randomPitch = Random.Range(minPitch, maxPitch);
-            AudioManager.Instance.PlaySFX(selectedClip, 1.0f, randomPitch);
+            Debug.LogWarning($"[CharactersAudio] AudioManager.Instanceê°€ ì—†ì–´ '{clip.name}'ì„ ì¬ìƒí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            return;
         }
+
+        AudioManager.Instance.PlaySFX(clip, volume, pitch);
     }
 }

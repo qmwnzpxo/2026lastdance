@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class ShotSound_Terret : MonoBehaviour
 {
-    [Header("ÅÍ·¿ »ç¿îµå ¼³Á¤")]
+    [Header("í„°ë › ì‚¬ìš´ë“œ ì„¤ì •")]
     [SerializeField] private AudioClip shootSound;
 
-    // ÅÍ·¿Àº ±â°è´Ï±î À½³ôÀÌ(ÇÇÄ¡) º¯È­¸¦ Àû°Ô ÁÖ°Å³ª ¾È Áàµµ ÁÁ½À´Ï´Ù.
+    // í„°ë ›ì€ ê¸°ê³„ë‹ˆê¹Œ ìŒë†’ì´(í”¼ì¹˜) ë³€í™”ë¥¼ ì ê²Œ ì£¼ê±°ë‚˜ ì•ˆ ì¤˜ë„ ì¢‹ìŠµë‹ˆë‹¤.
     [SerializeField] private float minPitch = 0.7f;
     [SerializeField] private float maxPitch = 0.75f;
 
@@ -13,13 +13,17 @@ public class ShotSound_Terret : MonoBehaviour
 
     private void Awake()
     {
-        // °°Àº ¿ÀºêÁ§Æ®¿¡ ÀÖ´Â ÅÍ·¿ ÀüÅõ ½ºÅ©¸³Æ® Ã£±â
+        // ê°™ì€ ì˜¤ë¸Œì íŠ¸ì— ìˆëŠ” í„°ë › ì „íˆ¬ ìŠ¤í¬ë¦½íŠ¸ ì°¾ê¸°
         _combat = GetComponent<TurretEnemyCombat>();
+        if (_combat == null)
+        {
+            Debug.LogWarning($"[ShotSound_Terret] {name}ì— TurretEnemyCombat ì»´í¬ë„ŒíŠ¸ê°€ ì—†ìŠµë‹ˆë‹¤.");
+        }
     }
 
     private void OnEnable()
     {
-        // È°¼ºÈ­µÉ ¶§ »ç°İ ÀÌº¥Æ® ¿¬°á
+        // í™œì„±í™”ë  ë•Œ ì‚¬ê²© ì´ë²¤íŠ¸ ì—°ê²°
         if (_combat != null)
         {
             _combat.OnShootEvent += PlayShootSound;
@@ -28,7 +32,7 @@ public class ShotSound_Terret : MonoBehaviour
 
     private void OnDisable()
     {
-        // ºñÈ°¼ºÈ­µÉ ¶§ »ç°İ ÀÌº¥Æ® ¿¬°á ÇØÁ¦ (¿¡·¯ ¹æÁö)
+        // ë¹„í™œì„±í™”ë  ë•Œ ì‚¬ê²© ì´ë²¤íŠ¸ ì—°ê²° í•´ì œ (ì—ëŸ¬ ë°©ì§€)
         if (_combat != null)
         {
             _combat.OnShootEvent -= PlayShootSound;
@@ -37,11 +41,16 @@ public class ShotSound_Terret : MonoBehaviour
 
     private void PlayShootSound()
     {
-        if (shootSound != null)
+        if (shootSound == null) return;
+
+        if (AudioManager.Instance == null)
         {
-            float randomPitch = Random.Range(minPitch, maxPitch);
-            // ±âÁ¸¿¡ Àß ¸¸µé¾îµĞ AudioManager¸¦ È°¿ëÇØ ¼Ò¸® Àç»ı!
-            AudioManager.Instance.PlaySFX(shootSound, 1.0f, randomPitch);
+            Debug.LogWarning($"[ShotSound_Terret] AudioManager.Instanceê°€ ì—†ì–´ ì‚¬ê²© ì‚¬ìš´ë“œë¥¼ ì¬ìƒí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            return;
         }
+
+        float randomPitch = Random.Range(Mathf.Min(minPitch, maxPitch), Mathf.Max(minPitch, maxPitch));
+        // ê¸°ì¡´ì— ì˜ ë§Œë“¤ì–´ë‘” AudioManagerë¥¼ í™œìš©í•´ ì†Œë¦¬ ì¬ìƒ!
+        AudioManager.Instance.PlaySFX(shootSound, 1.0f, randomPitch);
     }
 }

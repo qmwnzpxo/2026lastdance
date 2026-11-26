@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Audio;
 
@@ -91,7 +91,7 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlayBGM(AudioClip clip, float volume = 1f)
     {
-        if (clip == null) return;
+        if (clip == null || bgmSource == null) return;
 
         // 이미 같은 곡이 재생 중이라면 처음부터 다시 덮어씌우지 않고 유지
         if (bgmSource.clip == clip && bgmSource.isPlaying) return;
@@ -121,7 +121,10 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void StopBGM()
     {
-        bgmSource.Stop();
+        if (bgmSource != null)
+        {
+            bgmSource.Stop();
+        }
     }
 
     /// <summary>
@@ -132,9 +135,8 @@ public class AudioManager : MonoBehaviour
         if (clip == null) return;
 
         // [소리 뭉개짐 방지] 동일한 클립이 너무 짧은 시간 내에 다시 재생되는지 확인
-        if (clipLastPlayTime.ContainsKey(clip))
+        if (clipLastPlayTime.TryGetValue(clip, out float lastTime))
         {
-            float lastTime = clipLastPlayTime[clip];
             if (Time.time - lastTime < sfxCooldown)
             {
                 // 0.05초(sfxCooldown)가 지나지 않았다면 재생을 취소하여 뭉개짐을 막습니다.
@@ -146,6 +148,8 @@ public class AudioManager : MonoBehaviour
         clipLastPlayTime[clip] = Time.time;
 
         AudioSource availableSource = GetAvailableSFXSource(); // (기존 채널 찾는 함수)
+        if (availableSource == null) return;
+
         availableSource.clip = clip;
 
         // [볼륨 일괄 조절] 개별 볼륨에 마스터 볼륨을 곱해서 최종 소리를 냅니다.
@@ -159,8 +163,15 @@ public class AudioManager : MonoBehaviour
     private AudioSource GetAvailableSFXSource()
     {
         // 1. 리스트를 돌면서 재생 중이 아닌 소스를 찾습니다.
-        foreach (AudioSource source in sfxPool)
+        for (int i = sfxPool.Count - 1; i >= 0; i--)
         {
+            AudioSource source = sfxPool[i];
+            if (source == null)
+            {
+                sfxPool.RemoveAt(i);
+                continue;
+            }
+
             if (!source.isPlaying)
             {
                 return source;

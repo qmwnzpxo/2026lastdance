@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class BasecampTelepote : MonoBehaviour
 {
-    [Header("¼ø°£ÀÌµ¿ µµÂø ÁöÁ¡ (µµÂøÇÒ À§Ä¡¿¡ ÀÖ´Â ºó ¿ÀºêÁ§Æ® »ğÀÔ)")]
+    [Header("ìˆœê°„ì´ë™ ë„ì°© ì§€ì  (ë„ì°©í•  ìœ„ì¹˜ì— ìˆëŠ” ë¹ˆ ì˜¤ë¸Œì íŠ¸ ì‚½ì…)")]
     public Transform destinationPoint;
 
-    [Header("ÆäÀÌµå ¸Å´ÏÀú ¿¬°á")]
+    [Header("í˜ì´ë“œ ë§¤ë‹ˆì € ì—°ê²°")]
     public Cam_FadeOutManager fadeoutManager;
 
     private bool isPlayerInRange = false;
@@ -13,15 +13,21 @@ public class BasecampTelepote : MonoBehaviour
 
     void Update()
     {
-        // ÇÃ·¹ÀÌ¾î°¡ Æ®¸®°Å ¾È¿¡ ÀÖ°í FÅ°¸¦ ´­·¶À¸¸ç, ¸ñÀûÁö°¡ ¼³Á¤µÇ¾î ÀÖ´Ù¸é
-        if (isPlayerInRange && Input.GetKeyDown(KeyCode.F) && destinationPoint != null)
+        // í”Œë ˆì´ì–´ê°€ íŠ¸ë¦¬ê±° ì•ˆì— ìˆê³  Fí‚¤ë¥¼ ëˆŒë €ë‹¤ë©´
+        if (isPlayerInRange && Input.GetKeyDown(KeyCode.F))
         {
+            if (destinationPoint == null)
+            {
+                Debug.LogWarning($"[BasecampTelepote] {name}ì˜ destinationPointê°€ ì—°ê²°ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
+                return;
+            }
+
             if (playerObject != null)
             {
-                // ÇÃ·¹ÀÌ¾îÀÇ À§Ä¡¸¦ ¸ñÀûÁö ¿ÀºêÁ§Æ®ÀÇ À§Ä¡·Î ¼ø°£ÀÌµ¿
+                // í”Œë ˆì´ì–´ì˜ ìœ„ì¹˜ë¥¼ ëª©ì ì§€ ì˜¤ë¸Œì íŠ¸ì˜ ìœ„ì¹˜ë¡œ ìˆœê°„ì´ë™
                 playerObject.transform.position = destinationPoint.position;
 
-                // 2. ¸¸¾à FadeManager°¡ ¿¬°áµÇ¾î ÀÖ´Ù¸é, °ËÀº È­¸é ¿¬ÃâÀ» ½ÇÇàÇÕ´Ï´Ù!
+                // ë§Œì•½ FadeManagerê°€ ì—°ê²°ë˜ì–´ ìˆë‹¤ë©´, ê²€ì€ í™”ë©´ ì—°ì¶œì„ ì‹¤í–‰í•©ë‹ˆë‹¤!
                 if (fadeoutManager != null)
                 {
                     fadeoutManager.PlayFadeEffect();
@@ -34,7 +40,7 @@ public class BasecampTelepote : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("´êÀ½");
+            Debug.Log("ë‹¿ìŒ");
             isPlayerInRange = true;
             playerObject = other.gameObject;
         }
@@ -44,7 +50,7 @@ public class BasecampTelepote : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("³ª°¨");
+            Debug.Log("ë‚˜ê°");
             isPlayerInRange = false;
             playerObject = null;
         }

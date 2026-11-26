@@ -9,7 +9,7 @@
   {
     "id": "Scene_06_2",
     "speakerName": "???",
-    "text": "[event: 06-p_Flip_Left] 조금 늦었나? [click]",
+    "text": "[event: 06-p_Flip_Left]조금 늦었나? [click]",
     "nextIds": [ "Scene_06_3" ],
     "jumpId": ""
   },

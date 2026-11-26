@@ -56,22 +56,41 @@ public class BossDeathSceneTransition : MonoBehaviour
 
     private IEnumerator SceneTransitionCoroutine()
     {
+        if (string.IsNullOrWhiteSpace(nextSceneName) || !Application.CanStreamedLevelBeLoaded(nextSceneName))
+        {
+            Debug.LogError($"[BossDeathSceneTransition] '{nextSceneName}' 씬을 찾을 수 없거나 Build Settings에 등록되지 않았습니다!");
+            _isTransitionStarted = false;
+            yield break;
+        }
+
         Debug.Log($"[BossDeathSceneTransition] 보스 사망 상태 감지됨. {delayBeforeFade}초 대기 후 페이드 아웃 시작.");
 
         // 1. 보스의 사망 애니메이션과 이펙트가 끝날 때까지 대기합니다.
-        yield return new WaitForSeconds(delayBeforeFade);
+        if (delayBeforeFade > 0f)
+        {
+            yield return new WaitForSeconds(delayBeforeFade);
+        }
 
         // 2. 화면 페이드 아웃 (서서히 암전)
         if (fadeImage != null)
         {
             fadeImage.raycastTarget = true; // 페이드 아웃 중 플레이어의 UI 터치 방지
-            float timer = 0f;
-            while (timer < fadeDuration)
+            if (fadeDuration > 0f)
             {
-                timer += Time.deltaTime;
-                float alpha = Mathf.Clamp01(timer / fadeDuration);
-                fadeImage.color = new Color(0, 0, 0, alpha);
-                yield return null;
+                float timer = 0f;
+                while (timer < fadeDuration)
+                {
+                    if (fadeImage == null) break;
+                    timer += Time.deltaTime;
+                    float alpha = Mathf.Clamp01(timer / fadeDuration);
+                    fadeImage.color = new Color(0, 0, 0, alpha);
+                    yield return null;
+                }
+            }
+
+            if (fadeImage != null)
+            {
+                fadeImage.color = new Color(0, 0, 0, 1f);
             }
         }
 
@@ -79,6 +98,14 @@ public class BossDeathSceneTransition : MonoBehaviour
 
         // 3. 비동기 씬 로드 (LoadSceneAsync 활용)
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(nextSceneName);
+        if (asyncLoad == null)
+        {
+            Debug.LogError($"[BossDeathSceneTransition] '{nextSceneName}' 씬 비동기 로드에 실패했습니다.");
+            if (fadeImage != null) fadeImage.raycastTarget = false;
+            _isTransitionStarted = false;
+            yield break;
+        }
+
         asyncLoad.allowSceneActivation = false; // 로딩이 끝나도 즉시 넘어가지 않도록 대기
 
         // 유니티의 비동기 로딩은 90%(0.9)가 되면 완료로 판정합니다.

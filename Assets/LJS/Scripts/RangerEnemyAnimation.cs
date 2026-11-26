@@ -6,22 +6,22 @@ public class RangerEnemyAnimation : MonoBehaviour
     private Animator _animator;
     private Rigidbody2D _rb;
 
-    // Animator ÆÄ¶ó¹ÌÅÍ ÇØ½Ì (¹®ÀÚ¿­º¸´Ù ¼º´ÉÀÌ ÈÎ¾À ÁÁ½À´Ï´Ù)
+    // Animator íŒŒë¼ë¯¸í„° í•´ì‹± (ë¬¸ìì—´ë³´ë‹¤ ì„±ëŠ¥ì´ í›¨ì”¬ ì¢‹ìŠµë‹ˆë‹¤)
     private readonly int hashIsWalk = Animator.StringToHash("isWalk");
     private readonly int hashIsRun = Animator.StringToHash("isRun");
     private readonly int hashIsHit = Animator.StringToHash("isHit");
     private readonly int hashIsDead = Animator.StringToHash("isDead");
 
-    [Header("ÀÌµ¿ ¾Ö´Ï¸ŞÀÌ¼Ç ¼³Á¤")]
-    [Tooltip("ÀÌ ¼Óµµ ÀÌ»óÀÌ¸é °È±â·Î ÆÇÁ¤")]
+    [Header("ì´ë™ ì• ë‹ˆë©”ì´ì…˜ ì„¤ì •")]
+    [Tooltip("ì´ ì†ë„ ì´ìƒì´ë©´ ê±·ê¸°ë¡œ íŒì •")]
     [SerializeField] private float walkSpeedThreshold = 0.1f;
-    [Tooltip("ÀÌ ¼Óµµ ÀÌ»óÀÌ¸é ¶Ù±â·Î ÆÇÁ¤ (ControllerÀÇ moveSpeed¿Í ¸ÂÃçÁÖ¼¼¿ä)")]
+    [Tooltip("ì´ ì†ë„ ì´ìƒì´ë©´ ë›°ê¸°ë¡œ íŒì • (Controllerì˜ moveSpeedì™€ ë§ì¶°ì£¼ì„¸ìš”)")]
     [SerializeField] private float runSpeedThreshold = 3.0f;
 
     private void Awake()
     {
         _animator = GetComponent<Animator>();
-        // ¾Ö´Ï¸ŞÀÌÅÍ¿Í °°Àº ¿ÀºêÁ§Æ®³ª ºÎ¸ğ¿¡ ÀÖ´Â Rigidbody2D¸¦ °¡Á®¿É´Ï´Ù.
+        // ì• ë‹ˆë©”ì´í„°ì™€ ê°™ì€ ì˜¤ë¸Œì íŠ¸ë‚˜ ë¶€ëª¨ì— ìˆëŠ” Rigidbody2Dë¥¼ ê°€ì ¸ì˜µë‹ˆë‹¤.
         _rb = GetComponentInParent<Rigidbody2D>();
     }
 
@@ -31,38 +31,40 @@ public class RangerEnemyAnimation : MonoBehaviour
     }
 
     /// <summary>
-    /// ½ÇÁ¦ ÀÌµ¿ ¼Óµµ¿¡ ¸ÂÃç °È±â/¶Ù±â ¾Ö´Ï¸ŞÀÌ¼ÇÀ» ÀÚµ¿ ÀüÈ¯ÇÕ´Ï´Ù.
+    /// ì‹¤ì œ ì´ë™ ì†ë„ì— ë§ì¶° ê±·ê¸°/ë›°ê¸° ì• ë‹ˆë©”ì´ì…˜ì„ ìë™ ì „í™˜í•©ë‹ˆë‹¤.
     /// </summary>
     private void UpdateMovementAnimations()
     {
-        if (_rb == null) return;
+        if (_rb == null || _animator == null) return;
 
-        // 2D È¾½ºÅ©·ÑÀÌ¹Ç·Î XÃà ÀÌµ¿ ¼ÓµµÀÇ Àı´ñ°ªÀ» ±âÁØÀ¸·Î »ï½À´Ï´Ù.
-        // (À¯´ÏÆ¼ 6 ÀÌÀü ¹öÀüÀÌ¶ó¸é _rb.linearVelocity ´ë½Å _rb.velocity¸¦ »ç¿ëÇÏ¼¼¿ä)
+        // 2D íš¡ìŠ¤í¬ë¡¤ì´ë¯€ë¡œ Xì¶• ì´ë™ ì†ë„ì˜ ì ˆëŒ“ê°’ì„ ê¸°ì¤€ìœ¼ë¡œ ì‚¼ìŠµë‹ˆë‹¤.
+        // (ìœ ë‹ˆí‹° 6 ì´ì „ ë²„ì „ì´ë¼ë©´ _rb.linearVelocity ëŒ€ì‹  _rb.velocityë¥¼ ì‚¬ìš©í•˜ì„¸ìš”)
         float currentSpeed = Mathf.Abs(_rb.linearVelocity.x);
 
-        // ¼Óµµ¿¡ µû¸¥ »óÅÂ ÆÇº°
+        // ì†ë„ì— ë”°ë¥¸ ìƒíƒœ íŒë³„
         bool isWalking = currentSpeed > walkSpeedThreshold && currentSpeed <= runSpeedThreshold;
         bool isRunning = currentSpeed > runSpeedThreshold;
 
-        // ¾Ö´Ï¸ŞÀÌÅÍ ÆÄ¶ó¹ÌÅÍ Àû¿ë
+        // ì• ë‹ˆë©”ì´í„° íŒŒë¼ë¯¸í„° ì ìš©
         _animator.SetBool(hashIsWalk, isWalking);
         _animator.SetBool(hashIsRun, isRunning);
     }
 
     /// <summary>
-    /// ÇÇ°İ ½Ã È£ÃâÇÒ ¸Ş¼­µå (Trigger ¹æ½Ä)
+    /// í”¼ê²© ì‹œ í˜¸ì¶œí•  ë©”ì„œë“œ (Trigger ë°©ì‹)
     /// </summary>
     public void TriggerHit()
     {
+        if (_animator == null) return;
         _animator.SetTrigger(hashIsHit);
     }
 
     /// <summary>
-    /// »ç¸Á ½Ã È£ÃâÇÒ ¸Ş¼­µå (Bool ¹æ½Ä)
+    /// ì‚¬ë§ ì‹œ í˜¸ì¶œí•  ë©”ì„œë“œ (Bool ë°©ì‹)
     /// </summary>
     public void SetDead(bool isDead = true)
     {
+        if (_animator == null) return;
         _animator.SetBool(hashIsDead, isDead);
     }
 }

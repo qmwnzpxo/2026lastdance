@@ -95,32 +95,51 @@ public class PostCinematicPortal : MonoBehaviour
 
     private async UniTaskVoid TransitionAsync()
     {
+        if (string.IsNullOrWhiteSpace(nextSceneName) || !Application.CanStreamedLevelBeLoaded(nextSceneName))
+        {
+            Debug.LogError($"[PostCinematicPortal] '{nextSceneName}' 씬을 찾을 수 없거나 Build Settings에 등록되지 않았습니다!");
+            _isTransitioning = false;
+            return;
+        }
+
         Debug.Log($"[PostCinematicPortal] F키 → '{nextSceneName}' 씬 전환.");
+        var ct = this.GetCancellationTokenOnDestroy();
 
         if (fadeImage != null)
         {
             fadeImage.raycastTarget = true;
-            float timer = 0f;
-            while (timer < fadeDuration)
+            if (fadeDuration > 0f)
             {
-                timer += Time.deltaTime;
-                fadeImage.color = new Color(0, 0, 0, Mathf.Clamp01(timer / fadeDuration));
-                await UniTask.Yield(PlayerLoopTiming.Update);
+                float timer = 0f;
+                while (timer < fadeDuration)
+                {
+                    if (ct.IsCancellationRequested || fadeImage == null) break;
+                    timer += Time.deltaTime;
+                    fadeImage.color = new Color(0, 0, 0, Mathf.Clamp01(timer / fadeDuration));
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                }
             }
-            fadeImage.color = new Color(0, 0, 0, 1f);
+
+            if (fadeImage != null)
+            {
+                fadeImage.color = new Color(0, 0, 0, 1f);
+            }
         }
 
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(nextSceneName);
         if (asyncLoad == null)
         {
             Debug.LogError($"[PostCinematicPortal] '{nextSceneName}' 씬을 찾을 수 없습니다!");
+            if (fadeImage != null) fadeImage.raycastTarget = false;
             _isTransitioning = false;
             return;
         }
 
         asyncLoad.allowSceneActivation = false;
         while (asyncLoad.progress < 0.9f)
-            await UniTask.Yield(PlayerLoopTiming.Update);
+        {
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
+        }
 
         asyncLoad.allowSceneActivation = true;
     }

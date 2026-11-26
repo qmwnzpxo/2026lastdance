@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class ShotSound : MonoBehaviour
 {
-    [Header("»ç¿îµå ¼³Á¤")]
+    [Header("ì‚¬ìš´ë“œ ì„¤ì •")]
     [SerializeField] private AudioClip shootSound;
     [SerializeField] private float minPitch = 0.9f;
     [SerializeField] private float maxPitch = 1.1f;
@@ -11,13 +11,17 @@ public class ShotSound : MonoBehaviour
 
     private void Awake()
     {
-        // °°Àº ¿ÀºêÁ§Æ®¿¡ ÀÖ´Â ÀüÅõ ½ºÅ©¸³Æ®¸¦ Ã£¾Æ ¿¬°áÇÕ´Ï´Ù.
+        // ê°™ì€ ì˜¤ë¸Œì íŠ¸ì— ìˆëŠ” ì „íˆ¬ ìŠ¤í¬ë¦½íŠ¸ë¥¼ ì°¾ì•„ ì—°ê²°í•©ë‹ˆë‹¤.
         _combat = GetComponent<RangerEnemyCombat>();
+        if (_combat == null)
+        {
+            Debug.LogWarning($"[ShotSound] {name}ì— RangerEnemyCombat ì»´í¬ë„ŒíŠ¸ê°€ ì—†ìŠµë‹ˆë‹¤.");
+        }
     }
 
     private void OnEnable()
     {
-        // ¿ÀºêÁ§Æ®°¡ È°¼ºÈ­µÉ ¶§ ÀÌº¥Æ®¸¦ ±¸µ¶(¿¬°á)ÇÕ´Ï´Ù.
+        // ì˜¤ë¸Œì íŠ¸ê°€ í™œì„±í™”ë  ë•Œ ì´ë²¤íŠ¸ë¥¼ êµ¬ë…(ì—°ê²°)í•©ë‹ˆë‹¤.
         if (_combat != null)
         {
             _combat.OnShootEvent += PlayShootSound;
@@ -26,21 +30,26 @@ public class ShotSound : MonoBehaviour
 
     private void OnDisable()
     {
-        // ¿¡·¯ ¹× ¸Ş¸ğ¸® ´©¼ö ¹æÁö¸¦ À§ÇØ ºñÈ°¼ºÈ­µÉ ¶§´Â ¹İµå½Ã ±¸µ¶À» ÇØÁ¦ÇÕ´Ï´Ù.
+        // ì—ëŸ¬ ë° ë©”ëª¨ë¦¬ ëˆ„ìˆ˜ ë°©ì§€ë¥¼ ìœ„í•´ ë¹„í™œì„±í™”ë  ë•ŒëŠ” ë°˜ë“œì‹œ êµ¬ë…ì„ í•´ì œí•©ë‹ˆë‹¤.
         if (_combat != null)
         {
             _combat.OnShootEvent -= PlayShootSound;
         }
     }
 
-    // ÀüÅõ ½ºÅ©¸³Æ®¿¡¼­ »ç°İ ½ÅÈ£¸¦ º¸³»¸é ÀÚµ¿À¸·Î ½ÇÇàµÇ´Â ÇÔ¼öÀÔ´Ï´Ù.
+    // ì „íˆ¬ ìŠ¤í¬ë¦½íŠ¸ì—ì„œ ì‚¬ê²© ì‹ í˜¸ë¥¼ ë³´ë‚´ë©´ ìë™ìœ¼ë¡œ ì‹¤í–‰ë˜ëŠ” í•¨ìˆ˜ì…ë‹ˆë‹¤.
     private void PlayShootSound()
     {
-        if (shootSound != null)
+        if (shootSound == null) return;
+
+        if (AudioManager.Instance == null)
         {
-            // ÃÑ¼Ò¸®µµ »ìÂ¦ ÇÇÄ¡¸¦ ¼¯¾îÁÖ¸é ¿¬»çÇÒ ¶§ ±â°èÀ½Ã³·³ µé¸®Áö ¾Ê¾Æ ÁÁ½À´Ï´Ù.
-            float randomPitch = Random.Range(minPitch, maxPitch);
-            AudioManager.Instance.PlaySFX(shootSound, 1.0f, randomPitch);
+            Debug.LogWarning($"[ShotSound] AudioManager.Instanceê°€ ì—†ì–´ ì‚¬ê²© ì‚¬ìš´ë“œë¥¼ ì¬ìƒí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            return;
         }
+
+        // ì´ì†Œë¦¬ë„ ì‚´ì§ í”¼ì¹˜ë¥¼ ì„ì–´ì£¼ë©´ ì—°ì‚¬í•  ë•Œ ê¸°ê³„ìŒì²˜ëŸ¼ ë“¤ë¦¬ì§€ ì•Šì•„ ì¢‹ìŠµë‹ˆë‹¤.
+        float randomPitch = Random.Range(Mathf.Min(minPitch, maxPitch), Mathf.Max(minPitch, maxPitch));
+        AudioManager.Instance.PlaySFX(shootSound, 1.0f, randomPitch);
     }
 }

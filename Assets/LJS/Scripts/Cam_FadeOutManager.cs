@@ -4,43 +4,72 @@ using System.Collections;
 
 public class Cam_FadeOutManager : MonoBehaviour
 {
-    [Header("È­¸éÀ» °¡¸± °ËÀº»ö UI ÀÌ¹ÌÁö")]
+    [Header("í™”ë©´ì„ ê°€ë¦´ ê²€ì€ìƒ‰ UI ì´ë¯¸ì§€")]
     public Image fadeImage;
 
-    [Header("°ËÀº È­¸é À¯Áö ½Ã°£ (ÃÊ)")]
-    public float holdDuration = 1.0f; // »õ·Î Ãß°¡µÈ À¯Áö ½Ã°£ º¯¼ö
+    [Header("ê²€ì€ í™”ë©´ ìœ ì§€ ì‹œê°„ (ì´ˆ)")]
+    public float holdDuration = 1.0f; // ìƒˆë¡œ ì¶”ê°€ëœ ìœ ì§€ ì‹œê°„ ë³€ìˆ˜
 
-    [Header("ÆäÀÌµå ¾Æ¿ô¿¡ °É¸®´Â ½Ã°£ (ÃÊ)")]
+    [Header("í˜ì´ë“œ ì•„ì›ƒì— ê±¸ë¦¬ëŠ” ì‹œê°„ (ì´ˆ)")]
     public float fadeDuration = 2.0f;
+
+    private Coroutine _fadeCoroutine;
 
     public void PlayFadeEffect()
     {
-        StartCoroutine(FadeRoutine());
+        if (fadeImage == null)
+        {
+            Debug.LogWarning("[Cam_FadeOutManager] fadeImageê°€ ì—°ê²°ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
+            return;
+        }
+
+        if (_fadeCoroutine != null)
+        {
+            StopCoroutine(_fadeCoroutine);
+        }
+
+        _fadeCoroutine = StartCoroutine(FadeRoutine());
     }
 
     private IEnumerator FadeRoutine()
     {
-        // 1. ¾ËÆÄ°ªÀ» Áï½Ã 1(¿ÏÀüÇÑ ºÒÅõ¸í °ËÀº»ö)·Î ¸¸µì´Ï´Ù.
+        if (fadeImage == null) yield break;
+
+        // 1. ì•ŒíŒŒê°’ì„ ì¦‰ì‹œ 1(ì™„ì „í•œ ë¶ˆíˆ¬ëª… ê²€ì€ìƒ‰)ë¡œ ë§Œë“­ë‹ˆë‹¤.
         Color color = fadeImage.color;
         color.a = 1f;
         fadeImage.color = color;
+        fadeImage.raycastTarget = true;
 
-        // 2. ÁöÁ¤µÈ ½Ã°£(1ÃÊ) µ¿¾È ¾Æ¹«°Íµµ ÇÏÁö ¾Ê°í °ËÀº È­¸éÀ» À¯ÁöÇÏ¸ç ´ë±âÇÕ´Ï´Ù.
-        yield return new WaitForSeconds(holdDuration);
-
-        // 3. À¯Áö ½Ã°£ÀÌ ³¡³ª¸é, 2ÃÊ µ¿¾È ¼­¼­È÷ ¾ËÆÄ°ªÀ» 0À¸·Î »®´Ï´Ù.
-        float elapsedTime = 0f;
-        while (elapsedTime < fadeDuration)
+        // 2. ì§€ì •ëœ ì‹œê°„ ë™ì•ˆ ê²€ì€ í™”ë©´ì„ ìœ ì§€í•˜ë©° ëŒ€ê¸°í•©ë‹ˆë‹¤.
+        if (holdDuration > 0f)
         {
-            elapsedTime += Time.deltaTime;
-            color.a = Mathf.Lerp(1f, 0f, elapsedTime / fadeDuration);
-            fadeImage.color = color;
-
-            yield return null;
+            yield return new WaitForSeconds(holdDuration);
         }
 
-        // 4. ¿Ïº®ÇÑ Åõ¸í »óÅÂ·Î °íÁ¤
-        color.a = 0f;
-        fadeImage.color = color;
+        // 3. ìœ ì§€ ì‹œê°„ì´ ëë‚˜ë©´ ì„œì„œíˆ ì•ŒíŒŒê°’ì„ 0ìœ¼ë¡œ ëºë‹ˆë‹¤.
+        if (fadeDuration > 0f)
+        {
+            float elapsedTime = 0f;
+            while (elapsedTime < fadeDuration)
+            {
+                if (fadeImage == null) yield break;
+                elapsedTime += Time.deltaTime;
+                color.a = Mathf.Lerp(1f, 0f, Mathf.Clamp01(elapsedTime / fadeDuration));
+                fadeImage.color = color;
+
+                yield return null;
+            }
+        }
+
+        // 4. ì™„ë²½í•œ íˆ¬ëª… ìƒíƒœë¡œ ê³ ì •
+        if (fadeImage != null)
+        {
+            color.a = 0f;
+            fadeImage.color = color;
+            fadeImage.raycastTarget = false;
+        }
+
+        _fadeCoroutine = null;
     }
 }

@@ -6,56 +6,62 @@ using System.Threading;
 using System;
 
 [System.Serializable]
-public struct CinematicActor // ¹è¿ì
+public struct CinematicActor // ë°°ìš°
 {
     public string actorId;
     public Transform actorTransform;
 }
 
 [System.Serializable]
-public struct CinematicMoveAction // ÁÂÇ¥ ÀÌµ¿
+public struct CinematicMoveAction // ì¢Œí‘œ ì´ë™
 {
     public string eventName;
     public string targetActorId;
 
-    [Header("ÇöÀç À§Ä¡ ±âÁØ ÀÌµ¿·® (X: ÁÂ/¿ì, Y: »ó/ÇÏ)")]
+    [Header("í˜„ì¬ ìœ„ì¹˜ ê¸°ì¤€ ì´ë™ëŸ‰ (X: ì¢Œ/ìš°, Y: ìƒ/í•˜)")]
     public Vector2 moveOffset;
     public float duration;
 }
 
 [System.Serializable]
-public struct CinematicFlipAction // ÁÂ¿ì ¹İÀü
+public struct CinematicFlipAction // ì¢Œìš° ë°˜ì „
 {
     public string eventName;
     public string targetActorId;
-    public bool isFaceFlip;         // Ã¼Å©ÇÏ¸é ¹İÀü, ÇØÁ¦ÇÏ¸é ±×´ë·Î
+    public bool isFaceFlip;         // ì²´í¬í•˜ë©´ ë°˜ì „, í•´ì œí•˜ë©´ ê·¸ëŒ€ë¡œ
 }
 
 [System.Serializable]
-public struct CinematicAnimAction // ¾Ö´Ï¸ŞÀÌ¼Ç
+public struct CinematicAnimAction // ì• ë‹ˆë©”ì´ì…˜
 {
-    public string eventName;        // JSON¿¡¼­ È£ÃâÇÒ ÀÌº¥Æ® ÀÌ¸§ (¿¹: "¿ëº´A_³î¶÷")
-    public string targetActorId;    // ¾Ö´Ï¸ŞÀÌ¼ÇÀ» ½ÇÇàÇÒ ¹è¿ìÀÇ ID
-    public string triggerName;      // Animator¿¡ ¼³Á¤ÇØµĞ Trigger ÆÄ¶ó¹ÌÅÍ ÀÌ¸§ (¿¹: "Surprise")
-    public float waitDuration;      // [Ãß°¡] ÀÌ ¾Ö´Ï¸ŞÀÌ¼Ç ¿¬ÃâÀ» À§ÇØ ´ëÈ­¸¦ ¸ØÃâ ½Ã°£ (ÃÊ)
+    public string eventName;        // JSONì—ì„œ í˜¸ì¶œí•  ì´ë²¤íŠ¸ ì´ë¦„ (ì˜ˆ: "ìš©ë³‘A_ë†€ëŒ")
+    public string targetActorId;    // ì• ë‹ˆë©”ì´ì…˜ì„ ì‹¤í–‰í•  ë°°ìš°ì˜ ID
+    public string triggerName;      // Animatorì— ì„¤ì •í•´ë‘” Trigger íŒŒë¼ë¯¸í„° ì´ë¦„ (ì˜ˆ: "Surprise")
+    public float waitDuration;      // [ì¶”ê°€] ì´ ì• ë‹ˆë©”ì´ì…˜ ì—°ì¶œì„ ìœ„í•´ ëŒ€í™”ë¥¼ ë©ˆì¶œ ì‹œê°„ (ì´ˆ)
 }
 
 public class CinematicActionController : MonoBehaviour
 {
-    [Header("1. ¾À¿¡ µîÀåÇÏ´Â ¹è¿ì(NPC) ¸ñ·Ï")]
+    [Header("1. ì”¬ì— ë“±ì¥í•˜ëŠ” ë°°ìš°(NPC) ëª©ë¡")]
     public List<CinematicActor> actors = new List<CinematicActor>();
 
-    [Header("2. ½ÇÇàÇÒ ¿¬Ãâ(»ó´ëÀû ÀÌµ¿) ¸ñ·Ï")]
+    [Header("2. ì‹¤í–‰í•  ì—°ì¶œ(ìƒëŒ€ì  ì´ë™) ëª©ë¡")]
     public List<CinematicMoveAction> moveActions = new List<CinematicMoveAction>();
 
-    [Header("3. ½ÇÇàÇÒ ¿¬Ãâ(¾Ö´Ï¸ŞÀÌ¼Ç) ¸ñ·Ï")]
+    [Header("3. ì‹¤í–‰í•  ì—°ì¶œ(ì• ë‹ˆë©”ì´ì…˜) ëª©ë¡")]
     public List<CinematicAnimAction> animActions = new List<CinematicAnimAction>(); 
 
-    [Header("4. ½ÇÇàÇÒ ¿¬Ãâ(ÁÂ¿ì ¹İÀü) ¸ñ·Ï")]
+    [Header("4. ì‹¤í–‰í•  ì—°ì¶œ(ì¢Œìš° ë°˜ì „) ëª©ë¡")]
     public List<CinematicFlipAction> flipActions = new List<CinematicFlipAction>();
 
     private void Start()
     {
+        if (DialogueManager.Instance == null)
+        {
+            Debug.LogWarning("[CinematicActionController] DialogueManager.Instanceê°€ ì¡´ì¬í•˜ì§€ ì•Šì•„ ì´ë²¤íŠ¸ë¥¼ êµ¬ë…í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            return;
+        }
+
         DialogueManager.Instance.onEventTriggered += OnDialogueEvent;
         DialogueManager.Instance.onActionTriggered += OnDialogueActionAsync;
     }
@@ -71,32 +77,32 @@ public class CinematicActionController : MonoBehaviour
 
     private void OnDialogueEvent(string eventName)
     {
-        Debug.Log($"[CinematicActionController] ÀÌº¥Æ® °¨Áö: {eventName}");
+        if (string.IsNullOrEmpty(eventName)) return;
+
+        Debug.Log($"[CinematicActionController] ì´ë²¤íŠ¸ ê°ì§€: {eventName}");
 
         if (eventName.StartsWith("Show_"))
         {
-            // "Show_" ºÎºĞÀ» Àß¶ó³»°í µÚ¿¡ ÀÖ´Â ¹è¿ì ID¸¸ ÃßÃâÇÕ´Ï´Ù. (¿¹: "Show_01-1" -> "01-1")
-            string actorId = eventName.Replace("Show_", "").Trim();
+            // "Show_" ë¶€ë¶„ì„ ì˜ë¼ë‚´ê³  ë’¤ì— ìˆëŠ” ë°°ìš° IDë§Œ ì¶”ì¶œí•©ë‹ˆë‹¤. (ì˜ˆ: "Show_01-1" -> "01-1")
+            string actorId = eventName.Substring("Show_".Length).Trim();
             Transform actor = GetActor(actorId);
             if (actor != null) actor.gameObject.SetActive(true);
-            return; // Ã³¸®°¡ ³¡³µÀ¸´Ï ¾Æ·¡ ·ÎÁ÷Àº °Ç³Ê¶İ´Ï´Ù.
+            return; // ì²˜ë¦¬ê°€ ëë‚¬ìœ¼ë‹ˆ ì•„ë˜ ë¡œì§ì€ ê±´ë„ˆëœë‹ˆë‹¤.
         }
         else if (eventName.StartsWith("Hide_"))
         {
-            string actorId = eventName.Replace("Hide_", "").Trim();
+            string actorId = eventName.Substring("Hide_".Length).Trim();
             Transform actor = GetActor(actorId);
             if (actor != null) actor.gameObject.SetActive(false);
             return;
         }
 
-        // Ãë¼Ò ÅäÅ« °¡Á®¿À±â
-        CancellationToken ct = default;
-        if (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null)
-        {
-            ct = DialogueManager.Instance.PlaybackCts.Token;
-        }
+        // ì·¨ì†Œ í† í° ê°€ì ¸ì˜¤ê¸°
+        CancellationToken ct = (DialogueManager.Instance != null && DialogueManager.Instance.PlaybackCts != null)
+            ? DialogueManager.Instance.PlaybackCts.Token
+            : this.GetCancellationTokenOnDestroy();
 
-        // 1. ÀÌµ¿ ¾×¼Ç °Ë»ç
+        // 1. ì´ë™ ì•¡ì…˜ ê²€ì‚¬
         foreach (var action in moveActions)
         {
             if (action.eventName == eventName)
@@ -122,13 +128,13 @@ public class CinematicActionController : MonoBehaviour
                     if (spriteRenderer != null)
                     {
                         spriteRenderer.flipX = action.isFaceFlip;
-                        Debug.Log($"[CinematicAction] {action.targetActorId}ÀÇ ½Ã¼±ÀÌ {(action.isFaceFlip ? "¿ŞÂÊ" : "¿À¸¥ÂÊ")}À¸·Î º¯°æµÊ");
+                        Debug.Log($"[CinematicAction] {action.targetActorId}ì˜ ì‹œì„ ì´ {(action.isFaceFlip ? "ì™¼ìª½" : "ì˜¤ë¥¸ìª½")}ìœ¼ë¡œ ë³€ê²½ë¨");
                     }
                 }
             }
         }
 
-        // 2. [Ãß°¡µÊ] ¾Ö´Ï¸ŞÀÌ¼Ç ¾×¼Ç °Ë»ç
+        // 2. [ì¶”ê°€ë¨] ì• ë‹ˆë©”ì´ì…˜ ì•¡ì…˜ ê²€ì‚¬
         foreach (var action in animActions)
         {
             if (action.eventName == eventName)
@@ -137,17 +143,17 @@ public class CinematicActionController : MonoBehaviour
 
                 if (actor != null)
                 {
-                    // ¹è¿ì ¿ÀºêÁ§Æ®(¶Ç´Â ±× ÀÚ½Ä)¿¡ ÀÖ´Â Animator ÄÄÆ÷³ÍÆ®¸¦ Ã£½À´Ï´Ù.
+                    // ë°°ìš° ì˜¤ë¸Œì íŠ¸(ë˜ëŠ” ê·¸ ìì‹)ì— ìˆëŠ” Animator ì»´í¬ë„ŒíŠ¸ë¥¼ ì°¾ìŠµë‹ˆë‹¤.
                     Animator anim = actor.GetComponentInChildren<Animator>();
                     if (anim != null)
                     {
-                        // ÁöÁ¤µÈ Trigger¸¦ ¹ßµ¿½ÃÄÑ ¾Ö´Ï¸ŞÀÌ¼ÇÀ» Àç»ıÇÕ´Ï´Ù.
+                        // ì§€ì •ëœ Triggerë¥¼ ë°œë™ì‹œì¼œ ì• ë‹ˆë©”ì´ì…˜ì„ ì¬ìƒí•©ë‹ˆë‹¤.
                         anim.SetTrigger(action.triggerName);
-                        Debug.Log($"[CinematicActionController] {action.targetActorId}ÀÇ '{action.triggerName}' ¾Ö´Ï¸ŞÀÌ¼Ç ½ÇÇà!");
+                        Debug.Log($"[CinematicActionController] {action.targetActorId}ì˜ '{action.triggerName}' ì• ë‹ˆë©”ì´ì…˜ ì‹¤í–‰!");
                     }
                     else
                     {
-                        Debug.LogWarning($"[CinematicActionController] {action.targetActorId}¿¡°Ô Animator ÄÄÆ÷³ÍÆ®°¡ ¾ø½À´Ï´Ù!");
+                        Debug.LogWarning($"[CinematicActionController] {action.targetActorId}ì—ê²Œ Animator ì»´í¬ë„ŒíŠ¸ê°€ ì—†ìŠµë‹ˆë‹¤!");
                     }
                 }
             }
@@ -156,7 +162,9 @@ public class CinematicActionController : MonoBehaviour
 
     private async UniTask OnDialogueActionAsync(string actionName, CancellationToken ct)
     {
-        // 1. ÀÌµ¿ ¾×¼Ç
+        if (string.IsNullOrEmpty(actionName)) return;
+
+        // 1. ì´ë™ ì•¡ì…˜
         foreach (var action in moveActions)
         {
             if (action.eventName == actionName)
@@ -165,7 +173,7 @@ public class CinematicActionController : MonoBehaviour
                 if (actor != null)
                 {
                     Vector3 targetPos = actor.position + (Vector3)action.moveOffset;
-                    // ÀÌµ¿ÀÌ ³¡³¯ ¶§±îÁö ´ë±â
+                    // ì´ë™ì´ ëë‚  ë•Œê¹Œì§€ ëŒ€ê¸°
                     await MoveNpcAsync(actor, targetPos, action.duration, ct);
                     return;
                 }
@@ -183,13 +191,13 @@ public class CinematicActionController : MonoBehaviour
                     if (spriteRenderer != null)
                     {
                         spriteRenderer.flipX = action.isFaceFlip;
-                        Debug.Log($"[CinematicAction] {action.targetActorId}ÀÇ ½Ã¼±ÀÌ {(action.isFaceFlip ? "¿ŞÂÊ" : "¿À¸¥ÂÊ")}À¸·Î º¯°æµÊ");
+                        Debug.Log($"[CinematicAction] {action.targetActorId}ì˜ ì‹œì„ ì´ {(action.isFaceFlip ? "ì™¼ìª½" : "ì˜¤ë¥¸ìª½")}ìœ¼ë¡œ ë³€ê²½ë¨");
                     }
                 }
             }
         }
 
-        // 2. ¾Ö´Ï¸ŞÀÌ¼Ç ¾×¼Ç
+        // 2. ì• ë‹ˆë©”ì´ì…˜ ì•¡ì…˜
         foreach (var action in animActions)
         {
             if (action.eventName == actionName)
@@ -200,8 +208,11 @@ public class CinematicActionController : MonoBehaviour
                     Animator anim = actor.GetComponentInChildren<Animator>();
                     if (anim != null) anim.SetTrigger(action.triggerName);
 
-                    // ¿¬ÃâÀ» º¸¿©ÁÖ±â À§ÇØ ¼³Á¤ÇÑ ½Ã°£¸¸Å­ ´ë±â
-                    await UniTask.Delay(TimeSpan.FromSeconds(action.waitDuration), cancellationToken: ct);
+                    // ì—°ì¶œì„ ë³´ì—¬ì£¼ê¸° ìœ„í•´ ì„¤ì •í•œ ì‹œê°„ë§Œí¼ ëŒ€ê¸°
+                    if (action.waitDuration > 0f)
+                    {
+                        await UniTask.Delay(TimeSpan.FromSeconds(action.waitDuration), cancellationToken: ct);
+                    }
                     return;
                 }
             }
@@ -212,18 +223,29 @@ public class CinematicActionController : MonoBehaviour
     {
         if (npc == null) return;
 
+        if (duration <= 0f)
+        {
+            npc.position = targetPos;
+            return;
+        }
+
         Vector3 startPos = npc.position;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             ct.ThrowIfCancellationRequested();
+            if (npc == null) return;
+
             elapsed += Time.deltaTime;
-            npc.position = Vector3.Lerp(startPos, targetPos, elapsed / duration);
+            npc.position = Vector3.Lerp(startPos, targetPos, Mathf.Clamp01(elapsed / duration));
             await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken: ct);
         }
 
-        npc.position = targetPos;
+        if (npc != null)
+        {
+            npc.position = targetPos;
+        }
     }
 
     private Transform GetActor(string actorId)
