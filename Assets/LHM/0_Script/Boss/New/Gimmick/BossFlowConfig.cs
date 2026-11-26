@@ -17,6 +17,13 @@ namespace UnMachine.Boss
         [Tooltip("2페이즈 휴식(초). spec: boss.md 5장 Resting, 8장 2페이즈")]
         [SerializeField, Min(0f)] private float _restSecondsPhase2 = 0.8f;
 
+        [Header("휴식 걷기 (BossLocomotion, T32)")]
+        [Tooltip("Resting 중 플레이어 쪽으로 걷는 속도 (Unit/초). spec: boss.md 4장 걷는 속도 3, 5장 Resting")]
+        [SerializeField, Min(0f)] private float _restWalkSpeed = 3f;
+
+        [Tooltip("플레이어와 x 거리가 이 값(Unit) 이하면 정지. 〔임시값〕 기획서 값 없음 — BACKLOG T32·기존 RestingState 1.5")]
+        [SerializeField, Min(0f)] private float _restWalkStopDistance = 1.5f;
+
         [Header("예고·반격 틈")]
         [Tooltip("예고 최소 길이(초). 패턴 예고가 더 짧아도 이 값 보장. spec: boss.md 9장")]
         [SerializeField, Min(0f)] private float _minTelegraphSeconds = 0.4f;
@@ -43,6 +50,12 @@ namespace UnMachine.Boss
 
         [Tooltip("Groggy 배율. spec: boss.md 4장")]
         [SerializeField, Min(0f)] private float _groggyDamageScale = 1.5f;
+
+        /// <summary>Resting 걷기 속도 (Unit/초).</summary>
+        public float RestWalkSpeed => _restWalkSpeed;
+
+        /// <summary>Resting 걷기 정지 거리 (플레이어와 x 거리, Unit).</summary>
+        public float RestWalkStopDistance => _restWalkStopDistance;
 
         /// <summary>Core 상태 머신에 넘길 수치 묶음을 만든다.</summary>
         public BossFlowSettings ToSettings()

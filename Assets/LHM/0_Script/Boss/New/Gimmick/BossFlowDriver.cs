@@ -51,10 +51,14 @@ namespace UnMachine.Boss
         [SerializeField] private float _debugDamageMultiplier;
         [SerializeField] private bool _debugPhaseTransitionPending;
         [SerializeField] private string _debugPattern;
+        [SerializeField] private bool _debugWalkActive;
+        [SerializeField] private float _debugWalkVelocityX;
+        [SerializeField] private float _debugPlayerDistanceX;
 
         private BossFlowSettings _settings;
         private IBossPattern[] _patterns;
         private BossFlowMachine _machine;
+        private BossLocomotion _locomotion;
         private IBossPattern _currentPattern;
         private CancellationTokenSource _patternCts;
         private int _cycleIndex;
@@ -82,7 +86,15 @@ namespace UnMachine.Boss
                 return;
             }
 
+            if (!_boss.TryGetComponent(out Rigidbody2D body))
+            {
+                GameLog.Error(this, "[BossFlowDriver] 보스 오브젝트에 Rigidbody2D 없음 → 비활성화");
+                enabled = false;
+                return;
+            }
+
             _settings = _config.ToSettings();
+            _locomotion = new BossLocomotion(body, _boss, _config.RestWalkSpeed, _config.RestWalkStopDistance);
             _patterns = BuildLegacyPatterns();
         }
 
@@ -102,6 +114,7 @@ namespace UnMachine.Boss
             }
 
             CancelPattern();
+            StopWalking();
         }
 
         private void OnDestroy()
@@ -123,6 +136,7 @@ namespace UnMachine.Boss
             }
 
             CancelPattern();
+            StopWalking();
             ReleaseMachine();
 
             _machine = new BossFlowMachine(_settings);
@@ -143,11 +157,30 @@ namespace UnMachine.Boss
             }
 
             _machine.Tick(GameClock.World.DeltaTime);
+            _locomotion.Tick(GetWorldRate());
 
 #if UNITY_EDITOR
             HandleDebugInput();
             UpdateDebugView();
 #endif
+        }
+
+        private void FixedUpdate()
+        {
+            // spec: boss.md 5장 Resting 걷기. 물리 속도는 FixedUpdate 에서만 반영 (AI_RULES 2장).
+            if (_isRunning)
+            {
+                _locomotion.ApplyFixed();
+            }
+        }
+
+        /// <summary>
+        /// World 채널 진행 비율: 히트스톱 중 0, 평소 World 배율(적 배율 × 일시정지).
+        /// 걷기 속도에 곱해 World dt 와 같은 비율로 움직이게 한다.
+        /// </summary>
+        private static float GetWorldRate()
+        {
+            return GameClock.IsHitStopped ? 0f : GameClock.World.Scale;
         }
 
         private IBossPattern[] BuildLegacyPatterns()
@@ -172,6 +205,12 @@ namespace UnMachine.Boss
                 CancelPattern();
             }
 
+            // Resting 을 벗어나면 (정상 종료든 Stunned·Groggy·Dead 인터럽트든) 걷기를 멈춘다.
+            if (previous == BossFlowState.Resting)
+            {
+                StopWalking();
+            }
+
             // Dead 는 BossController 가 이미 처리했다 (Died 이벤트로 여기 들어옴).
             if (current == BossFlowState.Dead)
             {
@@ -189,6 +228,9 @@ namespace UnMachine.Boss
                     break;
                 case BossFlowState.Attacking:
                     StartCurrentPattern();
+                    break;
+                case BossFlowState.Resting:
+                    _locomotion.Begin();
                     break;
             }
         }
@@ -248,6 +290,14 @@ namespace UnMachine.Boss
             cts.Dispose();
         }
 
+        private void StopWalking()
+        {
+            if (_locomotion != null)
+            {
+                _locomotion.Stop();
+            }
+        }
+
         private void ReleaseMachine()
         {
             if (_machine == null)
@@ -279,7 +329,7 @@ namespace UnMachine.Boss
 
 #if UNITY_EDITOR
         private const float LabelWidth = 240f;
-        private const float LabelHeight = 70f;
+        private const float LabelHeight = 90f;
 
         private GUIStyle _labelStyle;
 
@@ -310,6 +360,9 @@ namespace UnMachine.Boss
             _debugDamageMultiplier = _machine.DamageMultiplier;
             _debugPhaseTransitionPending = _machine.IsPhaseTransitionPending;
             _debugPattern = _currentPattern != null ? _currentPattern.DebugName : string.Empty;
+            _debugWalkActive = _locomotion.IsActive;
+            _debugWalkVelocityX = _locomotion.TargetVelocityX;
+            _debugPlayerDistanceX = _locomotion.DistanceX;
         }
 
         private void OnGUI()
@@ -346,8 +399,11 @@ namespace UnMachine.Boss
                 Screen.height - screen.y - LabelHeight,
                 LabelWidth,
                 LabelHeight);
+            string walk = _debugWalkActive // guard-allow: 에디터 전용 디버그 라벨
+                ? $"\nWalk vx {_debugWalkVelocityX:F1} dx {_debugPlayerDistanceX:F1}"
+                : string.Empty;
             string text = $"{_machine.State} {_machine.StateRemaining:F2}s\n" + // guard-allow: 에디터 전용 디버그 라벨
-                          $"P{_machine.Phase} ×{_machine.DamageMultiplier:F1}\n{_debugPattern}";
+                          $"P{_machine.Phase} ×{_machine.DamageMultiplier:F1}\n{_debugPattern}{walk}";
             GUI.Label(rect, text, _labelStyle);
         }
 #endif
