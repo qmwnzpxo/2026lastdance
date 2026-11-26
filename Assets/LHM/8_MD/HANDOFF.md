@@ -1,139 +1,114 @@
 # docs/HANDOFF.md — 인수인계 문서
 
 > 작업이 끝날 때마다 **덮어쓴다.** 이전 기록은 git 히스토리에 남는다.
-> 다음 사람(또는 AI)이 이 문서 하나만 읽고 바로 이어서 작업할 수 있어야 한다.
-> 작성은 Claude 또는 현민 (사람)만 한다. Gemini는 `docs/REVIEW.md` 에 쓴다.
-> **커밋은 현민이 직접 한다.** Claude는 "커밋 제안"만 적는다.
+> ⏰ 마감 모드 (AI_RULES 0장): 짧은 형식, Gemini 리뷰 생략. **커밋은 현민이 직접 한다.**
 
 ---
 
-## 기본 정보
-- 작업 제목: 패턴 선택기 Core (`PatternSelector`·`DistanceBandTracker`·`PatternTableConfig`)
-- BACKLOG 작업 ID: T37
-- 기획서 근거: boss.md 11장(거리 구간·후보 표·체류 보정·반복 방지), 6장 P6(대체 P5), 17장 #8·#10
-- 작성자: Claude
-- 작성 일시: 2026-11-26
-- 모드: 일반
-- 브랜치: `main`
-- 기준 커밋: `9828d2b` (T37 착수 시 기록)
-- 커밋 상태: 미커밋 (새 파일 7개 + docs)
-- 상태: 🎮 현민 확인 대기 (컴파일·SO 에셋 생성만. 선택 동작은 T38 씬에서 확인)
-- 이전 작업: T33 — 커밋됨(`9828d2b`). 1차 로그 확인 통과 항목 있음. Gemini 리뷰 전
+## T46 ✂️ P1 점프 내려찍기 (T45 통합) — 🎮 현민 확인 대기
+- 근거: boss.md 6장 P1·4장·17장 #11, BACKLOG 축소 계획 6번 / 기준 커밋 `35b2fb2` (착수 시 기록)
 
-## 0. 이전 작업 리뷰 범위 (Gemini)
-- T33 은 `git diff 42cd5dd 9828d2b` (요청 사항은 `9828d2b` 의 HANDOFF 9장).
-- T32 는 `git diff 4b49e82 42cd5dd`, T31 은 `git diff 82d87de 4b49e82`, T29·T30 은 `git diff ae589ab 82d87de`, T27·T28·T22 는 `git diff d60f4f9 ae589ab`.
-
-## 1. 목표
-- 거리 구간(근 x<5 / 중 5≤x<20 / 원 x≥20) × 페이즈별 가중치로 다음 선택 단위(P1~P6·C1~C4)를 고르는 **순수 로직**.
-- 체류 보정(같은 구간 3초 이상 → 근:P1, 원:P2 ×2), 반복 방지(같은 단위 2연속이면 다음엔 제외, 콤보 = 단위 1), 사용 불가 대체(P6 → P5), `IRandom` 주입.
-- 범위 밖: Driver 연결·PatternRegistry·디버그 표시·강제 선택(T38), 콤보 실행(T55~). **기존 파일은 하나도 안 건드림** → 게임 동작 변화 없음.
-
-## 2. 변경 파일 (전부 새 파일)
-| 파일 | 계층 | 내용 |
-|---|---|---|
-| `Assets/LHM/0_Script/Boss/New/Core/SelectionUnit.cs` | Core | enum P1~P6, C1~C4 (직렬화 값 — 끝에만 추가) |
-| `Assets/LHM/0_Script/Boss/New/Core/DistanceBand.cs` | Core | enum Near / Mid / Far |
-| `Assets/LHM/0_Script/Boss/New/Core/PatternWeight.cs` | Core | readonly struct (단위, 가중치 ≥ 0) |
-| `Assets/LHM/0_Script/Boss/New/Core/DistanceBandTracker.cs` | Core | `Classify(|dx|)`, `Update(|dx|, dt)` → `Band`·`DwellSeconds`(구간 바뀐 프레임 0), `Reset()` |
-| `Assets/LHM/0_Script/Boss/New/Core/PatternTable.cs` | Core | 페이즈(1·2) × 구간 6개 목록 + 체류 3초·×2. 생성 시 검증(빈/전부 0/단위 중복 → `ArgumentException`)·복사 |
-| `Assets/LHM/0_Script/Boss/New/Core/PatternSelector.cs` | Core | `TrySelect(phase, band, dwell, out unit)`, `ResetHistory()`, 디버그용 `LastCandidates`·`LastDwellBonusApplied`·`LastWasSubstituted`·`LastSourceUnit`·`LastRepeatBanRelaxed`·`TryGetBannedUnit` |
-| `Assets/LHM/0_Script/Boss/New/Gimmick/PatternTableConfig.cs` | Runtime (SO) | 11장 표 초기값, 거리 5/20, 체류 3/×2, `ToTable()`, `CreateDistanceBandTracker()`. 메뉴 `UnMachine/Config/Pattern Table` |
-| `Assets/LHM/8_MD/HANDOFF.md`, `BACKLOG.md` | docs | 본 문서, T37 → 🎮 |
-
-- 파일 수 7개: BACKLOG 4개 → "파일 하나에 public 타입 하나" 때문에 enum·struct 분리 (현민 승인 2026-11-26).
-- 테스트 씬 툴(`BossTestSceneBuilder`) **수정 없음**: 씬에 붙일 컴포넌트가 없다. T38 에서 선택기 연결과 함께 갱신(필요하면 `PatternTableConfig` 에셋 자동 생성 포함).
-
-## 3. 동작 변화와 리스크
-- **게임 동작 변화 없음** (아무도 호출하지 않음).
-- `TrySelect` 순서: 표 가중치 → 체류 보정(원본 단위 기준) → 사용 불가면 대체(P6 → P5, 대체도 불가면 제외) → 반복 방지(**대체 후 단위** 기준) → `Value01 × 합계` 누적 추첨 → 기록.
-  - 반복 금지 때문에 후보가 0개면 반복 방지를 풀고 다시 고름 (`LastRepeatBanRelaxed`). 그래도 0개(전부 사용 불가)면 `false`, 기록 안 바뀜.
-  - 같은 구간에 P5 가 이미 있고 P6 이 P5 로 대체되면 후보 목록에 P5 가 두 줄 → 사실상 확률 합산 (2P 중거리: P5 3 + 1).
-- 결정성: 같은 시드 `SystemRandom(seed)` + 같은 입력 순서 → 같은 선택 순서. 체류 시간은 어댑터가 World dt 로 넣음.
-- 할당: 후보 리스트 재사용. `TrySelect` 는 패턴마다 1회 (매 프레임 아님). `Update(dx, dt)` 는 할당 없음.
-- 리스크:
-  - SO 인스펙터에서 목록을 비우거나 가중치를 전부 0 으로 두면 `ToTable()` 이 예외 → T38 어댑터에서 `GameLog.Error` 후 비활성 처리 예정.
-  - 1페이즈 표에 콤보·P6 를 넣어도 막지 않음 (표 그대로 사용).
-
-## 4. 정적 점검 (Claude — 실행 아님)
-| 항목 | 결과 |
+### 변경 파일
+| 파일 | 내용 |
 |---|---|
-| 컴파일 가능성 자체 점검 | 문제 없음으로 판단. asmdef 없음(전부 Assembly-CSharp) → `BossFlowMachine.RequireNonNegativeFinite`(internal) 접근 가능. `UnMachine.Core.Boss` 에서 상위 `UnMachine.Core.IRandom` 해석. 같은 이름 타입 기존에 없음(Grep). `Array.Empty`·`?? throw`·`out var` 계열 C# 9 범위. SO 의 `[Serializable] private struct Entry` + 배열 필드 초기값 → 새 에셋 생성 시 기본값 들어감. 120자 초과 줄 없음(PowerShell 글자 수) |
-| unity-guard | 문제 없음. Core 파일 `UnityEngine` 참조 0. `UnityEngine.Random`·`Time`·`Debug.Log`·코루틴·async 없음. `public` 필드 없음(`[SerializeField] private`). 문자열 보간은 예외 메시지·`ToString` 만 |
-| spec-check | ✅ 11장 거리 5/20 (경계값은 바깥 구간: 5 → 중, 20 → 원) / ✅ 1P 표 P3(5) P1(3) P2(1) · P5(4) P1(3) P2(3) · P2(5) P4(3) P5(2) / ✅ 2P 표 11장 값 그대로 (〔임시값〕 표시) / ✅ 체류 3초 이상 ×2, 근→P1·원→P2 / ✅ 반복 방지 2연속 → 제외, 콤보 = 단위 1 (17장 #10) / ✅ P6 → P5 대체 (6장 P6, BACKLOG T37) |
+| `Core/JumpSlamPhase.cs`, `Core/JumpSlamModel.cs` (새) | 도약 0.3 → 추적 1.2(그림자 x = 플레이어 x, 방 클램프) → 고정 0.4 → 낙하 0.2 → 착지. 남은 시간 이월 |
+| `Core/ShockwaveModel.cs` (새) | 한 방향 이동, 앞 끝이 벽에 닿으면 소멸 |
+| `Gimmick/Pattern/JumpSlamConfig.cs` (새) | 메뉴 `UnMachine/Config/Jump Slam (P1)`. 예고 0.5·틈 1.2·단계 시간·방 x(-20~20)·바닥 y 0·천장 30 +5·피해 8/4·속도 12·높이 1·폭 1·프리팹·Animator 트리거 이름 |
+| `Gimmick/Pattern/JumpSlamPattern.cs` (새) | `IBossPattern`. 화면 밖(추적·고정) = 몸체 콜라이더 Off + `SetUntargetable`, 낙하 시작에 On. 착지: 몸체 bounds 범위 피해 8 + 좌우 충격파. 취소 시 바닥 복귀 |
+| `Gimmick/Pattern/BossShockwave.cs`, `BossShadowMarker.cs`, `BossHitBox.cs` (새) | 충격파(ObjectPool, 1회 피해, Gizmo) / 그림자(추적 검정 → 고정 빨강) / 플레이어 박스 판정 |
+| `Gimmick/BossFlowDriver.cs` | `_jumpSlam` 지정 시 P1 = JumpSlamPattern (목록 P1 무시). 전환·사망 때 충격파 회수. 인스펙터 `Debug Jump Slam Phase` |
+| `BossController.cs` | `SetUntargetable(bool)` + TakeDamage 거부 1줄 (`IsInvulnerable`·자물쇠 변화 없음) |
+| `Editor/BossTestSceneBuilder.cs` | `JumpSlamConfig` 자동 생성·Driver 연결 |
 
-## 5. 에디터 작업 (현민)
-1. Unity Console 컴파일 에러 0 확인 → 새 `.cs` 7개의 `.meta` 생성됨.
-2. (선택, T38 전에 미리) Project 창 원하는 Config 폴더에서 우클릭 → `Create > UnMachine > Config > Pattern Table` → `PatternTableConfig.asset`.
-   - T38 테스트 씬 툴이 에셋이 없으면 만들게 할 예정이라 지금 안 만들어도 된다.
+- 프리팹이 없으면 **임시 사각형**(그림자 검정 띠, 충격파 주황 1×1)으로 동작 → T54 전에도 테스트 가능.
+- Animator 트리거(`JumpSlamLaunch`·`JumpSlamLand`)는 컨트롤러에 없으면 건너뜀 (로그 1줄). 웅크림 = Telegraph 0.5초(T39 하늘색 틴트), 별도 애니 없음.
+- C2·C3 는 아직 임시 레거시(Stomp) — T56 에서 교체.
 
-## 5-1. 확인 절차 (현민)
-> 선택기 동작(시드 재현, 체류 ×2 표시, 3연속 0회)은 BACKLOG 완료 기준대로 **T38 씬**에서 확인한다. 이번엔 아래만.
+### 에디터 작업 (현민)
+1. 테스트 씬 다시 생성(`UnMachine/Test Scene/Boss Arena`) → `JumpSlamConfig.asset` 자동 생성·연결. 기존 씬이면 Driver `Jump Slam` 칸에 `Create > UnMachine > Config > Jump Slam (P1)` 에셋 지정.
+2. 실제 보스 룸에서 쓰면 Config 의 방 x·바닥 y·천장 y 를 그 룸에 맞춘다.
 
-| # | 조작 | 기대 결과 | 근거 |
-|---|---|---|---|
-| 1 | 에디터 포커스 → 컴파일 | Console 에러 0, 경고 중 새 파일 이름 없음 | — |
-| 2 | 위 2번으로 에셋 생성 → 인스펙터 | 거리 5 / 20, 체류 3 / 2, 1페이즈 3목록·2페이즈 3목록이 11장 표와 같음 (단위 드롭다운 P1~C4) | 11장 |
-| 3 | 원거리 하한을 3 으로 입력 | 근거리 상한(5)으로 자동 보정 | OnValidate |
-| 4 | 기존 Test_Boss 씬 플레이 (선택) | T33 과 같은 동작 (변화 없음) | 회귀 |
+### 확인할 것
+1. Driver `Force Unit` = P1: 하늘색 예고 → 보스가 위로 사라짐 → 바닥 그림자가 플레이어를 1.2초 따라오다 빨갛게 멈춤(0.4초) → 그 자리 착지. 벽 쪽으로 가도 그림자가 방 밖으로 안 나감.
+2. 그림자 밖이면 착지 피해 0, 위면 8. 좌우 주황 충격파: 서 있으면 4, 점프로 넘으면 0. 벽에서 사라짐.
+3. 화면 밖 동안 공격해도 피해·그로기 0, 체력바 자물쇠 안 뜸. 착지 후 Punishable 1.2초(라벨) 동안 ×1.2. F1(전환) 을 공중에서 누르면 보스가 바닥으로 내려오고 충격파 사라짐.
 
-**Console 에 나오면 안 되는 것**: `CS` 컴파일 에러, `The type or namespace name 'SelectionUnit'…`, SO 직렬화 경고(`Serialization depth`).
+### 질문
+- 도약 0.3초·낙하 0.2초·충격파 폭 1 은 〔임시값〕(기획서 없음). 웅크림 애니를 Telegraph 에 붙일지는 T54 때 결정.
 
-## 5-2. 현민 확인 결과
-- (대기)
+### 커밋 제안
+- `[feat] T46 P1 점프 내려찍기: JumpSlamModel·Pattern·충격파·그림자 + 화면 밖 피해 거부` —
+  `Core/JumpSlamPhase.cs`, `Core/JumpSlamModel.cs`, `Core/ShockwaveModel.cs`, `Gimmick/Pattern/` 폴더 전체(5개 .cs),
+  `Gimmick/BossFlowDriver.cs`, `BossController.cs`, `Editor/BossTestSceneBuilder.cs`, `8_MD/HANDOFF.md`, `BACKLOG.md`
+  (+ 각 `.meta`, `Pattern` 폴더 `.meta`, 새로 생기는 `JumpSlamConfig.asset`). 아래 T38~T63 묶음과 같은 파일(Driver·Controller·Builder)을 건드리므로 그 묶음 먼저 또는 함께 커밋.
 
-## 6. 기획서와 다르게 한 점
-| 기획서 / BACKLOG | 구현 | 이유 |
-|---|---|---|
-| BACKLOG 파일 4개 | 7개 (enum·struct 분리) | AI_RULES 3장 "파일 하나에 public 타입 하나", 현민 승인 |
-| (명시 없음) 반복 방지로 후보가 0개 | 반복 허용 | 보스가 멈추지 않게. v1 "2연속 허용, 3번째 교체"와 충돌 없음 (후보 ≥ 2 면 3연속 0회 보장) |
-| (명시 없음) 반복 방지 판정 단위 | 대체 후 단위 | P6 → P5 대체가 끼어도 같은 패턴 3연속 금지 |
+---
 
-## 7. 결정 사항
-- Core 는 SO 를 모른다: `PatternTableConfig.ToTable()` → `PatternTable`, `CreateDistanceBandTracker()` → `DistanceBandTracker`.
-- 사용 가능 판정은 생성 시 `Func<SelectionUnit, bool>` 한 번 주입 (T38·T50 에서 드론 수로 P6 판정).
-- 체류 보정·대체 규칙은 기획서 고정 규칙이라 Core 상수 매핑 (`TryGetDwellEscapeUnit`, `TryGetSubstitute`), 수치(3초·×2·5·20)는 SO.
+## 기본 정보 (이전 묶음)
+- 작업: T38 ✂️ 선택기 연결 + T39 ✂️ 색 예고 + T60·T61·T63 ✂️ 그로기 (전부 미커밋, 한 묶음)
+- 근거: boss.md 11장·9장·7장·15장, BACKLOG "★ 1주 축소 계획" 1~5번
+- 기준 커밋: `35b2fb2` (T38 착수 시 기록, 이후 작업도 같은 기준)
+- 상태: 🎮 현민 확인 대기 (T29~T33·T37 도 이 씬에서 함께 확인)
 
-## 8. 알려진 문제 / 미완료
-- 선택기 연결·디버그 표시·강제 선택 = T38, 콤보 실행 = T55~, P6 드론 판정 = T50.
-- (T33 에서 이어짐) 전환 연출 T34, 자물쇠 T21, Animator 8~12 T36.
+## 변경 파일
+| 파일 | 내용 |
+|---|---|
+| `Assets/LHM/0_Script/Boss/New/Gimmick/PatternRegistry.cs` (새) | 단위 → `IBossPattern` 등록·조회 |
+| `Assets/LHM/0_Script/Boss/New/Gimmick/BossFlowDriver.cs` | 고정 순환(`_legacyCycle`) 삭제 → 선택기. `_patternTable`(필수)·단위→레거시 목록 `_unitPatterns`·드론 상한 1·고정 시드·강제 선택 단위·디버그(구간·체류·후보·최근 2개, 머리 위 라벨 4번째 줄). 콤보 = 첫 패턴만 + 경고 로그. 선택 실패 시 P5 로 대체 |
+| `Assets/LHM/0_Script/Boss/New/Gimmick/LegacyPatternBridge.cs` | 레거시 자체 반복 방지 끔 (`useRepeatGuard: false`) |
+| `Assets/LHM/0_Script/Boss/New/BossAttackPatterns.cs` | `ExecutePattern(..., bool useRepeatGuard = true)` 매개변수 1개 (기존 BT 호출은 그대로) |
+| `Assets/LHM/0_Script/Boss/New/Editor/BossTestSceneBuilder.cs` | Driver 에 `PatternTableConfig` 연결 (없으면 `Assets/LHM/3_ScriptableObject/PatternTableConfig.asset` 새로 생성), `BossTelegraphView` 추가·연결 |
+| (T39) `Core/TelegraphSignal.cs`, `Core/TelegraphColor.cs` (새) | 단위 → 색(빨강 깜빡 2회 / 노랑 / 하양) + `IsLit(경과, 길이)`. 콤보 = 첫 패턴 색 (C1 빨강, C2·C3 하양, C4 노랑) |
+| (T39) `Gimmick/BossTelegraphView.cs` (새) | Telegraph 동안 보스 SpriteRenderer 전체 곱셈 틴트, 끝나면 원래 색. World 채널 따름 |
+| (T39) `Gimmick/BossFlowDriver.cs` | `FlowStateChanged` 이벤트, `CurrentUnit`, `StateRemaining` 공개 |
 
-## 9. 리뷰어에게 요청
-- 반복 방지를 **대체 후 단위**로 세는 것, 후보 0개면 반복을 허용하는 것.
-- 체류 보정을 대체 전 원본 단위에 붙이는 것 (P1·P2 는 대체 대상이 아니라 현재 차이 없음).
-- `DistanceBandTracker` 가 구간이 바뀐 프레임의 dt 를 체류에 넣지 않는 것.
-- `PatternTable` 검증 범위(빈 목록·전부 0·단위 중복)가 적절한지.
-- (0장) T33 이전 범위.
+| (T60) `Core/GroggyGauge.cs`, `Gimmick/GroggyConfig.cs` (새) | 최대 100, 마지막 증가 3초 뒤 초당 5 감소, 가득 차면 유지. Config: 벽 +25, **피해 1당 +0.5 〔임시값〕** (메뉴 `UnMachine/Config/Groggy`) |
+| (T61) `Gimmick/BossGroggyDriver.cs` (새) | 피해·벽 충돌 → 게이지, 가득 → `EnterGroggy`(4초 ×1.5), Groggy 끝나면 0. Groggy·전환·사망 중엔 안 오름. 에디터 F5 = +25, 인스펙터 값·마지막 출처 |
+| (T61) `BossController.cs` | `Damaged(float 배율 전 피해)` 이벤트 +3줄 |
+| (T61) `BossAttackPatterns.cs` | `ChargeHitWall` 이벤트 (레거시 돌진 벽 충돌 지점 1줄) |
+| (T61) `Gimmick/BossFlowDriver.cs` | `State`·`IsRunning`·`EnterGroggy()` 공개 |
+| (T63) `Gimmick/BossGroggyBar.cs` (새) | Filled 이미지 fillAmount = 게이지, 전투 시작 때 표시·사망 때 숨김 |
 
-## 9-1. 규칙 변경 제안 (현민 판단, T31 에서 이어짐)
-- AI_RULES 0장 2번 예외에 추가: "테스트 씬 툴은 필요한 **Config SO 가 프로젝트에 없을 때만** 기본값으로 **새 `.asset`** 을 만들 수 있다 (기존 에셋 수정·덮어쓰기 금지)."
-- 작업 절차에 추가: "씬 테스트가 필요한 작업은 `BossTestSceneBuilder`(테스트 씬 툴)도 함께 갱신해, 메뉴 한 번으로 그 작업을 테스트할 수 있는 새 Test_* 씬이 나오게 한다." (현민 요청 2026-11-26)
+- (T61) 벽 충돌 시 v2 Stunned(×1.2)는 들어가지 않음 — 레거시 돌진 자체 스턴을 그대로 씀 (축소안). 벽 충돌로 게이지가 가득 차면 Groggy 가 레거시 스턴을 끊고 들어감.
+- (T39) "하양"은 곱셈 틴트로 안 보여서 **옅은 하늘색(0.6, 0.85, 1)** 기본값. View 인스펙터에서 3색 조정 가능.
+- (T39) 보스 자식의 이펙트 스프라이트도 함께 물듦 (Awake 시점에 있던 것만). 거슬리면 View `Renderers` 에 본체만 지정.
 
-## 10. 질문 (현민 답변 필요)
-- (T37) 반복 방지로 후보가 하나도 안 남으면 반복 허용 — 괜찮은지 (기본: 허용).
-- (T37) 2P 중거리처럼 P6 가 P5 로 대체되면 P5 확률이 합산됨 (3+1) — 괜찮은지 (기본: 합산).
-- (T37) 페이즈 전환 때 반복 방지 기록을 지울지 (기본: 유지 — 1P 마지막 2개가 2P 첫 선택에 영향).
-- (T33) AirBurst·Bounce 펠릿이 전환 때 남으면 추적·회수를 추가할지 (기본: 그대로).
-- (T33) 2P 기믹 시작(`PhaseChanged`)이 전환 끝(1.5초 뒤)이어도 괜찮은지 (기본: 끝날 때).
-- (T32) 정지 거리 1.5 유지? 기획서 4장 표에 넣을지 (기본: Config 1.5 유지).
-- (T32) 2P Resting 이동도 걷기(속도 3)로 충분한지 (기본: 걷기).
-- (T22) 체력바 색상 경계도 `>= 0.5f` 로 맞출지 (기본: 그대로).
-- (T28) Player 채널 동기화 유지 여부 (기본 유지).
-- (T28) `GameClockDriver` 의 `Time.unscaledDeltaTime` 상한 여부 (기본: 그대로).
-- (T31) 패턴이 Stunned·Groggy 로 끊길 때 이미 쏜 발사체를 남길지 지울지 (기본: 그대로).
+- 리스크: **기존 씬의 Driver 는 `_patternTable` 이 비어 있어 비활성 → 보스가 기존 흐름(BT)으로 동작**하고 Console 에 Error 1줄. 아래 에디터 작업 1번으로 해결.
+- 기존 씬 Driver 의 레거시 순환 값(`_legacyCycle`)은 사라지고 새 목록 기본값이 들어간다.
 
-## 11. 다음 할 일
-1. 현민: 컴파일 확인 → (선택) 에셋 생성·인스펙터 확인 → 커밋 → Gemini 리뷰
-2. 다음 작업: T38 ✂️ (선택기 연결 + 레거시 영구 매핑 + 레거시 자체 반복 방지 끔, 디버그는 Driver 인스펙터만) — BACKLOG "1주 축소 계획"(2026-11-26) 기준
+## 에디터 작업 (현민)
+1. 컴파일 확인 → `UnMachine/Test Scene/Boss Arena` 로 Test_Boss 씬 **다시 생성** (PatternTableConfig 자동 연결).
+   - 씬을 다시 만들기 싫으면: 보스의 `BossFlowDriver` → `Pattern Table` 칸에 `PatternTableConfig` 에셋 지정 (없으면 `Create > UnMachine > Config > Pattern Table`).
 
-## 11-1. 커밋 제안 (현민이 판단해서 직접 커밋)
-- `[feat] T37 패턴 선택기 Core: 거리 구간·체류 보정·반복 방지·P6 대체 + PatternTableConfig` —
-  `Assets/LHM/0_Script/Boss/New/Core/SelectionUnit.cs`,
-  `Assets/LHM/0_Script/Boss/New/Core/DistanceBand.cs`,
-  `Assets/LHM/0_Script/Boss/New/Core/PatternWeight.cs`,
-  `Assets/LHM/0_Script/Boss/New/Core/DistanceBandTracker.cs`,
-  `Assets/LHM/0_Script/Boss/New/Core/PatternTable.cs`,
-  `Assets/LHM/0_Script/Boss/New/Core/PatternSelector.cs`,
-  `Assets/LHM/0_Script/Boss/New/Gimmick/PatternTableConfig.cs`,
-  `Assets/LHM/8_MD/HANDOFF.md`, `Assets/LHM/8_MD/BACKLOG.md`
-- **새 `.cs` 7개의 `.meta` 함께 커밋** (에디터 열면 Unity가 생성). 에셋을 만들었으면 `PatternTableConfig.asset` + `.meta` 도.
+2. (T63) 그로기 바 UI: 보스 체력바 Canvas 아래에 빈 오브젝트 `GroggyBar`(+ `BossGroggyBar`) → 자식 `Root`(배경 Image, 얇게) → 그 자식 `Fill`(Image, Type = Filled / Horizontal / Origin Left). `BossGroggyBar` 에 Groggy(보스의 `BossGroggyDriver`)·Boss·Root·Fill 지정. **Root 는 GroggyBar 자신이 아닌 자식**으로.
+   - 테스트 씬 툴은 `BossGroggyDriver`·`GroggyConfig` 까지만 자동 연결 (UI 는 수동).
+
+## 확인할 것
+1. 가까이 서 있으면 라벨 `Near` + Stomp(P3) 위주, 3초 넘게 서 있으면 후보 줄에 `P1:6 [체류×]`. 같은 단위 3연속 없음.
+2. F1 → 2P: 후보에 C1~C4·P6 등장, 콤보 선택 시 경고 로그 `콤보 C… 미구현`. 드론이 살아 있으면 `[대체 P6]` (P6 → P5).
+3. Driver `Force Unit` 켜고 단위 지정 → 그 패턴만 반복. `Use Fixed Seed` 켜고 같은 위치에서 재시작 → 같은 순서.
+4. (T39) 라벨이 Telegraph 일 때만 색: P2·P3 빨강 2번 깜빡, P4·P5·P6 노랑, P1(임시 Stomp) 하늘색. Attacking 되면 원래 색. Force Unit 으로 단위별 확인.
+5. (T61) 보스를 때리면 `BossGroggyDriver` 값 상승(피해 × 0.5), 3초 가만히 → 초당 5 감소. F5 4번 → 100 → 라벨 Groggy 4초·피해 로그 ×1.5 → 값 0. P2 벽 충돌 → +25(마지막 출처 "벽 충돌"). Groggy 중 때려도 값 안 오름. (T63) 바가 값대로 움직임.
+
+## 질문
+- (T37 이어짐) 반복 방지로 후보가 없으면 반복 허용 / P6→P5 대체 시 확률 합산 / 페이즈 전환 때 기록 유지 — 기본값대로 진행 중.
+
+## 커밋 제안
+- `[feat] T38 선택기 연결: PatternRegistry + 레거시 영구 매핑, 레거시 반복 방지 끔` —
+  `Assets/LHM/0_Script/Boss/New/Gimmick/PatternRegistry.cs`(+ `.meta`), `Gimmick/BossFlowDriver.cs`,
+  `Gimmick/LegacyPatternBridge.cs`, `BossAttackPatterns.cs`, `Editor/BossTestSceneBuilder.cs`,
+  `Assets/LHM/8_MD/HANDOFF.md`, `BACKLOG.md` (+ 새로 생긴 `PatternTableConfig.asset`·`Test_Boss.unity` 와 `.meta`)
+- `[feat] T39 예고 색: TelegraphSignal + BossTelegraphView (스프라이트 틴트)` —
+  `Core/TelegraphSignal.cs`, `Core/TelegraphColor.cs`, `Gimmick/BossTelegraphView.cs` (+ 각 `.meta`),
+  `Gimmick/BossFlowDriver.cs`, `Editor/BossTestSceneBuilder.cs` (T38 과 한 커밋으로 묶어도 됨)
+- `[feat] T60·T61·T63 그로기 게이지 (피해 비례·벽 충돌) + Groggy 진입 + 게이지 바` —
+  `Core/GroggyGauge.cs`, `Gimmick/GroggyConfig.cs`, `Gimmick/BossGroggyDriver.cs`, `Gimmick/BossGroggyBar.cs` (+ 각 `.meta`),
+  `BossController.cs`, `BossAttackPatterns.cs`, `Gimmick/BossFlowDriver.cs`, `Editor/BossTestSceneBuilder.cs`
+  (+ 새로 생기는 `GroggyConfig.asset`·`.meta`)
+- 문서 변경(AI_RULES·CLAUDE·BACKLOG 축소 계획)이 아직 미커밋이면 같이 또는 먼저 커밋.
+
+## 질문 (그로기)
+- 피해 1당 +0.5 면 게이지 100 = 피해 200 (HP 500 의 40%). 너무 빠르거나 느리면 `GroggyConfig` 에서 조정.
+
+## 다음 할 일
+- T55 콤보 계획·실행기 (로직) → T56 (C2 = P1 → Burst, C3 = P1×3).

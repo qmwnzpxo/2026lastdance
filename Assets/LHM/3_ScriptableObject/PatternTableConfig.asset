@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: adf00de5dbaf0f74d8a323caf6cadfde, type: 3}
+  m_Name: PatternTableConfig
+  m_EditorClassIdentifier: 
+  _nearMaxDistance: 5
+  _farMinDistance: 20
+  _dwellBonusSeconds: 3
+  _dwellBonusMultiplier: 2
+  _phase1Near:
+  - _unit: 2
+    _weight: 5
+  - _unit: 0
+    _weight: 3
+  - _unit: 1
+    _weight: 1
+  _phase1Mid:
+  - _unit: 4
+    _weight: 4
+  - _unit: 0
+    _weight: 3
+  - _unit: 1
+    _weight: 3
+  _phase1Far:
+  - _unit: 1
+    _weight: 5
+  - _unit: 3
+    _weight: 3
+  - _unit: 4
+    _weight: 2
+  _phase2Near:
+  - _unit: 2
+    _weight: 4
+  - _unit: 0
+    _weight: 3
+  - _unit: 6
+    _weight: 2
+  - _unit: 8
+    _weight: 1
+  _phase2Mid:
+  - _unit: 4
+    _weight: 3
+  - _unit: 0
+    _weight: 2
+  - _unit: 1
+    _weight: 2
+  - _unit: 7
+    _weight: 2
+  - _unit: 5
+    _weight: 1
+  _phase2Far:
+  - _unit: 1
+    _weight: 3
+  - _unit: 3
+    _weight: 3
+  - _unit: 9
+    _weight: 2
+  - _unit: 5
+    _weight: 2

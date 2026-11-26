@@ -13,6 +13,8 @@
 > 1. **커밋하지 않는다.** git은 읽기 전용 명령(`status`, `diff`, `log`, `show`, `rev-parse`, `blame`, `ls-files`)만 쓴다. 커밋 시점과 범위는 현민이 정한다.
 > 2. **Unity를 실행하지 않는다.** 검증은 현민이 씬에 배치해서 한다. 너는 현민이 바로 확인할 수 있게 "에디터 작업"과 "씬 테스트 절차"를 쓴다.
 
+> **⏰ 마감 모드 중 (2026-11-26~):** `AI_RULES.md` 0장 "마감 모드"가 아래 절차(HANDOFF 템플릿 전체 작성, 보고 5단계, 리뷰 반영, "한 세션 한 작업", "리뷰 생략 금지")보다 우선한다. 커밋 금지·Unity 실행 금지는 그대로.
+
 ### 사용할 수 있는 도구 (`.claude/`)
 - 슬래시 명령: `/start-session`, `/task`, `/fix-review`, `/light`, `/breakdown`, `/prompt-expert`, `/end-session`
 - 서브에이전트: `planner` (읽기 전용, 계획·기능 분해)

@@ -164,6 +164,9 @@ public class BossController : MonoBehaviour, IDamageable
 
     // 피격 무적
     private bool _isInvincible = false;
+
+    // P1 점프 화면 밖 피해 거부 (T46). 체력바 자물쇠(IsInvulnerable)에는 넣지 않는다 — spec: boss.md 15장
+    private bool _isUntargetable = false;
     private Coroutine _hitInvincibilityCoroutine;
 
     // 런타임 콘텍스트 (SO 기반 패턴 공유 참조 및 AnimationEventBridge)
@@ -189,6 +192,9 @@ public class BossController : MonoBehaviour, IDamageable
     /// 구독 직후에는 이벤트를 기다리지 말고 <see cref="IsInvulnerable"/> 를 먼저 읽는다.
     /// </summary>
     public event System.Action<bool> InvulnerableChanged;
+
+    /// <summary>피해가 실제로 들어갔을 때 (인자: 상태 배율 적용 전 피해). 그로기 게이지용 (T61).</summary>
+    public event System.Action<float> Damaged;
 
     /// <summary>현재 무적(자물쇠 표시 대상) 여부. 등장 중·(v2) 페이즈 전환 중 true. (T19에서 2페이즈 쉴드 추가 예정)</summary>
     public bool IsInvulnerable => ComputeInvulnerable();
@@ -1055,6 +1061,14 @@ public class BossController : MonoBehaviour, IDamageable
     }
 
     /// <summary>
+    /// (v2 P1) 화면 밖 동안 피해를 거부한다. 자물쇠 표시(IsInvulnerable)·InvulnerableChanged 는 바뀌지 않는다. (T46)
+    /// </summary>
+    public void SetUntargetable(bool value)
+    {
+        _isUntargetable = value;
+    }
+
+    /// <summary>
     /// facing 잠금 해제 — 이후 FacePlayer()가 다시 동작함
     /// </summary>
     public void UnlockFacing()
@@ -1154,6 +1168,10 @@ public class BossController : MonoBehaviour, IDamageable
         if (_isInvincible)
             return;
 
+        // v2 P1 화면 밖: 피해 거부 (자물쇠 표시 없음 — IsInvulnerable 과 별개, T46)
+        if (_isUntargetable)
+            return;
+
         // Attacking, Resting, Idle 상태에서만 피격 판정 (v2 는 예고·반격 틈·기절·그로기도 포함)
         if (currentState != BossState.Attacking &&
             currentState != BossState.Resting &&
@@ -1166,6 +1184,8 @@ public class BossController : MonoBehaviour, IDamageable
             StopCoroutine(_hitInvincibilityCoroutine);
         _hitInvincibilityCoroutine = StartCoroutine(HitInvincibilityCoroutine());
 
+        float rawDamage = damage;
+
         // v2: 상태별 받는 피해 배율 (spec: boss.md 4장)
         if (_isFlowV2Active)
         {
@@ -1176,6 +1196,7 @@ public class BossController : MonoBehaviour, IDamageable
         }
 
         currentHP -= damage;
+        Damaged?.Invoke(rawDamage);
 
         // DamageHandler HP 동기화 — OnHPChanged 이벤트를 통해 HP UI 갱신
         if (damageHandler != null)

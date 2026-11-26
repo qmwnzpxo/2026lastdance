@@ -140,6 +140,9 @@ public class BossAttackPatterns : MonoBehaviour
     [Tooltip("동일 패턴을 연속해서 사용할 수 있는 최대 횟수 (지정 횟수 이상 도달 시 랜덤 대체 패턴 실행)")]
     [SerializeField] private int maxConsecutiveSamePattern = 2;
 
+    /// <summary>돌진이 벽에 부딪혀 스턴에 들어갈 때 (v2 그로기 게이지용, T61).</summary>
+    public event System.Action ChargeHitWall;
+
     private AttackPattern lastExecutedPattern = AttackPattern.Wait3Sec; // 보조용 값으로 초기화
     private int consecutivePatternCount = 0;
 
@@ -308,12 +311,13 @@ public class BossAttackPatterns : MonoBehaviour
     /// <summary>
     /// 공격 패턴 실행
     /// </summary>
-    public IEnumerator ExecutePattern(AttackPattern pattern, BossController controller)
+    /// <param name="useRepeatGuard">false 면 동일 패턴 연속 대체를 건너뛴다 (v2 선택기가 반복 방지를 맡을 때, T38).</param>
+    public IEnumerator ExecutePattern(AttackPattern pattern, BossController controller, bool useRepeatGuard = true)
     {
         bossController = controller;
 
         // 보조 대기 패턴(Wait3Sec)이 아닐 때만 동일 패턴 연속 실행 검사 실행
-        if (pattern != AttackPattern.Wait3Sec && bossController != null)
+        if (useRepeatGuard && pattern != AttackPattern.Wait3Sec && bossController != null)
         {
             if (pattern == lastExecutedPattern)
             {
@@ -998,6 +1002,7 @@ public class BossAttackPatterns : MonoBehaviour
         if (hasHitWall)
         {
             Debug.Log("[Boss] 돌진 벽 충돌 - 스턴 시작");
+            ChargeHitWall?.Invoke(); // v2 그로기 +25 (T61)
 
             // 충돌 이펙트 (필요시 추가)
             // 스턴 애니메이션 트리거

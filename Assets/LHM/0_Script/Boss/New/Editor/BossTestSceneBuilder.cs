@@ -24,6 +24,17 @@ namespace UnMachine.EditorTools
         private const string FlowDriverConfigField = "_config";
         private const string FlowDriverBossField = "_boss";
         private const string FlowDriverPatternsField = "_attackPatterns";
+        private const string FlowDriverPatternTableField = "_patternTable";
+        private const string TelegraphViewDriverField = "_driver";
+        private const string DefaultJumpSlamConfigPath = "Assets/LHM/3_ScriptableObject/JumpSlamConfig.asset";
+        private const string FlowDriverJumpSlamField = "_jumpSlam";
+        private const string DefaultGroggyConfigPath = "Assets/LHM/3_ScriptableObject/GroggyConfig.asset";
+        private const string GroggyConfigField = "_config";
+        private const string GroggyBossField = "_boss";
+        private const string GroggyFlowDriverField = "_flowDriver";
+        private const string GroggyPatternsField = "_attackPatterns";
+        // T38: 프로젝트에 PatternTableConfig 가 하나도 없을 때만 새로 만든다
+        private const string DefaultPatternTablePath = "Assets/LHM/3_ScriptableObject/PatternTableConfig.asset";
         private const string BossUseFlowV2Field = "_useFlowV2";
         private const string BossFlowDriverField = "_flowDriver";
         private const string RequiredFilePrefix = "Test_";
@@ -303,8 +314,9 @@ namespace UnMachine.EditorTools
                 return false;
             }
 
-            BossFlowConfig config = ResolveFlowConfig();
-            if (config == null)
+            BossFlowConfig config = ResolveOrCreateConfig(_flowConfig, DefaultFlowConfigPath);
+            PatternTableConfig patternTable = ResolveOrCreateConfig<PatternTableConfig>(null, DefaultPatternTablePath);
+            if (config == null || patternTable == null)
             {
                 return false;
             }
@@ -319,44 +331,80 @@ namespace UnMachine.EditorTools
             AssignReference(driver, FlowDriverConfigField, config);
             AssignReference(driver, FlowDriverBossField, controller);
             AssignReference(driver, FlowDriverPatternsField, patterns);
+            AssignReference(driver, FlowDriverPatternTableField, patternTable);
+
+            // T46 P1 점프 내려찍기 (없으면 기본값으로 생성. 아레나 크기를 바꿨으면 방 x·천장 y 를 맞출 것)
+            JumpSlamConfig jumpSlam = ResolveOrCreateConfig<JumpSlamConfig>(null, DefaultJumpSlamConfigPath);
+            if (jumpSlam != null)
+            {
+                AssignReference(driver, FlowDriverJumpSlamField, jumpSlam);
+            }
+
+            // T39 예고 색
+            var telegraphView = controller.GetComponent<BossTelegraphView>();
+            if (telegraphView == null)
+            {
+                telegraphView = controller.gameObject.AddComponent<BossTelegraphView>();
+            }
+
+            AssignReference(telegraphView, TelegraphViewDriverField, driver);
+
+            // T61 그로기 게이지 (바 UI 는 에디터 작업)
+            GroggyConfig groggyConfig = ResolveOrCreateConfig<GroggyConfig>(null, DefaultGroggyConfigPath);
+            if (groggyConfig != null)
+            {
+                var groggy = controller.GetComponent<BossGroggyDriver>();
+                if (groggy == null)
+                {
+                    groggy = controller.gameObject.AddComponent<BossGroggyDriver>();
+                }
+
+                AssignReference(groggy, GroggyConfigField, groggyConfig);
+                AssignReference(groggy, GroggyBossField, controller);
+                AssignReference(groggy, GroggyFlowDriverField, driver);
+                AssignReference(groggy, GroggyPatternsField, patterns);
+            }
             AssignReference(controller, BossFlowDriverField, driver);
             AssignBool(controller, BossUseFlowV2Field, true);
             return true;
         }
 
-        /// <summary>지정 에셋 → 프로젝트에서 찾은 첫 BossFlowConfig → 없으면 기본 경로에 새로 만든다.</summary>
-        private BossFlowConfig ResolveFlowConfig()
+        /// <summary>
+        /// 지정 에셋 → 프로젝트에서 찾은 첫 T 에셋 → 없으면 기본 경로에 새로 만든다 (기존 에셋은 수정하지 않음).
+        /// </summary>
+        private static T ResolveOrCreateConfig<T>(T assigned, string defaultPath) where T : ScriptableObject
         {
-            if (_flowConfig != null)
+            string typeName = typeof(T).Name;
+            if (assigned != null)
             {
-                return _flowConfig;
+                return assigned;
             }
 
-            string[] guids = AssetDatabase.FindAssets("t:" + nameof(BossFlowConfig));
+            string[] guids = AssetDatabase.FindAssets("t:" + typeName);
             if (guids.Length > 0)
             {
                 string foundPath = AssetDatabase.GUIDToAssetPath(guids[0]);
                 if (guids.Length > 1)
                 {
-                    GameLog.Warn($"[TestScene] BossFlowConfig 가 {guids.Length}개 → 첫 번째 사용: {foundPath}");
+                    GameLog.Warn($"[TestScene] {typeName} 가 {guids.Length}개 → 첫 번째 사용: {foundPath}");
                 }
 
-                return AssetDatabase.LoadAssetAtPath<BossFlowConfig>(foundPath);
+                return AssetDatabase.LoadAssetAtPath<T>(foundPath);
             }
 
-            string directory = Path.GetDirectoryName(DefaultFlowConfigPath);
+            string directory = Path.GetDirectoryName(defaultPath);
             if (string.IsNullOrEmpty(directory) || !Directory.Exists(ToFullPath(directory)))
             {
-                GameLog.Error(null, $"[TestScene] Config 폴더가 없어 BossFlowConfig 를 만들지 못했다: {directory}");
+                GameLog.Error(null, $"[TestScene] Config 폴더가 없어 {typeName} 를 만들지 못했다: {directory}");
                 return null;
             }
 
-            // 기본값 = BossFlowConfig 필드 초기값 (boss.md 임시 수치)
-            string path = AssetDatabase.GenerateUniqueAssetPath(DefaultFlowConfigPath);
-            var created = CreateInstance<BossFlowConfig>();
+            // 기본값 = 필드 초기값 (boss.md 임시 수치)
+            string path = AssetDatabase.GenerateUniqueAssetPath(defaultPath);
+            var created = CreateInstance<T>();
             AssetDatabase.CreateAsset(created, path);
             AssetDatabase.SaveAssets();
-            GameLog.Info($"[TestScene] BossFlowConfig 새로 생성: {path}");
+            GameLog.Info($"[TestScene] {typeName} 새로 생성: {path}");
             return created;
         }
 

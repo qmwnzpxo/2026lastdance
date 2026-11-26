@@ -33,12 +33,12 @@
 
 | 순서 | ID | 축소 후 범위 | 완료 기준 (씬) |
 |---|---|---|---|
-| 1 | T38 ✂️ | 선택기 연결 + `PatternRegistry`. 매핑은 **영구**: P2→Charge, P3→Stomp, P4→Howitzer, P5→MachinegunBurst, P6→DroneSpawn, P1→임시 Stomp(T46 후 교체), 콤보 → 첫 패턴(T56·T57 후 교체). **레거시 `ExecutePattern` 의 자체 반복 방지(:316-335)를 Bridge 경로에서 끔** (선택기와 이중 적용 방지). 강제 선택 단위 유지. 디버그는 별도 View 파일 없이 Driver 인스펙터 읽기 전용(구간·체류·최근 2개) | 가까이 서면 Stomp 위주, 같은 단위 3연속 없음, F1 후 Drone 등장, 강제 단위 지정 시 그것만 반복 |
-| 2 | T39 ✂️ | 눈 오버레이 없이 **보스 SpriteRenderer 색 깜빡임**으로 예고 (Telegraph 동안만, 단위 → 빨강 2회 / 노랑 / 하양). 프리팹 작업 없음 → T40 삭제 | 예고 동안만 색이 바뀌고 끝나면 원래 색 |
-| 3 | T60 ✂️ | `GroggyGauge`: 최대 100, 출처는 **벽 충돌 +25 / 받은 피해량 × 0.5** 〔임시값〕 두 가지만, 3초 뒤 초당 5 감소, 100 → `Filled` 1회, Groggy 끝나면 0 | (T61 씬) |
-| 4 | T61 ✂️ | `BossGroggyDriver`: BossController 피해 이벤트로 게이지 증가 (**CSH 수정 없음, T70 삭제**), 레거시 `Charge()` 의 `hasHitWall`(:998) 지점에 이벤트 1줄 → +25, `Filled` → `EnterGroggy`(4초, ×1.5). F5 = +25 | 피해를 주면 게이지 상승, 벽 충돌 +25, 100 → Groggy 4초(로그 ×1.5) → 0 |
-| 5 | T63 ✂️ | 그로기 바만 (체력바 아래). "낙섬!" 아이콘 삭제 | 바가 게이지 값대로 움직임 |
-| 6 | T46 ✂️ (T45 통합) | P1 점프 내려찍기: 모델 + 패턴 한 작업. 방 경계 클램프는 `JumpSlamConfig` 의 최소/최대 x (Director 없음). 그림자·충격파 유지, 연출(T51) 없음 | T46 원래 기준에서 "자물쇠·연출" 항목 제외 |
+| 1 | T38 🎮 | 선택기 연결 + `PatternRegistry`. 매핑은 **영구**: P2→Charge, P3→Stomp, P4→Howitzer, P5→MachinegunBurst, P6→DroneSpawn, P1→임시 Stomp(T46 후 교체), 콤보 → 첫 패턴(T56·T57 후 교체). **레거시 `ExecutePattern` 의 자체 반복 방지(:316-335)를 Bridge 경로에서 끔** (선택기와 이중 적용 방지). 강제 선택 단위 유지. 디버그는 별도 View 파일 없이 Driver 인스펙터 읽기 전용(구간·체류·최근 2개) | 가까이 서면 Stomp 위주, 같은 단위 3연속 없음, F1 후 Drone 등장, 강제 단위 지정 시 그것만 반복 |
+| 2 | T39 🎮 | 눈 오버레이 없이 **보스 SpriteRenderer 색 깜빡임**으로 예고 (Telegraph 동안만, 단위 → 빨강 2회 / 노랑 / 하양). 프리팹 작업 없음 → T40 삭제 | 예고 동안만 색이 바뀌고 끝나면 원래 색 |
+| 3 | T60 🎮 | `GroggyGauge`: 최대 100, 출처는 **벽 충돌 +25 / 받은 피해량 × 0.5** 〔임시값〕 두 가지만, 3초 뒤 초당 5 감소, 100 → `Filled` 1회, Groggy 끝나면 0 | (T61 씬) |
+| 4 | T61 🎮 | `BossGroggyDriver`: BossController 피해 이벤트로 게이지 증가 (**CSH 수정 없음, T70 삭제**), 레거시 `Charge()` 의 `hasHitWall`(:998) 지점에 이벤트 1줄 → +25, `Filled` → `EnterGroggy`(4초, ×1.5). F5 = +25 | 피해를 주면 게이지 상승, 벽 충돌 +25, 100 → Groggy 4초(로그 ×1.5) → 0 |
+| 5 | T63 🎮 | 그로기 바만 (체력바 아래). "낙섬!" 아이콘 삭제 | 바가 게이지 값대로 움직임 |
+| 6 | T46 🎮 (T45 통합) | P1 점프 내려찍기: 모델 + 패턴 한 작업. 방 경계 클램프는 `JumpSlamConfig` 의 최소/최대 x (Director 없음). 그림자·충격파 유지, 연출(T51) 없음 | T46 원래 기준에서 "자물쇠·연출" 항목 제외 |
 | 7 | T55 | 원안 (콤보 계획·실행기, 로직) | (T56·T57 씬) |
 | 8 | T56 | 원안. C2 = P1 → 레거시 Burst, C3 = P1×3 | 원안 |
 | 9 | T57 ⚠ | 원안이지만 **레거시 `Charge()` 수정 필요**: 통과 후 0.3초 Brake 옵션, HitPlayer 결과 보고 / C4 는 레거시 Howitzer 가 "발사 끝" 신호를 줘야 함 | 원안 |
@@ -66,7 +66,7 @@
 | T21 | 체력바 자물쇠 v2 | 기존 표시 유지 |
 | T68·T69 | 레거시 정리 | 플레이어에게 보이는 가치 없음, 회귀 위험 큼 |
 
-**절차 축소 제안 (AI_RULES 변경 = 현민 판단, 아직 미반영)**
+**절차 축소 (✅ AI_RULES 0장 "마감 모드"에 반영, 2026-11-26)**
 - 마감까지 **Gemini 리뷰 생략** (👀 T22·T27·T28 포함). 리뷰는 T38·T46·T55 처럼 구조 작업만 원하면 요청.
 - HANDOFF 는 "변경 파일 / 에디터 작업 / 확인할 것 3줄 / 커밋 제안"만 (정적 점검·spec-check 표 생략).
 - 씬 테스트는 🎮 작업을 **묶어서** 한 번에 (T29~T33·T37 은 T38 씬에서 함께 확인).
@@ -145,8 +145,8 @@
 | ID | 유형 | 작업 | 완료 기준 (씬) | 범위 밖 | 의존 | 근거 | 예상 파일 | 상태 |
 |---|---|---|---|---|---|---|---|---|
 | T37 | 로직 | `PatternSelector`: `SelectionUnit`(P1~P6·C1~C4), 거리 구간(근 x<5 / 중 5≤x<20 / 원 x≥20) × 페이즈별 가중치, **체류 보정**(같은 구간 3초 이상 → 근:P1, 원:P2 가중치 ×2), **반복 방지**(같은 단위 2연속이면 다음엔 제외, 콤보 = 단위 1), 사용 불가 단위 대체(P6 → P5), `IRandom` + `DistanceBandTracker`(dt로 체류 시간) + `PatternTableConfig` SO(11장 표) 〔임시값: 2P 가중치〕 | (T38 씬) 고정 시드로 재시작하면 같은 선택 순서, 체류 3초 후 가중치 ×2 표시, 같은 단위 3연속 0회 | 콤보 실행(T55~) | T1 | 11장, 17장 #8·#10 | Core/PatternSelector.cs, Core/DistanceBandTracker.cs, Core/SelectionUnit.cs, Gimmick/PatternTableConfig.cs | 🎮 |
-| T38 | 어댑터 | 선택기 연결: Driver Idle → 선택기 → `PatternRegistry`(단위 → `IBossPattern`). 미구현 단위는 LegacyBridge 임시 매핑(P1·P3→Stomp, P2→Charge, P4→Howitzer, P5→MachinegunBurst, P6→DroneSpawn, 콤보 → 첫 패턴 + 경고 로그). 활성 드론 수로 P6 사용 가능 판정. 인스펙터 **"강제 선택 단위"**(에디터 전용, 패턴별 테스트용, 반복 방지 무시). 디버그 표시(구간·체류 시간·후보 가중치·최근 2개) | 가까이 서면 P3 위주, 근거리 3초 이상 → P1 가중치 ×2 표시, 같은 단위 3연속 없음, F1 후 2P 표(P6·콤보 후보 등장), 강제 단위 지정 시 그것만 반복 | 각 패턴 구현 | T31·T37 | 11장 | Gimmick/PatternRegistry.cs, Gimmick/PatternSelectorDebugView.cs, Gimmick/BossFlowDriver.cs(+) | ✂️ |
-| T39 | 연출 | 눈 색 예고: `TelegraphSignal`(Core: 단위 → 빨강 깜빡 2회 / 노랑 / 하양) + `BossTelegraphView`(눈 오버레이 색·깜빡임, Telegraph 동안만) | P2·P3 빨강 2회 깜빡, P4~P6 노랑, P1 하양, 예고 밖에서는 꺼짐 (T38 임시 매핑 상태로 확인) | 콤보 신호(T58), 2P 틴트(T34) | T38 | 9장, 17장 #7 | Core/TelegraphSignal.cs, Gimmick/BossTelegraphView.cs | ✂️ |
+| T38 | 어댑터 | 선택기 연결: Driver Idle → 선택기 → `PatternRegistry`(단위 → `IBossPattern`). 미구현 단위는 LegacyBridge 임시 매핑(P1·P3→Stomp, P2→Charge, P4→Howitzer, P5→MachinegunBurst, P6→DroneSpawn, 콤보 → 첫 패턴 + 경고 로그). 활성 드론 수로 P6 사용 가능 판정. 인스펙터 **"강제 선택 단위"**(에디터 전용, 패턴별 테스트용, 반복 방지 무시). 디버그 표시(구간·체류 시간·후보 가중치·최근 2개) | 가까이 서면 P3 위주, 근거리 3초 이상 → P1 가중치 ×2 표시, 같은 단위 3연속 없음, F1 후 2P 표(P6·콤보 후보 등장), 강제 단위 지정 시 그것만 반복 | 각 패턴 구현 | T31·T37 | 11장 | Gimmick/PatternRegistry.cs, Gimmick/PatternSelectorDebugView.cs, Gimmick/BossFlowDriver.cs(+) | 🎮 |
+| T39 | 연출 | 눈 색 예고: `TelegraphSignal`(Core: 단위 → 빨강 깜빡 2회 / 노랑 / 하양) + `BossTelegraphView`(눈 오버레이 색·깜빡임, Telegraph 동안만) | P2·P3 빨강 2회 깜빡, P4~P6 노랑, P1 하양, 예고 밖에서는 꺼짐 (T38 임시 매핑 상태로 확인) | 콤보 신호(T58), 2P 틴트(T34) | T38 | 9장, 17장 #7 | Core/TelegraphSignal.cs, Gimmick/BossTelegraphView.cs | 🎮 |
 | T40 | 에디터 | 보스 프리팹에 눈 오버레이 오브젝트(작은 원형 스프라이트), `PatternTableConfig` 에셋 | 현민 플레이: T38·T39 완료 기준 재확인 | — | T39 | — | (현민) | 🗑 |
 
 #### B-3. 패턴 P1~P6 (`IBossPattern` 구현 → Registry 임시 매핑 교체)
@@ -158,7 +158,7 @@
 | T43 | 로직 | `ChargeRunModel`: 돌진 진행(속도·dt), 플레이어 통과 판정(상대 x 부호 변화), 결과(HitPlayer / HitWall / ReachedEnd), 통과 후 경과 시간(C1 Brake용) | (T44 씬) 결과 로그가 실제 상황과 일치 | — | T29 | 6장 P2, 8장 C1 | Core/ChargeRunModel.cs | 🗑 |
 | T44 | 어댑터 | **P2 질주 돌진** `ChargePattern` + `ChargeConfig`: 예고 0.6초(runboost 1프레임 정지), 속도 18 직선 돌진(World dt), 몸체 피해 6·넉백 강, 벽 판정 = Config 레이어 마스크(방 벽 + 레이저 벽). HitWall → `EnterStunned` 1.5초 + `GroggyHit(+25)` 이벤트(게이지 연결은 T61) / HitPlayer·ReachedEnd → 틈 0.6초 | 피하면 벽에서 멈추고 Stunned 1.5초 + 로그 "그로기 +25", 맞으면 Punishable 0.6초, 일섬 통과 시 피해 0, 점프로는 못 넘음 | 잔상·스파크(T52), Brake(T57) | T38·T43 | 6장 P2, 4장 돌진 18, 3장 단단한 벽 | Gimmick/Pattern/ChargePattern.cs, Gimmick/Pattern/ChargeConfig.cs | 🗑 |
 | T45 | 로직 | `JumpSlamModel`(웅크림 0.5 → 도약 → 체공 추적 1.2초(그림자 x = 플레이어 x, 방 경계 클램프) → 고정 0.4초 → 낙하 → 착지 → 틈 1.2초) + `ShockwaveModel`(좌우 이동 속도 12, 높이, 경계 도달 시 소멸) | (T46 씬) 그림자가 1.2초 추적 후 0.4초 고정, 방 밖으로 안 나감 | — | T41 | 6장 P1 | Core/JumpSlamModel.cs, Core/ShockwaveModel.cs | 🗑 |
-| T46 | 어댑터 | **P1 점프 내려찍기** `JumpSlamPattern` + `JumpSlamConfig` + `BossShockwave`(풀) + `BossShadowMarker`: 천장 + 5 Unit 화면 밖 → 몸체 콜라이더 Off + 피해 거부(**자물쇠 없음**, `IsInvulnerable` 변화 없음), 낙하 시 콜라이더 On, 착지 범위 피해 8 + 좌우 충격파(피해 4, 속도 12, 높이 1) | 보스가 화면 밖으로 사라지고 그림자가 따라오다 멈춤, 그림자 밖이면 착지 피해 0, 충격파는 점프로 넘으면 0·서 있으면 4, 화면 밖 동안 공격 불가·자물쇠 안 뜸, 착지 후 Punishable 1.2초, F1·사망 시 충격파 사라짐 | 연출(T51) | T3·T38·T45 | 6장 P1, 4장 점프 높이, 15장, 17장 #2·#11 | Gimmick/Pattern/JumpSlamPattern.cs, Gimmick/Pattern/JumpSlamConfig.cs, Gimmick/Pattern/BossShockwave.cs, Gimmick/Pattern/BossShadowMarker.cs | ✂️ |
+| T46 | 어댑터 | **P1 점프 내려찍기** `JumpSlamPattern` + `JumpSlamConfig` + `BossShockwave`(풀) + `BossShadowMarker`: 천장 + 5 Unit 화면 밖 → 몸체 콜라이더 Off + 피해 거부(**자물쇠 없음**, `IsInvulnerable` 변화 없음), 낙하 시 콜라이더 On, 착지 범위 피해 8 + 좌우 충격파(피해 4, 속도 12, 높이 1) | 보스가 화면 밖으로 사라지고 그림자가 따라오다 멈춤, 그림자 밖이면 착지 피해 0, 충격파는 점프로 넘으면 0·서 있으면 4, 화면 밖 동안 공격 불가·자물쇠 안 뜸, 착지 후 Punishable 1.2초, F1·사망 시 충격파 사라짐 | 연출(T51) | T3·T38·T45 | 6장 P1, 4장 점프 높이, 15장, 17장 #2·#11 | Gimmick/Pattern/JumpSlamPattern.cs, Gimmick/Pattern/JumpSlamConfig.cs, Gimmick/Pattern/BossShockwave.cs, Gimmick/Pattern/BossShadowMarker.cs | 🎮 |
 | T47 | 어댑터 | **P4 포드 곡사** `PodHowitzerPattern` + Config: 포드 들기 → 6발 0.25초 간격 → 경고 마커 1초 → 0.4초 간격 낙하(반경 1.5, 피해 6), 탄종 가중치는 기존 규칙, 기존 포탄·마커 풀 재사용, 발사 중 보스 제자리 = Attacking(피해 ×1.0), 발사 후 Punishable 0초 (Q24) | 마커 6개가 순서대로 뜨고 낙하, 마커 밖 피해 0, 탄종 3종 섞임, F1 시 포탄·마커·파편 전부 사라짐 | 포탄 일섬 베기(T62), 연출(T53) | T23·T38 | 6장 P4 | Gimmick/Pattern/PodHowitzerPattern.cs, Gimmick/Pattern/PodHowitzerConfig.cs | 🗑 |
 | T48 | 어댑터 | **P5 포드 직사 (회피 + 반격 버전)** `PodShotPattern` + Config: 포드 앞으로 0.4초 정지 → 3발 0.2초 간격 조준(피해 3, 속도 14, 기존 총알 풀), 2P 5발, 직후 Punishable 0.6초 〔임시값: 패링 없는 버전〕 | 0.4초 정지 후 3발이 발사 순간 플레이어 위치로, F1 후 5발, 끝나고 Punishable 0.6초 | 패링(T49) | T38 | 6장 P5, 17장 #1 | Gimmick/Pattern/PodShotPattern.cs, Gimmick/Pattern/PodShotConfig.cs | 🗑 |
 | T49 | 어댑터 | ⏳ **P5 패링 반사** (분리): 패링 → 반사탄이 보스에게(피해 10, 그로기 +15), 2P 마지막 1발 빨간 탄(패링 불가, 탄 색으로 구분) | 패링 성공 시 탄이 돌아가 보스 피해 10·게이지 +15, 빨간 탄은 패링해도 피해 | — | **패링 구현(CSH)**·T48·T61 | 6장 P5 ⏳, 7장 ⏳, 9장 ⏳ | Gimmick/Pattern/PodShotPattern.cs(+), New/BossProjectile.cs(반사 상태) | 🗑 |
@@ -182,11 +182,11 @@
 
 | ID | 유형 | 작업 | 완료 기준 (씬) | 범위 밖 | 의존 | 근거 | 예상 파일 | 상태 |
 |---|---|---|---|---|---|---|---|---|
-| T60 | 로직 | `GroggyGauge`: 최대 100, `Add(GroggySource)`(벽 충돌 25·일섬 10·포탄 베기 5·일반 1·⏳패링 15, Config), 마지막 피격 3초 뒤부터 초당 5 감소, 100 → `Filled` 1회, Groggy 끝나면 0 | (T61 씬) 게이지 값이 규칙대로 증감 | — | T1 | 7장 표·감소 규칙, 4장 최대 100 | Core/GroggyGauge.cs, Core/GroggySource.cs, Gimmick/GroggyConfig.cs | ✂️ |
+| T60 | 로직 | `GroggyGauge`: 최대 100, `Add(GroggySource)`(벽 충돌 25·일섬 10·포탄 베기 5·일반 1·⏳패링 15, Config), 마지막 피격 3초 뒤부터 초당 5 감소, 100 → `Filled` 1회, Groggy 끝나면 0 | (T61 씬) 게이지 값이 규칙대로 증감 | — | T1 | 7장 표·감소 규칙, 4장 최대 100 | Core/GroggyGauge.cs, Core/GroggySource.cs, Gimmick/GroggyConfig.cs | 🎮 |
 | T70 | 어댑터 | 피해 출처 전달 (Q21 A): `HitSource`(Slash 일섬 / Normal 일반 / BlueFall 낙섬) + `IHitSourceReceiver.OnHitBy(HitSource)` 신설(`Assets/Scripts/` 의 `IDamageable` 옆), CSH `PlayerDash`(일섬·낙섬 판정 :421 부근)·`PlayerCombat`(:213 부근)에서 `TakeDamage` 와 같은 대상에 1~3줄로 호출. 낙섬 호출 지점은 착수 시 확인 | (T61 씬) 보스 인스펙터 "마지막 출처"가 일반 공격 → Normal, 일섬 → Slash, 낙섬 → BlueFall. 보스 외 적은 기존과 같은 피해(인터페이스 미구현 → 호출 없음), 플레이어 동작 변화 없음 | 보스 쪽 처리(T61) | T1 | 7장, Q21 | Core/HitSource.cs, Assets/Scripts/IHitSourceReceiver.cs, CSH/0.Scripts/Player/PlayerDash.cs(+3), CSH/0.Scripts/Player/PlayerCombat.cs(+3) | 🗑 |
-| T61 | 어댑터 | 게이지 연결: `BossGroggyDriver`(보스 오브젝트, `IHitSourceReceiver` 구현) → 출처별 `Add`, P2 HitWall → +25, `Filled` → `EnterGroggy`(4초, ×1.5). 디버그: 인스펙터 게이지 값·마지막 출처, 에디터 전용 F5 = +25 | 일반 공격 → +1, 일섬 명중 → +10, 벽 충돌 → +25, 3초 가만히 → 초당 5 감소, 100 → Groggy 4초(로그 피해 ×1.5) → 게이지 0 | UI(T63), QTE(T65) | T31·T44·T60·T70 | 7장 | Gimmick/BossGroggyDriver.cs, Gimmick/BossFlowDriver.cs(+Groggy 진입 연결) | ✂️ |
+| T61 | 어댑터 | 게이지 연결: `BossGroggyDriver`(보스 오브젝트, `IHitSourceReceiver` 구현) → 출처별 `Add`, P2 HitWall → +25, `Filled` → `EnterGroggy`(4초, ×1.5). 디버그: 인스펙터 게이지 값·마지막 출처, 에디터 전용 F5 = +25 | 일반 공격 → +1, 일섬 명중 → +10, 벽 충돌 → +25, 3초 가만히 → 초당 5 감소, 100 → Groggy 4초(로그 피해 ×1.5) → 게이지 0 | UI(T63), QTE(T65) | T31·T44·T60·T70 | 7장 | Gimmick/BossGroggyDriver.cs, Gimmick/BossFlowDriver.cs(+Groggy 진입 연결) | 🎮 |
 | T62 | 어댑터 | 포탄 일섬 베기: 낙하 중 포탄이 `HitSource.Slash` 를 받으면 공중 폭발(플레이어 피해 없음) + 그로기 +5. 포탄 콜라이더가 일섬 BoxCast 마스크에 포함되는지 착수 시 확인 | 일섬으로 포탄을 지나가면 그 자리에서 폭발, 피해 0, 게이지 +5. 일반 공격으로는 안 베어짐 | — | T47·T61 | 6장 P4, 7장 | New/HowitzerCannonball.cs(+) | 🗑 |
-| T63 | 어댑터 | 그로기 UI: 체력바 아래 얇은 게이지 바, Groggy 진입 시 보스 머리 위 "낙섬!" 아이콘 | 바가 게이지 값대로 움직임, Groggy 동안만 아이콘 | 바 레이아웃(에디터) | T61 | 15장 | Gimmick/BossGroggyBar.cs, Gimmick/FinisherPromptView.cs | ✂️ |
+| T63 | 어댑터 | 그로기 UI: 체력바 아래 얇은 게이지 바, Groggy 진입 시 보스 머리 위 "낙섬!" 아이콘 | 바가 게이지 값대로 움직임, Groggy 동안만 아이콘 | 바 레이아웃(에디터) | T61 | 15장 | Gimmick/BossGroggyBar.cs, Gimmick/FinisherPromptView.cs | 🎮 |
 | T64 | 로직 | `FinisherQteJudge` (Q22 A, 보스 전용 타이밍 바): 커서 진행(dt), Perfect / Normal 구간, 입력 → Perfect 60 / Normal 30 / Fail 0, 시간 초과 Fail + `FinisherConfig`(바 1초·Perfect 0.1초·Normal 0.3초 〔임시값〕) | (T65 씬) 구간별 결과가 Config 값과 일치 | — | T1 | 7장, Q22 | Core/FinisherQteJudge.cs, Gimmick/FinisherConfig.cs | 🗑 |
 | T65 | 어댑터 | 낙섬 QTE 연결 (Q22 A): Groggy 중 보스가 `HitSource.BlueFall` 을 받으면 보스 쪽에서 QTE 바 표시(UI 채널 dt, 기존 BlueDash QTE·낙하 흐름은 그대로) → 결과 피해 **60 / 30 고정, Groggy ×1.5 미적용**(Q23), Fail → Groggy 즉시 종료 → Resting, 보류된 PhaseTransition 처리 | Groggy 중 낙섬 명중 → 바 표시, Perfect 60 / Normal 30(로그에 배율 없음) / Fail 0 + Groggy 즉시 끝. Groggy 아닐 때 낙섬은 기존대로. QTE 중 HP 50% 하회 → QTE·Groggy 끝난 뒤 전환. QTE 중 보스 사망 → 바 닫힘 | Perfect 연출(T66) | T61·T63·T64 | 7장, 5장, Q22·Q23 | Gimmick/FinisherQtePresenter.cs, Gimmick/FinisherQteView.cs, Gimmick/BossGroggyDriver.cs(+) | 🗑 |
 | T66 | 연출 | Perfect 연출: GameClock World 슬로우 + 컷인 | Perfect일 때만 슬로우·컷인, 끝나면 1배속 복귀 | 컷인 아트 | T28·T65 | 7장 | Gimmick/FinisherCutinView.cs | 🗑 |

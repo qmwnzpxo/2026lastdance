@@ -9,7 +9,7 @@ namespace UnMachine.Boss
 {
     /// <summary>
     /// 기존 코루틴 패턴(BossAttackPatterns.ExecutePattern)을 IBossPattern 으로 감싼다.
-    /// v2 패턴이 완성될 때까지만 쓰는 임시 다리다. (BACKLOG Q19 C, T68 에서 삭제)
+    /// 1주 축소 계획(2026-11-26)으로 P2~P6 은 이 다리를 계속 쓴다 (T68 레거시 제거 철회).
     /// </summary>
     /// <remarks>
     /// 레거시 패턴은 내부에서 Time·WaitForSeconds 를 쓰므로 GameClock 히트스톱·슬로우를 따르지 않는다.
@@ -96,7 +96,8 @@ namespace UnMachine.Boss
         private IEnumerator RunLegacy(BossController boss, RunHandle handle)
         {
             // 중첩 IEnumerator 는 같은 MonoBehaviour(_patterns) 위에서 이어 실행된다.
-            yield return _patterns.ExecutePattern(_pattern, boss);
+            // 반복 방지는 PatternSelector 가 맡는다 → 레거시 자체 대체는 끈다 (이중 적용 방지, T38).
+            yield return _patterns.ExecutePattern(_pattern, boss, useRepeatGuard: false);
             handle.IsDone = true;
         }
 
