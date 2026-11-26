@@ -39,10 +39,10 @@
 | 4 | T61 🎮 | `BossGroggyDriver`: BossController 피해 이벤트로 게이지 증가 (**CSH 수정 없음, T70 삭제**), 레거시 `Charge()` 의 `hasHitWall`(:998) 지점에 이벤트 1줄 → +25, `Filled` → `EnterGroggy`(4초, ×1.5). F5 = +25 | 피해를 주면 게이지 상승, 벽 충돌 +25, 100 → Groggy 4초(로그 ×1.5) → 0 |
 | 5 | T63 🎮 | 그로기 바만 (체력바 아래). "낙섬!" 아이콘 삭제 | 바가 게이지 값대로 움직임 |
 | 6 | T46 🎮 (T45 통합) | P1 점프 내려찍기: 모델 + 패턴 한 작업. 방 경계 클램프는 `JumpSlamConfig` 의 최소/최대 x (Director 없음). 그림자·충격파 유지, 연출(T51) 없음 | T46 원래 기준에서 "자물쇠·연출" 항목 제외 |
-| 7 | T55 | 원안 (콤보 계획·실행기, 로직) | (T56·T57 씬) |
-| 8 | T56 | 원안. C2 = P1 → 레거시 Burst, C3 = P1×3 | 원안 |
-| 9 | T57 ⚠ | 원안이지만 **레거시 `Charge()` 수정 필요**: 통과 후 0.3초 Brake 옵션, HitPlayer 결과 보고 / C4 는 레거시 Howitzer 가 "발사 끝" 신호를 줘야 함 | 원안 |
-| 10 | T58 | 원안 (증기 + 경고음) | 원안 |
+| 7 | T55 🎮 | 원안 (콤보 계획·실행기, 로직) | (T56·T57 씬) |
+| 8 | T56 🎮 | 원안. C2 = P1 → 레거시 Burst, C3 = P1×3 | 원안 |
+| 9 | T57 🎮 | 원안이지만 **레거시 `Charge()` 수정 필요**: 통과 후 0.3초 Brake 옵션, HitPlayer 결과 보고 / C4 는 레거시 Howitzer 가 "발사 끝" 신호를 줘야 함 | 원안 |
+| 10 | T58 🎮 | 원안 (증기 + 경고음) | 원안 |
 | 11 | T34 ✂️ | **붉은 틴트를 2P 동안 유지**만. 역재생·증기·흔들림 삭제 (기존 `SpawnPhaseTransitionEffect` 화면 이펙트는 유지) | 전환 후 2P 내내 붉은 틴트 |
 | 12 | T23 | 원안 (회수 누락 = 눈에 보이는 버그) | 원안 |
 
@@ -172,10 +172,10 @@
 
 | ID | 유형 | 작업 | 완료 기준 (씬, 강제 선택 단위로) | 범위 밖 | 의존 | 근거 | 예상 파일 | 상태 |
 |---|---|---|---|---|---|---|---|---|
-| T55 | 로직 | `ComboPlan` + `ComboRunner`: 콤보 = 단계 목록(C1 P2→Brake→P3, C2 P1→P5, C3 P1×3, C4 P4→P2), 단계 사이 Punishable·Resting 생략, 마지막 단계만 틈(C3은 긴 틈), 결과 분기(C1: P2 HitPlayer → P3 생략·틈 0.6 / 통과 전 HitWall → Stunned) 〔임시값: C1 예외 2가지〕 | (T56·T57 씬) 단계 진행 로그가 규칙과 일치 | — | T29·T37 | 8장 콤보 표·C1 예외, 11장, 17장 #9·#10 | Core/ComboPlan.cs, Core/ComboRunner.cs, Core/ComboStep.cs | ✅ |
-| T56 | 어댑터 | C2·C3 (점프 계열) 실행: Driver가 콤보 단계를 이어 실행 | C2: 착지 즉시 직사(틈 없음). C3: 3번 점프 사이 틈 없음, 마지막 착지 후에만 긴 틈 | — | T46·T48·T55 | 8장 | Gimmick/BossFlowDriver.cs(+), Gimmick/PatternRegistry.cs(+) | ✅ |
-| T57 | 어댑터 | C1·C4 (돌진 계열): `ChargePattern` 에 "통과 후 0.3초 뒤 Brake 정지" 옵션, C1 예외, C4 = P4 **발사 직후**(낙하를 기다리지 않고) P2 | C1: 플레이어를 지나치고 0.3초 뒤 정지 → 짓밟기, 돌진에 맞으면 짓밟기 없이 0.6초 틈, 지나치기 전 벽 → Stunned. C4: 발사가 끝나자마자 돌진, 포탄은 계속 낙하 | — | T44·T47·T55 | 8장, 17장 #9 | Gimmick/Pattern/ChargePattern.cs(+), Gimmick/BossFlowDriver.cs(+), Gimmick/PatternRegistry.cs(+) | ✅ |
-| T58 | 연출 | 콤보 시작 신호: 증기 분출 + 경고음, 첫 패턴의 눈 색 예고보다 **먼저** | 콤보 선택 시 증기·경고음 → 그다음 눈 색, 단독 패턴에서는 안 나옴 | — | T39·T56·T57 | 9장 | Gimmick/ComboSignalView.cs | ✅ |
+| T55 | 로직 | `ComboPlan` + `ComboRunner`: 콤보 = 단계 목록(C1 P2→Brake→P3, C2 P1→P5, C3 P1×3, C4 P4→P2), 단계 사이 Punishable·Resting 생략, 마지막 단계만 틈(C3은 긴 틈), 결과 분기(C1: P2 HitPlayer → P3 생략·틈 0.6 / 통과 전 HitWall → Stunned) 〔임시값: C1 예외 2가지〕 | (T56·T57 씬) 단계 진행 로그가 규칙과 일치 | — | T29·T37 | 8장 콤보 표·C1 예외, 11장, 17장 #9·#10 | Core/ComboPlan.cs, Core/ComboRunner.cs, Core/ComboStep.cs | 🎮 |
+| T56 | 어댑터 | C2·C3 (점프 계열) 실행: Driver가 콤보 단계를 이어 실행 | C2: 착지 즉시 직사(틈 없음). C3: 3번 점프 사이 틈 없음, 마지막 착지 후에만 긴 틈 | — | T46·T48·T55 | 8장 | Gimmick/BossFlowDriver.cs(+), Gimmick/PatternRegistry.cs(+) | 🎮 |
+| T57 | 어댑터 | C1·C4 (돌진 계열): `ChargePattern` 에 "통과 후 0.3초 뒤 Brake 정지" 옵션, C1 예외, C4 = P4 **발사 직후**(낙하를 기다리지 않고) P2 | C1: 플레이어를 지나치고 0.3초 뒤 정지 → 짓밟기, 돌진에 맞으면 짓밟기 없이 0.6초 틈, 지나치기 전 벽 → Stunned. C4: 발사가 끝나자마자 돌진, 포탄은 계속 낙하 | — | T44·T47·T55 | 8장, 17장 #9 | Gimmick/Pattern/ChargePattern.cs(+), Gimmick/BossFlowDriver.cs(+), Gimmick/PatternRegistry.cs(+) | 🎮 |
+| T58 | 연출 | 콤보 시작 신호: 증기 분출 + 경고음, 첫 패턴의 눈 색 예고보다 **먼저** | 콤보 선택 시 증기·경고음 → 그다음 눈 색, 단독 패턴에서는 안 나옴 | — | T39·T56·T57 | 9장 | Gimmick/ComboSignalView.cs | 🎮 |
 | T59 | 에디터 | 증기 파티클·경고음 클립 연결 | 현민 플레이: T56~T58 재확인 | — | T58 | — | (현민) | ✅ |
 
 #### B-5. 그로기 게이지 + 낙섬 QTE 결정타

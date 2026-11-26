@@ -14,22 +14,28 @@ namespace UnMachine.Boss
     /// <remarks>
     /// 레거시 패턴은 내부에서 Time·WaitForSeconds 를 쓰므로 GameClock 히트스톱·슬로우를 따르지 않는다.
     /// </remarks>
-    public sealed class LegacyPatternBridge : IBossPattern
+    public sealed class LegacyPatternBridge : IBossPattern, IComboStepOutcomeSource
     {
         private readonly BossAttackPatterns _patterns;
         private readonly AttackPattern _pattern;
         private readonly float _timeoutSeconds;
+        private readonly bool _chargeBrakeAfterPass;
+        private readonly bool _howitzerDetachFall;
 
         /// <summary>레거시 패턴 하나를 감싼다.</summary>
         /// <param name="patterns">레거시 패턴 실행기. 코루틴도 여기서 돌린다 (ForceStopAllPatterns 로 함께 멈추게).</param>
         /// <param name="pattern">실행할 레거시 패턴.</param>
         /// <param name="timing">예고·반격 틈.</param>
         /// <param name="timeoutSeconds">이 시간(레거시와 같은 Time.deltaTime 기준) 안에 끝나지 않으면 강제 종료한다. 0보다 커야 한다.</param>
+        /// <param name="chargeBrakeAfterPass">(C1 첫 단계) 돌진이 플레이어를 지나친 뒤 Brake 정지 (T57).</param>
+        /// <param name="howitzerDetachFall">(C4 첫 단계) 곡사 발사가 끝나면 종료, 낙하는 따로 진행 (T57).</param>
         public LegacyPatternBridge(
             BossAttackPatterns patterns,
             AttackPattern pattern,
             PatternTiming timing,
-            float timeoutSeconds)
+            float timeoutSeconds,
+            bool chargeBrakeAfterPass = false,
+            bool howitzerDetachFall = false)
         {
             if (patterns == null)
             {
@@ -45,8 +51,22 @@ namespace UnMachine.Boss
             _patterns = patterns;
             _pattern = pattern;
             _timeoutSeconds = timeoutSeconds;
+            _chargeBrakeAfterPass = chargeBrakeAfterPass;
+            _howitzerDetachFall = howitzerDetachFall;
             Timing = timing;
-            DebugName = $"Legacy:{pattern}";
+            DebugName = chargeBrakeAfterPass ? $"Legacy:{pattern}+Brake"
+                : howitzerDetachFall ? $"Legacy:{pattern}+FireOnly"
+                : $"Legacy:{pattern}";
+        }
+
+        /// <inheritdoc />
+        public ComboStepOutcome LastOutcome { get; private set; }
+
+        /// <summary>같은 레거시 패턴·타이밍으로 콤보 옵션만 다른 다리를 만든다 (C1·C4 첫 단계, T57).</summary>
+        public LegacyPatternBridge WithComboOptions(bool chargeBrakeAfterPass, bool howitzerDetachFall)
+        {
+            return new LegacyPatternBridge(
+                _patterns, _pattern, Timing, _timeoutSeconds, chargeBrakeAfterPass, howitzerDetachFall);
         }
 
         /// <inheritdoc />
@@ -64,6 +84,7 @@ namespace UnMachine.Boss
             }
 
             ct.ThrowIfCancellationRequested();
+            LastOutcome = ComboStepOutcome.Completed;
 
             var handle = new RunHandle();
             _patterns.StartCoroutine(RunLegacy(boss, handle)); // guard-allow: 레거시 래핑
@@ -90,14 +111,36 @@ namespace UnMachine.Boss
                 }
             }
 
+            LastOutcome = ReadOutcome();
             return PatternResult.Default;
+        }
+
+        /// <summary>돌진 결과 → 콤보 단계 결과. 명중이 벽보다 우선 (boss.md 8장 C1 예외 순서).</summary>
+        private ComboStepOutcome ReadOutcome()
+        {
+            if (_pattern != AttackPattern.Charge || _patterns == null)
+            {
+                return ComboStepOutcome.Completed;
+            }
+
+            if (_patterns.LastChargeHitPlayer)
+            {
+                return ComboStepOutcome.HitPlayer;
+            }
+
+            return _patterns.LastChargeHitWallBeforePass ? ComboStepOutcome.HitWall : ComboStepOutcome.Completed;
         }
 
         private IEnumerator RunLegacy(BossController boss, RunHandle handle)
         {
             // 중첩 IEnumerator 는 같은 MonoBehaviour(_patterns) 위에서 이어 실행된다.
             // 반복 방지는 PatternSelector 가 맡는다 → 레거시 자체 대체는 끈다 (이중 적용 방지, T38).
-            yield return _patterns.ExecutePattern(_pattern, boss, useRepeatGuard: false);
+            yield return _patterns.ExecutePattern(
+                _pattern,
+                boss,
+                useRepeatGuard: false,
+                chargeBrakeAfterPass: _chargeBrakeAfterPass,
+                howitzerDetachFall: _howitzerDetachFall);
             handle.IsDone = true;
         }
 

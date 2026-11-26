@@ -349,6 +349,15 @@ namespace UnMachine.EditorTools
 
             AssignReference(telegraphView, TelegraphViewDriverField, driver);
 
+            // T58 콤보 시작 신호 (증기·경고음 연결은 T59 에디터 작업)
+            var comboSignal = controller.GetComponent<ComboSignalView>();
+            if (comboSignal == null)
+            {
+                comboSignal = controller.gameObject.AddComponent<ComboSignalView>();
+            }
+
+            AssignReference(comboSignal, TelegraphViewDriverField, driver); // 같은 필드 이름 "_driver"
+
             // T61 그로기 게이지 (바 UI 는 에디터 작업)
             GroggyConfig groggyConfig = ResolveOrCreateConfig<GroggyConfig>(null, DefaultGroggyConfigPath);
             if (groggyConfig != null)

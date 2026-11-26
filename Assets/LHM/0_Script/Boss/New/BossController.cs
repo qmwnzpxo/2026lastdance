@@ -167,6 +167,9 @@ public class BossController : MonoBehaviour, IDamageable
 
     // P1 점프 화면 밖 피해 거부 (T46). 체력바 자물쇠(IsInvulnerable)에는 넣지 않는다 — spec: boss.md 15장
     private bool _isUntargetable = false;
+
+    // C4 곡사포 분리 낙하 코루틴 (T57)
+    private Coroutine _detachedHowitzerFall;
     private Coroutine _hitInvincibilityCoroutine;
 
     // 런타임 콘텍스트 (SO 기반 패턴 공유 참조 및 AnimationEventBridge)
@@ -542,8 +545,32 @@ public class BossController : MonoBehaviour, IDamageable
     /// 캐논볼/총알/경고마커가 보스 이동을 막는 문제 방지
     /// FindObjectsByType 대신 직접 추적 리스트를 사용 (Unity 버전 호환)
     /// </summary>
+    /// <summary>
+    /// (v2 C4, T57) 곡사포 경고·낙하 단계를 이 컴포넌트 위에서 실행한다 → BossAttackPatterns.ForceStopAllPatterns 로 끊기지 않는다.
+    /// 전환·사망의 ClearAllActiveProjectiles 에서 멈춘다. 이전 것이 남아 있으면 그대로 두고 마지막 것만 추적한다.
+    /// </summary>
+    public void StartDetachedHowitzerFall(IEnumerator routine)
+    {
+        if (routine == null)
+            return;
+
+        _detachedHowitzerFall = StartCoroutine(routine); // guard-allow: 레거시 곡사포 코루틴 이어 실행
+    }
+
+    private void StopDetachedHowitzerFall()
+    {
+        if (_detachedHowitzerFall == null)
+            return;
+
+        StopCoroutine(_detachedHowitzerFall);
+        _detachedHowitzerFall = null;
+    }
+
     public void ClearAllActiveProjectiles()
     {
+        // 분리된 곡사포 낙하가 회수된 포탄·마커를 다시 쓰지 않게 먼저 멈춘다 (T57)
+        StopDetachedHowitzerFall();
+
         // 활성 캐논볼 전체 회수 (추적 리스트 기반)
         for (int i = activeCannonballs.Count - 1; i >= 0; i--)
         {

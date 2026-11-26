@@ -33,7 +33,7 @@ namespace UnMachine.Boss
         [Tooltip("P1 점프 내려찍기 (T46). 지정하면 P1 은 아래 목록 대신 JumpSlamPattern. 비우면 목록의 임시 레거시")]
         [SerializeField] private JumpSlamConfig _jumpSlam;
 
-        [Header("단위 → 레거시 패턴 (T38, 1주 축소: P2~P6 영구 / P1·콤보는 T46·T56·T57 에서 교체)")]
+        [Header("단위 → 패턴 (T38: P2~P6 레거시 영구 / P1 = Jump Slam 지정 시 새 패턴 / C1~C4 = 콤보, T56)")]
         [Tooltip("예고·반격 틈 = boss.md 6장 패턴 값. 표에 있어도 여기 없는 단위는 선택되지 않는다")]
         [SerializeField] private UnitPatternEntry[] _unitPatterns =
         {
@@ -43,10 +43,11 @@ namespace UnMachine.Boss
             new UnitPatternEntry(SelectionUnit.P4, AttackPattern.Howitzer, 0.4f, 0f),          // 틈 없음 (Q24)
             new UnitPatternEntry(SelectionUnit.P5, AttackPattern.MachinegunBurst, 0.4f, 0.6f),
             new UnitPatternEntry(SelectionUnit.P6, AttackPattern.DroneSpawn, 0.4f, 0.5f),
-            new UnitPatternEntry(SelectionUnit.C1, AttackPattern.Charge, 0.6f, 0.6f),          // 임시: 첫 패턴만
-            new UnitPatternEntry(SelectionUnit.C2, AttackPattern.Stomp, 0.5f, 1.2f),           // 임시: 첫 패턴만
-            new UnitPatternEntry(SelectionUnit.C3, AttackPattern.Stomp, 0.5f, 1.8f),           // 임시: 첫 패턴만
-            new UnitPatternEntry(SelectionUnit.C4, AttackPattern.Howitzer, 0.4f, 0f),          // 임시: 첫 패턴만
+            // 콤보 (T56): 패턴 칸은 안 씀 (구성 = ComboPlan). 예고 = 첫 단계, 틈 = 마지막 단계 뒤
+            new UnitPatternEntry(SelectionUnit.C1, AttackPattern.Charge, 0.6f, 0.9f),          // 끝 = P3 틈
+            new UnitPatternEntry(SelectionUnit.C2, AttackPattern.Stomp, 0.5f, 0.6f),           // 끝 = P5 틈
+            new UnitPatternEntry(SelectionUnit.C3, AttackPattern.Stomp, 0.5f, 1.8f),           // 마지막 착지만 긴 틈 〔임시값〕
+            new UnitPatternEntry(SelectionUnit.C4, AttackPattern.Howitzer, 0.4f, 0.6f),        // 끝 = P2 틈
         };
 
         [Tooltip("레거시 패턴이 이 시간(초, Time.deltaTime 기준) 안에 안 끝나면 강제 종료. 기존 BT 노드 타임아웃과 같은 값")]
@@ -127,6 +128,12 @@ namespace UnMachine.Boss
 
         /// <summary>지금(또는 마지막으로) 실행하는 선택 단위. 예고 색 결정용.</summary>
         public SelectionUnit CurrentUnit => _currentUnit;
+
+        /// <summary>현재 단위가 콤보(C1~C4)인지. 콤보 시작 신호용 (T58).</summary>
+        public bool IsCurrentCombo => ComboPlan.TryGet(_currentUnit, out _);
+
+        /// <summary>현재 예고 앞부분의 콤보 신호 구간(초). 단독 패턴이면 0. 이 구간에는 눈 색을 켜지 않는다 (T58).</summary>
+        public float CurrentSignalLead => IsCurrentCombo && _config != null ? _config.ComboSignalLeadSeconds : 0f;
 
         /// <summary>현재 상태 남은 시간(초, World 채널). 루프 전에는 0.</summary>
         public float StateRemaining => _machine != null ? _machine.StateRemaining : 0f;
@@ -324,6 +331,11 @@ namespace UnMachine.Boss
                     continue;
                 }
 
+                if (ComboPlan.TryGet(entry.Unit, out _))
+                {
+                    continue; // 콤보는 단독 패턴을 다 등록한 뒤 (단계 패턴이 필요)
+                }
+
                 var timing = new PatternTiming(entry.TelegraphSeconds, entry.PunishableSeconds);
                 var pattern = new LegacyPatternBridge(_attackPatterns, entry.Pattern, timing, _legacyTimeoutSeconds);
 
@@ -341,7 +353,68 @@ namespace UnMachine.Boss
                 }
             }
 
-            return registry;
+            return RegisterCombos(registry) ? registry : null;
+        }
+
+        /// <summary>목록의 C1~C4 → ComboPattern (T56). 단계 패턴이 없으면 그 콤보만 건너뛴다. 중복이면 false.</summary>
+        private bool RegisterCombos(PatternRegistry registry)
+        {
+            for (int i = 0; i < _unitPatterns.Length; i++)
+            {
+                UnitPatternEntry entry = _unitPatterns[i];
+                if (!ComboPlan.TryGet(entry.Unit, out ComboPlan plan))
+                {
+                    continue;
+                }
+
+                if (registry.Contains(entry.Unit))
+                {
+                    GameLog.Error(this, $"[BossFlowDriver] 단위 {entry.Unit} 가 목록에 두 번 있음 → 비활성화");
+                    return false;
+                }
+
+                IBossPattern[] steps = BuildComboSteps(plan, registry);
+                if (steps == null)
+                {
+                    GameLog.Warn($"[BossFlowDriver] 콤보 {entry.Unit} 단계 패턴 누락 → 등록 안 함 (선택 안 됨)", this);
+                    continue;
+                }
+
+                // T58: 예고 앞에 증기·경고음 구간을 붙인다 (그 동안 눈 색 없음 → 신호가 먼저)
+                var timing = new PatternTiming(
+                    entry.TelegraphSeconds + _config.ComboSignalLeadSeconds, entry.PunishableSeconds);
+                registry.Register(entry.Unit, new ComboPattern(plan, steps, timing));
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 콤보 단계 패턴 목록. 첫 단계가 레거시면 C1 = 돌진 Brake, C4 = 곡사 발사만 옵션을 켠 다리로 바꾼다 (T57).
+        /// 단계가 하나라도 등록되지 않았으면 null.
+        /// </summary>
+        private static IBossPattern[] BuildComboSteps(ComboPlan plan, PatternRegistry registry)
+        {
+            var steps = new IBossPattern[plan.Steps.Count];
+            for (int s = 0; s < steps.Length; s++)
+            {
+                if (!registry.TryGet(plan.Steps[s], out steps[s]))
+                {
+                    return null;
+                }
+            }
+
+            if (steps[0] is LegacyPatternBridge first)
+            {
+                bool isC1 = plan.Combo == SelectionUnit.C1; // spec: boss.md 8장 C1 지나치고 0.3초 뒤 Brake
+                bool isC4 = plan.Combo == SelectionUnit.C4; // spec: boss.md 8장 C4 P4 발사 직후 P2
+                if (isC1 || isC4)
+                {
+                    steps[0] = first.WithComboOptions(chargeBrakeAfterPass: isC1, howitzerDetachFall: isC4);
+                }
+            }
+
+            return steps;
         }
 
         /// <summary>선택기용 사용 가능 판정: 등록된 단위만, P6 은 활성 드론이 상한 미만일 때만. spec: boss.md 6장 P6</summary>
@@ -448,11 +521,6 @@ namespace UnMachine.Boss
             {
                 _currentUnit = unit;
                 _currentPattern = pattern;
-
-                if (unit >= SelectionUnit.C1)
-                {
-                    GameLog.Warn($"[BossFlowDriver] 콤보 {unit} 미구현 → 첫 패턴만 실행 (T56·T57)", this);
-                }
             }
             else
             {

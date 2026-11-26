@@ -80,6 +80,8 @@ public class BossAttackPatterns : MonoBehaviour
     [SerializeField] private float chargeRange = 10f;
     [SerializeField] private float chargeCastTime = 0.8f;
     [SerializeField] private float chargeStunDuration = 1f;  // 벽 충돌 후 스턴 지속 시간
+    [Tooltip("(v2 콤보 C1) 플레이어를 지나친 뒤 이 시간(초) 후 Brake 정지. spec: boss.md 8장 C1 0.3초")]
+    [SerializeField] private float chargeBrakeDelay = 0.3f;
 
     [Header("드론 소환 설정")]
     [SerializeField] private float droneSpawnAnticipationTime = 0.4f;
@@ -142,6 +144,16 @@ public class BossAttackPatterns : MonoBehaviour
 
     /// <summary>돌진이 벽에 부딪혀 스턴에 들어갈 때 (v2 그로기 게이지용, T61).</summary>
     public event System.Action ChargeHitWall;
+
+    /// <summary>(v2 콤보 C1, T57) 마지막 돌진이 플레이어를 맞혔는지.</summary>
+    public bool LastChargeHitPlayer { get; private set; }
+
+    /// <summary>(v2 콤보 C1, T57) 마지막 돌진이 플레이어를 지나치기 전에 벽에 닿았는지.</summary>
+    public bool LastChargeHitWallBeforePass { get; private set; }
+
+    // (v2 콤보 옵션, T57) ExecutePattern 이 설정하고 각 패턴이 시작할 때 지역 변수로 복사한다.
+    private bool _chargeBrakeAfterPass;
+    private bool _howitzerDetachFall;
 
     private AttackPattern lastExecutedPattern = AttackPattern.Wait3Sec; // 보조용 값으로 초기화
     private int consecutivePatternCount = 0;
@@ -208,6 +220,8 @@ public class BossAttackPatterns : MonoBehaviour
         _stompImpactCalled   = false;
         _howitzerLaunchPending = false;
         _howitzerStopped     = false;
+        _chargeBrakeAfterPass = false;
+        _howitzerDetachFall  = false;
 
         // 고착 방지: 모든 애니메이터 트리거 리셋
         if (animator != null)
@@ -312,9 +326,18 @@ public class BossAttackPatterns : MonoBehaviour
     /// 공격 패턴 실행
     /// </summary>
     /// <param name="useRepeatGuard">false 면 동일 패턴 연속 대체를 건너뛴다 (v2 선택기가 반복 방지를 맡을 때, T38).</param>
-    public IEnumerator ExecutePattern(AttackPattern pattern, BossController controller, bool useRepeatGuard = true)
+    /// <param name="chargeBrakeAfterPass">(v2 C1) 돌진이 플레이어를 지나친 뒤 chargeBrakeDelay 후 정지 (T57).</param>
+    /// <param name="howitzerDetachFall">(v2 C4) 곡사 발사가 끝나면 패턴 종료, 경고·낙하는 BossController 에서 계속 (T57).</param>
+    public IEnumerator ExecutePattern(
+        AttackPattern pattern,
+        BossController controller,
+        bool useRepeatGuard = true,
+        bool chargeBrakeAfterPass = false,
+        bool howitzerDetachFall = false)
     {
         bossController = controller;
+        _chargeBrakeAfterPass = chargeBrakeAfterPass;
+        _howitzerDetachFall = howitzerDetachFall;
 
         // 보조 대기 패턴(Wait3Sec)이 아닐 때만 동일 패턴 연속 실행 검사 실행
         if (useRepeatGuard && pattern != AttackPattern.Wait3Sec && bossController != null)
@@ -564,6 +587,7 @@ public class BossAttackPatterns : MonoBehaviour
     private IEnumerator Howitzer()
     {
         Debug.Log("[Boss] 곡사포 패턴 시작");
+        bool detachFall = _howitzerDetachFall; // v2 C4 (T57), 시작 시점 값으로 고정
         if (player == null)
         {
             Debug.LogError("[Boss] Howitzer: player 참조가 누락되었습니다. 패턴을 시작할 수 없습니다.");
@@ -673,6 +697,30 @@ public class BossAttackPatterns : MonoBehaviour
 
         // Step 2: 포탄 수직 상승 중인 상태에서 바로 다음 단계 진행
 
+        if (detachFall && bossController != null)
+        {
+            // v2 C4 (T57): 발사 끝 = 패턴 끝 → 바로 다음 단계(돌진). 자세는 지금 풀고, 경고·낙하는 BossController 가 이어서 진행
+            // (이 컴포넌트의 ForceStopAllPatterns 로 끊기지 않게. 전환·사망 시 ClearAllActiveProjectiles 가 멈춘다)
+            if (animator != null)
+            {
+                animator.SetTrigger("stopHowitzer");
+                animator.SetTrigger("StopHowitzer");
+            }
+
+            bossController.StartDetachedHowitzerFall(HowitzerFallSequence(cannonballs, false));
+            Debug.Log("[Boss] Howitzer 발사 완료 → 낙하 분리 (C4)");
+            yield break;
+        }
+
+        yield return HowitzerFallSequence(cannonballs, true);
+    }
+
+    /// <summary>
+    /// 곡사포 Step 3~5: 경고 마커 → 순서대로 낙하 → 마커 회수 → (선택) 포격 자세 종료 트리거.
+    /// T57 에서 Howitzer() 에서 분리 (C4 는 BossController 위에서 따로 실행).
+    /// </summary>
+    private IEnumerator HowitzerFallSequence(List<GameObject> cannonballs, bool setStopTrigger)
+    {
         // Step 3: 경고 마커 표시
         List<GameObject> warningMarkers = new List<GameObject>();
         List<Vector3> targetPositions = new List<Vector3>();
@@ -762,7 +810,7 @@ public class BossAttackPatterns : MonoBehaviour
         // 포격 자세 종료 애니메이션 트리거 (대소문자 둘 다 대비)
         // 코루틴 내에서 포탄 투하가 다 끝나면 자동으로 트리거를 호출하여 
         // 애니메이터가 루프 자세를 풀고 Idle로 돌아가게 합니다.
-        if (animator != null)
+        if (setStopTrigger && animator != null)
         {
             animator.SetTrigger("stopHowitzer");
             animator.SetTrigger("StopHowitzer");
@@ -847,6 +895,11 @@ public class BossAttackPatterns : MonoBehaviour
     private IEnumerator Charge()
     {
         Debug.Log("[Boss] 돌진 패턴 시작");
+        // v2 C1 옵션·결과 (T57). 옵션은 시작 시점 값으로 고정 (다음 ExecutePattern 이 필드를 덮어써도 영향 없음)
+        bool brakeAfterPass = _chargeBrakeAfterPass;
+        LastChargeHitPlayer = false;
+        LastChargeHitWallBeforePass = false;
+
         // 등뒤 부스터 시동 전조 애니메이션
         if (animator != null)
         {
@@ -875,6 +928,8 @@ public class BossAttackPatterns : MonoBehaviour
         float chargeStartTime = Time.time;
         const float MAX_CHARGE_TIME = 3f;
         Vector3 startPosition = transform.position;
+        bool hasPassedPlayer = false;
+        float passedTime = 0f;
 
         // 돌진 이펙트 생성 및 부착 (보스를 따라가도록 부모 지정)
         GameObject chargeFX = null;
@@ -945,6 +1000,19 @@ public class BossAttackPatterns : MonoBehaviour
             // 판정 박스 활성화 (OnChargeImpactCheck로 위임)
             OnChargeImpactCheck();
 
+            // v2 C1 (T57): 플레이어를 지나친 시점 기록 → brakeAfterPass 면 chargeBrakeDelay 뒤 정지 (스턴 없음)
+            if (!hasPassedPlayer && player != null && (player.position.x - transform.position.x) * chargeDirectionX < 0f)
+            {
+                hasPassedPlayer = true;
+                passedTime = Time.time;
+            }
+
+            if (brakeAfterPass && hasPassedPlayer && Time.time - passedTime >= chargeBrakeDelay)
+            {
+                Debug.Log("[Boss] 돌진 Brake 정지 (C1)");
+                break;
+            }
+
             // 벽 충돌 감지 방법 1: OnTriggerEnter2D 플래그 (isTrigger 환경)
             if (_chargeHitWall)
             {
@@ -1001,6 +1069,7 @@ public class BossAttackPatterns : MonoBehaviour
 
         if (hasHitWall)
         {
+            LastChargeHitWallBeforePass = !hasPassedPlayer; // v2 C1 예외 (T57)
             Debug.Log("[Boss] 돌진 벽 충돌 - 스턴 시작");
             ChargeHitWall?.Invoke(); // v2 그로기 +25 (T61)
 
@@ -1250,6 +1319,7 @@ public class BossAttackPatterns : MonoBehaviour
             if (target.CompareTag("Player"))
             {
                 target.GetComponent<IDamageable>()?.TakeDamage(chargeDamage);
+                LastChargeHitPlayer = true; // v2 C1 예외 (T57)
             }
         }
     }

@@ -5,6 +5,97 @@
 
 ---
 
+## T58 콤보 시작 신호 (증기 + 경고음) — 🎮 현민 확인 대기
+- 근거: boss.md 9장 표 "증기 분출 + 경고음 = 2페이즈 콤보 시작 (첫 패턴의 눈 색 예고보다 먼저)" / 기준 커밋 `70953f2` (착수 시 기록, T55~T57 미커밋 상태)
+
+### 변경 파일
+| 파일 | 내용 |
+|---|---|
+| `Gimmick/ComboSignalView.cs` (새) | 콤보 Telegraph 진입 순간 증기 파티클 Play + 경고음 PlayOneShot 1회. 단독 패턴은 무시. 비어 있으면 로그만 |
+| `Gimmick/BossFlowConfig.cs` | `콤보 신호 선행 시간` 0.3초 〔임시값〕 |
+| `Gimmick/BossFlowDriver.cs` | 콤보 예고 = 콤보 예고 값 + 0.3초. `IsCurrentCombo`·`CurrentSignalLead` 공개 |
+| `Gimmick/BossTelegraphView.cs` | 콤보면 예고 앞 0.3초는 색 없음 → 그 뒤 첫 패턴 색 (깜빡임도 남은 구간 기준) |
+| `Editor/BossTestSceneBuilder.cs` | `ComboSignalView` 자동 추가·Driver 연결 |
+
+- 콤보 예고가 0.3초 길어짐 (색 구간은 그대로). 기존 씬 값 수정 불필요 (코드에서 더함).
+- 경고음은 보스 오브젝트의 AudioSource(BGM 과 같은 소스)에서 PlayOneShot — 소리가 묻히면 T59 에서 별도 AudioSource 지정.
+
+### 에디터 작업 (현민) — T59 와 묶어서
+1. 보스 자식에 증기 파티클(Play On Awake 끔) 배치 → `ComboSignalView` 의 `Steam` 에 지정, `Warning Clip` 에 경고음 지정. 기존 씬이면 보스에 `ComboSignalView` 추가하고 `Driver` 지정 (테스트 씬은 재생성 시 자동).
+
+### 확인할 것
+1. `Force Unit` = C1~C4: 예고 시작 순간 Console `[ComboSignal] C… 시작 신호` + 증기·경고음 → 0.3초 동안 보스 원래 색 → 그다음 눈 색(C1 빨강 깜빡, C2·C3 하늘색, C4 노랑).
+2. `Force Unit` = P1~P6: 신호 로그·증기·소리 없음, 예고 시작부터 바로 색 (예전과 같음).
+3. 2P 자연 선택에서 콤보마다 신호 1회씩 (중복 재생 없음).
+
+### 커밋 제안
+- `[feat] T58 콤보 시작 신호: 증기·경고음을 눈 색 예고보다 먼저 (ComboSignalView)` —
+  `Gimmick/ComboSignalView.cs`(+ `.meta`), `Gimmick/BossFlowConfig.cs`, `Gimmick/BossFlowDriver.cs`, `Gimmick/BossTelegraphView.cs`,
+  `Editor/BossTestSceneBuilder.cs`, `8_MD/HANDOFF.md`, `8_MD/BACKLOG.md`. Driver 는 T55~T57 과 같은 파일 → 함께 또는 뒤에.
+
+---
+
+## T57 C1·C4 (돌진 계열 콤보) — 🎮 현민 확인 대기
+- 근거: boss.md 8장 C1·C4·C1 예외 / 기준 커밋 `70953f2` (T55·T56 미커밋 상태에서 이어서 착수)
+
+### 변경 파일
+| 파일 | 내용 |
+|---|---|
+| `BossAttackPatterns.cs` (레거시) | `ExecutePattern(..., chargeBrakeAfterPass, howitzerDetachFall)` 옵션 2개 (기본 false → 기존 BT·단독 패턴 동작 그대로). `Charge()`: 지나친 시점 기록, Brake 옵션이면 `chargeBrakeDelay`(0.3, 인스펙터) 뒤 정지·스턴 없음, 결과 `LastChargeHitPlayer`·`LastChargeHitWallBeforePass`. `Howitzer()`: 경고·낙하를 `HowitzerFallSequence` 로 분리 — 분리 옵션이면 발사 직후 자세 종료 트리거 → 낙하는 BossController 에서 계속, 패턴은 바로 끝 |
+| `BossController.cs` | `StartDetachedHowitzerFall(IEnumerator)`, `ClearAllActiveProjectiles` 첫 줄에서 멈춤 (전환·사망) |
+| `Gimmick/IComboStepOutcomeSource.cs` (새) | 단계 결과 보고 인터페이스 |
+| `Gimmick/LegacyPatternBridge.cs` | 옵션 전달 + `WithComboOptions`, 돌진 결과 → `HitPlayer`(우선)/`HitWall`/`Completed` |
+| `Gimmick/Pattern/ComboPattern.cs` | 단계 목록을 직접 받음, 단계 결과로 C1 분기. 명중·벽 → P2 틈(0.6)으로 끝 |
+| `Gimmick/BossFlowDriver.cs` | C1 첫 단계 = 돌진+Brake, C4 첫 단계 = 곡사 발사만 |
+
+- C1 "벽 → Stunned": 축소안은 v2 Stunned 를 쓰지 않으므로 **레거시 돌진 자체 스턴(1초) + P2 틈 0.6** 으로 끝 (단독 P2 벽 충돌과 같음).
+- 리스크: C4 에서 곡사 낙하가 돌진과 동시에 진행 → 그로기 등으로 돌진이 끊겨도 낙하는 계속(의도). 곡사 자세 종료 트리거 직후 돌진이 Animator 트리거를 리셋하므로, 곡사 자세가 남으면 알려줄 것. Brake 전용 애니는 없음(그냥 정지).
+
+### 확인할 것
+1. `Force Unit` = C1: 돌진이 플레이어를 지나쳐 0.3초 뒤 멈추고(벽까지 안 감, 스턴 없음) 바로 짓밟기 → 틈 0.9. 돌진에 맞으면 짓밟기 없이 `끝 (ChargeHitPlayer)` → 틈 0.6. 벽에 바짝 붙어서(약 2 Unit 이내) 점프로 피하면 보스가 플레이어 x 를 지나기 전에 벽 → 스턴 후 `끝 (WallStun)`.
+2. `Force Unit` = C4: 포탄 3발 발사 직후 경고 마커가 뜨는 동안 이미 돌진, 포탄은 계속 낙하·폭발. 경고 마커가 남지 않음.
+3. C4 낙하 중 F1(전환) → 포탄·마커 회수, 에러 없음. 단독 P2·P4 는 예전과 같음.
+
+### 커밋 제안
+- `[feat] T57 C1 돌진 Brake·예외 + C4 발사 직후 돌진 (레거시 Charge·Howitzer 옵션)` —
+  `BossAttackPatterns.cs`, `BossController.cs`, `Gimmick/IComboStepOutcomeSource.cs`(+ `.meta`), `Gimmick/LegacyPatternBridge.cs`,
+  `Gimmick/Pattern/ComboPattern.cs`, `Gimmick/BossFlowDriver.cs`, `8_MD/HANDOFF.md`, `8_MD/BACKLOG.md`.
+  T55·T56 과 같은 파일(ComboPattern·Driver)이라 그 커밋과 함께 또는 뒤에.
+
+---
+
+## T55 콤보 계획·실행기 + T56 콤보 실행 — 🎮 현민 확인 대기
+- 근거: boss.md 8장 콤보 표·C1 예외, 17장 #9·#10 / 기준 커밋 `70953f2` (T55 착수 시 기록)
+
+### 변경 파일
+| 파일 | 내용 |
+|---|---|
+| `Core/ComboPlan.cs`, `ComboRunner.cs`, `ComboStepOutcome.cs`, `ComboEndReason.cs` (새) | 구성 C1 P2→P3 / C2 P1→P5 / C3 P1×3 / C4 P4→P2. 단계 진행, C1 예외(첫 돌진 명중 → 종료·P2 틈 / 벽 → Stunned 요청) |
+| `Gimmick/Pattern/ComboPattern.cs` (새) | 콤보 = 패턴 하나. 예고 1회 → 단계 패턴을 틈 없이 연속 실행 → 마지막에만 콤보 틈 |
+| `Gimmick/BossFlowDriver.cs` | C1~C4 를 ComboPattern 으로 등록 (단계 누락 시 그 콤보만 제외 + 경고). "콤보 미구현" 경고 삭제. 콤보 틈 기본값: C1 0.9 · C2 0.6 · C3 1.8 · C4 0.6 |
+
+- 상태 머신은 그대로 (콤보 동안 Attacking 이 길어짐). 단계 사이 Telegraph·Punishable·Resting 없음.
+- (C1 Brake·예외, C4 발사 직후 돌진은 위 T57 에서 처리)
+- 리스크: 기존 씬 Driver 의 콤보 틈 값은 예전 값(C2 1.2, C4 0)이 남아 있음 → 씬 재생성 또는 인스펙터에서 위 값으로.
+
+### 에디터 작업 (현민)
+1. 테스트 씬 다시 생성 (또는 Driver `Unit Patterns` 의 C1~C4 반격 틈을 0.9 / 0.6 / 1.8 / 0.6 으로).
+
+### 확인할 것
+1. `Force Unit` = C3: 예고 1회 → 점프 3번이 사이 틈 없이 이어지고, 마지막 착지 후에만 Punishable 1.8초. Console `[Combo C3] 단계 1/3 … 2/3 … 3/3 … 끝 (Completed)`.
+2. `Force Unit` = C2: 착지하자마자 기관총 3연발(틈 없음) → Punishable 0.6. C1 = 돌진 → 바로 짓밟기, C4 = 곡사 → 돌진.
+3. F1 → 2P 자연 선택에서 콤보가 섞여 나오고, 콤보 도중 F1·사망·그로기 시 다음 단계로 안 넘어감 (로그 끊김).
+
+### 질문
+- C1 예외 2가지·C3 긴 틈 1.8초는 〔임시값〕 그대로.
+
+### 커밋 제안
+- `[feat] T55·T56 콤보: ComboPlan·ComboRunner + ComboPattern 연속 실행 (C1~C4)` —
+  `Core/ComboPlan.cs`, `Core/ComboRunner.cs`, `Core/ComboStepOutcome.cs`, `Core/ComboEndReason.cs`,
+  `Gimmick/Pattern/ComboPattern.cs`, `Gimmick/BossFlowDriver.cs`, `8_MD/HANDOFF.md`, `8_MD/BACKLOG.md` (+ 새 `.cs` 의 `.meta`)
+
+---
+
 ## T46 ✂️ P1 점프 내려찍기 (T45 통합) — 🎮 현민 확인 대기
 - 근거: boss.md 6장 P1·4장·17장 #11, BACKLOG 축소 계획 6번 / 기준 커밋 `35b2fb2` (착수 시 기록)
 
@@ -111,4 +202,4 @@
 - 피해 1당 +0.5 면 게이지 100 = 피해 200 (HP 500 의 40%). 너무 빠르거나 느리면 `GroggyConfig` 에서 조정.
 
 ## 다음 할 일
-- T55 콤보 계획·실행기 (로직) → T56 (C2 = P1 → Burst, C3 = P1×3).
+- T34 ✂️ 2P 붉은 틴트 유지 → T23 회수 누락.

@@ -27,6 +27,7 @@ namespace UnMachine.Boss
         private Color[] _baseColors;
         private TelegraphSignal _signal;
         private float _duration;
+        private float _lead;
         private bool _isTelegraphing;
         private bool _isLit;
 
@@ -77,7 +78,9 @@ namespace UnMachine.Boss
             }
 
             // 경과 = 예고 길이 - 남은 시간 → World 채널을 따른다 (히트스톱 중 멈춤).
-            bool isLit = _signal.IsLit(_duration - _driver.StateRemaining, _duration);
+            // 콤보는 앞 _lead 초가 증기·경고음 구간 → 그 뒤부터 색 (T58, spec: boss.md 9장 "눈 색 예고보다 먼저")
+            float elapsed = _duration - _driver.StateRemaining - _lead;
+            bool isLit = elapsed >= 0f && _signal.IsLit(elapsed, _duration - _lead);
             if (isLit != _isLit)
             {
                 _isLit = isLit;
@@ -91,9 +94,10 @@ namespace UnMachine.Boss
             {
                 _signal = TelegraphSignal.For(_driver.CurrentUnit);
                 _duration = _driver.StateRemaining;
+                _lead = Mathf.Min(_driver.CurrentSignalLead, _duration);
                 _isTelegraphing = true;
-                _isLit = true;
-                ApplyColor(true);
+                _isLit = _lead <= 0f;
+                ApplyColor(_isLit);
                 return;
             }
 

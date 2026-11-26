@@ -31,6 +31,9 @@ namespace UnMachine.Boss
         [Tooltip("2페이즈 반격 틈 배율 (패턴 값 × 이 값). spec: boss.md 8장 2페이즈")]
         [SerializeField, Min(0f)] private float _phase2PunishScale = 0.8f;
 
+        [Tooltip("콤보 예고 앞에 붙는 증기·경고음 구간(초). 이 동안 눈 색 없음. 〔임시값〕 spec: boss.md 9장 '눈 색 예고보다 먼저'")]
+        [SerializeField, Min(0f)] private float _comboSignalLeadSeconds = 0.3f;
+
         [Header("인터럽트 상태")]
         [Tooltip("벽 충돌 기절 길이(초). 끝나면 Resting. spec: boss.md 5장 Stunned")]
         [SerializeField, Min(0f)] private float _stunnedSeconds = 1.5f;
@@ -56,6 +59,9 @@ namespace UnMachine.Boss
 
         /// <summary>Resting 걷기 정지 거리 (플레이어와 x 거리, Unit).</summary>
         public float RestWalkStopDistance => _restWalkStopDistance;
+
+        /// <summary>콤보 시작 신호 구간(초). 콤보 예고 = 이 값 + 콤보 예고 값 (T58).</summary>
+        public float ComboSignalLeadSeconds => _comboSignalLeadSeconds;
 
         /// <summary>Core 상태 머신에 넘길 수치 묶음을 만든다.</summary>
         public BossFlowSettings ToSettings()
