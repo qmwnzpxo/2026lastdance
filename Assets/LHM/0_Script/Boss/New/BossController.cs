@@ -17,7 +17,14 @@ public enum BossState
     BoosterJump, // 부스터 점프 이동 중
     Hit,         // 피격
     Dead,        // 사망
-    Walk         // 걷기 이동 상태 추가
+    Walk,        // 걷기 이동 상태 추가
+
+    // ── v2 흐름 상태 (T31, useFlowV2 On 일 때만 사용). Animator State 정수와 같아서 맨 끝에 고정값으로 둔다 ──
+    Telegraph = 8,       // 패턴 예고
+    Punishable = 9,      // 반격 틈 (피해 ×1.2)
+    Stunned = 10,        // 벽 충돌 기절 (피해 ×1.2)
+    Groggy = 11,         // 그로기 (피해 ×1.5)
+    PhaseTransition = 12 // 페이즈 전환 〔임시값: 상태명〕
 }
 
 
@@ -117,6 +124,13 @@ public class BossController : MonoBehaviour, IDamageable
     [SerializeField] private float droneSpawnAnticipationTime = 0.4f;
     [SerializeField] private int maxDroneCount = 2;
 
+    [Header("v2 흐름 (T31, BACKLOG Q19 C)")]
+    [Tooltip("On = 전투 시작 후 BossFlowDriver 가 Idle~Resting 루프를 소유. Off = 기존 코루틴 흐름 그대로")]
+    [SerializeField] private bool _useFlowV2 = false;
+    [SerializeField] private UnMachine.Boss.BossFlowDriver _flowDriver;
+
+    // Start 에서 토글 + Driver 준비 상태로 확정. Driver 가 없거나 꺼져 있으면 기존 흐름으로 동작한다.
+    private bool _isFlowV2Active;
 
     // 현재 상태
     private BossState currentState = BossState.Appearing;
@@ -232,6 +246,11 @@ public class BossController : MonoBehaviour, IDamageable
 
         // Behavior Tree 빌드
         BuildBehaviorTrees();
+
+        // v2 흐름 확정 — Driver.Awake 가 끝난 뒤(Start)에 준비 상태를 읽는다.
+        _isFlowV2Active = _useFlowV2 && _flowDriver != null && _flowDriver.IsReady;
+        if (_useFlowV2 && !_isFlowV2Active)
+            GameLog.Error(this, "[Boss] useFlowV2 On 이지만 BossFlowDriver 가 없거나 준비되지 않음 → 기존 흐름으로 동작");
 
         // 등장 연출 시작
         StartCoroutine(AppearingSequence());
@@ -598,8 +617,8 @@ public class BossController : MonoBehaviour, IDamageable
         GameLog.Info("[Boss] BattleStarted", this);
         BattleStarted?.Invoke();
 
-        // Appearing 상태 해제 후 Idle로 전이
-        ChangeState(BossState.Idle);
+        // Appearing 상태 해제 후 Idle로 전이 (v2 면 Driver 가 루프 시작)
+        StartBattleLoop();
     }
 
 
@@ -637,6 +656,10 @@ public class BossController : MonoBehaviour, IDamageable
 
 
         // 상태별 초기화 로직
+
+        // v2: Idle·Attacking·Resting 등은 BossFlowDriver 가 소유 → 레거시 코루틴을 시작하지 않는다 (Dead 만 기존 처리)
+        if (_isFlowV2Active && newState != BossState.Dead)
+            return;
 
         switch (newState)
         {
@@ -1105,7 +1128,7 @@ public class BossController : MonoBehaviour, IDamageable
 
                 NotifyPhaseChanged();
 
-                ChangeState(BossState.Idle);
+                StartBattleLoop();
                 Debug.Log("[Debug] F1: 2페이즈 전환 완료 → 드론 패턴 활성화됨");
             }
         }
@@ -1146,16 +1169,26 @@ public class BossController : MonoBehaviour, IDamageable
         if (_isInvincible)
             return;
 
-        // Attacking, Resting, Idle 상태에서만 피격 판정
-        if (currentState != BossState.Attacking && 
-            currentState != BossState.Resting && 
-            currentState != BossState.Idle)
+        // Attacking, Resting, Idle 상태에서만 피격 판정 (v2 는 예고·반격 틈·기절·그로기도 포함)
+        if (currentState != BossState.Attacking &&
+            currentState != BossState.Resting &&
+            currentState != BossState.Idle &&
+            !(_isFlowV2Active && IsFlowV2DamageableState(currentState)))
             return;
 
         // 피격 무적 + 깜빡임 시작 (이전 코루틴 중복 방지)
         if (_hitInvincibilityCoroutine != null)
             StopCoroutine(_hitInvincibilityCoroutine);
         _hitInvincibilityCoroutine = StartCoroutine(HitInvincibilityCoroutine());
+
+        // v2: 상태별 받는 피해 배율 (spec: boss.md 4장)
+        if (_isFlowV2Active)
+        {
+            float multiplier = _flowDriver.DamageMultiplier;
+            float scaled = damage * multiplier;
+            GameLog.Info($"[Boss] 피해 {damage:F1} × {multiplier:F2} = {scaled:F1} ({currentState})", this);
+            damage = scaled;
+        }
 
         currentHP -= damage;
 
@@ -1226,8 +1259,8 @@ public class BossController : MonoBehaviour, IDamageable
             // 페이즈 전환 알림 (정리 완료 후, 새 루프 시작 전 — 구독자가 이전 페이즈 기믹을 회수하고 다음 기믹을 시작)
             NotifyPhaseChanged();
 
-            // 5) 새 상태 시작
-            ChangeState(BossState.Idle);
+            // 5) 새 상태 시작 (v2 면 Driver 가 2페이즈로 루프 재시작 — T33 에서 PhaseTransition 경로로 교체)
+            StartBattleLoop();
         }
 
         // 사망 체크
@@ -1385,6 +1418,42 @@ public class BossController : MonoBehaviour, IDamageable
     {
         GameLog.Info($"[Boss] PhaseChanged → {currentPhase}", this);
         PhaseChanged?.Invoke(currentPhase);
+    }
+
+    /// <summary>
+    /// 전투 루프를 시작한다 (전투 시작, 페이즈 전환 직후). v2 면 BossFlowDriver 가 현재 페이즈로 루프를 (다시) 시작하고,
+    /// 아니면 기존처럼 Idle 코루틴으로 들어간다.
+    /// </summary>
+    private void StartBattleLoop()
+    {
+        if (_isFlowV2Active)
+        {
+            _flowDriver.StartLoop(currentPhase);
+            return;
+        }
+
+        ChangeState(BossState.Idle);
+    }
+
+    /// <summary>(useFlowV2) BossFlowDriver 가 흐름 상태를 반영한다. 상태값·Animator 만 바꾸고 코루틴은 시작하지 않는다.</summary>
+    public void ApplyFlowState(BossState state)
+    {
+        if (!_isFlowV2Active)
+        {
+            GameLog.Warn($"[Boss] useFlowV2 가 꺼져 있는데 ApplyFlowState({state}) 호출 → 무시", this);
+            return;
+        }
+
+        ChangeState(state);
+    }
+
+    /// <summary>v2 에서 기존 3상태(Idle·Attacking·Resting) 외에 피격을 받는 상태. PhaseTransition 은 제외 (T33 무적).</summary>
+    private static bool IsFlowV2DamageableState(BossState state)
+    {
+        return state == BossState.Telegraph
+            || state == BossState.Punishable
+            || state == BossState.Stunned
+            || state == BossState.Groggy;
     }
 
     /// <summary>무적 표시 대상 판정의 단일 기준. T19에서 2페이즈 쉴드 조건을 여기에 더한다.</summary>
