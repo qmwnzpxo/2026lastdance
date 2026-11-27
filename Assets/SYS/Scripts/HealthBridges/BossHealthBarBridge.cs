@@ -69,6 +69,10 @@ public class BossHealthBarBridge : MonoBehaviour
         if (damageHandler == null)
             damageHandler = GetComponentInParent<DamageHandler>();
 
+        // UI 프리팹(BossBar_v2)처럼 보스와 떨어진 Canvas 에 있을 때: 씬에서 탐색
+        if (damageHandler == null)
+            damageHandler = FindFirstObjectByType<DamageHandler>();
+
         if (healthBar == null)
             healthBar = GetComponent<UnifiedHealthBarVisual>();
 

@@ -79,6 +79,13 @@ public class UnifiedHealthBarVisual : MonoBehaviour
         var img = GetComponent<Image>();
         rt = GetComponent<RectTransform>();
 
+        // rootCanvas 미연결 시 자동 탐색 (프리팹을 아무 Canvas 아래에 넣어도 동작)
+        if (rootCanvas == null)
+        {
+            var c = GetComponentInParent<Canvas>();
+            if (c != null) rootCanvas = c.rootCanvas;
+        }
+
         if (sourceMaterial == null)
         {
             Debug.LogError("[UnifiedHealthBarVisual] Source Material 연결 필요!", this);
