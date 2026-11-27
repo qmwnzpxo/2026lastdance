@@ -5,6 +5,121 @@
 
 ---
 
+## 🛠 테스트 도구: `UnMachine/Boss Test Panel` (현민 요청, 기준 커밋 `70953f2`)
+- **쓰는 법:** 메뉴 `UnMachine/Boss Test Panel` 로 창 열기 → (테스트 씬에서) Play → 보스 자동 탐색.
+  - **조작:** 강제 단위 P1~C4·해제 / 2P 전환(HP 49%) / HP 50% 경계 / 사망 / 그로기 +25 / 그로기 진입 / 기절
+  - **상태:** 흐름·남은 시간·페이즈·배율 / 현재 패턴 / P1 점프 단계·피해 거부 / HP·그로기 / 씬에 남은 탄(포탄·총알/파편·에너지탄·마커·충격파·드론)
+  - **체크리스트 (자동 판정):** P1 착지·충격파 적중·화면 밖 피해 0 / 그로기 / 2P 전환+틴트 / 전환 직후 남은 탄 0 / C1~C4 끝(이유 표시) / 콤보 신호 먼저 / 사망 후 남은 것 0 / Console 에러 0
+  - **자동 순회:** P1 → 그로기 → 2P 전환 → C1 → C2 → C3 → C4 → 사망 (각 단계 완료 로그를 기다림, 최대 30초). 플레이어는 피하기만.
+  - **보고서 복사:** 결과를 클립보드로 → 채팅에 붙여 주면 판단·수정.
+- **변경 파일:** `Editor/BossTestPanel.cs` (새), 디버그 진입점(`#if UNITY_EDITOR`, 빌드 제외): `BossController.cs`(HP 비율·즉시 사망·마커 수·피해 거부 여부), `Gimmick/BossFlowDriver.cs`(강제 단위·기절·페이즈·패턴 이름·점프 단계·충격파 수), `Gimmick/BossGroggyDriver.cs`(+N), `Gimmick/Pattern/JumpSlamPattern.cs`(충격파 수, 런타임 읽기 전용)
+- **한계:** 판정은 GameLog 문구 기준 (문구를 바꾸면 패널도 수정). 회피·점프 같은 손맛과 색·이펙트는 눈으로. C1 예외(명중·벽)는 자동 순회에서 일부러 맞거나 벽에 붙어야 나옴.
+- **커밋 제안:** `[chore] 보스 테스트 패널 (자동 체크리스트·자동 순회·보고서)` — 위 파일 + `BossTestPanel.cs.meta`, `8_MD/HANDOFF.md`
+
+### 현민 씬 테스트 결과 — 2차 (2026-11-27 12:25, 테스트 씬) ✅ 13/13 통과
+- 착지 몸체 피해 수정 확인 (`몸체 적중 1 (피해 8)`), 충격파 적중 1회, 그로기 진입 1회 (자동 순회 그로기 단계), 나머지 1차와 동일하게 통과. Console 에러 0.
+- 상태: **T46·T55·T56·T57·T58·T34·T23 씬 통과 → 현민 커밋 대기.** (T38·T39·T60·T61·T63 은 이전 커밋분)
+- 남은 수동 확인(선택): C1 정상 경로 `Completed`(돌진 회피 → 0.3초 뒤 Brake → 짓밟기), C1 `WallStun`(벽에 바짝 붙어 점프), 눈으로 볼 것(아래).
+
+### 현민 씬 테스트 결과 — 1차 (2026-11-27 12:14, 테스트 씬)
+- ✓ 11 / ✗ 0 / 미확인 2. 컴파일 OK, Console 에러 0.
+- ✓ T46 P1 착지 6회, 화면 밖 피해 0 / ✓ T33·T34 전환 + 붉은 틴트 / ✓ T23 전환 직후·사망 후 남은 탄·드론·충격파 0
+- ✓ T56 C2·C3 Completed / ✓ T57 C1 (ChargeHitPlayer 경로), C4 Completed / ✓ T58 콤보 신호 4/4 먼저
+- 미확인: T46 충격파 적중(서서 맞아보기), T61 그로기(→ 자동 순회에 그로기 단계 추가함). C1 정상 경로(돌진 회피 → Brake → 짓밟기 = `Completed`)와 WallStun 경로도 아직 기록 없음.
+- 🐞 수정 (같은 날): **착지 몸체 피해가 항상 0** — 보스가 중력 0 이라 배치 높이(테스트 씬 y 3)에 떠 있어 몸체 판정 아래 끝이 바닥보다 3 높았음. `JumpSlamPattern.Land` 에서 판정 박스를 `Ground Y` 까지 늘림 (보스 위치는 그대로). Driver Gizmo(노랑)로 마지막 착지 박스 표시. → 그림자 위에 서 있으면 8 다시 확인.
+- 충격파 맞는 법: 그림자가 **빨갛게 고정되면** 옆으로 3~4 Unit 벗어나 **바닥에 선 채로** 기다림 (몸 옆에서 출발해 바깥으로 이동). 그림자를 안 벗어나면 착지 판정(8)만 받고 충격파는 바깥으로 지나감.
+- 눈으로 볼 것(패널이 판정 못 함): 예고 색·깜빡임, 그림자 색 변화, C1 Brake 정지 위치, C4 곡사 자세가 남는지.
+
+---
+
+## ★ 남은 에디터 작업 체크리스트 (현민) — 축소 계획 코드 작업 완료 후
+> 순서대로 하면 됨. 테스트 씬(`UnMachine/Test Scene/Boss Arena`)은 1~3번 대부분이 자동이고, **실제 보스 씬**은 아래를 손으로.
+
+### T36 ✂️ v2 흐름 켜기 (실제 보스 씬)
+- [ ] 보스 오브젝트(BossController 있는 곳)에 컴포넌트 추가: `BossFlowDriver`, `BossTelegraphView`, `ComboSignalView`, `BossGroggyDriver`
+- [ ] `BossFlowDriver`: `Config` = BossFlowConfig, `Boss` = 자기 BossController, `Attack Patterns` = 자기 BossAttackPatterns, `Pattern Table` = PatternTableConfig, `Jump Slam` = JumpSlamConfig
+- [ ] `BossTelegraphView`·`ComboSignalView`: `Driver` = 위 Driver
+- [ ] `BossGroggyDriver`: `Config` = GroggyConfig, `Boss`·`Flow Driver`·`Attack Patterns` 지정
+- [ ] `BossController`: `Flow Driver` 지정, **`Use Flow V2` 체크**
+- [ ] (선택) 보스 Animator 에 Int 파라미터 `State` 추가 → Console 의 `Parameter 'State' does not exist` 경고 사라짐 (상태 8~12 애니 전이는 생략 가능)
+
+### T67 ✂️ 그로기 바 UI
+- [ ] 보스 체력바 Canvas 아래: 빈 오브젝트 `GroggyBar`(+ `BossGroggyBar`) → 자식 `Root`(배경 Image) → 그 자식 `Fill`(Image, Type Filled / Horizontal / Origin Left)
+- [ ] `BossGroggyBar`: `Groggy`·`Boss`·`Root`·`Fill` 지정 (**Root 는 GroggyBar 자신이 아닌 자식**)
+
+### T54 ✂️ P1 점프 내려찍기 에셋
+- [ ] `JumpSlamConfig` 에셋 값: 실제 보스 룸의 `Room Min X`·`Room Max X`(벽 x), `Ground Y`(바닥), `Ceiling Y`(천장) 로 맞추기
+- [ ] (선택) 보스 Animator 에 Trigger `JumpSlamLaunch`(도약 jumping 3~5)·`JumpSlamLand`(착지 lending) + 상태·전이 → 없으면 애니 없이 이동만
+- [ ] (선택) 그림자 프리팹: SpriteRenderer + `BossShadowMarker`, **피벗 아래 끝** → Config `Shadow Prefab`
+- [ ] (선택) 충격파 프리팹: SpriteRenderer + `BossShockwave`, 피벗 가운데, 오른쪽을 보는 그림 → Config `Shockwave Prefab` (크기는 프리팹 그대로, 판정은 Config 폭·높이)
+- [ ] `Player Layer` 가 플레이어 레이어인지 확인 (비우면 "player")
+
+### T59 콤보 신호
+- [ ] 보스 자식에 증기 ParticleSystem (Play On Awake 끔) → `ComboSignalView` `Steam`
+- [ ] 경고음 클립 → `Warning Clip` (소리가 BGM 에 묻히면 별도 AudioSource 를 만들어 `Audio Source` 에)
+
+### T24 ✂️ 최종 플레이 (실제 보스 씬)
+- [ ] 1P: P1~P5 가 섞여 나오고, 예고 색이 패턴마다 맞음 (P1 하늘·P2/P3 빨강 깜빡·P4/P5 노랑)
+- [ ] 그로기: 때리거나 돌진 벽 충돌로 바가 차고 → 100 에서 Groggy 4초 (피해 ×1.5) → 0
+- [ ] HP 50% → 전환(무적·탄 회수·붉은 틴트) → 2P: 콤보마다 증기·경고음 → 색, P6 드론
+- [ ] 사망 → 씬에 충격파·포탄·파편·에너지탄·드론·경고 마커 0개, Console 에러 0
+- [ ] 문제가 있으면 Console 로그와 함께 알려주면 수정 (또는 "로그 체크")
+
+---
+
+## T23 회수 누락 보강 (파편·에너지탄) — 🎮 현민 확인 대기
+- 근거: boss.md 8장 전환 1 "진행 중 패턴·발사체 정리", BACKLOG T23 원안 / 기준 커밋 `70953f2` (착수 시 기록, T55~T34 미커밋 상태)
+
+### 원인
+- 곡사 파편: `HowitzerCannonball` 이 풀 대신 매번 `Instantiate`, 아무도 추적 안 함 → 전환·사망 때 안 사라짐. AirBurst 사거리 코루틴은 포탄 위에서 돌아 포탄이 풀로 돌아가는 순간 멈춤 (파편이 수명 5초까지 날아감).
+- 드론 에너지탄: `ConductorDrone` 이 매번 `Instantiate`, 추적 없음 → 전환·사망 후에도 남음.
+
+### 변경 파일
+| 파일 | 내용 |
+|---|---|
+| `HowitzerCannonball.cs` | 파편을 `SpawnPellet` → 보스 파편 풀에서 꺼냄 (보스 없으면 예전처럼 Instantiate). AirBurst 사거리 = 파편 `SetLifetime` |
+| `BossProjectile.cs` | `SetLifetime(초)` 추가 |
+| `BossController.cs` | 파편 Get 에 대체 프리팹 인자(보스 프리팹 없을 때 포탄 것), 활성 파편 목록 추적·반환 시 제거. `SpawnEnergyBullet` (꺼진 것 재사용·추적). `ClearAllActiveProjectiles` 에서 파편 반환 + 에너지탄 끄기 |
+| `ConductorDrone.cs` | 에너지탄 생성을 `SpawnEnergyBullet` 로 |
+
+- 사망(`DeadState`)·v2 전환(`EnterFlowPhaseTransition`)·레거시 전환 모두 `ClearAllActiveProjectiles` 를 거치므로 한 곳 수정으로 모두 적용.
+- 리스크: 보스(`BossController`)와 `BossAttackPatterns` 의 파편 프리팹이 서로 다르면 이제 **보스 쪽 프리팹**이 쓰임 (지금까지는 BossAttackPatterns 쪽). 같은 프리팹인지 확인.
+
+### 확인할 것
+1. 곡사(P4)에서 AirBurst·BounceBlast 파편이 날아가는 중에 F1 → 파편 전부 즉시 사라짐, 에러 없음. AirBurst 파편이 사거리만큼만 날고 사라짐.
+2. 2P 드론 에너지탄 비행 중 보스 사망(HP 0) → 에너지탄 사라짐. 에너지탄이 계속 정상 발사(재사용)되고 Hierarchy 에 꺼진 에너지탄이 끝없이 늘지 않음.
+3. 곡사 여러 번 후 Hierarchy 의 파편 개수가 계속 늘지 않음 (풀 재사용).
+
+### 커밋 제안
+- `[fix] T23 회수 누락: 곡사 파편 풀 사용·추적, 드론 에너지탄 추적 → 전환·사망 시 회수` —
+  `HowitzerCannonball.cs`, `BossProjectile.cs`, `BossController.cs`, `ConductorDrone.cs`, `8_MD/HANDOFF.md`, `8_MD/BACKLOG.md`.
+  BossController 는 T57 과 같은 파일 → 함께 또는 뒤에.
+
+---
+
+## T34 ✂️ 2P 붉은 틴트 유지 — 🎮 현민 확인 대기
+- 근거: boss.md 8장 전환 3·9장 "눈은 예고 전용" / 기준 커밋 `70953f2` (착수 시 기록, T55~T58 미커밋 상태)
+
+### 변경 파일
+| 파일 | 내용 |
+|---|---|
+| `Gimmick/BossTelegraphView.cs` | 페이즈 틴트 추가 (새 파일 대신 — 스프라이트 색을 바꾸는 곳을 하나로 유지). PhaseTransition 진입 시 On, `BossController.PhaseChanged` 로 2P 이상 On / 1P Off. 예고 중엔 예고 색만, 그 외엔 붉은 틴트(1, 0.55, 0.55) 〔임시값〕 |
+
+- BACKLOG 원안 파일(`BossPhaseTransitionView.cs`)은 만들지 않음: 두 컴포넌트가 같은 스프라이트 색을 덮어쓰게 되기 때문.
+- 역재생·증기·흔들림은 축소안대로 없음, 기존 `SpawnPhaseTransitionEffect` 화면 이펙트는 그대로.
+- 2P 예고 깜빡임의 "꺼진" 순간은 붉은색 (원래 색 아님).
+
+### 확인할 것
+1. 1P: 평소 원래 색, 예고 때만 예고 색 (예전과 같음).
+2. F1 → 전환 시작 순간 붉어지고 Console `2P 붉은 틴트 On`, 전환이 끝난 뒤 2P 내내 유지.
+3. 2P 예고: 예고 색(빨강·노랑·하늘)이 붉은색과 섞이지 않고 보이고, 예고가 끝나면 다시 붉은 틴트. 사망까지 유지.
+
+### 커밋 제안
+- `[feat] T34 ✂️ 2P 붉은 틴트 유지 (BossTelegraphView 페이즈 틴트)` —
+  `Gimmick/BossTelegraphView.cs`, `8_MD/HANDOFF.md`, `8_MD/BACKLOG.md`. TelegraphView 는 T58 과 같은 파일 → 함께 또는 뒤에.
+
+---
+
 ## T58 콤보 시작 신호 (증기 + 경고음) — 🎮 현민 확인 대기
 - 근거: boss.md 9장 표 "증기 분출 + 경고음 = 2페이즈 콤보 시작 (첫 패턴의 눈 색 예고보다 먼저)" / 기준 커밋 `70953f2` (착수 시 기록, T55~T57 미커밋 상태)
 
@@ -202,4 +317,4 @@
 - 피해 1당 +0.5 면 게이지 100 = 피해 200 (HP 500 의 40%). 너무 빠르거나 느리면 `GroggyConfig` 에서 조정.
 
 ## 다음 할 일
-- T34 ✂️ 2P 붉은 틴트 유지 → T23 회수 누락.
+- 축소 계획 코드 작업 끝. 남은 것은 현민 에디터 묶음: T36 ✂️ → T67 ✂️ → T54 ✂️ → T59 → T24 ✂️ (최종 플레이). 그 사이 🎮 씬 확인 결과를 알려주면 수정.

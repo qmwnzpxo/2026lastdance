@@ -150,6 +150,9 @@ public class BossController : MonoBehaviour, IDamageable
     private List<GameObject> activeCannonballs = new List<GameObject>();
     private List<GameObject> activeBullets = new List<GameObject>();
     private List<GameObject> activeWarningMarkers = new List<GameObject>();
+    private List<GameObject> activeAirBurstPellets = new List<GameObject>(); // T23
+    private List<GameObject> activeBouncePellets = new List<GameObject>();   // T23
+    private List<GameObject> energyBullets = new List<GameObject>();         // T23 (켜짐·꺼짐 모두, 재사용)
 
     // Behavior Tree
     private BossBT.BTNode _phase1BT;
@@ -442,21 +445,35 @@ public class BossController : MonoBehaviour, IDamageable
     /// <summary>
     /// AirBurst 파편 오브젝트 풀에서 가져오기
     /// </summary>
-    public GameObject GetAirBurstPelletFromPool()
+    /// <param name="fallbackPrefab">풀이 비고 보스에 프리팹도 없을 때 쓸 프리팹 (포탄이 가진 것, T23).</param>
+    public GameObject GetAirBurstPelletFromPool(GameObject fallbackPrefab = null)
     {
-        if (airBurstPelletPool.Count > 0)
+        GameObject pellet = TakeFromPool(airBurstPelletPool, airBurstPelletPrefab, fallbackPrefab);
+        if (pellet != null)
+            activeAirBurstPellets.Add(pellet); // 전환·사망 회수용 (T23)
+        return pellet;
+    }
+
+    /// <summary>풀에서 꺼내거나(파괴된 항목은 건너뜀) 프리팹 → 대체 프리팹 순으로 새로 만든다. 활성 상태로 돌려준다.</summary>
+    private GameObject TakeFromPool(Queue<GameObject> pool, GameObject prefab, GameObject fallbackPrefab)
+    {
+        while (pool.Count > 0)
         {
-            GameObject pellet = airBurstPelletPool.Dequeue();
-            pellet.SetActive(true);
-            return pellet;
+            GameObject pooled = pool.Dequeue();
+            if (pooled != null)
+            {
+                pooled.SetActive(true);
+                return pooled;
+            }
         }
-        else if (airBurstPelletPrefab != null)
-        {
-            GameObject pellet = Instantiate(airBurstPelletPrefab);
-            pellet.SetActive(true);
-            return pellet;
-        }
-        return null;
+
+        GameObject source = prefab != null ? prefab : fallbackPrefab;
+        if (source == null)
+            return null;
+
+        GameObject created = Instantiate(source);
+        created.SetActive(true);
+        return created;
     }
 
 
@@ -469,27 +486,20 @@ public class BossController : MonoBehaviour, IDamageable
         {
             pellet.SetActive(false);
             airBurstPelletPool.Enqueue(pellet);
+            activeAirBurstPellets.Remove(pellet);
         }
     }
 
     /// <summary>
     /// BounceBlast 파편 오브젝트 풀에서 가져오기
     /// </summary>
-    public GameObject GetBouncePelletFromPool()
+    /// <param name="fallbackPrefab">풀이 비고 보스에 프리팹도 없을 때 쓸 프리팹 (포탄이 가진 것, T23).</param>
+    public GameObject GetBouncePelletFromPool(GameObject fallbackPrefab = null)
     {
-        if (bouncePelletPool.Count > 0)
-        {
-            GameObject pellet = bouncePelletPool.Dequeue();
-            pellet.SetActive(true);
-            return pellet;
-        }
-        else if (bouncePelletPrefab != null)
-        {
-            GameObject pellet = Instantiate(bouncePelletPrefab);
-            pellet.SetActive(true);
-            return pellet;
-        }
-        return null;
+        GameObject pellet = TakeFromPool(bouncePelletPool, bouncePelletPrefab, fallbackPrefab);
+        if (pellet != null)
+            activeBouncePellets.Add(pellet); // 전환·사망 회수용 (T23)
+        return pellet;
     }
 
 
@@ -502,7 +512,48 @@ public class BossController : MonoBehaviour, IDamageable
         {
             pellet.SetActive(false);
             bouncePelletPool.Enqueue(pellet);
+            activeBouncePellets.Remove(pellet);
         }
+    }
+
+    /// <summary>
+    /// (T23) 드론 에너지탄 생성. 꺼진(수명·명중으로 스스로 꺼진) 것을 재사용하고, 전환·사망 시 함께 끈다.
+    /// EnergyBullet 은 스스로 SetActive(false) 로 끝나므로 반환 호출이 필요 없다.
+    /// </summary>
+    public GameObject SpawnEnergyBullet(GameObject prefab, Vector3 position)
+    {
+        if (prefab == null)
+            return null;
+
+        GameObject bullet = null;
+        for (int i = energyBullets.Count - 1; i >= 0; i--)
+        {
+            GameObject candidate = energyBullets[i];
+            if (candidate == null)
+            {
+                energyBullets.RemoveAt(i);
+                continue;
+            }
+
+            if (!candidate.activeSelf)
+            {
+                bullet = candidate;
+                break;
+            }
+        }
+
+        if (bullet == null)
+        {
+            bullet = Instantiate(prefab, position, Quaternion.identity);
+            energyBullets.Add(bullet);
+        }
+        else
+        {
+            bullet.transform.SetPositionAndRotation(position, Quaternion.identity);
+            bullet.SetActive(true);
+        }
+
+        return bullet;
     }
 
     /// <summary>
@@ -545,6 +596,22 @@ public class BossController : MonoBehaviour, IDamageable
     /// 캐논볼/총알/경고마커가 보스 이동을 막는 문제 방지
     /// FindObjectsByType 대신 직접 추적 리스트를 사용 (Unity 버전 호환)
     /// </summary>
+    /// <summary>활성 파편을 끄고 풀에 넣는다. 이미 꺼졌거나 파괴된 항목은 건너뛴다 (T23).</summary>
+    private static void ReturnActivePellets(List<GameObject> active, Queue<GameObject> pool)
+    {
+        for (int i = active.Count - 1; i >= 0; i--)
+        {
+            GameObject pellet = active[i];
+            if (pellet != null && pellet.activeSelf)
+            {
+                pellet.SetActive(false);
+                pool.Enqueue(pellet);
+            }
+        }
+
+        active.Clear();
+    }
+
     /// <summary>
     /// (v2 C4, T57) 곡사포 경고·낙하 단계를 이 컴포넌트 위에서 실행한다 → BossAttackPatterns.ForceStopAllPatterns 로 끊기지 않는다.
     /// 전환·사망의 ClearAllActiveProjectiles 에서 멈춘다. 이전 것이 남아 있으면 그대로 두고 마지막 것만 추적한다.
@@ -606,6 +673,20 @@ public class BossController : MonoBehaviour, IDamageable
             }
         }
         activeWarningMarkers.Clear();
+
+        // T23: 곡사 파편 (AirBurst·Bounce) 회수
+        ReturnActivePellets(activeAirBurstPellets, airBurstPelletPool);
+        ReturnActivePellets(activeBouncePellets, bouncePelletPool);
+
+        // T23: 드론 에너지탄 끄기 (목록은 재사용을 위해 유지)
+        for (int i = energyBullets.Count - 1; i >= 0; i--)
+        {
+            GameObject bullet = energyBullets[i];
+            if (bullet == null)
+                energyBullets.RemoveAt(i);
+            else if (bullet.activeSelf)
+                bullet.SetActive(false);
+        }
 
         Debug.Log("[Boss] 페이즈 전환: 씬의 모든 발사체 회수 완료");
     }
@@ -1179,6 +1260,57 @@ public class BossController : MonoBehaviour, IDamageable
         GameLog.Info(
             $"[Debug] F6: 보스 HP {currentHP:F0}/{maxHP:F0} (경계) → 계산 페이즈 {GetCurrentPhase()}, 현재 {currentPhase}",
             this);
+    }
+
+    // ── 테스트 패널 (Editor/BossTestPanel) 전용 ──
+
+    /// <summary>(에디터 전용) HP 비율 0~1.</summary>
+    public float DebugHpRatio => maxHP > 0f ? currentHP / maxHP : 0f;
+
+    /// <summary>(에디터 전용) P1 화면 밖 피해 거부 중인지.</summary>
+    public bool DebugIsUntargetable => _isUntargetable;
+
+    /// <summary>(에디터 전용) v2 흐름이 실제로 켜졌는지.</summary>
+    public bool DebugIsFlowV2Active => _isFlowV2Active;
+
+    /// <summary>(에디터 전용) HP 를 비율로 맞춘다. v2 면 50% 미만일 때 TakeDamage 와 같은 경로로 전환 요청.</summary>
+    public void DebugSetHpRatio(float ratio)
+    {
+        currentHP = maxHP * Mathf.Clamp01(ratio);
+        if (damageHandler != null)
+            damageHandler.SetHP(currentHP / maxHP);
+        if (healthBar != null)
+            healthBar.UpdateHealth(currentHP);
+
+        GameLog.Info($"[TestPanel] 보스 HP {currentHP:F0}/{maxHP:F0} ({ratio:P0})", this);
+        if (_isFlowV2Active)
+            TryRequestFlowPhaseTransition();
+    }
+
+    /// <summary>(에디터 전용) 즉시 사망 (HP 0 → Dead, 사망 정리 경로 그대로).</summary>
+    public void DebugKill()
+    {
+        currentHP = 0f;
+        if (damageHandler != null)
+            damageHandler.SetHP(0f);
+        if (healthBar != null)
+            healthBar.UpdateHealth(currentHP);
+
+        GameLog.Info("[TestPanel] 보스 즉시 사망", this);
+        ChangeState(BossState.Dead);
+    }
+
+    /// <summary>(에디터 전용) 켜져 있는 경고 마커 수.</summary>
+    public int DebugCountActiveWarningMarkers()
+    {
+        int count = 0;
+        for (int i = 0; i < activeWarningMarkers.Count; i++)
+        {
+            if (activeWarningMarkers[i] != null && activeWarningMarkers[i].activeSelf)
+                count++;
+        }
+
+        return count;
     }
 #endif
 

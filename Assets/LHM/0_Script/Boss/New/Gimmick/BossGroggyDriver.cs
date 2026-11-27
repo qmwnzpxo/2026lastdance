@@ -100,6 +100,17 @@ namespace UnMachine.Boss
 #endif
         }
 
+#if UNITY_EDITOR
+        /// <summary>(에디터 전용) 테스트 패널에서 게이지를 올린다. 일반 증가와 같은 조건 (Groggy·전환 중 무시).</summary>
+        public void DebugGain(float amount)
+        {
+            Gain(amount, "테스트 패널");
+        }
+
+        /// <summary>(에디터 전용) 벽 충돌 1회분.</summary>
+        public float DebugWallHitAmount => _config != null ? _config.WallHitAmount : 0f;
+#endif
+
         private void OnBattleStarted()
         {
             _gauge.Reset();

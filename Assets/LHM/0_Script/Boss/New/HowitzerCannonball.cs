@@ -297,7 +297,7 @@ public class HowitzerCannonball : MonoBehaviour
             float angleStep = 360f / airBurstPelletCount;
             for (int i = 0; i < airBurstPelletCount; i++)
             {
-                GameObject pellet = Instantiate(airBurstPelletPrefab, transform.position, Quaternion.identity);
+                GameObject pellet = SpawnPellet(isAirBurst: true);
                 Rigidbody2D pelletRb = pellet.GetComponent<Rigidbody2D>();
                 if (pelletRb != null)
                 {
@@ -310,13 +310,19 @@ public class HowitzerCannonball : MonoBehaviour
 
                     // 파편에 데미지 정보 전달 — InitializeAirBurstPellet 사용(velocity 바체 없음)
                     BossProjectile projectile = pellet.GetComponent<BossProjectile>();
+                    float rangeSeconds = airBurstPelletRange / airBurstPelletSpeed;
                     if (projectile != null)
                     {
                         projectile.InitializeAirBurstPellet(airBurstDamage, bossController);
+                        // 파편 사거리 제한: 파편 자신의 수명으로 (끝나면 풀 반환). 포탄 쪽 코루틴은
+                        // 포탄이 바로 풀로 돌아가며 멈춰 파편이 남던 문제 (T23)
+                        projectile.SetLifetime(rangeSeconds);
                     }
-
-                    // 파편 사거리 제한 (일정 시간 후 파괴)
-                    StartCoroutine(DestroyPelletAfterDelay(pellet, airBurstPelletRange / airBurstPelletSpeed));
+                    else
+                    {
+                        // BossProjectile 없는 파편 (예전 방식 유지)
+                        StartCoroutine(DestroyPelletAfterDelay(pellet, rangeSeconds));
+                    }
                 }
             }
         }
@@ -350,7 +356,7 @@ public class HowitzerCannonball : MonoBehaviour
         {
             for (int i = 0; i < bounceCount; i++)
             {
-                GameObject pellet = Instantiate(bouncePelletPrefab, transform.position, Quaternion.identity);
+                GameObject pellet = SpawnPellet(isAirBurst: false);
                 Rigidbody2D pelletRb = pellet.GetComponent<Rigidbody2D>();
                 if (pelletRb != null)
                 {
@@ -376,6 +382,30 @@ public class HowitzerCannonball : MonoBehaviour
 
         // 오브젝트 풀 반환
         ReturnToPool();
+    }
+
+    /// <summary>
+    /// 파편을 보스 파편 풀에서 꺼내 이 위치에 둔다 (T23: 전환·사망 시 ClearAllActiveProjectiles 로 회수되게).
+    /// 보스 참조가 없으면 예전처럼 Instantiate.
+    /// </summary>
+    private GameObject SpawnPellet(bool isAirBurst)
+    {
+        GameObject fallbackPrefab = isAirBurst ? airBurstPelletPrefab : bouncePelletPrefab;
+        GameObject pellet = null;
+        if (bossController != null)
+        {
+            pellet = isAirBurst
+                ? bossController.GetAirBurstPelletFromPool(fallbackPrefab)
+                : bossController.GetBouncePelletFromPool(fallbackPrefab);
+        }
+
+        if (pellet == null)
+        {
+            pellet = Instantiate(fallbackPrefab);
+        }
+
+        pellet.transform.SetPositionAndRotation(transform.position, Quaternion.identity);
+        return pellet;
     }
 
     /// <summary>

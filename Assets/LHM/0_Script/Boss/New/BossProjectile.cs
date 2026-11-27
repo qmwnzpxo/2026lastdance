@@ -230,6 +230,14 @@ public class BossProjectile : MonoBehaviour
     }
 
     /// <summary>
+    /// 남은 수명(초)을 덮어쓴다. Initialize* 뒤에 호출. AirBurst 파편 사거리 제한용 (T23: 포탄 쪽 코루틴은 포탄이 풀로 돌아가면 멈춰서 대체).
+    /// </summary>
+    public void SetLifetime(float seconds)
+    {
+        currentLifetime = seconds;
+    }
+
+    /// <summary>
     /// BounceBlast 파편 초기화 (2차 폭발용)
     /// </summary>
     public void InitializeForBounceBlast(float projectileDamage, float range, BossController controller)

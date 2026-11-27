@@ -5,9 +5,12 @@ namespace UnMachine.Boss
 {
     /// <summary>
     /// 예고(Telegraph) 동안 보스 스프라이트 색을 바꾼다: P2·P3 빨강 깜빡 2회 / P4~P6 노랑 / P1 하양.
-    /// 1주 축소(T39 ✂️): 눈 오버레이 대신 스프라이트 전체 틴트. 예고 밖에서는 원래 색. spec: boss.md 9장
+    /// 1주 축소(T39 ✂️): 눈 오버레이 대신 스프라이트 전체 틴트. spec: boss.md 9장
+    /// 예고 밖에서는 페이즈 틴트: 1P 원래 색, 페이즈 전환 시작부터 2P 내내 붉은 틴트 (T34 ✂️, spec: boss.md 8장 전환 3).
     /// </summary>
     /// <remarks>
+    /// 스프라이트 색을 바꾸는 곳은 이 컴포넌트 하나다 (예고 색·페이즈 틴트가 서로 덮어쓰지 않게).
+    /// 예고 중에는 페이즈 틴트 대신 예고 색만 곱한다 → 2P 에서도 예고 색이 붉게 섞이지 않는다 ("눈은 예고 전용").
     /// SpriteRenderer.color 는 곱셈이라 순수 하양은 변화가 없다 → "하양" 기본값은 옅은 하늘색.
     /// 피격 깜빡임(BossController)은 enabled 를 끄고 켜므로 색과 충돌하지 않는다.
     /// </remarks>
@@ -24,6 +27,12 @@ namespace UnMachine.Boss
         [SerializeField] private Color _yellow = new Color(1f, 0.9f, 0.3f);
         [SerializeField] private Color _white = new Color(0.6f, 0.85f, 1f);
 
+        [Header("페이즈 틴트 (T34 ✂️)")]
+        [Tooltip("페이즈 전환 시작부터 2P 내내 곱하는 색. 〔임시값〕 기획서 '붉은 틴트'")]
+        [SerializeField] private Color _phase2Tint = new Color(1f, 0.55f, 0.55f);
+
+        private BossController _boss;
+        private bool _isPhaseTinted;
         private Color[] _baseColors;
         private TelegraphSignal _signal;
         private float _duration;
@@ -50,6 +59,12 @@ namespace UnMachine.Boss
             {
                 _baseColors[i] = _renderers[i] != null ? _renderers[i].color : Color.white;
             }
+
+            // Driver 는 BossController 와 같은 오브젝트에 둔다 (BossFlowDriver remarks)
+            if (!_driver.TryGetComponent(out _boss))
+            {
+                GameLog.Warn("[BossTelegraphView] Driver 오브젝트에 BossController 없음 → 2P 틴트는 전환 시작에만 켜짐", this);
+            }
         }
 
         private void OnEnable()
@@ -57,6 +72,11 @@ namespace UnMachine.Boss
             if (_driver != null)
             {
                 _driver.FlowStateChanged += OnFlowStateChanged;
+            }
+
+            if (_boss != null)
+            {
+                _boss.PhaseChanged += OnPhaseChanged;
             }
         }
 
@@ -67,7 +87,33 @@ namespace UnMachine.Boss
                 _driver.FlowStateChanged -= OnFlowStateChanged;
             }
 
+            if (_boss != null)
+            {
+                _boss.PhaseChanged -= OnPhaseChanged;
+            }
+
             EndTelegraph();
+        }
+
+        private void OnPhaseChanged(int phase)
+        {
+            SetPhaseTint(phase >= 2);
+        }
+
+        /// <summary>페이즈 틴트를 켜고 끈다. 예고 색이 켜져 있으면 예고가 끝날 때 반영된다.</summary>
+        private void SetPhaseTint(bool isTinted)
+        {
+            if (_isPhaseTinted == isTinted)
+            {
+                return;
+            }
+
+            _isPhaseTinted = isTinted;
+            GameLog.Info($"[BossTelegraphView] 2P 붉은 틴트 {(isTinted ? "On" : "Off")}", this);
+            if (!_isLit)
+            {
+                ApplyColor(false);
+            }
         }
 
         private void LateUpdate()
@@ -101,6 +147,12 @@ namespace UnMachine.Boss
                 return;
             }
 
+            // spec: boss.md 8장 전환 3 "붉은 틴트로 물들이고 2페이즈 동안 유지" — 전환 연출 시작부터
+            if (state == BossFlowState.PhaseTransition)
+            {
+                SetPhaseTint(true);
+            }
+
             EndTelegraph();
         }
 
@@ -123,13 +175,14 @@ namespace UnMachine.Boss
                 return;
             }
 
-            Color tint = GetTint(_signal.Color);
+            // 예고 중 = 예고 색만, 그 외 = 페이즈 틴트 (1P 는 원래 색)
+            Color tint = isLit ? GetTint(_signal.Color) : (_isPhaseTinted ? _phase2Tint : Color.white);
             for (int i = 0; i < _renderers.Length; i++)
             {
                 SpriteRenderer target = _renderers[i];
                 if (target != null)
                 {
-                    target.color = isLit ? _baseColors[i] * tint : _baseColors[i];
+                    target.color = _baseColors[i] * tint;
                 }
             }
         }

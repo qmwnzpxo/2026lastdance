@@ -46,6 +46,8 @@ namespace UnMachine.Boss
         private Sprite _centerSprite;
         private Sprite _bottomSprite;
         private bool _isOffscreen;
+        private Vector2 _lastLandingCenter;
+        private Vector2 _lastLandingSize;
 
         /// <summary>패턴을 만든다. 그림자는 지금 1개 만들고, 충격파는 풀에서 필요할 때 만든다.</summary>
         public JumpSlamPattern(JumpSlamConfig config, BossController boss, Rigidbody2D body, Animator animator)
@@ -101,6 +103,15 @@ namespace UnMachine.Boss
 
         /// <summary>디버그: 현재 단계.</summary>
         public JumpSlamPhase Phase => _model.Phase;
+
+        /// <summary>디버그: 날아가는 충격파 수.</summary>
+        public int ActiveShockwaveCount => _activeShockwaves.Count;
+
+        /// <summary>디버그: 마지막 착지 판정 박스 (Gizmo 표시용). 착지 전에는 크기 0.</summary>
+        public Vector2 LastLandingCenter => _lastLandingCenter;
+
+        /// <summary>디버그: 마지막 착지 판정 박스 크기.</summary>
+        public Vector2 LastLandingSize => _lastLandingSize;
 
         /// <inheritdoc />
         public async UniTask<PatternResult> RunAsync(BossController boss, CancellationToken ct)
@@ -215,7 +226,21 @@ namespace UnMachine.Boss
 
             // spec: 착지 지점 몸체 범위 피해 (콜라이더 bounds 는 동기화 전일 수 있어 시작 때 잰 오프셋으로 계산)
             var center = new Vector2(_model.X, _model.Y) + bodyCenterOffset;
-            int hits = _hitBox.DamagePlayers(center, bodySize, _config.LandingDamage);
+            Vector2 size = bodySize;
+
+            // 보스는 중력 0 이라 배치 높이에 떠 있을 수 있다 (테스트 씬 y 3) → 몸체 아래 끝이 바닥보다 높으면
+            // 판정을 바닥까지 늘린다. 그대로 두면 바닥에 선 플레이어가 그림자 위에 있어도 피해 0 (씬 테스트 2026-11-27)
+            float top = center.y + size.y * 0.5f;
+            float bottom = center.y - size.y * 0.5f;
+            if (bottom > _config.GroundY && top > _config.GroundY)
+            {
+                size.y = top - _config.GroundY;
+                center.y = (top + _config.GroundY) * 0.5f;
+            }
+
+            _lastLandingCenter = center;
+            _lastLandingSize = size;
+            int hits = _hitBox.DamagePlayers(center, size, _config.LandingDamage);
 
             // spec: 좌우로 퍼지는 충격파 — 몸 양옆에서 출발
             float waveOffset = halfWidth + _config.ShockwaveWidth * 0.5f;

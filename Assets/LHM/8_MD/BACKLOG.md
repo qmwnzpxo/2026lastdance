@@ -43,8 +43,8 @@
 | 8 | T56 🎮 | 원안. C2 = P1 → 레거시 Burst, C3 = P1×3 | 원안 |
 | 9 | T57 🎮 | 원안이지만 **레거시 `Charge()` 수정 필요**: 통과 후 0.3초 Brake 옵션, HitPlayer 결과 보고 / C4 는 레거시 Howitzer 가 "발사 끝" 신호를 줘야 함 | 원안 |
 | 10 | T58 🎮 | 원안 (증기 + 경고음) | 원안 |
-| 11 | T34 ✂️ | **붉은 틴트를 2P 동안 유지**만. 역재생·증기·흔들림 삭제 (기존 `SpawnPhaseTransitionEffect` 화면 이펙트는 유지) | 전환 후 2P 내내 붉은 틴트 |
-| 12 | T23 | 원안 (회수 누락 = 눈에 보이는 버그) | 원안 |
+| 11 | T34 🎮 | **붉은 틴트를 2P 동안 유지**만. 역재생·증기·흔들림 삭제 (기존 `SpawnPhaseTransitionEffect` 화면 이펙트는 유지) | 전환 후 2P 내내 붉은 틴트 |
+| 12 | T23 🎮 | 원안 (회수 누락 = 눈에 보이는 버그) | 원안 |
 
 **에디터 (현민, 묶어서)**: T36 ✂️(Animator 8~12 생략 가능 — Config 에셋·Driver 연결·토글 On만) → T67 ✂️(그로기 바 UI만) → T54 ✂️(P1 애니·그림자·충격파 프리팹·JumpSlamConfig 에셋만) → T59(증기·경고음) → T24 ✂️(최종 플레이: 1P → 그로기 → 2P(콤보) → 사망, 레이저 벽·QTE 항목 제외)
 
@@ -125,7 +125,7 @@
 | T27 | 로직 | `GameClock`: 채널 World·Player·UI, 채널 `Scale`, `HitStop(seconds)`(겹치면 긴 쪽 유지, World·Player만 0), `Tick(realDt)` → 채널별 `DeltaTime` | (T28 씬) 히트스톱 중 World·Player dt = 0·UI dt 진행, 0.2초 진행 중 0.5초 요청 → 0.5초 유지 | 프로 모션 채널 연동, 플레이어 코드 교체 | T1 | ARCH 3-1, boss.md 5장 Hit | Core/GameClock.cs, Core/ClockChannel.cs | 👀 |
 | T28 | 어댑터 | `GameClockDriver` (Q20·Q25): 매 프레임 Tick, World 채널 배율 = `CustomTimeManager.EnemyTimeScale`, `HitStop` 은 `HitstopManager.TriggerHitstop(seconds, 0.05)` 에도 위임(배율 0.05 = CSH Light 프리셋과 동일, Driver 인스펙터 필드). **(CSH 수정, Q25)** `HitstopManager`: ① `finally` 에서 자기 CTS만 정리(다음 요청 CTS 취소·배율 복구 금지) ② `RemainingTime`(실제 초) 공개 ③ 겹치면 **종료 시각이 늦은 쪽 유지**(짧은 새 요청은 무시, 긴 요청은 연장) — 플레이어 기존 히트스톱에도 동일 적용. 인스펙터 읽기 전용(채널 dt·GameClock/HitstopManager 남은 시간), 에디터 전용 F2 = 히트스톱 0.5초 | F2 → 0.5초 동안 인스펙터 World dt 0 + 플레이어 0.05배 슬로우 → 1배속 복귀. F2 연타 → 정지가 누적되지 않고 긴 쪽만. 플레이어 공격 히트스톱(0.8초) 중 F2 → 0.8초가 잘리지 않음(HitstopManager 남은 시간 확인). 낙섬 QTE 슬로우 중 World dt도 느려짐 | 보스 로직의 dt 전환(T31~), `TimeScaleReceiver` 로그 정리 | T27 | ARCH 3-1, Q20·Q25 | Gimmick/GameClockDriver.cs, CSH/0.Scripts/Hitstop/HitstopManager.cs(수정) | 👀 |
 | T22 | 어댑터 | (수정) 50% 경계만: `GetCurrentPhase` `>= 0.5f` → 1P, 체력바 표시도 동일 | HP 250 → 1P 유지, 249 → 2P 전환 1회 | 반복 방지(→T37), 드론 제한(→T50), 거리(→T37) | — | 5장 "HP 50% 최초 하회" | New/BossController.cs, New/BossHealthBar.cs | 👀 |
-| T23 | 어댑터 | (유지) 회수 누락 보강: AirBurst·Bounce 파편을 기존 파편 풀로, 에너지탄 회수 경로 → 전환·사망 시 함께 회수 | 곡사 AirBurst/Bounce 직후 F1 → 파편 전부 사라짐, 에너지탄 비행 중 보스 사망 → 사라짐 | 새 패턴 회수(각 패턴 작업) | T2 | 6장 P4 탄종·P6, 8장 전환 1번 | New/HowitzerCannonball.cs, New/ConductorDrone.cs, New/EnergyBullet.cs, New/BossController.cs | ✅ |
+| T23 | 어댑터 | (유지) 회수 누락 보강: AirBurst·Bounce 파편을 기존 파편 풀로, 에너지탄 회수 경로 → 전환·사망 시 함께 회수 | 곡사 AirBurst/Bounce 직후 F1 → 파편 전부 사라짐, 에너지탄 비행 중 보스 사망 → 사라짐 | 새 패턴 회수(각 패턴 작업) | T2 | 6장 P4 탄종·P6, 8장 전환 1번 | New/HowitzerCannonball.cs, New/ConductorDrone.cs, New/EnergyBullet.cs, New/BossController.cs | 🎮 |
 
 #### B-1. 상태 흐름 (Telegraph · Punishable · Stunned · Groggy · PhaseTransition)
 
@@ -136,7 +136,7 @@
 | T31 | 어댑터 | `BossFlowDriver` + BossController 연결: `useFlowV2` 토글(Off = 기존 그대로). On이면 BattleStarted 이후 Idle/Attacking/Resting 코루틴 대신 Driver가 루프 소유. Attacking = `IBossPattern.RunAsync(ctx, ct)` — 이 작업에선 `LegacyPatternBridge`(기존 `ExecutePattern` 을 UniTask로 감쌈, `// guard-allow: 레거시 래핑`) 하나로 고정 순환. `TakeDamage` 에 배율 적용. `BossState` 끝에 Telegraph=8·Punishable=9·Stunned=10·Groggy=11·PhaseTransition=12 추가. 디버그: 머리 위 상태 라벨(에디터 전용), F3 Stunned·F4 Groggy | 토글 On → 착지 후 라벨 Idle→Telegraph→Attacking→Punishable→Resting 반복, Attacking 안에서 기존 패턴 실행, Punishable 중 공격 → 로그 피해 ×1.2, 사망 → 루프 즉시 중단·Dead만 진행. 토글 Off → T2 씬 테스트와 같은 동작 | 걷기(T32), 선택기(T38), 전환(T33) | T28·T30 | 5장, Q19 C | Gimmick/BossFlowDriver.cs, Gimmick/IBossPattern.cs, Gimmick/LegacyPatternBridge.cs, New/BossController.cs(+40) | 🎮 |
 | T32 | 어댑터 | Resting 걷기: 플레이어 쪽으로 걷기(속도 3, 1.5 Unit 이내 정지), 방향 전환, World dt 사용. 걷기 값은 `BossFlowConfig` | Resting 중 보스가 플레이어 쪽으로 걷다가 가까우면 멈춤(떨림 없음), F2 히트스톱 중 멈춤 | 걷기 애니(runboost 0.5배속, T54) | T31 | 4장 걷기 3, 5장 Resting | Gimmick/BossLocomotion.cs, Gimmick/BossFlowDriver.cs(+) | 🎮 |
 | T33 | 어댑터 | PhaseTransition 상태 연결 (토글 On): 50% 최초 하회 → `RequestPhaseTransition`(Groggy면 보류) → 진입 시 패턴 CTS 취소·`ForceStopAllPatterns`·발사체 회수·완전 무적(`ComputeInvulnerable` 에 추가 → `InvulnerableChanged` true) → Config 시간 뒤 2P Idle + `PhaseChanged(2)`. F1 디버그도 같은 경로 〔임시값: 상태명〕 | HP 249 → 라벨 PhaseTransition, 그동안 피해 0·발사체 전부 사라짐, 끝나면 2P 루프(휴식 0.8). Groggy 중 하회 → Groggy 끝난 뒤 전환. 전환은 1회만 | 역재생·틴트(T34) | T22·T31 | 5장, 8장 전환 1~4, 17장 #13·#14 | New/BossController.cs, Gimmick/BossFlowDriver.cs | 🎮 |
-| T34 | 연출 | 전환 연출: lending 역재생, 증기 분출, **붉은 틴트를 2P 동안 유지**, 화면 흔들림 호출 | 전환 시 역재생·증기·흔들림 1회, 이후 2P 내내 붉은 틴트, 눈은 예고 때만 색 | 포효 스프라이트(13장) | T33 | 8장 2~3, 9장 | Gimmick/BossPhaseTransitionView.cs | ✂️ |
+| T34 | 연출 | 전환 연출: lending 역재생, 증기 분출, **붉은 틴트를 2P 동안 유지**, 화면 흔들림 호출 | 전환 시 역재생·증기·흔들림 1회, 이후 2P 내내 붉은 틴트, 눈은 예고 때만 색 | 포효 스프라이트(13장) | T33 | 8장 2~3, 9장 | Gimmick/BossPhaseTransitionView.cs | 🎮 |
 | T35 | 연출 | 피격: 흰색 번쩍임 + `GameClock.HitStop(0.05)` (Config). 기존 피격 점멸이 있으면 유지하고 히트스톱만 추가 | 피격마다 흰색 번쩍 + 짧은 정지, 연타해도 정지가 길어지지 않음 | 패턴별 히트스톱(T51) | T28·T31 | 5장 Hit | Gimmick/BossHitFeedback.cs | 🗑 |
 | T36 | 에디터 | Animator State 8~12 상태·전이, `BossFlowConfig` 에셋, Test_Boss 보스에 Driver·View 연결·`useFlowV2` On | 현민 플레이: T31~T35 완료 기준 재확인 | — | T31~T35 | — | (현민) | ✂️ |
 

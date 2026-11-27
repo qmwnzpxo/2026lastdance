@@ -197,9 +197,11 @@ public class ConductorDrone : MonoBehaviour, IDamageable
         if (energyBulletPrefab == null || bossController == null || player == null)
             return;
 
-        // 에너지탄 생성
-        GameObject bullet = Instantiate(energyBulletPrefab, transform.position, Quaternion.identity);
-        
+        // 에너지탄 생성 — 보스가 추적·재사용하고 전환·사망 시 함께 끈다 (T23)
+        GameObject bullet = bossController.SpawnEnergyBullet(energyBulletPrefab, transform.position);
+        if (bullet == null)
+            return;
+
         // 플레이어 방향 계산
         Vector3 direction = (player.position - transform.position).normalized;
 

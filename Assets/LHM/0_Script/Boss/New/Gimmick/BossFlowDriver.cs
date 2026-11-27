@@ -631,6 +631,51 @@ namespace UnMachine.Boss
         }
 
 #if UNITY_EDITOR
+        /// <summary>(에디터 전용, 테스트 패널) 강제 선택 단위 켜기·끄기. 다음 선택부터 적용.</summary>
+        public void DebugForceUnit(bool isOn, SelectionUnit unit)
+        {
+            _forceUnit = isOn;
+            _forcedUnit = unit;
+        }
+
+        /// <summary>(에디터 전용) 강제 선택 중인지.</summary>
+        public bool DebugIsForcing => _forceUnit;
+
+        /// <summary>(에디터 전용) 강제 선택 단위.</summary>
+        public SelectionUnit DebugForcedUnit => _forcedUnit;
+
+        /// <summary>(에디터 전용) F3 과 같은 기절 진입.</summary>
+        public bool DebugEnterStunned()
+        {
+            return _isRunning && _machine.EnterStunned();
+        }
+
+        /// <summary>(에디터 전용) 현재 페이즈. 루프 전 0.</summary>
+        public int DebugPhase => _machine != null ? _machine.Phase : 0;
+
+        /// <summary>(에디터 전용) 현재 패턴 디버그 이름.</summary>
+        public string DebugPatternName => _currentPattern != null ? _currentPattern.DebugName : "-";
+
+        /// <summary>(에디터 전용) P1 점프 단계.</summary>
+        public JumpSlamPhase DebugJumpSlamPhase =>
+            _jumpSlamPattern != null ? _jumpSlamPattern.Phase : JumpSlamPhase.Idle;
+
+        /// <summary>(에디터 전용) 날아가는 충격파 수.</summary>
+        public int DebugActiveShockwaveCount =>
+            _jumpSlamPattern != null ? _jumpSlamPattern.ActiveShockwaveCount : 0;
+
+        private void OnDrawGizmos()
+        {
+            // P1 마지막 착지 판정 박스 (노랑). Scene 뷰에서 바닥까지 닿는지 확인용
+            if (_jumpSlamPattern == null || _jumpSlamPattern.LastLandingSize == Vector2.zero)
+            {
+                return;
+            }
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireCube(_jumpSlamPattern.LastLandingCenter, _jumpSlamPattern.LastLandingSize);
+        }
+
         private const float LabelWidth = 360f;
         private const float LabelHeight = 110f;
 
