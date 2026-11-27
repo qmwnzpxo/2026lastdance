@@ -254,7 +254,19 @@ namespace UnMachine.EditorTools
             float width = hpRect.rect.width;
             float height = Mathf.Max(SysBarMinHeight, Mathf.Round(hpHeight * SysBarHeightRatio));
 
-            // 컨테이너(BossGroggyBar) = 체력바와 같은 앵커·피벗, 바로 아래로
+            // 체력바 테두리 (Chapter_1_Boss 의 'Bored'). 테두리 두께(체력바 밖으로 나온 만큼)는 그대로 둔다.
+            RectTransform frameRect = FindHealthBarFrame(hpRect);
+            Vector2 framePadding = Vector2.zero;
+            Vector2 frameOffset = Vector2.zero;
+            if (frameRect != null)
+            {
+                framePadding = new Vector2(
+                    Mathf.Max(0f, (frameRect.rect.width - width) * 0.5f),
+                    Mathf.Max(0f, (frameRect.rect.height - hpHeight) * 0.5f));
+                frameOffset = RectCenter(frameRect) - RectCenter(hpRect);
+            }
+
+            // 컨테이너(BossGroggyBar) = 체력바와 같은 앵커·피벗, 바로 아래로 (테두리끼리 SysBarGap 띄움)
             RectTransform bar = CreateRect("Groggy Bar", hpRect.parent);
             bar.SetSiblingIndex(hpRect.GetSiblingIndex() + 1);
             bar.anchorMin = hpRect.anchorMin;
@@ -262,11 +274,26 @@ namespace UnMachine.EditorTools
             bar.pivot = hpRect.pivot;
             bar.sizeDelta = new Vector2(hpRect.sizeDelta.x, height);
             float hpBottom = hpRect.anchoredPosition.y - hpHeight * hpRect.pivot.y;
-            float barY = hpBottom - SysBarGap - height * (1f - hpRect.pivot.y);
+            float barY = hpBottom - SysBarGap - framePadding.y * 2f - height * (1f - hpRect.pivot.y);
             bar.anchoredPosition = new Vector2(hpRect.anchoredPosition.x, barY);
 
-            // 비주얼 복제 → Root (브릿지는 제거: HP 가 아니라 그로기 게이지로 채움)
-            GameObject clone = Object.Instantiate(hpVisual.gameObject, bar);
+            // Root (켜고 끔) → Bored(테두리 복제) + Fill(비주얼 복제)
+            RectTransform root = CreateRect("Root", bar);
+            Stretch(root);
+
+            if (frameRect != null)
+            {
+                GameObject frameClone = Object.Instantiate(frameRect.gameObject, root);
+                frameClone.name = frameRect.name;
+                var frameCloneRect = (RectTransform)frameClone.transform;
+                frameCloneRect.anchorMin = frameCloneRect.anchorMax = new Vector2(0.5f, 0.5f);
+                frameCloneRect.pivot = new Vector2(0.5f, 0.5f);
+                frameCloneRect.sizeDelta = new Vector2(width, height) + framePadding * 2f;
+                frameCloneRect.anchoredPosition = frameOffset;
+            }
+
+            // 브릿지는 제거: HP 가 아니라 그로기 게이지로 채움
+            GameObject clone = Object.Instantiate(hpVisual.gameObject, root);
             clone.name = "Fill";
             BossHealthBarBridge cloneBridge = clone.GetComponent<BossHealthBarBridge>();
             if (cloneBridge != null)
@@ -306,7 +333,7 @@ namespace UnMachine.EditorTools
             var so = new SerializedObject(groggyBar);
             so.FindProperty("_groggy").objectReferenceValue = groggy;
             so.FindProperty("_boss").objectReferenceValue = boss;
-            so.FindProperty("_root").objectReferenceValue = clone;
+            so.FindProperty("_root").objectReferenceValue = root.gameObject;
             so.FindProperty("_visual").objectReferenceValue = cloneVisual;
             so.ApplyModifiedPropertiesWithoutUndo(); // 새 오브젝트라 생성 Undo 에 포함
 
@@ -316,10 +343,61 @@ namespace UnMachine.EditorTools
             Selection.activeGameObject = bar.gameObject;
 
             GameLog.Info(
-                $"[BossSetup] 그로기 바 생성 (SYS 체력바 '{hpVisual.name}' 복제): {GetPath(bar)}, " +
+                $"[BossSetup] 그로기 바 생성 (SYS 체력바 '{hpVisual.name}' 복제, " +
+                $"테두리 {(frameRect != null ? $"'{frameRect.name}' 복제" : "없음")}): {GetPath(bar)}, " +
                 $"{width:F0}×{height:F0}, 머티리얼 {(groggyMaterial != null ? groggyMaterial.name : "원본 그대로")}. " +
                 "위치·높이는 'Groggy Bar' RectTransform, 색은 머티리얼 _ColorFill 에서 조정 → Ctrl+S. 되돌리려면 Ctrl+Z.",
                 bar.gameObject);
+        }
+
+        private const string HealthBarFrameName = "Bored"; // Chapter_1_Boss 의 체력바 테두리 이름
+
+        /// <summary>
+        /// 체력바 테두리: 같은 부모의 'Bored' → 없으면 체력바를 감싸는 형제 Image (UnifiedHealthBarVisual 아닌 것). 없으면 null.
+        /// </summary>
+        private static RectTransform FindHealthBarFrame(RectTransform hpRect)
+        {
+            Transform parent = hpRect.parent;
+            RectTransform enclosing = null;
+            Rect hpBounds = LocalBounds(hpRect);
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                if (!(parent.GetChild(i) is RectTransform sibling) || sibling == hpRect
+                    || !sibling.TryGetComponent(out UnityEngine.UI.Image _)
+                    || sibling.TryGetComponent(out UnifiedHealthBarVisual _))
+                {
+                    continue;
+                }
+
+                if (sibling.name == HealthBarFrameName)
+                {
+                    return sibling;
+                }
+
+                Rect bounds = LocalBounds(sibling);
+                const float tolerance = 0.5f;
+                if (enclosing == null
+                    && bounds.xMin <= hpBounds.xMin + tolerance && bounds.xMax >= hpBounds.xMax - tolerance
+                    && bounds.yMin <= hpBounds.yMin + tolerance && bounds.yMax >= hpBounds.yMax - tolerance)
+                {
+                    enclosing = sibling;
+                }
+            }
+
+            return enclosing;
+        }
+
+        /// <summary>부모 로컬 좌표 기준 사각형.</summary>
+        private static Rect LocalBounds(RectTransform rect)
+        {
+            Rect r = rect.rect;
+            Vector2 offset = rect.localPosition;
+            return new Rect(r.position + offset, r.size);
+        }
+
+        private static Vector2 RectCenter(RectTransform rect)
+        {
+            return LocalBounds(rect).center;
         }
 
         /// <summary>체력바 머티리얼을 그로기 전용으로 복사 (없을 때만, 채움 색 = 주황). 원본이 없으면 null.</summary>

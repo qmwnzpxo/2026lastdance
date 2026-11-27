@@ -5,11 +5,26 @@
 
 ---
 
+## 🛠 테스트 씬 보스 체력바 = 실제 씬과 같은 SYS 체력바 (현민 요청 2026-11-27, 기준 커밋 `3e0a15b`) — 🎮 현민 확인 대기
+- **이유:** 테스트 씬 빌더가 체력바를 아예 만들지 않아 `Scenes_Main/Chapter_1_Boss` 와 달랐음. (실제 씬은 SYS 체력바, `BossController.healthBar` 는 비어 있고 LHM `BossHealthBar` 미사용)
+- **이제 `UnMachine/Test Scene/Boss Arena` 가 만드는 것** (Chapter_1_Boss 값 그대로):
+  - `Canvas` (Screen Space Overlay, Scale With Screen Size 1920×1080, Match 0, PPU 36) → `Boss Health Bar` (앵커 0.084·0.056, 위치 49.85·-50, 피벗 0.5·0)
+  - → `Bored` (검은 테두리 Image 1600×70) + `Boss HP` (1600×60, Image 머티리얼 `SYS/Materials/Boss Health.mat`)
+  - `Boss HP`: `UnifiedHealthBarVisual` (rootCanvas·sourceMaterial·barSize 1600×60) + `BossHealthBarBridge` (damageHandler = 보스 프리팹 `DamageHandler`, 고스트 On, 글로우·내부 글로우·시머·흔들림 Off, 딜타임 글로우 On, 딜타임 흔들림 30·14 / 0.8초)
+  - 보스에 `DamageHandler` 가 없거나 머티리얼이 없으면 만들지 않고 경고. 완료 로그에 `체력바 SYS/없음` 표시.
+- **추가 (같은 날): 그로기 바도 `Bored` 테두리까지 복제** — `Editor/BossSceneSetupTool.cs` (`CreateSysGroggyBar` 에 Root·테두리 복제, `FindHealthBarFrame` 추가). 테스트 씬도 이제 `Bored` 가 있으므로 같은 모양.
+- **변경 파일:** `Editor/BossTestSceneBuilder.cs` (`CreateBossHealthBar`·`CreateUiRect`·`PlaceLeftAnchored` 추가, `Build` 에서 호출)
+- **확인할 것:** 컴파일 → 테스트 씬 다시 생성 → Play → 보스 타격 시 체력바 감소·고스트 HP. 이후 `그로기 바 UI 만들기` 가 테스트 씬에서도 1순위(`Boss HP` 복제) 경로로 동작.
+- **커밋 제안:** `[fix] 보스 테스트 씬에 SYS 보스 체력바 생성 (Chapter_1_Boss 와 동일)` — `BossTestSceneBuilder.cs`, `BossSceneSetupTool.cs`, `HANDOFF.md` (새 파일 없음 → `.meta` 없음)
+- **작업 트리의 다른 변경 (현민 판단):** `.vscode/settings.json` — `files.exclude` 삭제 (현민 요청, VS Code 탐색기에 씬·프리팹·에셋 전부 보이게) / `ProjectSettings/EditorBuildSettings.asset` — 작업 전부터 수정돼 있던 Unity 자동 변경
+
+---
+
 ## 🛠 보스 씬 연결 툴: `UnMachine/Boss Setup` (현민 요청 2026-11-27, 기준 커밋 `bc3c69d`)
 - **쓰는 법:** 실제 보스 씬을 열고 보스 선택 → `열린 씬 보스에 v2 연결` → Console 보고 확인 → Ctrl+S. `연결 상태 검사` = 읽기 전용 점검.
 - **하는 일:** 보스에 `BossFlowDriver`·`BossTelegraphView`·`ComboSignalView`·`BossGroggyDriver` 추가(없을 때만), Config 4종(BossFlow·PatternTable·Groggy·JumpSlam — 없으면 `3_ScriptableObject` 에 생성) 연결, `BossController` Flow Driver·Use Flow V2 On. **이미 값이 있는 칸은 덮어쓰지 않음.** Undo 한 묶음, 씬 Dirty 표시만.
 - **`그로기 바 UI 만들기` (T67):**
-  - **1순위 (Chapter_1_Boss 등 SYS 체력바 씬, 현민 지정):** 보스 `DamageHandler` 에 연결된 `BossHealthBarBridge` 의 비주얼(`Boss HP`, `UnifiedHealthBarVisual`)을 복제 → 체력바 바로 아래 `Groggy Bar`(+BossGroggyBar) → `Fill`(복제본, 브릿지 제거). 같은 폭, 높이 = 체력바 × 0.35(최소 8), 간격 8. 머티리얼은 `Boss Health.mat` → **`Assets/LHM/1_Material/Boss Groggy.mat`** 복사(채움 색 `_ColorFill` 주황, 원본 그대로).
+  - **1순위 (Chapter_1_Boss 등 SYS 체력바 씬, 현민 지정):** 보스 `DamageHandler` 에 연결된 `BossHealthBarBridge` 의 비주얼(`Boss HP`, `UnifiedHealthBarVisual`)을 복제 → 체력바 바로 아래 `Groggy Bar`(+BossGroggyBar) → `Root`(켜고 끔) → `Bored`(테두리 복제, 같은 두께) + `Fill`(복제본, 브릿지 제거). 테두리 = 같은 부모의 `Bored`, 없으면 체력바를 감싸는 형제 Image (없으면 테두리 없이). 같은 폭, 높이 = 체력바 × 0.35(최소 8), 테두리끼리 간격 8. 머티리얼은 `Boss Health.mat` → **`Assets/LHM/1_Material/Boss Groggy.mat`** 복사(채움 색 `_ColorFill` 주황, 원본 그대로).
   - 2순위: 레거시 `BossController.healthBar` 아래 Image 바 → 3순위: Canvas 위쪽 가운데 (Canvas 없으면 `BossUICanvas` 생성). 이미 BossGroggyBar 가 있으면 만들지 않음.
   - `BossGroggyBar.cs` 수정: `_visual`(UnifiedHealthBarVisual) 칸 추가 — 지정 시 Image 대신 `SetFill(게이지)`, 표시될 때 고스트 HP 끔.
 - **안 하는 일:** 씬 열기·저장, 프리팹 원본 수정, 증기·경고음(T59)·JumpSlamConfig 방 값(T54).
@@ -56,7 +71,7 @@
 - [ ] (선택) 보스 Animator 에 Int 파라미터 `State` 추가 → Console 의 `Parameter 'State' does not exist` 경고 사라짐 (상태 8~12 애니 전이는 생략 가능)
 
 ### T67 ✂️ 그로기 바 UI — 🛠 툴로 자동
-- [ ] (위 v2 연결 후) `Scenes_Main/Chapter_1_Boss` 에서 메뉴 **`UnMachine/Boss Setup/그로기 바 UI 만들기`** → `Boss HP` 체력바를 복제한 주황 바가 바로 아래에 생김 → 위치·높이(`Groggy Bar`)·색(`Boss Groggy.mat` `_ColorFill`) 조정 → Ctrl+S
+- [ ] (위 v2 연결 후) `Scenes_Main/Chapter_1_Boss` 에서 메뉴 **`UnMachine/Boss Setup/그로기 바 UI 만들기`** → `Boss HP` 체력바와 `Bored` 테두리를 복제한 주황 바가 바로 아래에 생김 (**이미 만든 `Groggy Bar` 가 있으면 지우고 다시 실행** — 있으면 만들지 않음) → 위치·높이(`Groggy Bar`)·색(`Boss Groggy.mat` `_ColorFill`) 조정 → Ctrl+S
 - [ ] 이미 BossGroggyBar 가 있으면 만들지 않고 선택만 함
 
 ### T54 ✂️ P1 점프 내려찍기 에셋

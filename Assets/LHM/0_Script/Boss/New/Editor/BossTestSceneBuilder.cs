@@ -54,6 +54,18 @@ namespace UnMachine.EditorTools
             "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime";
         private const int Light2DGlobalType = 4; // Light2D.LightType.Global
 
+        // 보스 체력바: Scenes_Main/Chapter_1_Boss 의 SYS 체력바와 같은 구조·값
+        // Canvas ─ Boss Health Bar ─ Bored(검은 테두리) + Boss HP(UnifiedHealthBarVisual + BossHealthBarBridge)
+        private const string BossHealthMaterialPath = "Assets/SYS/Materials/Boss Health.mat";
+        private static readonly Vector2 CanvasReferenceResolution = new Vector2(1920f, 1080f);
+        private const float CanvasReferencePixelsPerUnit = 36f;
+        private static readonly Vector2 BossBarAnchor = new Vector2(0.084f, 0.056f);
+        private static readonly Vector2 BossBarPosition = new Vector2(49.85034f, -50.00003f);
+        private static readonly Vector2 BossBarFrameSize = new Vector2(1600f, 70f);
+        private static readonly Vector2 BossBarFillSize = new Vector2(1600f, 60f);
+        private static readonly Vector2 DealTimeShakeStrength = new Vector2(30f, 14f);
+        private const float DealTimeShakeDuration = 0.8f;
+
         private const float SpecMinWidth = 40f;  // spec: boss.md 2장 가로 40 이상
         private const float SpecMinHeight = 30f; // spec: boss.md 2장 세로 30 이상
 
@@ -288,6 +300,7 @@ namespace UnMachine.EditorTools
             }
 
             bool isFlowV2Ready = boss != null && _setupFlowV2 && SetupFlowV2(boss);
+            bool hasHealthBar = boss != null && CreateBossHealthBar(boss);
 
             if (!EditorSceneManager.SaveScene(scene, _scenePath))
             {
@@ -296,7 +309,112 @@ namespace UnMachine.EditorTools
             }
 
             GameLog.Info($"[TestScene] 생성 완료: {_scenePath} (보스 {(boss != null ? "배치" : "마커만")}, " +
-                         $"플레이어 {(player != null ? "배치" : "없음")}, v2 흐름 {(isFlowV2Ready ? "On" : "Off")})");
+                         $"플레이어 {(player != null ? "배치" : "없음")}, v2 흐름 {(isFlowV2Ready ? "On" : "Off")}, " +
+                         $"체력바 {(hasHealthBar ? "SYS" : "없음")})");
+        }
+
+        /// <summary>
+        /// Chapter_1_Boss 와 같은 SYS 보스 체력바를 만든다:
+        /// Canvas ─ Boss Health Bar ─ Bored(검은 테두리) + Boss HP(UnifiedHealthBarVisual + BossHealthBarBridge ← 보스 DamageHandler).
+        /// </summary>
+        /// <returns>만들었으면 true.</returns>
+        private static bool CreateBossHealthBar(GameObject boss)
+        {
+            var damageHandler = boss.GetComponentInChildren<BossSystem.DamageHandler>(true);
+            if (damageHandler == null)
+            {
+                GameLog.Warn("[TestScene] 보스에 DamageHandler 가 없어 체력바를 만들지 않았다");
+                return false;
+            }
+
+            var material = AssetDatabase.LoadAssetAtPath<Material>(BossHealthMaterialPath);
+            if (material == null)
+            {
+                GameLog.Warn($"[TestScene] 체력바 머티리얼이 없어 체력바를 만들지 않았다: {BossHealthMaterialPath}");
+                return false;
+            }
+
+            int uiLayer = LayerMask.NameToLayer("UI");
+            var canvasGo = new GameObject(
+                "Canvas",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(UnityEngine.UI.CanvasScaler),
+                typeof(UnityEngine.UI.GraphicRaycaster));
+            if (uiLayer >= 0)
+            {
+                canvasGo.layer = uiLayer;
+            }
+
+            var canvas = canvasGo.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            var scaler = canvasGo.GetComponent<UnityEngine.UI.CanvasScaler>();
+            scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = CanvasReferenceResolution;
+            scaler.referencePixelsPerUnit = CanvasReferencePixelsPerUnit;
+            scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0f;
+
+            RectTransform group = CreateUiRect("Boss Health Bar", canvasGo.transform, uiLayer);
+            group.anchorMin = group.anchorMax = BossBarAnchor;
+            group.pivot = new Vector2(0.5f, 0f);
+            group.anchoredPosition = BossBarPosition;
+            group.sizeDelta = new Vector2(100f, 100f);
+
+            // 테두리 (Image 기본 흰 사각형을 검게)
+            RectTransform frame = CreateUiRect("Bored", group, uiLayer);
+            PlaceLeftAnchored(frame, BossBarFrameSize);
+            frame.gameObject.AddComponent<UnityEngine.UI.Image>().color = Color.black;
+
+            // 체력 (셰이더 바)
+            RectTransform fill = CreateUiRect("Boss HP", group, uiLayer);
+            PlaceLeftAnchored(fill, BossBarFillSize);
+            var fillImage = fill.gameObject.AddComponent<UnityEngine.UI.Image>();
+            fillImage.material = material;
+
+            var visual = fill.gameObject.AddComponent<UnifiedHealthBarVisual>();
+            var visualSo = new SerializedObject(visual);
+            visualSo.FindProperty("rootCanvas").objectReferenceValue = canvas;
+            visualSo.FindProperty("sourceMaterial").objectReferenceValue = material;
+            visualSo.FindProperty("barSize").vector2Value = BossBarFillSize;
+            visualSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var bridge = fill.gameObject.AddComponent<BossHealthBarBridge>();
+            var bridgeSo = new SerializedObject(bridge);
+            bridgeSo.FindProperty("damageHandler").objectReferenceValue = damageHandler;
+            bridgeSo.FindProperty("healthBar").objectReferenceValue = visual;
+            bridgeSo.FindProperty("enableGhostFill").boolValue = true;
+            bridgeSo.FindProperty("enableGlow").boolValue = false;
+            bridgeSo.FindProperty("enableInnerGlow").boolValue = false;
+            bridgeSo.FindProperty("enableShimmer").boolValue = false;
+            bridgeSo.FindProperty("enableShake").boolValue = false;
+            bridgeSo.FindProperty("enableDealTimeGlow").boolValue = true;
+            bridgeSo.FindProperty("dealTimeShakeStrength").vector2Value = DealTimeShakeStrength;
+            bridgeSo.FindProperty("dealTimeShakeDuration").floatValue = DealTimeShakeDuration;
+            bridgeSo.ApplyModifiedPropertiesWithoutUndo();
+            return true;
+        }
+
+        private static RectTransform CreateUiRect(string name, Transform parent, int layer)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            if (layer >= 0)
+            {
+                go.layer = layer;
+            }
+
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(parent, false);
+            return rect;
+        }
+
+        /// <summary>Chapter_1_Boss 의 Bored·Boss HP 배치: 부모 왼쪽 가운데 기준, 왼쪽 끝이 부모 왼쪽에 닿게.</summary>
+        private static void PlaceLeftAnchored(RectTransform rect, Vector2 size)
+        {
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(size.x * 0.5f, 0f);
         }
 
         /// <summary>
