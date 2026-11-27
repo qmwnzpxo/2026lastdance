@@ -497,7 +497,7 @@ namespace UnMachine.EditorTools
         }
 
         /// <summary>
-        /// 지정 에셋 → 프로젝트에서 찾은 첫 T 에셋 → 없으면 기본 경로에 새로 만든다 (기존 에셋은 수정하지 않음).
+        /// 지정 에셋 → 기본 경로 에셋 → 프로젝트에서 찾은 첫 T 에셋 → 없으면 기본 경로에 새로 만든다 (기존 에셋은 수정하지 않음).
         /// </summary>
         internal static T ResolveOrCreateConfig<T>(T assigned, string defaultPath) where T : ScriptableObject
         {
@@ -505,6 +505,13 @@ namespace UnMachine.EditorTools
             if (assigned != null)
             {
                 return assigned;
+            }
+
+            // 기본 경로가 있으면 우선 (씬 전용 복사본 'JumpSlamConfig_씬이름' 등이 있어도 공용 에셋을 쓰게)
+            var atDefault = AssetDatabase.LoadAssetAtPath<T>(defaultPath);
+            if (atDefault != null)
+            {
+                return atDefault;
             }
 
             string[] guids = AssetDatabase.FindAssets("t:" + typeName);

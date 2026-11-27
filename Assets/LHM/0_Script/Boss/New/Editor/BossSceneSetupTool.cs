@@ -37,8 +37,8 @@ namespace UnMachine.EditorTools
             var flowConfig = BossTestSceneBuilder.ResolveOrCreateConfig<BossFlowConfig>(null, FlowConfigPath);
             var patternTable = BossTestSceneBuilder.ResolveOrCreateConfig<PatternTableConfig>(null, PatternTablePath);
             var groggyConfig = BossTestSceneBuilder.ResolveOrCreateConfig<GroggyConfig>(null, GroggyConfigPath);
-            var jumpSlam = BossTestSceneBuilder.ResolveOrCreateConfig<JumpSlamConfig>(null, JumpSlamConfigPath);
-            if (flowConfig == null || patternTable == null || groggyConfig == null || jumpSlam == null)
+            var jumpSlamTemplate = BossTestSceneBuilder.ResolveOrCreateConfig<JumpSlamConfig>(null, JumpSlamConfigPath);
+            if (flowConfig == null || patternTable == null || groggyConfig == null || jumpSlamTemplate == null)
             {
                 GameLog.Error(null, "[BossSetup] Config 에셋을 준비하지 못해 중단 (Console 위쪽 로그 확인)");
                 return;
@@ -54,7 +54,10 @@ namespace UnMachine.EditorTools
             Assign(driver, "_boss", boss, report);
             Assign(driver, "_attackPatterns", patterns, report);
             Assign(driver, "_patternTable", patternTable, report);
-            Assign(driver, "_jumpSlam", jumpSlam, report);
+
+            // T54: 이 씬 전용 JumpSlamConfig (방 값 = 씬에서 측정). 공용 에셋(테스트 씬용)은 수정하지 않는다
+            JumpSlamConfig jumpSlam = ResolveSceneJumpSlam(boss, jumpSlamTemplate, report);
+            AssignJumpSlam(driver, jumpSlam, jumpSlamTemplate, report);
 
             BossTelegraphView telegraph = GetOrAdd<BossTelegraphView>(go, report);
             Assign(telegraph, "_driver", driver, report);
@@ -71,14 +74,204 @@ namespace UnMachine.EditorTools
             Assign(boss, "_flowDriver", driver, report);
             SetBool(boss, "_useFlowV2", true, report);
 
+            // T28: v2 흐름은 GameClock.World dt 로 움직인다 → 씬에 Driver 가 없으면 dt = 0 으로 멈춘다
+            EnsureGameClockDriver(go.scene, report);
+
+            // T67: 그로기 바 UI (이미 있으면 건너뜀)
+            CreateGroggyBarCore(boss, groggy, undoGroup);
+
             Undo.CollapseUndoOperations(undoGroup);
             EditorSceneManager.MarkSceneDirty(go.scene);
             Selection.activeGameObject = go;
 
-            report.AppendLine("→ 씬 저장(Ctrl+S)은 직접. 되돌리려면 Ctrl+Z 한 번.");
-            report.AppendLine("다음: 메뉴 '그로기 바 UI 만들기'(T67). 수동: JumpSlamConfig 방 x·바닥·천장 값(T54), 증기·경고음(T59).");
+            report.AppendLine("→ 씬 저장(Ctrl+S)은 직접. 되돌리려면 Ctrl+Z 한 번 (만든 JumpSlamConfig 에셋은 남음).");
+            report.AppendLine("수동 (선택): 증기·경고음(T59), Animator 'State'·JumpSlam 트리거, 그림자·충격파 프리팹(T54).");
             report.Append(BuildCheckReport(boss));
             GameLog.Info(report.ToString(), go);
+        }
+
+        /// <summary>열린 씬에 GameClockDriver 가 없으면 루트 오브젝트 'GameClock' 으로 만든다 (테스트 씬 빌더와 같은 구성).</summary>
+        private static void EnsureGameClockDriver(UnityEngine.SceneManagement.Scene scene, StringBuilder report)
+        {
+            GameClockDriver[] drivers =
+                Object.FindObjectsByType<GameClockDriver>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            if (drivers.Length > 0)
+            {
+                return;
+            }
+
+            var clock = new GameObject("GameClock");
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(clock, scene);
+            clock.AddComponent<GameClockDriver>();
+            Undo.RegisterCreatedObjectUndo(clock, "GameClock 추가");
+            report.AppendLine("  + 씬 루트에 'GameClock' (GameClockDriver) 추가 — 없으면 v2 흐름 시간이 0 으로 멈춤");
+        }
+
+        // ───────────── 씬 전용 JumpSlamConfig (T54) ─────────────
+
+        private const string SceneJumpSlamPathFormat = "Assets/LHM/3_ScriptableObject/JumpSlamConfig_{0}.asset";
+        private const float RoomProbeDistance = 200f;
+        private const float WallProbeHeight = 0.5f; // 바닥에서 이 높이로 좌우 벽을 잰다 (플레이어·충격파 높이)
+
+        /// <summary>
+        /// 'JumpSlamConfig_씬이름' 이 있으면 그것, 없으면 공용 에셋을 복사해 씬에서 잰 방 값을 넣는다.
+        /// 측정에 실패하면 공용 에셋을 그대로 돌려준다 (방 값은 수동).
+        /// </summary>
+        private static JumpSlamConfig ResolveSceneJumpSlam(BossController boss, JumpSlamConfig template, StringBuilder report)
+        {
+            string sceneName = boss.gameObject.scene.name;
+            if (string.IsNullOrEmpty(sceneName))
+            {
+                report.AppendLine("  ! 씬이 저장된 적 없음 → 공용 JumpSlamConfig 사용, 방 값 수동 (T54)");
+                return template;
+            }
+
+            string path = string.Format(SceneJumpSlamPathFormat, sceneName);
+            var existing = AssetDatabase.LoadAssetAtPath<JumpSlamConfig>(path);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            if (!TryMeasureRoom(boss, out float minX, out float maxX, out float groundY, out float ceilingY, report))
+            {
+                report.AppendLine("  ! 방 측정 실패 → 공용 JumpSlamConfig 사용, 방 값 수동 (T54)");
+                return template;
+            }
+
+            if (!AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(template), path))
+            {
+                report.AppendLine($"  ! {path} 복사 실패 → 공용 JumpSlamConfig 사용, 방 값 수동 (T54)");
+                return template;
+            }
+
+            var created = AssetDatabase.LoadAssetAtPath<JumpSlamConfig>(path);
+            var so = new SerializedObject(created);
+            so.FindProperty("_roomMinX").floatValue = minX;
+            so.FindProperty("_roomMaxX").floatValue = maxX;
+            so.FindProperty("_groundY").floatValue = groundY;
+            so.FindProperty("_ceilingY").floatValue = ceilingY;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            AssetDatabase.SaveAssets();
+
+            report.AppendLine(
+                $"  + {path} 생성: 방 x {minX:F2} ~ {maxX:F2}, 바닥 y {groundY:F2}, 천장 y {ceilingY:F2} " +
+                "(공용 JumpSlamConfig 는 그대로)");
+            return created;
+        }
+
+        /// <summary>비어 있거나 공용 에셋이면 씬 전용으로 바꾼다. 다른 값이 직접 지정돼 있으면 유지.</summary>
+        private static void AssignJumpSlam(
+            BossFlowDriver driver, JumpSlamConfig value, JumpSlamConfig template, StringBuilder report)
+        {
+            var so = new SerializedObject(driver);
+            SerializedProperty prop = so.FindProperty("_jumpSlam");
+            if (prop == null)
+            {
+                report.AppendLine("  ! BossFlowDriver._jumpSlam 필드 없음 → 수동 확인");
+                return;
+            }
+
+            Object current = prop.objectReferenceValue;
+            if (current == value)
+            {
+                return;
+            }
+
+            if (current != null && current != template)
+            {
+                report.AppendLine($"  = BossFlowDriver._jumpSlam 기존 값 유지 ({current.name})");
+                return;
+            }
+
+            prop.objectReferenceValue = value;
+            so.ApplyModifiedProperties(); // Undo 기록
+            report.AppendLine($"  → BossFlowDriver._jumpSlam = {value.name}");
+        }
+
+        /// <summary>
+        /// 보스 몸 가운데에서 아래(바닥)·위(천장), 바닥 + 0.5 높이에서 좌우(벽)로 광선을 쏴 방 경계를 잰다.
+        /// 보스 자신·트리거·player/enemy/enemyBullet/UI 레이어는 무시.
+        /// </summary>
+        private static bool TryMeasureRoom(
+            BossController boss, out float minX, out float maxX, out float groundY, out float ceilingY,
+            StringBuilder report)
+        {
+            minX = maxX = groundY = ceilingY = 0f;
+            Physics2D.SyncTransforms();
+
+            Vector2 center = boss.TryGetComponent(out Collider2D body)
+                ? (Vector2)body.bounds.center
+                : (Vector2)boss.transform.position;
+
+            bool ok = true;
+            if (TryProbe(boss, center, Vector2.down, out Vector2 floor))
+            {
+                groundY = floor.y;
+            }
+            else
+            {
+                report.AppendLine("  ! 바닥 측정 실패 (보스 아래 콜라이더 없음)");
+                ok = false;
+            }
+
+            if (TryProbe(boss, center, Vector2.up, out Vector2 ceiling))
+            {
+                ceilingY = ceiling.y;
+            }
+            else
+            {
+                report.AppendLine("  ! 천장 측정 실패 (보스 위 콜라이더 없음)");
+                ok = false;
+            }
+
+            if (!ok)
+            {
+                return false;
+            }
+
+            var low = new Vector2(center.x, groundY + WallProbeHeight);
+            if (TryProbe(boss, low, Vector2.left, out Vector2 left))
+            {
+                minX = left.x;
+            }
+            else
+            {
+                report.AppendLine("  ! 왼쪽 벽 측정 실패");
+                ok = false;
+            }
+
+            if (TryProbe(boss, low, Vector2.right, out Vector2 right))
+            {
+                maxX = right.x;
+            }
+            else
+            {
+                report.AppendLine("  ! 오른쪽 벽 측정 실패");
+                ok = false;
+            }
+
+            return ok;
+        }
+
+        private static bool TryProbe(BossController boss, Vector2 origin, Vector2 direction, out Vector2 point)
+        {
+            point = default;
+            int mask = Physics2D.DefaultRaycastLayers & ~LayerMask.GetMask("player", "enemy", "enemyBullet", "UI");
+            RaycastHit2D[] hits = Physics2D.RaycastAll(origin, direction, RoomProbeDistance, mask);
+            for (int i = 0; i < hits.Length; i++) // 가까운 순
+            {
+                Collider2D hit = hits[i].collider;
+                if (hit == null || hit.isTrigger || hit.transform.IsChildOf(boss.transform))
+                {
+                    continue;
+                }
+
+                point = hits[i].point;
+                return true;
+            }
+
+            return false;
         }
 
         [MenuItem(SetupMenu, true)]
@@ -112,17 +305,20 @@ namespace UnMachine.EditorTools
                 return;
             }
 
+            Undo.SetCurrentGroupName("그로기 바 UI 만들기");
+            CreateGroggyBarCore(boss, groggy, Undo.GetCurrentGroup());
+        }
+
+        /// <summary>그로기 바를 만든다 (이미 있으면 건너뜀). v2 연결 메뉴에서도 같은 Undo 묶음으로 호출.</summary>
+        private static void CreateGroggyBarCore(BossController boss, BossGroggyDriver groggy, int undoGroup)
+        {
             BossGroggyBar[] existing =
                 Object.FindObjectsByType<BossGroggyBar>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             if (existing.Length > 0)
             {
-                GameLog.Warn($"[BossSetup] 그로기 바가 이미 있음 ('{existing[0].name}') → 만들지 않음", existing[0]);
-                Selection.activeGameObject = existing[0].gameObject;
+                GameLog.Info($"[BossSetup] 그로기 바가 이미 있음 ('{existing[0].name}') → 만들지 않음", existing[0]);
                 return;
             }
-
-            Undo.SetCurrentGroupName("그로기 바 UI 만들기");
-            int undoGroup = Undo.GetCurrentGroup();
 
             // 1순위: SYS 체력바(Chapter_1_Boss 의 Boss HP)를 복제해 같은 모양으로
             if (TryFindSysHealthBar(boss, out UnifiedHealthBarVisual hpVisual))
@@ -622,6 +818,13 @@ namespace UnMachine.EditorTools
 
             CheckBool(builder, boss, "_useFlowV2", "BossController.Use Flow V2");
             CheckRef(builder, boss, "_flowDriver", "BossController.Flow Driver");
+            int clockCount =
+                Object.FindObjectsByType<GameClockDriver>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
+            builder.AppendLine(clockCount == 1
+                ? "  ✓ GameClockDriver"
+                : clockCount == 0
+                    ? "  ✗ GameClockDriver 없음 (v2 흐름이 멈춤) → 'v2 연결' 다시 실행"
+                    : $"  ✗ GameClockDriver {clockCount}개 (하나만 둘 것)");
             CheckComponent(builder, driver, "BossFlowDriver");
             if (driver != null)
             {
@@ -630,6 +833,15 @@ namespace UnMachine.EditorTools
                 CheckRef(builder, driver, "_attackPatterns", "  Attack Patterns");
                 CheckRef(builder, driver, "_patternTable", "  Pattern Table");
                 CheckRef(builder, driver, "_jumpSlam", "  Jump Slam (비우면 P1 = 임시 레거시)");
+                if (new SerializedObject(driver).FindProperty("_jumpSlam")?.objectReferenceValue is JumpSlamConfig slam)
+                {
+                    var slamSo = new SerializedObject(slam);
+                    builder.AppendLine(
+                        $"    {slam.name}: 방 x {slamSo.FindProperty("_roomMinX").floatValue:F2} ~ " +
+                        $"{slamSo.FindProperty("_roomMaxX").floatValue:F2}, " +
+                        $"바닥 y {slamSo.FindProperty("_groundY").floatValue:F2}, " +
+                        $"천장 y {slamSo.FindProperty("_ceilingY").floatValue:F2}");
+                }
             }
 
             BossTelegraphView telegraph = go.GetComponent<BossTelegraphView>();

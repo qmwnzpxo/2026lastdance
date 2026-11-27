@@ -5,6 +5,17 @@
 
 ---
 
+## 🛠 `열린 씬 보스에 v2 연결` = T36 + T67 + T54 방 값 한 번에 (현민 요청 2026-11-27, 기준 커밋 `90f8db9`) — 🎮 현민 확인 대기
+- **변경 파일:** `Editor/BossSceneSetupTool.cs` (v2 연결에 그로기 바 생성·씬 전용 JumpSlamConfig 생성/방 측정 추가, `CreateGroggyBarCore` 분리, 검사 보고에 Jump Slam 방 값), `Editor/BossTestSceneBuilder.cs` (`ResolveOrCreateConfig` 가 기본 경로 에셋 우선)
+- **🐞 현민 테스트 (13:55, Chapter_1_Boss) 자동 순회 7단계 전부 타임아웃 → 원인: 씬에 `GameClockDriver` 없음** (Test_Boss 에만 있음). v2 흐름은 `GameClock.World` dt 로 돌아서 dt = 0 → 루프 시작 후 첫 Telegraph 에서 정지, Groggy 진입 후 안 끝남 (Editor.log: 패턴 로그 0, `[Boss] 피해 … (Telegraph)` 만 반복). **수정:** v2 연결이 씬에 없으면 루트 `GameClock`(+GameClockDriver) 추가, 연결 상태 검사에 `GameClockDriver` ✓/✗ 추가. (CustomTimeManager·HitstopManager 는 씬에 있음)
+- 측정된 방 값 (`JumpSlamConfig_Chapter_1_Boss.asset`, 13:51): x -10.87 ~ 27.86, 바닥 -4.00, 천장 10.00 ✓ (예상과 일치, 바닥은 타일 윗면)
+- **정적 점검:** `dotnet build Assembly-CSharp-Editor.csproj` 오류 0. 리스크: 방 측정은 **에디터(Play 아님)에서 Physics2D 광선** → 실패하면 `!` 보고 후 공용 Config 연결 (수동 입력)
+- **확인할 것:** 아래 체크리스트 "T36·T67·T54(방 값)" 대로 실행 → 보고의 방 값이 x -10.87 ~ 27.86, 바닥 -3.95, 천장 10 근처인지 / 그로기 바 생겼는지 / Play 에서 P1 그림자가 방 안에서만 움직이는지
+- **커밋 제안:** `[chore] Boss Setup v2 연결에 그로기 바·씬 전용 JumpSlamConfig 자동 생성` — 위 2파일 + `HANDOFF.md`. 실행 후 생긴 `JumpSlamConfig_Chapter_1_Boss.asset`(+`.meta`)·`Boss Groggy.mat`(+`.meta`)·씬도 함께
+- 작업 트리: `Assets/LHM/Test_Boss 1~6.unity`(+`.meta`) 삭제 상태 (현민 정리로 보임)
+
+---
+
 ## 🛠 테스트 씬 보스 체력바 = 실제 씬과 같은 SYS 체력바 (현민 요청 2026-11-27, 기준 커밋 `3e0a15b`) — 🎮 현민 확인 대기
 - **이유:** 테스트 씬 빌더가 체력바를 아예 만들지 않아 `Scenes_Main/Chapter_1_Boss` 와 달랐음. (실제 씬은 SYS 체력바, `BossController.healthBar` 는 비어 있고 LHM `BossHealthBar` 미사용)
 - **이제 `UnMachine/Test Scene/Boss Arena` 가 만드는 것** (Chapter_1_Boss 값 그대로):
@@ -64,18 +75,20 @@
 ## ★ 남은 에디터 작업 체크리스트 (현민) — 축소 계획 코드 작업 완료 후
 > 순서대로 하면 됨. 테스트 씬(`UnMachine/Test Scene/Boss Arena`)은 1~3번 대부분이 자동이고, **실제 보스 씬**은 아래를 손으로.
 
-### T36 ✂️ v2 흐름 켜기 (실제 보스 씬) — 🛠 툴로 자동
-- [ ] 실제 보스 씬 열기 → Hierarchy 에서 보스 선택 → 메뉴 **`UnMachine/Boss Setup/열린 씬 보스에 v2 연결`** → Console 보고 확인 → **Ctrl+S**
-  (Driver·TelegraphView·ComboSignalView·GroggyDriver 추가, Config 4종·참조 연결, `Use Flow V2` On. 이미 채워진 칸은 그대로. Ctrl+Z 한 번으로 되돌림)
-- [ ] `UnMachine/Boss Setup/연결 상태 검사` 로 ✓/✗ 확인
-- [ ] (선택) 보스 Animator 에 Int 파라미터 `State` 추가 → Console 의 `Parameter 'State' does not exist` 경고 사라짐 (상태 8~12 애니 전이는 생략 가능)
+### T36·T67·T54(방 값) — 🛠 메뉴 하나로 자동 (2026-11-27 갱신)
+- [ ] `Scenes_Main/Chapter_1_Boss` 열기 → Hierarchy 에서 보스 선택 → 메뉴 **`UnMachine/Boss Setup/열린 씬 보스에 v2 연결`** → Console 보고 확인 → **Ctrl+S**
+  - 한 번에 하는 일: Driver·TelegraphView·ComboSignalView·GroggyDriver 추가 + Config 연결 + `Use Flow V2` On (T36) / **그로기 바 UI 생성** (T67, `Boss HP`+`Bored` 복제, 이미 있으면 건너뜀) / **씬 전용 `JumpSlamConfig_Chapter_1_Boss.asset` 생성 + 방 값 자동 측정** (T54)
+  - 방 측정: 보스 몸 가운데에서 아래·위로, 바닥 + 0.5 높이에서 좌우로 광선 (보스 자신·트리거·player/enemy/enemyBullet/UI 무시). 씬 파일 기준 예상값 **x -10.87 ~ 27.86, 바닥 -3.95, 천장 10** → 보고 값이 다르면 알려줄 것
+  - 측정 실패 시 공용 `JumpSlamConfig` 를 연결하고 `!` 로 보고 → 위 예상값을 수동 입력
+  - 공용 `JumpSlamConfig.asset`(테스트 씬용)은 수정하지 않음. 테스트 씬 빌더·Boss Setup 은 이제 **기본 경로 에셋을 우선** 사용 (복사본이 있어도 헷갈리지 않음)
+  - Driver `Jump Slam` 칸이 비었거나 공용 에셋이면 씬 전용으로 바꾸고, 직접 다른 에셋을 넣어 뒀으면 그대로 둠
+  - Ctrl+Z 한 번이면 씬 변경 전부 되돌림 (만든 에셋 `JumpSlamConfig_Chapter_1_Boss`·`Boss Groggy.mat` 은 남음)
+- [ ] `UnMachine/Boss Setup/연결 상태 검사` → ✓/✗ + Jump Slam 방 값 확인 → Console 보고를 채팅에 붙여 주면 판단
+- [ ] 그로기 바 위치·높이(`Groggy Bar`)·색(`Boss Groggy.mat` `_ColorFill`) 조정 (선택). 다시 만들려면 `Groggy Bar` 지우고 `그로기 바 UI 만들기`
+- [ ] (선택) 보스 Animator 에 Int 파라미터 `State` 추가 → `Parameter 'State' does not exist` 경고 사라짐
+- 참고: 레거시 돌진 벽 충돌은 **태그 `Wall`** 로 판정 (`BossAttackPatterns.cs:1031·1099`). `WallObject/left·right` = `Wall` ✓ → 돌진 벽 충돌(그로기 +25)은 투명벽 x -10.87 / 27.86 에서 남
 
-### T67 ✂️ 그로기 바 UI — 🛠 툴로 자동
-- [ ] (위 v2 연결 후) `Scenes_Main/Chapter_1_Boss` 에서 메뉴 **`UnMachine/Boss Setup/그로기 바 UI 만들기`** → `Boss HP` 체력바와 `Bored` 테두리를 복제한 주황 바가 바로 아래에 생김 (**이미 만든 `Groggy Bar` 가 있으면 지우고 다시 실행** — 있으면 만들지 않음) → 위치·높이(`Groggy Bar`)·색(`Boss Groggy.mat` `_ColorFill`) 조정 → Ctrl+S
-- [ ] 이미 BossGroggyBar 가 있으면 만들지 않고 선택만 함
-
-### T54 ✂️ P1 점프 내려찍기 에셋
-- [ ] `JumpSlamConfig` 에셋 값: 실제 보스 룸의 `Room Min X`·`Room Max X`(벽 x), `Ground Y`(바닥), `Ceiling Y`(천장) 로 맞추기
+### T54 ✂️ P1 점프 내려찍기 — 남은 수동 (선택)
 - [ ] (선택) 보스 Animator 에 Trigger `JumpSlamLaunch`(도약 jumping 3~5)·`JumpSlamLand`(착지 lending) + 상태·전이 → 없으면 애니 없이 이동만
 - [ ] (선택) 그림자 프리팹: SpriteRenderer + `BossShadowMarker`, **피벗 아래 끝** → Config `Shadow Prefab`
 - [ ] (선택) 충격파 프리팹: SpriteRenderer + `BossShockwave`, 피벗 가운데, 오른쪽을 보는 그림 → Config `Shockwave Prefab` (크기는 프리팹 그대로, 판정은 Config 폭·높이)

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec7bf3311558ca04fabeae3b23e86b6f, type: 3}
+  m_Name: JumpSlamConfig_Chapter_1_Boss
+  m_EditorClassIdentifier: 
+  _telegraphSeconds: 0.5
+  _punishableSeconds: 1.2
+  _riseSeconds: 0.3
+  _trackSeconds: 1.2
+  _lockSeconds: 0.4
+  _fallSeconds: 0.2
+  _roomMinX: -10.870003
+  _roomMaxX: 27.859999
+  _groundY: -4.0000086
+  _ceilingY: 9.999974
+  _aboveCeiling: 5
+  _playerLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  _landingDamage: 8
+  _shockwaveDamage: 4
+  _shockwaveSpeed: 12
+  _shockwaveHeight: 1
+  _shockwaveWidth: 1
+  _shadowPrefab: {fileID: 0}
+  _shockwavePrefab: {fileID: 0}
+  _placeholderShadowHeight: 0.3
+  _launchTrigger: JumpSlamLaunch
+  _landTrigger: JumpSlamLand
