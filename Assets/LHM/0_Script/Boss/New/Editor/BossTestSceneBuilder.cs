@@ -381,7 +381,7 @@ namespace UnMachine.EditorTools
         /// <summary>
         /// 지정 에셋 → 프로젝트에서 찾은 첫 T 에셋 → 없으면 기본 경로에 새로 만든다 (기존 에셋은 수정하지 않음).
         /// </summary>
-        private static T ResolveOrCreateConfig<T>(T assigned, string defaultPath) where T : ScriptableObject
+        internal static T ResolveOrCreateConfig<T>(T assigned, string defaultPath) where T : ScriptableObject
         {
             string typeName = typeof(T).Name;
             if (assigned != null)

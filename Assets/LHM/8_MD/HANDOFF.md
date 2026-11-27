@@ -5,6 +5,20 @@
 
 ---
 
+## 🛠 보스 씬 연결 툴: `UnMachine/Boss Setup` (현민 요청 2026-11-27, 기준 커밋 `bc3c69d`)
+- **쓰는 법:** 실제 보스 씬을 열고 보스 선택 → `열린 씬 보스에 v2 연결` → Console 보고 확인 → Ctrl+S. `연결 상태 검사` = 읽기 전용 점검.
+- **하는 일:** 보스에 `BossFlowDriver`·`BossTelegraphView`·`ComboSignalView`·`BossGroggyDriver` 추가(없을 때만), Config 4종(BossFlow·PatternTable·Groggy·JumpSlam — 없으면 `3_ScriptableObject` 에 생성) 연결, `BossController` Flow Driver·Use Flow V2 On. **이미 값이 있는 칸은 덮어쓰지 않음.** Undo 한 묶음, 씬 Dirty 표시만.
+- **`그로기 바 UI 만들기` (T67):**
+  - **1순위 (Chapter_1_Boss 등 SYS 체력바 씬, 현민 지정):** 보스 `DamageHandler` 에 연결된 `BossHealthBarBridge` 의 비주얼(`Boss HP`, `UnifiedHealthBarVisual`)을 복제 → 체력바 바로 아래 `Groggy Bar`(+BossGroggyBar) → `Fill`(복제본, 브릿지 제거). 같은 폭, 높이 = 체력바 × 0.35(최소 8), 간격 8. 머티리얼은 `Boss Health.mat` → **`Assets/LHM/1_Material/Boss Groggy.mat`** 복사(채움 색 `_ColorFill` 주황, 원본 그대로).
+  - 2순위: 레거시 `BossController.healthBar` 아래 Image 바 → 3순위: Canvas 위쪽 가운데 (Canvas 없으면 `BossUICanvas` 생성). 이미 BossGroggyBar 가 있으면 만들지 않음.
+  - `BossGroggyBar.cs` 수정: `_visual`(UnifiedHealthBarVisual) 칸 추가 — 지정 시 Image 대신 `SetFill(게이지)`, 표시될 때 고스트 HP 끔.
+- **안 하는 일:** 씬 열기·저장, 프리팹 원본 수정, 증기·경고음(T59)·JumpSlamConfig 방 값(T54).
+- **변경 파일:** `Editor/BossSceneSetupTool.cs` (새), `Editor/BossTestSceneBuilder.cs` (`ResolveOrCreateConfig` private → internal 1줄)
+- **규칙 변경 제안 (현민 판단):** AI_RULES 0장 2번 예외에 "현민이 요청한 **열린 씬 연결 툴**(Undo 가능, 저장은 현민, 기존 값 덮어쓰기 없음)" 추가. 이번 툴은 채팅에서 현민이 허락한 1회 예외로 작성.
+- **커밋 제안:** `[chore] 보스 씬 v2 연결 툴 (UnMachine/Boss Setup)` — 위 2파일 + `BossSceneSetupTool.cs.meta`
+
+---
+
 ## 🛠 테스트 도구: `UnMachine/Boss Test Panel` (현민 요청, 기준 커밋 `70953f2`)
 - **쓰는 법:** 메뉴 `UnMachine/Boss Test Panel` 로 창 열기 → (테스트 씬에서) Play → 보스 자동 탐색.
   - **조작:** 강제 단위 P1~C4·해제 / 2P 전환(HP 49%) / HP 50% 경계 / 사망 / 그로기 +25 / 그로기 진입 / 기절
@@ -35,17 +49,15 @@
 ## ★ 남은 에디터 작업 체크리스트 (현민) — 축소 계획 코드 작업 완료 후
 > 순서대로 하면 됨. 테스트 씬(`UnMachine/Test Scene/Boss Arena`)은 1~3번 대부분이 자동이고, **실제 보스 씬**은 아래를 손으로.
 
-### T36 ✂️ v2 흐름 켜기 (실제 보스 씬)
-- [ ] 보스 오브젝트(BossController 있는 곳)에 컴포넌트 추가: `BossFlowDriver`, `BossTelegraphView`, `ComboSignalView`, `BossGroggyDriver`
-- [ ] `BossFlowDriver`: `Config` = BossFlowConfig, `Boss` = 자기 BossController, `Attack Patterns` = 자기 BossAttackPatterns, `Pattern Table` = PatternTableConfig, `Jump Slam` = JumpSlamConfig
-- [ ] `BossTelegraphView`·`ComboSignalView`: `Driver` = 위 Driver
-- [ ] `BossGroggyDriver`: `Config` = GroggyConfig, `Boss`·`Flow Driver`·`Attack Patterns` 지정
-- [ ] `BossController`: `Flow Driver` 지정, **`Use Flow V2` 체크**
+### T36 ✂️ v2 흐름 켜기 (실제 보스 씬) — 🛠 툴로 자동
+- [ ] 실제 보스 씬 열기 → Hierarchy 에서 보스 선택 → 메뉴 **`UnMachine/Boss Setup/열린 씬 보스에 v2 연결`** → Console 보고 확인 → **Ctrl+S**
+  (Driver·TelegraphView·ComboSignalView·GroggyDriver 추가, Config 4종·참조 연결, `Use Flow V2` On. 이미 채워진 칸은 그대로. Ctrl+Z 한 번으로 되돌림)
+- [ ] `UnMachine/Boss Setup/연결 상태 검사` 로 ✓/✗ 확인
 - [ ] (선택) 보스 Animator 에 Int 파라미터 `State` 추가 → Console 의 `Parameter 'State' does not exist` 경고 사라짐 (상태 8~12 애니 전이는 생략 가능)
 
-### T67 ✂️ 그로기 바 UI
-- [ ] 보스 체력바 Canvas 아래: 빈 오브젝트 `GroggyBar`(+ `BossGroggyBar`) → 자식 `Root`(배경 Image) → 그 자식 `Fill`(Image, Type Filled / Horizontal / Origin Left)
-- [ ] `BossGroggyBar`: `Groggy`·`Boss`·`Root`·`Fill` 지정 (**Root 는 GroggyBar 자신이 아닌 자식**)
+### T67 ✂️ 그로기 바 UI — 🛠 툴로 자동
+- [ ] (위 v2 연결 후) `Scenes_Main/Chapter_1_Boss` 에서 메뉴 **`UnMachine/Boss Setup/그로기 바 UI 만들기`** → `Boss HP` 체력바를 복제한 주황 바가 바로 아래에 생김 → 위치·높이(`Groggy Bar`)·색(`Boss Groggy.mat` `_ColorFill`) 조정 → Ctrl+S
+- [ ] 이미 BossGroggyBar 가 있으면 만들지 않고 선택만 함
 
 ### T54 ✂️ P1 점프 내려찍기 에셋
 - [ ] `JumpSlamConfig` 에셋 값: 실제 보스 룸의 `Room Min X`·`Room Max X`(벽 x), `Ground Y`(바닥), `Ceiling Y`(천장) 로 맞추기
