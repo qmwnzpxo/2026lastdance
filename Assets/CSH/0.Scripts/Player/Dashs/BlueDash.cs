@@ -72,18 +72,20 @@ public partial class PlayerDash : MonoBehaviour
 
         // 이전 QTE 요청이 남아 있으면 정리 후 새로 요청 (플레이어 + 적 슬로우)
         ReleaseBlueTimeScale();
-        var hPlayer = _blueTimePlayer = tmg.Request(TimeCategory.Player, 0.02f, tag: "BlueQTE");
-        var hEnemy = _blueTimeEnemy = tmg.Request(TimeCategory.Enemy, 0.02f, tag: "BlueQTE");
+        var hPlayer = _blueTimePlayer = tmg.Request(TimeCategory.Player, blueQTEStartScale, tag: "BlueQTE");
+        var hEnemy = _blueTimeEnemy = tmg.Request(TimeCategory.Enemy, blueQTEStartScale, tag: "BlueQTE");
 
         float elapsed = 0f;
 
         try
         {
             // 낙하 입력(우클릭/스페이스)은 PlayerDash.HandleDash에서 처리 → 여기선 슬로우 연출만
-            while (elapsed < 1f && !ct.IsCancellationRequested)
+            // 시작 배율 → 1까지 선형 복귀 (끝날 때 배율이 튀지 않도록 1에서 끝냄)
+            while (elapsed < blueQTEDuration && !ct.IsCancellationRequested)
             {
-                tmg.SetScale(hPlayer, elapsed / 2);
-                tmg.SetScale(hEnemy, elapsed / 2);
+                float scale = Mathf.Lerp(blueQTEStartScale, 1f, elapsed / blueQTEDuration);
+                tmg.SetScale(hPlayer, scale);
+                tmg.SetScale(hEnemy, scale);
                 elapsed += Time.unscaledDeltaTime;
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken: ct);
             }

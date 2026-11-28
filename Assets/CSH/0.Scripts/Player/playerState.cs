@@ -208,6 +208,8 @@ public class PlayerState : MonoBehaviour, IDamageable
     {
         await CustomTime.WaitForScaledSeconds(duration, category, tk)
             .SuppressCancellationThrow();
+        // 새 무적(StartImmunity 재호출)이 덮어써서 취소됐으면 isHit은 새 루틴이 관리 → 여기서 끄지 않음
+        if (tk.IsCancellationRequested) return;
         isHit = false;
         
     }

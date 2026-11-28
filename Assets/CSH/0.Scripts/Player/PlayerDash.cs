@@ -53,6 +53,10 @@ public partial class PlayerDash : MonoBehaviour
     [SerializeField] private float blueFallSpeed = 120f;  // 낙하 속도
     [SerializeField] private float blueSlamRadius = 3f;    // 착지 범위 공격 반지름
     [SerializeField] private float blueSlamDamage = 8f;    // 착지 범위 공격 데미지
+    [Tooltip("상승 대시 직후 슬로우 지속 시간 (실제 초)")]
+    [SerializeField] private float blueQTEDuration = 0.25f;
+    [Tooltip("슬로우 시작 배율 (플레이어·적). 지속 시간 동안 1까지 선형으로 올라감")]
+    [SerializeField, Range(0f, 1f)] private float blueQTEStartScale = 0.1f;
 
     // ── 공용 설정 ────────────────────────────
     [Header("공용")]
