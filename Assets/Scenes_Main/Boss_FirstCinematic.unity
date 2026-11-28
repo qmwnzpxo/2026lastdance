@@ -1126,6 +1126,7 @@ MonoBehaviour:
   duration: 3
   fromOrtho: 1.5
   toOrtho: 8.4375
+  introSettleDuration: 0.5
   target: {fileID: 2115244527}
 --- !u!4 &356379177
 Transform:
@@ -2210,6 +2211,7 @@ GameObject:
   - component: {fileID: 967247998}
   - component: {fileID: 967247997}
   - component: {fileID: 967247996}
+  - component: {fileID: 967247999}
   m_Layer: 0
   m_Name: Chapter_1_BossJump
   m_TagString: Untagged
@@ -2224,7 +2226,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 967247995}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 13eea482ecbff7d46a0feaebcd5f74af, type: 3}
   m_Name: 
@@ -2290,6 +2292,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &967247999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 967247995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54adc13a371ad3e4d9eceb2c534adbdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetType: 1
+  targetSceneName: Chapter_1_Boss
+  targetBuildIndex: 5
+  triggerMode: 0
+  interactionKey: 102
+  playerTag: Player
+  useLoadingScene: 0
+  loadingSceneName: Loading
+  useAsyncLoad: 1
+  logProgress: 0
+  clearSectionSave: 0
 --- !u!1 &1000484306
 GameObject:
   m_ObjectHideFlags: 0
@@ -19332,6 +19357,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90f7210b821dcca4fbe6eb8ccf64d6c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _channels: []
 --- !u!4 &1250497960
 Transform:
   m_ObjectHideFlags: 0
@@ -37299,6 +37325,7 @@ MonoBehaviour:
   chargeRange: 10
   chargeCastTime: 0.8
   chargeStunDuration: 1
+  chargeBrakeDelay: 0.3
   droneSpawnAnticipationTime: 0.4
   dronePatternA_Count: 10
   droneAimDuration: 0.5
@@ -37466,6 +37493,8 @@ MonoBehaviour:
   droneRiseSpeed: 10
   droneSpawnAnticipationTime: 0.4
   maxDroneCount: 2
+  _useFlowV2: 0
+  _flowDriver: {fileID: 0}
 --- !u!212 &1766646318
 SpriteRenderer:
   m_ObjectHideFlags: 0
