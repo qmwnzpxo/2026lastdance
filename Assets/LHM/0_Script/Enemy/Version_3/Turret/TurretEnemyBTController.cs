@@ -20,12 +20,13 @@ public class  TurretEnemyBTController : EnemyBTController
                 new ConditionAttackCooldownReady(),
                 new ActionAttack()
             ),
-            // 우선순위 3: 추격
-            new BTSequence(
+            // 추격 분기 제거: 포탑은 IMoveable이 없어 ActionChase가 아무것도 하지 않음
+            // (예전엔 Running으로 남아 대기 역할을 대신했고, 지금은 바로 Failure를 돌려줌)
+            /*new BTSequence(
                 new ConditionIsChasing(),
                 new ActionChase()
-            ),
-            // 우선순위 4: 대기
+            ),*/
+            // 우선순위 3: 대기
             new ActionIdle()
         );
     }
@@ -39,11 +40,12 @@ public class  TurretEnemyBTController : EnemyBTController
     // ────────────────────────────────────────
     #region Gizmos
 
-    Color retreatdisColor = new Color(0f, 1f, 0.7f, 1f);
+    // 미사용 (부모와 같은 동작 / 쓰이지 않는 색)
+    /*Color retreatdisColor = new Color(0f, 1f, 0.7f, 1f);
     protected override void OnDrawGizmosSelected()
     {
         base.OnDrawGizmosSelected();
-    }
+    }*/
 
     #endregion
 }

@@ -47,6 +47,13 @@ namespace CSHPlayer
         public float detectGauge;
         public float chaseEndTimer;
         public bool isStunned;
-        public float lastAttackTime;
+        public float stunDuration;
+        public float stunElapsed;
+        public float attackCooldownRemaining;
+
+        // IMoveable (컨트롤러에 저장됨. 없으면 hasMoveable = false)
+        public bool hasMoveable;
+        public int patrolDirection;
+        public bool needsRetreat;
     }
 }

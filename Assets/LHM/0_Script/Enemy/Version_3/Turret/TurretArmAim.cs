@@ -39,7 +39,8 @@ public class TurretArmAim : EnemyArmAim
         float targetWorldAngle = 0f; // 기본 각도. 이 밑으로 0707추가코드
 
         // [핵심 수정] 거리 안이면서 동시에 시야(LOS)가 확보되었을 때만! 플레이어를 조준합니다.
-        if (dist <= detectionRange && _enemyBB != null && _enemyBB.hasLOS)
+        // _enemyBB null 검사는 위에서 이미 _enemyBB.enemyState를 쓴 뒤라 의미 없음
+        if (dist <= detectionRange /*&& _enemyBB != null*/ && _enemyBB.hasLOS)
         {
             Vector2 dir = _player.position - armPivot.position;
             float rawAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
@@ -62,13 +63,14 @@ public class TurretArmAim : EnemyArmAim
         armPivot.rotation = Quaternion.Lerp(
             armPivot.rotation,
             Quaternion.Euler(0f, 0f, finalAngle),
-            Time.deltaTime * rotationSpeed);
+            AimDeltaTime * rotationSpeed);
 
-        if (Mathf.Abs(NormalizeAngle(finalAngle)) -
+        // isRecoil 미사용 (EnemyArmAim 참고)
+        /*if (Mathf.Abs(NormalizeAngle(finalAngle)) -
             Mathf.Abs(NormalizeAngle(armPivot.rotation.z)) <= 0.05f)
         {
             isRecoil = false;
-        }
+        }*/
 
         /*Vector2 dir;
         if (_enemyBB.hasLOS)
@@ -94,7 +96,7 @@ public class TurretArmAim : EnemyArmAim
         armPivot.rotation = Quaternion.Lerp(
             armPivot.rotation,
             Quaternion.Euler(0f, 0f, finalAngle),
-            Time.deltaTime * rotationSpeed);
+            AimDeltaTime * rotationSpeed);
 
         if (Mathf.Abs(NormalizeAngle(finalAngle)) - 
             Mathf.Abs(NormalizeAngle(armPivot.rotation.z)) <= 0.05f)
@@ -104,7 +106,8 @@ public class TurretArmAim : EnemyArmAim
 
     }
 
-    public override void TriggerRecoil()
+    // 아래 TriggerRecoil·UpdateRecoil·GetTargetWorldAngle·TryFlip은 EnemyArmAim과 내용이 같아 불필요
+    /*public override void TriggerRecoil()
     {
         // 각도
         _recoilAngleOffset = 0f;
@@ -123,7 +126,7 @@ public class TurretArmAim : EnemyArmAim
         // 각도
         if (_recoilAngleRising)
         {
-            _recoilAngleOffset = Mathf.MoveTowards(_recoilAngleOffset, _recoilAngleTarget, recoilRiseSpeed * Time.deltaTime);
+            _recoilAngleOffset = Mathf.MoveTowards(_recoilAngleOffset, _recoilAngleTarget, recoilRiseSpeed * AimDeltaTime);
             if (Mathf.Approximately(_recoilAngleOffset, _recoilAngleTarget))
             {
                 _recoilAngleRising = false;
@@ -132,14 +135,14 @@ public class TurretArmAim : EnemyArmAim
         }
         else
         {
-            _recoilAngleOffset = Mathf.Lerp(_recoilAngleOffset, 0f, recoilReturnSpeed * Time.deltaTime);
+            _recoilAngleOffset = Mathf.Lerp(_recoilAngleOffset, 0f, recoilReturnSpeed * AimDeltaTime);
             if (Mathf.Abs(_recoilAngleOffset) < 0.01f) _recoilAngleOffset = 0f;
         }
 
         // 위치
         if (_recoilPosRising)
         {
-            _recoilPosOffset = Mathf.MoveTowards(_recoilPosOffset, _recoilPosTarget, recoilPushSpeed * Time.deltaTime);
+            _recoilPosOffset = Mathf.MoveTowards(_recoilPosOffset, _recoilPosTarget, recoilPushSpeed * AimDeltaTime);
             if (Mathf.Approximately(_recoilPosOffset, _recoilPosTarget))
             {
                 _recoilPosRising = false;
@@ -148,7 +151,7 @@ public class TurretArmAim : EnemyArmAim
         }
         else
         {
-            _recoilPosOffset = Mathf.Lerp(_recoilPosOffset, 0f, recoilPullSpeed * Time.deltaTime);
+            _recoilPosOffset = Mathf.Lerp(_recoilPosOffset, 0f, recoilPullSpeed * AimDeltaTime);
             if (_recoilPosOffset < 0.001f) _recoilPosOffset = 0f;
         }
     }
@@ -168,7 +171,7 @@ public class TurretArmAim : EnemyArmAim
     {
         bool shouldFaceRight = rawAngle > -90f && rawAngle < 90f;
         if (shouldFaceRight != _isFacingRight) Flip();
-    }
+    }*/
 
     protected override void Flip()
     {
@@ -220,7 +223,8 @@ public class TurretArmAim : EnemyArmAim
         return true;
     }
 
-    protected override float NormalizeAngle(float angle)
+    // NormalizeAngle·SetFacing·OnDrawGizmosSelected도 EnemyArmAim과 내용이 같아 불필요
+    /*protected override float NormalizeAngle(float angle)
     {
         while (angle > 180f) angle -= 360f;
         while (angle < -180f) angle += 360f;
@@ -239,5 +243,5 @@ public class TurretArmAim : EnemyArmAim
         Gizmos.color = new Color(1f, 0.5f, 0f, 0.4f);
         Gizmos.DrawWireSphere(bodyTransform.position, detectionRange);
     }
-#endif
+#endif*/
 }

@@ -29,6 +29,9 @@ public class EnemyState : MonoBehaviour, IDamageable
 
     public virtual void TakeDamage(float damage)
     {
+        // 이미 죽은 적은 무시 (Die·OnDeath·비활성화 코루틴 중복 실행 방지)
+        if (currentHp <= 0) return;
+
         currentHp -= damage;
         if (currentHp <= 0)
         {
@@ -68,7 +71,14 @@ public class EnemyState : MonoBehaviour, IDamageable
 
     protected virtual IEnumerator DeactivateAfterDelay()
     {
-        yield return new WaitForSeconds(deathDelay); // 2초 대기
+        // deathDelay(2초) 대기 — 적 배율 시간 기준 (슬로우·히트스톱 중엔 그만큼 늦게, 일시정지 중엔 멈춤)
+        float elapsed = 0f;
+        while (elapsed < deathDelay)
+        {
+            yield return null;
+            var tmg = CustomTimeManager.Instance;
+            elapsed += Time.deltaTime * (tmg != null ? tmg.EnemyTimeScale : 1f);
+        }
         gameObject.SetActive(false);                 // 오브젝트 비활성화 (삭제)
     }
 }
