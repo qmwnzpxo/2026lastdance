@@ -222,6 +222,13 @@ public class EnemyBTController : MonoBehaviour
 
     protected virtual void UpdateBlackboard()
     {
+        // 적 배율 시간 (빨강 칩·파랑 QTE 슬로우, 히트스톱 반영)
+        float dt = CustomTimeManager.Instance.EnemyFixedDeltaTime;
+
+        // 공격 쿨다운 감소
+        if (_bb.attackCooldownRemaining > 0f)
+            _bb.attackCooldownRemaining -= dt;
+
         float dist = _bb.DistanceToPlayer;
         bool playerInDetection = dist <= _bb.detectionRange;
         bool playerInMaintenance = dist <= _bb.chaseMaintenanceRange;
@@ -232,13 +239,13 @@ public class EnemyBTController : MonoBehaviour
         if (playerInDetection && _bb.hasLOS)
         {
             _bb.detectGauge = Mathf.Min(
-                _bb.detectGauge + _bb.gaugeIncreaseRate * Time.fixedDeltaTime,
+                _bb.detectGauge + _bb.gaugeIncreaseRate * dt,
                 _bb.maxDetectGauge);
         }
         else if (_bb.isDetected && !playerInMaintenance)
         {
             _bb.detectGauge = Mathf.Max(
-                _bb.detectGauge - _bb.gaugeDecreaseRate * Time.fixedDeltaTime,
+                _bb.detectGauge - _bb.gaugeDecreaseRate * dt,
                 0f);
         }
 
@@ -249,7 +256,7 @@ public class EnemyBTController : MonoBehaviour
         // 추격 유지 범위 이탈 → 해제 타이머
         if (_bb.isDetected && !playerInMaintenance)
         {
-            _bb.chaseEndTimer += Time.fixedDeltaTime;
+            _bb.chaseEndTimer += dt;
             if (_bb.chaseEndTimer >= _bb.chaseEndDuration)
             {
                 _bb.isDetected = false;
@@ -284,9 +291,15 @@ public class EnemyBTController : MonoBehaviour
 
     public void ApplyStun(float duration = 0f)
     {
+        bool alreadyStunned = _bb.isStunned;
         _bb.stunDuration = duration > 0f ? duration : _stunDuration;
+        _bb.stunElapsed = 0f; // 새 스턴은 처음부터
         _bb.isStunned = true;
-        _bb.CancelAction(); // 현재 진행 중인 액션 즉시 중단
+
+        // 이미 스턴 중이면 진행 중인 ActionStun이 위 값으로 이어서 처리하므로 취소하지 않음
+        // (취소하면 ActionStun의 취소 처리가 다음 물리 프레임에 isStunned = false로 덮어써 새 스턴이 풀림)
+        if (!alreadyStunned)
+            _bb.CancelAction(); // 현재 진행 중인 액션 즉시 중단
     }
 
     #endregion

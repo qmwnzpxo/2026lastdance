@@ -43,12 +43,17 @@ public class EnemyBullet : MonoBehaviour, IDamageable
         damage = dmg;
         traveledDistance = 0f;
 
-        rb.linearVelocity = direction * speed;
+        // 풀에서 처음 꺼낸 탄은 Start(customTimeManager 할당)보다 Init이 먼저 불릴 수 있어 Instance를 직접 사용
+        var tmg = CustomTimeManager.Instance;
+        rb.linearVelocity = direction * speed * (tmg != null ? tmg.EnemyTimeScale : 1f);
     }
 
     // ── 이동 / 거리 체크 ─────────────────────────
     protected virtual void FixedUpdate()
     {
+        // 적 배율에 맞춰 매 물리 프레임 속도 갱신 (발사 때 한 번만 정하면 슬로우 중에도 원래 속도로 날아가고,
+        // 사거리는 배율 시간으로 계산돼 슬로우 중 훨씬 멀리 날아감)
+        rb.linearVelocity = direction * speed * customTimeManager.EnemyTimeScale;
         traveledDistance += speed * customTimeManager.EnemyFixedDeltaTime;
 
         if (traveledDistance >= maxTravelDistance)

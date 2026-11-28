@@ -27,16 +27,19 @@ public class EnemyCombat : MonoBehaviour
     }
 
     /// <summary>ActionAttack에서 호출. 선딜 → 발사 → 후딜 순서로 실행.</summary>
+    /// <remarks>딜레이는 적 배율 시간 기준 (빨강 칩·파랑 QTE 슬로우, 히트스톱 중엔 그만큼 느려짐)</remarks>
     public async UniTask ExecuteAttack(CancellationToken ct)
     {
         _isAttack = true;
         try
         {
-            await UniTask.WaitForSeconds(_preDelay, cancellationToken: ct);
+            // CustomTime.WaitForScaledSeconds는 취소돼도 예외 없이 끝나므로, 취소 확인은 직접 한다
+            await CustomTime.WaitForScaledSeconds(_preDelay, TimeCategory.Enemy, ct);
 
             ct.ThrowIfCancellationRequested();
             Shoot();
-            await UniTask.WaitForSeconds(_postDelay, cancellationToken: ct);
+            await CustomTime.WaitForScaledSeconds(_postDelay, TimeCategory.Enemy, ct);
+            ct.ThrowIfCancellationRequested();
         }
         finally
         {

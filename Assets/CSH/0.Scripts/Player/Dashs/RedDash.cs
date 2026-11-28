@@ -426,6 +426,7 @@ public partial class PlayerDash : MonoBehaviour
             if (bb == null) continue;
 
             var enemyRb = ctrl.GetComponent<Rigidbody2D>();
+            var moveable = bb.moveable;
             enemySnapshots.Add(new EnemySnapshotData
             {
                 controller = ctrl,
@@ -438,7 +439,12 @@ public partial class PlayerDash : MonoBehaviour
                 detectGauge = bb.detectGauge,
                 chaseEndTimer = bb.chaseEndTimer,
                 isStunned = bb.isStunned,
-                lastAttackTime = bb.lastAttackTime,
+                stunDuration = bb.stunDuration,
+                stunElapsed = bb.stunElapsed,
+                attackCooldownRemaining = bb.attackCooldownRemaining,
+                hasMoveable = moveable != null,
+                patrolDirection = moveable != null ? moveable.patrolDirection : 1,
+                needsRetreat = moveable != null && moveable.needsRetreat,
             });
         }
     }
@@ -470,7 +476,17 @@ public partial class PlayerDash : MonoBehaviour
             bb.detectGauge = snap.detectGauge;
             bb.chaseEndTimer = snap.chaseEndTimer;
             bb.isStunned = snap.isStunned;
-            bb.lastAttackTime = snap.lastAttackTime;
+            // 스턴 중이었다면 처음부터가 아니라 남은 시간만큼 이어서 (ActionStun이 stunElapsed부터 진행)
+            bb.stunDuration = snap.stunDuration;
+            bb.stunElapsed = snap.stunElapsed;
+            bb.attackCooldownRemaining = snap.attackCooldownRemaining;
+
+            // 순찰 방향·후퇴 필요 여부는 블랙보드가 아니라 컨트롤러(IMoveable)에 저장됨
+            if (snap.hasMoveable && bb.moveable != null)
+            {
+                bb.moveable.patrolDirection = snap.patrolDirection;
+                bb.moveable.needsRetreat = snap.needsRetreat;
+            }
         }
     }
     #endregion

@@ -26,7 +26,7 @@ public class EnemyArmAim : MonoBehaviour
     [SerializeField] protected float recoilPushDist = 0.3f;   // 뒤로 밀리는 거리
     [SerializeField] protected float recoilPushSpeed = 800f;  // 밀리는 속도
     [SerializeField] protected float recoilPullSpeed = 10f;   // 복귀 속도
-    protected bool isRecoil = false;
+    //protected bool isRecoil = false; // 쓰기만 하고 읽는 곳이 없어 미사용
 
     protected Transform _player;
     protected EnemyBlackboard _enemyBB;
@@ -48,6 +48,20 @@ public class EnemyArmAim : MonoBehaviour
     public float DetactionRange { get => detectionRange; set => detectionRange = value; }
     public EnemyBlackboard EnemyBlackBoard { get => _enemyBB; set => _enemyBB = value; }
 
+    /// <summary>
+    /// 조준 회전·반동용 프레임 시간 = Time.deltaTime × 적 배율.
+    /// 빨강 칩·파랑 QTE 슬로우와 히트스톱에 맞춰 느려지고, 일시정지(Time.timeScale = 0)에도 멈춘다.
+    /// (CustomTimeManager.EnemyDeltaTime은 unscaled 기준이라 일시정지 중에도 흘러서 쓰지 않음)
+    /// </summary>
+    protected static float AimDeltaTime
+    {
+        get
+        {
+            var tmg = CustomTimeManager.Instance;
+            return Time.deltaTime * (tmg != null ? tmg.EnemyTimeScale : 1f);
+        }
+    }
+
     protected virtual void Awake()
     {
         var playerObj = GameObject.FindWithTag("Player");
@@ -59,8 +73,11 @@ public class EnemyArmAim : MonoBehaviour
 
     public virtual void Tick() // EnemyManager → EnemyBTController가 호출
     {
+#if UNITY_EDITOR
+        // 디버그: N 키로 모든 적 반동 테스트 (에디터 전용, 빌드에서 제외)
         if (Input.GetKeyDown(KeyCode.N))
             TriggerRecoil();
+#endif
 
         if (_enemyBB.enemyState.currentHp <= 0) return;
         UpdateRecoil();
@@ -85,7 +102,9 @@ public class EnemyArmAim : MonoBehaviour
         float targetWorldAngle = -99f; // 기본 각도. 이 밑으로 0707추가코드
 
         // [핵심 수정] 거리 안이면서 동시에 시야(LOS)가 확보되었을 때만! 플레이어를 조준합니다.
-        if (dist <= detectionRange && _enemyBB != null && _enemyBB.hasLOS)
+        // _enemyBB null 검사는 위에서 이미 _enemyBB.enemyState를 쓴 뒤라 의미 없음
+        // (EnemyBTController.ReInit이 Tick 전에 항상 넣어 줌)
+        if (dist <= detectionRange /*&& _enemyBB != null*/ && _enemyBB.hasLOS)
         {
             Vector2 dir = _player.position - armPivot.position;
             float rawAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
@@ -114,13 +133,14 @@ public class EnemyArmAim : MonoBehaviour
         armPivot.rotation = Quaternion.Lerp(
             armPivot.rotation,
             Quaternion.Euler(0f, 0f, finalAngle),
-            Time.deltaTime * rotationSpeed);
+            AimDeltaTime * rotationSpeed);
 
-        if (Mathf.Abs(NormalizeAngle(finalAngle)) -
+        // isRecoil은 어디서도 읽지 않아 불필요 (rotation.z는 쿼터니언 성분이라 각도 비교로도 맞지 않음)
+        /*if (Mathf.Abs(NormalizeAngle(finalAngle)) -
             Mathf.Abs(NormalizeAngle(armPivot.rotation.z)) <= 0.05f)
         {
             isRecoil = false;
-        }
+        }*/
 
         /*Vector2 dir;
         if (_enemyBB.hasLOS)
@@ -146,7 +166,7 @@ public class EnemyArmAim : MonoBehaviour
         armPivot.rotation = Quaternion.Lerp(
             armPivot.rotation,
             Quaternion.Euler(0f, 0f, finalAngle),
-            Time.deltaTime * rotationSpeed);
+            AimDeltaTime * rotationSpeed);
 
         if (Mathf.Abs(NormalizeAngle(finalAngle)) - 
             Mathf.Abs(NormalizeAngle(armPivot.rotation.z)) <= 0.05f)
@@ -167,7 +187,7 @@ public class EnemyArmAim : MonoBehaviour
         _recoilPosOffset = 0f;
         _recoilPosTarget = recoilPushDist;
         _recoilPosRising = true;
-        isRecoil = true;
+        //isRecoil = true; // 미사용
     }
 
     protected virtual void UpdateRecoil()
@@ -175,7 +195,7 @@ public class EnemyArmAim : MonoBehaviour
         // 각도
         if (_recoilAngleRising)
         {
-            _recoilAngleOffset = Mathf.MoveTowards(_recoilAngleOffset, _recoilAngleTarget, recoilRiseSpeed * Time.deltaTime);
+            _recoilAngleOffset = Mathf.MoveTowards(_recoilAngleOffset, _recoilAngleTarget, recoilRiseSpeed * AimDeltaTime);
             if (Mathf.Approximately(_recoilAngleOffset, _recoilAngleTarget))
             {
                 _recoilAngleRising = false;
@@ -184,14 +204,14 @@ public class EnemyArmAim : MonoBehaviour
         }
         else
         {
-            _recoilAngleOffset = Mathf.Lerp(_recoilAngleOffset, 0f, recoilReturnSpeed * Time.deltaTime);
+            _recoilAngleOffset = Mathf.Lerp(_recoilAngleOffset, 0f, recoilReturnSpeed * AimDeltaTime);
             if (Mathf.Abs(_recoilAngleOffset) < 0.01f) _recoilAngleOffset = 0f;
         }
 
         // 위치
         if (_recoilPosRising)
         {
-            _recoilPosOffset = Mathf.MoveTowards(_recoilPosOffset, _recoilPosTarget, recoilPushSpeed * Time.deltaTime);
+            _recoilPosOffset = Mathf.MoveTowards(_recoilPosOffset, _recoilPosTarget, recoilPushSpeed * AimDeltaTime);
             if (Mathf.Approximately(_recoilPosOffset, _recoilPosTarget))
             {
                 _recoilPosRising = false;
@@ -200,7 +220,7 @@ public class EnemyArmAim : MonoBehaviour
         }
         else
         {
-            _recoilPosOffset = Mathf.Lerp(_recoilPosOffset, 0f, recoilPullSpeed * Time.deltaTime);
+            _recoilPosOffset = Mathf.Lerp(_recoilPosOffset, 0f, recoilPullSpeed * AimDeltaTime);
             if (_recoilPosOffset < 0.001f) _recoilPosOffset = 0f;
         }
     }

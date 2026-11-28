@@ -39,7 +39,12 @@ public class RangerEnemyAnimation : MonoBehaviour
 
         // 2D 횡스크롤이므로 X축 이동 속도의 절댓값을 기준으로 삼습니다.
         // (유니티 6 이전 버전이라면 _rb.linearVelocity 대신 _rb.velocity를 사용하세요)
-        float currentSpeed = Mathf.Abs(_rb.linearVelocity.x);
+        // 적 이동 속도에는 적 배율(슬로우·히트스톱)이 곱해져 있으므로 나눠서 원래 속도로 판정.
+        // 안 나누면 슬로우 중 Run→Walk→Idle로 바뀜 (재생 속도는 TimeScaleReceiver가 Animator.speed로 따로 맞춤)
+        var tmg = CustomTimeManager.Instance;
+        float enemyScale = tmg != null ? tmg.EnemyTimeScale : 1f;
+        if (enemyScale <= 0.0001f) return; // 완전 정지 중엔 이전 상태 유지
+        float currentSpeed = Mathf.Abs(_rb.linearVelocity.x) / enemyScale;
 
         // 속도에 따른 상태 판별
         bool isWalking = currentSpeed > walkSpeedThreshold && currentSpeed <= runSpeedThreshold;
