@@ -47,6 +47,27 @@ public static class SolidPhysics
         return Closest();
     }
 
+    /// <summary>
+    /// CircleCast 결과 중 바닥으로 볼 수 있는 면(법선 y >= minNormalY)만 골라 가장 가까운 히트 반환.
+    /// 벽에 붙은 채 아래로 캐스트하면 벽이 거리 0으로 먼저 잡혀 바닥으로 오인되는 것을 막는다.
+    /// minNormalY 0.5 = 경사 60°까지 바닥으로 인정.
+    /// </summary>
+    public static RaycastHit2D CircleCastFloor(Vector2 origin, float radius, Vector2 direction, float distance, int layerMask, float minNormalY = 0.5f)
+    {
+        _hits.Clear();
+        Physics2D.CircleCast(origin, radius, direction, Filter(layerMask), _hits, distance);
+
+        RaycastHit2D best = default;
+        float bestDist = float.MaxValue;
+        foreach (var h in _hits)
+        {
+            if (h.collider == null || h.normal.y < minNormalY || h.distance >= bestDist) continue;
+            best = h;
+            bestDist = h.distance;
+        }
+        return best;
+    }
+
     public static Collider2D OverlapBox(Vector2 point, Vector2 size, float angle, int layerMask)
     {
         _cols.Clear();

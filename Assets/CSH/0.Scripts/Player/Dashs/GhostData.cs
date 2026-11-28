@@ -20,6 +20,8 @@ namespace CSHPlayer
         public GhostEventType eventType;
 
         public Quaternion rotation;
+        // 공격: 기록 당시 땅(천장) 공격이었는지. 재생 때 공격 길이를 기록과 같게 맞춰 공격끼리 겹치지 않게 함
+        public bool groundAttack;
 
         public int itemId;
         public Vector2 eventPosition;
@@ -32,6 +34,10 @@ namespace CSHPlayer
 
         // Transform
         public Vector2 position;
+
+        // Rigidbody2D (없으면 hasRigidbody = false)
+        public bool hasRigidbody;
+        public Vector2 velocity;
 
         // EnemyState
         public float hp;

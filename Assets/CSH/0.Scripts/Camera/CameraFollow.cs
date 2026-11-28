@@ -46,6 +46,13 @@ public class CameraFollow : MonoBehaviour
     // 카메라 흔들림(지진) 기능용 CancellationTokenSource
     private CancellationTokenSource shakeCts;
 
+    [Header("대시 후 댐핑 복구 (핑크 대시)")]
+    [Tooltip("대시가 끝난 뒤 낮은 댐핑을 유지하는 시간 (초)")]
+    [SerializeField] private float dashDampingHold = 0.1f;
+    [Tooltip("유지가 끝난 뒤 인스펙터 댐핑으로 부드럽게 되돌리는 시간 (초)")]
+    [SerializeField] private float dashDampingRecover = 0.2f;
+    private CancellationTokenSource _dashDampingCts;
+
     public static bool ZoomRequest { get; set; } = false;
 
 
@@ -228,6 +235,45 @@ public class CameraFollow : MonoBehaviour
         if (_gameplayFollow == null) return;
         _gameplayFollow.TrackerSettings.PositionDamping = new Vector3(
             _gameplayBaseDamping.x * scale, _gameplayBaseDamping.y * scale, _gameplayBaseDamping.z);
+    }
+
+    /// <summary>
+    /// 순간이동형 대시(핑크)가 끝난 뒤 호출. 낮은 댐핑(scale)을 dashDampingHold 동안 유지한 뒤
+    /// dashDampingRecover 동안 인스펙터 값(배율 1)으로 부드럽게 되돌린다.
+    /// 대시가 한 물리 프레임에 끝나 댐핑을 바로 복구하면 낮은 댐핑 효과가 없기 때문.
+    /// 다시 호출되면(연속 대시) 진행 중인 복구를 버리고 처음부터 다시 시작한다.
+    /// </summary>
+    public void HoldThenRestoreDamping(float scale)
+    {
+        _dashDampingCts?.Cancel();
+        _dashDampingCts?.Dispose();
+        _dashDampingCts = new CancellationTokenSource();
+        HoldThenRestoreDampingAsync(scale, _dashDampingCts.Token).Forget();
+    }
+
+    private async UniTaskVoid HoldThenRestoreDampingAsync(float scale, CancellationToken ct)
+    {
+        SetCameraDumping(scale);
+
+        // 유지
+        float timer = 0f;
+        while (timer < dashDampingHold)
+        {
+            if (await UniTask.Yield(PlayerLoopTiming.Update, ct).SuppressCancellationThrow()) return;
+            timer += Time.deltaTime;
+        }
+
+        // 부드럽게 복구 (댐핑은 따라가는 속도만 바꾸므로 값이 변해도 위치가 튀지 않음)
+        timer = 0f;
+        while (timer < dashDampingRecover)
+        {
+            if (await UniTask.Yield(PlayerLoopTiming.Update, ct).SuppressCancellationThrow()) return;
+            timer += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / dashDampingRecover));
+            SetCameraDumping(Mathf.Lerp(scale, 1f, t));
+        }
+
+        SetCameraDumping(1f);
     }
 #endregion
 
@@ -512,5 +558,7 @@ public class CameraFollow : MonoBehaviour
         if (_lockdownPivot != null) Destroy(_lockdownPivot.gameObject);
         shakeCts?.Cancel();
         shakeCts?.Dispose();
+        _dashDampingCts?.Cancel();
+        _dashDampingCts?.Dispose();
     }
 }

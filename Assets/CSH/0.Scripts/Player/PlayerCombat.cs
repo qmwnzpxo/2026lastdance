@@ -42,7 +42,8 @@ public class PlayerCombat : MonoBehaviour
     public float dashGaugePerAttack = 5;
 
     private HashSet<Collider2D> _hitEnemiesInAttack = new HashSet<Collider2D>();
-    public event Action<Quaternion> OnAttackInput;
+    /// <summary>빨강 칩 기록 중 공격 입력 (회전, 땅 공격 여부)</summary>
+    public event Action<Quaternion, bool> OnAttackInput;
 
     private PlayerState state;
     private PlayerAnimation ani;
@@ -115,32 +116,45 @@ public class PlayerCombat : MonoBehaviour
     {
         if (!Input.GetMouseButtonDown(0)) return;
         if (state.isAttacking) return;
+        // 빨강 칩 재생 중엔 직접 공격 불가 (기록된 공격만 TriggerRedDashAttack으로 재생)
+        if (state.isRedDashPlaying) return;
 
         if (state.isRedDashRecording)
         {
-            OnAttackInput?.Invoke(attackTransform.rotation);
+            bool ground = IsGroundAttack();
+            OnAttackInput?.Invoke(attackTransform.rotation, ground);
             // 판정 없이 모션만 실행. isAttacking을 켜야 PlayerMove가 Run을 꺼서
             // 이동 중에도 공격 모션으로 전이됨 (ani.Attack()만 부르면 멈출 때까지 공격 모션이 안 나옴)
-            PerformAttack(applyHit: false).Forget();
+            PerformAttack(applyHit: false, groundAttack: ground).Forget();
             return;
         }
 
         PerformAttack().Forget();
     }
-    public void TriggerRedDashAttack(Quaternion attackRotation)
+
+    /// <summary>
+    /// 빨강 칩 재생용 공격. groundAttack은 기록 당시 값을 그대로 넘긴다.
+    /// (재생 위치의 땅 판정은 기록과 달라질 수 있어, 그 값으로 공격 길이를 정하면 다음 기록 공격과 겹침)
+    /// </summary>
+    public void TriggerRedDashAttack(Quaternion attackRotation, bool groundAttack)
     {
         // 피벗 강제 회전
         attackTransform.rotation = attackRotation;
         playerMove.SetFacingRight(attackTransform.right.x >= 0f);
         // ani.Attack()은 PerformAttack 안에서 호출됨 (여기서도 부르면 트리거가 두 번 걸려 재생 때 한 번 더 휘두름)
 
-        PerformAttack().Forget();
+        PerformAttack(applyHit: true, groundAttack: groundAttack).Forget();
         //ExecuteAttackBox(attackPos);
         //_hitEnemiesInAttack.Clear(); // 다음 연타를 위해 바로 클리어
     }
 
-    private async UniTaskVoid PerformAttack(bool applyHit = true)
+    // 땅(천장) 공격 = 긴 2타 공격(attackSecondHitDelay), 아니면 짧은 공중 공격(attackActiveDuration)
+    private bool IsGroundAttack() => state.isGrounded || state.isOnCeiling;
+
+    /// <param name="groundAttack">null이면 지금 땅 판정으로 결정. 빨강 칩 기록·재생은 기록 값을 넘김</param>
+    private async UniTaskVoid PerformAttack(bool applyHit = true, bool? groundAttack = null)
     {
+        bool ground = groundAttack ?? IsGroundAttack();
         state.isAttacking = true;
         playerMove.SetFacingRight(attackTransform.right.x >= 0f);
 
@@ -152,7 +166,7 @@ public class PlayerCombat : MonoBehaviour
         try
         {
             var timeManager = CustomTimeManager.Instance;
-            if (state.isGrounded || state.isOnCeiling)
+            if (ground)
             {
                 for (int i = 0; i < attackRepeatTime; i++)
                 {

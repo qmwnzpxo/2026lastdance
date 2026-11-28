@@ -263,7 +263,9 @@ public partial class PlayerDash : MonoBehaviour
 
     void HandleDash()
     {
-
+        // 빨강 칩 재생 중엔 모든 대시 입력 불가
+        // (아래 분기 중 일부가 빨강 재생 확인보다 먼저 있어서 맨 앞에서 막음)
+        if (state.isRedDashPlaying) return;
 
         if (_blueDashSecondInput) return;
 
@@ -408,12 +410,21 @@ public partial class PlayerDash : MonoBehaviour
         state.StartImmunity(0.06f);
         state.NotifyDashStopped();
         playerMove.RestoreGravity();
-        cameraFollow.SetCameraDumping(originalCameraDumping);
+        // 핑크: 대시가 한 물리 프레임에 끝나므로 낮은 댐핑을 잠깐 유지했다가 부드럽게 복구
+        // 파랑(상승 대시): 낙하 시작(StartBlueFall)에서 다시 낮추므로 기존처럼 즉시 복구
+        if (state.currentChip == PlayerChip.blue)
+            cameraFollow.SetCameraDumping(originalCameraDumping);
+        else
+            cameraFollow.HoldThenRestoreDamping(cameraDumpingScale);
 
         if (!state.isOnCeiling)
             rb.linearVelocity = Vector2.up * 0.05f;
         if (state.currentChip == PlayerChip.blue)
         {
+            // isGrounded는 PlayerMove(실행 순서상 뒤)가 갱신하므로 지금은 대시 전 값(땅이면 true)이 남아 있음.
+            // 그대로 두면 다음 HandleDash가 "착지함"으로 보고 낙하 입력 창을 바로 닫아 버림 → 대시 직후는 공중으로 취급
+            // (실제로 땅에 있으면 PlayerMove.CheckGround가 이번 프레임에 다시 true로 고침)
+            state.isGrounded = false;
             _blueAirAfterDash = true;
             StartBlueQTE();
             return;

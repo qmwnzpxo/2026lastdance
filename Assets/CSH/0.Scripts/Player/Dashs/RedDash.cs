@@ -74,13 +74,14 @@ public partial class PlayerDash : MonoBehaviour
             combat = GetComponent<PlayerCombat>();
 
         // ── 공격 입력 기록용 로컬 함수 (클로저로 recordTimer 직접 참조) ──
-        void RecordAttack(Quaternion rot)
+        void RecordAttack(Quaternion rot, bool groundAttack)
         {
             eventRecords.Add(new GhostEventData
             {
                 timestamp = recordTimer,
                 eventType = GhostEventType.Attack,
-                rotation = rot
+                rotation = rot,
+                groundAttack = groundAttack,
             });
             Debug.Log($"[RedDash] 공격 기록됨: t={recordTimer:F2}");
         }
@@ -172,6 +173,11 @@ public partial class PlayerDash : MonoBehaviour
         state.isRedDashPlaying = true;
         state.StartImmunity(0.08f);
 
+        // 재생 중엔 PlayerMove 입력 처리가 멈추므로, 기록 끝에 남아 있던 벽·등반 상태를 정리
+        // (등반 상태가 남으면 재생이 끝난 뒤 등반 이동이 이어져 위로 솟구침)
+        playerMove.ResetWallState();
+        playerMove.CancelClimb();
+
         ReturnAllEnemyBullets();
         RestoreEnemySnapshots();
 
@@ -205,6 +211,8 @@ public partial class PlayerDash : MonoBehaviour
                 // 시작 무적(StartImmunity 0.08초)도 isHit을 켜므로, 실시간 기준으로 그 구간은 피격 판정에서 제외
                 // (replayTimer는 재생 배율로 빨리 흘러 첫 프레임에 0.08을 넘어버려 재생이 바로 끊겼음)
                 if (replayElapsed > 0.08f && state.isHit) break;
+                // 사망은 무적(isHit)을 걸지 않으므로 따로 확인. 안 끊으면 리스폰 위치를 재생이 다시 경로로 끌어옴
+                if (state.isDead) break;
 
                 // 공격 시작/종료 시점에만 배율 전환
                 if (state.isAttacking != slowed)
@@ -257,7 +265,7 @@ public partial class PlayerDash : MonoBehaviour
                         switch (ev.eventType)
                         {
                             case GhostEventType.Attack:
-                                combat.TriggerRedDashAttack(ev.rotation);
+                                combat.TriggerRedDashAttack(ev.rotation, ev.groundAttack);
                                 break;
 
                             case GhostEventType.Jump:
@@ -417,11 +425,14 @@ public partial class PlayerDash : MonoBehaviour
             var bb = ctrl._BB;
             if (bb == null) continue;
 
+            var enemyRb = ctrl.GetComponent<Rigidbody2D>();
             enemySnapshots.Add(new EnemySnapshotData
             {
                 controller = ctrl,
                 state = ctrl.GetComponent<EnemyState>(),
                 position = ctrl.transform.position,
+                hasRigidbody = enemyRb != null,
+                velocity = enemyRb != null ? enemyRb.linearVelocity : Vector2.zero,
                 hp = ctrl.GetComponent<EnemyState>()?.currentHp ?? 0f,
                 isDetected = bb.isDetected,
                 detectGauge = bb.detectGauge,
@@ -437,15 +448,20 @@ public partial class PlayerDash : MonoBehaviour
         {
             if (snap.controller == null || snap.state == null) continue;
 
-            // 위치 복원
+            // 위치·속도 복원 (리지드바디 위치도 같이 맞춰야 다음 물리 스텝에서 되돌아가지 않음)
             snap.controller.transform.position = snap.position;
-
-            // HP 복원
-            snap.state.currentHp = snap.hp;
+            if (snap.hasRigidbody && snap.controller.TryGetComponent(out Rigidbody2D enemyRb))
+            {
+                enemyRb.position = snap.position;
+                enemyRb.linearVelocity = snap.velocity;
+            }
 
             // BT 재초기화 후 블랙보드 값 덮어쓰기
             snap.controller.requireInit = true;
             snap.controller.ReInit();
+
+            // HP 복원 — 반드시 ReInit 뒤에 (ReInit 안의 EnemyState.Init()이 currentHp를 maxHp로 덮어씀)
+            snap.state.currentHp = snap.hp;
 
             var bb = snap.controller._BB;
             if (bb == null) continue;

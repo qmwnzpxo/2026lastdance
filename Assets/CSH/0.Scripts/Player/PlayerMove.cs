@@ -155,6 +155,16 @@ public class PlayerMove : MonoBehaviour
         CheckWall();
         //UpdateBlend();
 
+        // 빨강 칩 재생 중: 기록 경로만 따라가고 플레이어 행동(이동·점프·벽붙기·등반) 입력은 받지 않음
+        // (지형 감지는 위에서 계속 갱신 → 착지 애니메이션 등은 유지)
+        if (state.isRedDashPlaying)
+        {
+            moveInput = 0f;
+            verticalInput = 0f;
+            state.isPowerRun = false;
+            return;
+        }
+
         HandlePowerRun();
         HandleCeilingAttach();
         HandleWallGrabInput();
@@ -495,6 +505,14 @@ public class PlayerMove : MonoBehaviour
             climbDirX * _climbHorizSpeed,
             _climbSpeed
         );
+    }
+
+    /// <summary>벽 끝 자동 등반을 이동 없이 즉시 취소한다 (빨강 칩 재생 시작 등)</summary>
+    public void CancelClimb()
+    {
+        if (!isClimbing) return;
+        isClimbing = false;
+        RestoreGravity();
     }
 
     void FinishClimb()
