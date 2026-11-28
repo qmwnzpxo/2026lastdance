@@ -180,7 +180,7 @@ public class PlayerState : MonoBehaviour, IDamageable
 
     public void TakeDamage(float dmg)
     {
-        if (isDead || isHit || hitCts!=null) return;
+        if (isDead || isHit ) return;
         if (isDashing || isRedDashRecording) return;
         currentHP -= dmg;
         if (currentHP <= 0)
