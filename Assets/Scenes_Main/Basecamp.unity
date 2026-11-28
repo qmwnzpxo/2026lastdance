@@ -12849,6 +12849,7 @@ MonoBehaviour:
   loadingSceneName: Loading
   useAsyncLoad: 1
   logProgress: 0
+  clearSectionSave: 1
 --- !u!1 &1790747146
 GameObject:
   m_ObjectHideFlags: 0

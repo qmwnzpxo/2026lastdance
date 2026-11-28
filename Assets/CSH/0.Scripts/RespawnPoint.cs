@@ -7,6 +7,9 @@ public class RespawnPoint : MonoBehaviour
 
     public Vector2 Position => transform.position;
 
+    /// <summary>현재 활성화된 모든 리스폰 지점 (구역 저장 SectionSave에서 사용)</summary>
+    public static IReadOnlyList<RespawnPoint> All => _points;
+
     private void OnEnable() { _points.Add(this); }
     private void OnDisable() { _points.Remove(this); }
 

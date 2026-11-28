@@ -34,6 +34,10 @@ public class ChapterJump : MonoBehaviour
     [SerializeField] private bool useAsyncLoad = true;
     [SerializeField] private bool logProgress = false;
 
+    [Header("저장")]
+    [Tooltip("이동 직전에 구역 저장(SectionSave)을 초기화. 거점 → 챕터 시작처럼 챕터를 처음부터 시작하는 이동에만 켠다")]
+    [SerializeField] private bool clearSectionSave = false;
+
     private bool _isPlayerInRange = false;
     private bool _isLoading = false;
 
@@ -82,6 +86,9 @@ public class ChapterJump : MonoBehaviour
             }
             return;
         }
+
+        if (clearSectionSave)
+            SectionSave.Clear();
 
         if (useLoadingScene)
         {

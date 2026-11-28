@@ -9,6 +9,14 @@ public class SaveManager : PersistentSingleton<SaveManager>
 {
     private string _savePath;
 
+    /// <summary>씬에 SaveManager가 없으면 새로 만들어 반환한다 (DontDestroyOnLoad).</summary>
+    public static SaveManager GetOrCreate()
+    {
+        if (Instance != null) return Instance;
+        // AddComponent 시 Awake가 즉시 실행되어 _savePath·Instance가 설정된다
+        return new GameObject(nameof(SaveManager)).AddComponent<SaveManager>();
+    }
+
     // ── 저장 ──────────────────────────────────────────────────
     public void Save(SaveData data)
     {

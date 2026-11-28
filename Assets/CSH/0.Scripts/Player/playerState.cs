@@ -285,6 +285,40 @@ public class PlayerState : MonoBehaviour, IDamageable
         return maxHP;
     }
 
+    // ── 구역 저장 (SectionSave) ───────────────
+    /// <summary>현재 상태를 구역 저장용으로 복사한다.</summary>
+    public SectionPlayerState CaptureSectionState()
+    {
+        return new SectionPlayerState
+        {
+            valid = true,
+            hp = currentHP,
+            stamina = stamina,
+            dashGauge = dashGauge,
+            flashCount = flashCount,
+            ownedChips = new List<PlayerChip>(ownedChips),
+            currentChip = currentChip,
+        };
+    }
+
+    /// <summary>구역 저장 상태를 적용한다. 최대치는 현재 스탯 기준으로 잘라낸다.</summary>
+    public void RestoreSectionState(SectionPlayerState s)
+    {
+        if (s == null || !s.valid) return;
+
+        currentHP = Mathf.Clamp(s.hp, 1f, maxHP); // 0 HP로 저장됐어도 바로 죽지 않도록 최소 1
+        dashGauge = Mathf.Clamp(s.dashGauge, 0f, maxDashGauge);
+        flashCount = Mathf.Clamp(s.flashCount, 0, flashMaxCount);
+
+        stamina = s.stamina;
+        isExhausted = false;
+        ModifyGauge(0f); // 범위 보정 + 탈진 상태 재계산
+
+        ownedChips = new List<PlayerChip>(s.ownedChips);
+        if (!ownedChips.Contains(PlayerChip.pink)) ownedChips.Insert(0, PlayerChip.pink);
+        currentChip = ownedChips.Contains(s.currentChip) ? s.currentChip : PlayerChip.pink;
+    }
+
     public bool TryAddFlashbang()
     {
         if (flashCount >= flashMaxCount) return false;
