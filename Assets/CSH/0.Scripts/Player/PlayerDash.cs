@@ -65,8 +65,9 @@ public partial class PlayerDash : MonoBehaviour
     [SerializeField] private LayerMask enemyLayer;
     private LayerMask bulletLayer;
     private LayerMask combined;
-    private float cameraDumpingScale = 0.2f;
-    private float originalCameraDumping = 1f;
+    // CameraFollow.SetCameraDumping 배율 (게임플레이 카메라 인스펙터 댐핑에 곱함)
+    private float cameraDumpingScale = 0.2f;    // 대시 중
+    private float originalCameraDumping = 1f;   // 1 = 인스펙터 값으로 복구
     public bool dashhitEnemy { get => dashHitEnemy; set => dashHitEnemy = value; }
 
     // ── 대쉬 내부 상태 ───────────────────────

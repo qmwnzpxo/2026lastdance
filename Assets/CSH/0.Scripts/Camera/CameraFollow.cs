@@ -4,6 +4,8 @@ using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
+// ※ 카메라 구조를 크게 바꾸거나 연출을 추가할 때는 같은 폴더의 CameraRefactorPlan.md 를 먼저 읽을 것
+
 public class CameraFollow : MonoBehaviour
 {
     [Header("메인 카메라")]
@@ -26,7 +28,12 @@ public class CameraFollow : MonoBehaviour
     public Transform target;
     bool isZooming = false;
     bool isfirstZooming = false;
-    CinemachineFollow cinemachineFollow;
+    CinemachineFollow cinemachineFollow;    // cmZoom의 Follow
+    private CinemachineFollow _gameplayFollow;
+
+    // 인스펙터에 설정된 댐핑 (복구 기준). 고정값 1로 덮어쓰지 않기 위해 시작 시 저장
+    private Vector3 _gameplayBaseDamping = Vector3.one;
+    private Vector3 _zoomBaseDamping = Vector3.one;
 
     private CancellationTokenSource zoom_cts;
 
@@ -65,6 +72,9 @@ public class CameraFollow : MonoBehaviour
             Debug.LogError("CinemachineFollow 컴포넌트를 찾을 수 없습니다: " + e.Message);
         }
 
+        _gameplayFollow = cmGamePlay.GetComponent<CinemachineFollow>();
+        if (_gameplayFollow != null) _gameplayBaseDamping = _gameplayFollow.TrackerSettings.PositionDamping;
+        if (cinemachineFollow != null) _zoomBaseDamping = cinemachineFollow.TrackerSettings.PositionDamping;
     }
 
     private void Start()
@@ -132,7 +142,7 @@ public class CameraFollow : MonoBehaviour
         SyncGameplayLensToOutput(); // 인트로 끝 컷 전환 프레임에 줌이 튀지 않도록 (락다운 진입과 같은 이유)
 
         cmBrain.DefaultBlend.Time = 0f;
-        SetCameraDumping(0f);
+        SetZoomDamping(0f);
         SetZoomOrtho(from);
         cmZoom.gameObject.SetActive(true);
 
@@ -161,7 +171,7 @@ public class CameraFollow : MonoBehaviour
             if (await AnimateZoomOrtho(to, gameplayOrtho, introSettleDuration, ct)) return;
         }
 
-        SetCameraDumping(1f);
+        RestoreZoomDamping();
         isZooming = false;
         await CutToGameplayAsync(ct);
     }
@@ -208,11 +218,16 @@ public class CameraFollow : MonoBehaviour
         if (cf != null) cf.SnapToTarget();
     }
 
-    public void SetCameraDumping(float value)
+    /// <summary>
+    /// 대시용 게임플레이 카메라 댐핑 배율. 인스펙터 댐핑(x·y)에 곱한다. 1 = 인스펙터 값으로 복구.
+    /// cmZoom(인트로·락다운)은 CameraFollow가 직접 관리하므로 건드리지 않는다
+    /// (락다운 중 대시가 cmZoom 댐핑을 바꾸면 복귀 끝 컷 전환에서 위치가 튐).
+    /// </summary>
+    public void SetCameraDumping(float scale)
     {
-        cmZoom.gameObject.GetComponent<CinemachineFollow>().TrackerSettings.PositionDamping = new Vector3(value, value, 1);
-        cmGamePlay.gameObject.GetComponent<CinemachineFollow>().TrackerSettings.PositionDamping = new Vector3(value, value, 1);
-
+        if (_gameplayFollow == null) return;
+        _gameplayFollow.TrackerSettings.PositionDamping = new Vector3(
+            _gameplayBaseDamping.x * scale, _gameplayBaseDamping.y * scale, _gameplayBaseDamping.z);
     }
 #endregion
 
@@ -310,7 +325,7 @@ public class CameraFollow : MonoBehaviour
         if (canceled) return;
 
         _lockdownExiting = false;
-        SetCameraDumping(1f);
+        RestoreZoomDamping(); // 게임플레이 카메라 댐핑은 대시가 관리하므로 건드리지 않음
         isZooming = false;
         await CutToGameplayAsync(ct);
         if (cmZoom != null && !_isLockdown) cmZoom.Follow = target;
@@ -360,10 +375,18 @@ public class CameraFollow : MonoBehaviour
         return new Vector3(p.x + gameOffset.x - zoomOffset.x, p.y + gameOffset.y - zoomOffset.y, p.z);
     }
 
+    /// <summary>cmZoom 위치 댐핑 x·y 지정 (z는 인스펙터 값 유지)</summary>
     private void SetZoomDamping(float value)
     {
         if (cinemachineFollow != null)
-            cinemachineFollow.TrackerSettings.PositionDamping = new Vector3(value, value, 1);
+            cinemachineFollow.TrackerSettings.PositionDamping = new Vector3(value, value, _zoomBaseDamping.z);
+    }
+
+    /// <summary>cmZoom 댐핑을 인스펙터 값으로 복구</summary>
+    private void RestoreZoomDamping()
+    {
+        if (cinemachineFollow != null)
+            cinemachineFollow.TrackerSettings.PositionDamping = _zoomBaseDamping;
     }
 
     // 렌더 프레임마다(Update) 렌즈를 갱신해 FixedUpdate 주기로 인한 계단 현상을 없앤다.
