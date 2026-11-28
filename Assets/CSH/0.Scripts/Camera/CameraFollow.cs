@@ -2,13 +2,14 @@
 using System.Threading;
 using Unity.Cinemachine;
 using UnityEngine;
-//using static UnityEngine.Rendering.DebugUI;
+using UnityEngine.Rendering.Universal;
 
 public class CameraFollow : MonoBehaviour
 {
     [Header("메인 카메라")]
     [SerializeField] private Camera mainCamera;
     private CinemachineBrain cmBrain;
+    private PixelPerfectCamera _pixelPerfect; // 메인 카메라의 URP Pixel Perfect (cmGamePlay 출력 크기 보정용)
     float defaultBlendTime;
 
     [Header("버추얼 카메라")]
@@ -53,6 +54,7 @@ public class CameraFollow : MonoBehaviour
         cmGamePlay.Follow = target;
 
         cmBrain = mainCamera.GetComponent<CinemachineBrain>();
+        _pixelPerfect = mainCamera.GetComponent<PixelPerfectCamera>();
         defaultBlendTime = cmBrain.DefaultBlend.Time;
         try
         {
@@ -127,6 +129,7 @@ public class CameraFollow : MonoBehaviour
     private async UniTaskVoid ZoomAsync(float from, float to, float zoomDuration, CancellationToken ct)
     {
         isZooming = true;
+        SyncGameplayLensToOutput(); // 인트로 끝 컷 전환 프레임에 줌이 튀지 않도록 (락다운 진입과 같은 이유)
 
         cmBrain.DefaultBlend.Time = 0f;
         SetCameraDumping(0f);
@@ -152,7 +155,7 @@ public class CameraFollow : MonoBehaviour
         cinemachineFollow.FollowOffset.y = 1f;
 
         // 최종 크기가 게임플레이 카메라와 다르면 컷 전에 부드럽게 맞춘다 (안 맞추면 전환 순간 크기가 튐)
-        float gameplayOrtho = cmGamePlay.Lens.OrthographicSize;
+        float gameplayOrtho = GameplayOutputOrtho();
         if (!Mathf.Approximately(to, gameplayOrtho))
         {
             if (await AnimateZoomOrtho(to, gameplayOrtho, introSettleDuration, ct)) return;
@@ -264,10 +267,15 @@ public class CameraFollow : MonoBehaviour
         bool resuming = _lockdownExiting;
         _lockdownExiting = false;
 
+        // 렌즈 원본값(Lens)이 아니라 Pixel Perfect 보정 후 실제 화면 크기 기준
+        // (원본값으로 복귀하면 cmGamePlay로 컷 전환되는 순간 보정 크기로 줌이 튐)
         if (!resuming)
-            _savedOrthoSize = cmGamePlay.Lens.OrthographicSize;
+        {
+            SyncGameplayLensToOutput(); // cmGamePlay가 라이브인 지금 맞춰 둬야 대기 중 상태도 보정 크기로 계산됨
+            _savedOrthoSize = GameplayOutputOrtho();
+        }
 
-        float fromOrthoSize = resuming ? cmZoom.Lens.OrthographicSize : cmGamePlay.Lens.OrthographicSize;
+        float fromOrthoSize = resuming ? cmZoom.Lens.OrthographicSize : GameplayOutputOrtho();
         // 시작점 = 지금 화면이 보고 있는 위치 → 진입 순간 카메라가 튀지 않음
         Vector3 fromPos = resuming ? LockdownPivot.position : CurrentZoomPivotPosition();
 
@@ -381,6 +389,39 @@ public class CameraFollow : MonoBehaviour
             SetZoomOrtho(Mathf.Lerp(from, to, t));
         }
         return false;
+    }
+
+    /// <summary>
+    /// cmGamePlay가 실제로 화면에 내보내는 크기.
+    /// cmGamePlay의 CinemachinePixelPerfect 확장은 라이브일 때만 렌즈 크기를 픽셀 퍼펙트 값으로 보정하므로,
+    /// 라이브가 아닐 때(락다운·인트로 중)에도 같은 보정값을 직접 계산한다.
+    /// cmZoom은 확장이 없어 원본 크기 그대로 나가므로, cmZoom을 이 값으로 끝내야 컷 전환 순간 줌이 튀지 않는다.
+    /// </summary>
+    private float GameplayOutputOrtho()
+    {
+        float size = cmGamePlay.Lens.OrthographicSize;
+        if (_pixelPerfect != null && _pixelPerfect.isActiveAndEnabled
+            && cmGamePlay.TryGetComponent(out CinemachinePixelPerfect ext) && ext.enabled)
+        {
+            // 첫 렌더 전에는 Pixel Perfect 내부 값이 계산되지 않아 0이 나올 수 있음 → 원본 값 유지
+            float corrected = _pixelPerfect.CorrectCinemachineOrthoSize(size);
+            if (corrected > 0f) size = corrected;
+        }
+        return size;
+    }
+
+    /// <summary>
+    /// cmGamePlay 렌즈 원본 값을 보정값으로 맞춘다.
+    /// 브레인(Smart Update)은 컷 전환 프레임에 cmGamePlay를 다시 계산하지 않고 대기 중 상태를 그대로 내보내는데,
+    /// 대기 중(라이브 아님)에는 CinemachinePixelPerfect가 보정하지 않아 원본 크기가 한 프레임 출력된다.
+    /// 원본 값을 미리 보정값으로 맞춰 두면 라이브·대기 상태의 크기가 같아진다. 보정은 멱등이라 반복 적용해도 값이 변하지 않는다.
+    /// cmZoom으로 넘기기 전(락다운 진입·인트로 시작)에 호출할 것.
+    /// </summary>
+    private void SyncGameplayLensToOutput()
+    {
+        var lens = cmGamePlay.Lens;
+        lens.OrthographicSize = GameplayOutputOrtho();
+        cmGamePlay.Lens = lens;
     }
 
     private void SetZoomOrtho(float size)
