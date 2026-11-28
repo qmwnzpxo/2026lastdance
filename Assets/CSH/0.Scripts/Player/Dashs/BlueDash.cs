@@ -24,8 +24,6 @@ public partial class PlayerDash : MonoBehaviour
                 ? groundHit.point
                 : (Vector2)transform.position + dashDirection * dashRange;
 
-            SetLineRenderer(transform.position, dashTargetPosition, true);
-
             _blueDashSecondInput = false;
 
             state.isGrounded = false;
@@ -195,7 +193,6 @@ public partial class PlayerDash : MonoBehaviour
         cameraFollow.SetCameraDumping(originalCameraDumping);
         rb.linearVelocity = Vector2.zero;
         _blueDashSecondInput = false;
-        if (line != null) line.enabled = false;
 
         HitstopManager.Instance.TriggerHeavy();
     }

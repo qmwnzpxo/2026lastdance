@@ -82,8 +82,6 @@ public partial class PlayerDash : MonoBehaviour
         if (groundHit.collider != null)
             target = groundHit.point;
 
-        SetLineRenderer(start, target, true);
-
         rb.gravityScale = 0f;
         state.isDashing = true;
         rb.linearVelocity = Vector2.zero;
@@ -154,6 +152,5 @@ public partial class PlayerDash : MonoBehaviour
         playerMove.RestoreGravity();
         cameraFollow.SetCameraDumping(originalCameraDumping);
         rb.linearVelocity = Vector2.up * 0.05f;
-        if (line != null) line.enabled = false;
     }
 }

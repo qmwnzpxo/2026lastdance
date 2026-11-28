@@ -10,7 +10,23 @@ public class PlayerCombat : MonoBehaviour
     [Header("공격")]
     [SerializeField] private Transform attackTransform;
     [SerializeField] private Vector2   attackBoxSize     = new Vector2(1f, 1f);
-    [RuntimeOnly] public float AttackBoxSize { set { attackBoxSize.x = value; attackBoxSize.y = value; } }
+    // 업그레이드 값(baseAttackBox + 증가량, 기본 1)은 인스펙터에 설정한 박스 크기에 곱하는 배율로 쓴다.
+    // (예전엔 값을 그대로 대입해서 인스펙터 값이 1×1로 덮어써졌음)
+    [RuntimeOnly] public float AttackBoxSize
+    {
+        set
+        {
+            // 첫 설정 시점에 인스펙터 값을 기준으로 보관 (PlayerUpgrader가 다른 Awake에서 먼저 부를 수 있어 지연 캡처)
+            if (!_hasBaseAttackBoxSize)
+            {
+                _baseAttackBoxSize = attackBoxSize;
+                _hasBaseAttackBoxSize = true;
+            }
+            attackBoxSize = _baseAttackBoxSize * value;
+        }
+    }
+    private Vector2 _baseAttackBoxSize;
+    private bool _hasBaseAttackBoxSize;
 
     [SerializeField] private float     attackBoxDistance = 1f;
     [SerializeField] private float     attackSecondHitDelay = 0.427f;

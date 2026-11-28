@@ -513,7 +513,8 @@ public class PlayerMove : MonoBehaviour
 
     void HandleJump()
     {
-        if (!Input.GetKeyDown(KeyCode.Space) || state.isDashing) return;
+        // 파랑 칩 내려찍기(스페이스)와 키가 겹치므로 낙하 중에는 점프 무시
+        if (!Input.GetKeyDown(KeyCode.Space) || state.isDashing || IsBlueFalling) return;
 
         // 천장 붙기 상태에서 Space → 분리 후 아래로
         if (state.isOnCeiling)

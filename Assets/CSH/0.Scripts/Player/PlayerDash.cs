@@ -98,7 +98,6 @@ public partial class PlayerDash : MonoBehaviour
     private Rigidbody2D rb;
     private Collider2D col;
     private CircleCollider2D circleCol;
-    private LineRenderer line;
     private PlayerAnimation ani;
     private Camera mainCamera;
     private CameraFollow cameraFollow;
@@ -112,7 +111,9 @@ public partial class PlayerDash : MonoBehaviour
         cameraFollow = mainCamera.transform.parent.GetComponent<CameraFollow>();
         state = GetComponent<PlayerState>();
         playerMove = GetComponent<PlayerMove>();
-        line = GetComponent<LineRenderer>();
+        // 대시 경로 라인은 쓰지 않음 → 프리팹에서 켜져 있어도 숨김
+        var line = GetComponent<LineRenderer>();
+        if (line != null) line.enabled = false;
         ani = GetComponent<PlayerAnimation>();
         col = GetComponent<Collider2D>();
 
@@ -243,7 +244,6 @@ public partial class PlayerDash : MonoBehaviour
         state.NotifyDashStopped();
         playerMove.RestoreGravity();
         cameraFollow.SetCameraDumping(originalCameraDumping);
-        if (line != null) line.enabled = false;
         rb.linearVelocity = Vector2.zero;
     }
 
@@ -373,8 +373,6 @@ public partial class PlayerDash : MonoBehaviour
             : origin + dashDirection * dashRange;
 
 
-        SetLineRenderer(origin, dashTargetPosition, true);
-
         //if (state.TryUseDashGauge(state.DashCost))
         TriggerDash(origin);
     }
@@ -407,7 +405,6 @@ public partial class PlayerDash : MonoBehaviour
         playerMove.RestoreGravity();
         cameraFollow.SetCameraDumping(originalCameraDumping);
 
-        if (line != null) line.enabled = false;
         if (!state.isOnCeiling)
             rb.linearVelocity = Vector2.up * 0.05f;
         if (state.currentChip == PlayerChip.blue)
@@ -518,13 +515,6 @@ public partial class PlayerDash : MonoBehaviour
         {
             Debug.LogError($"데미지 적용 중 오류: {ex.Message}");
         }
-    }
-
-    private void SetLineRenderer(Vector3 from, Vector3 to, bool enabled)
-    {
-        if (line == null) return;
-        line.enabled = enabled;
-        if (enabled) { line.SetPosition(0, from); line.SetPosition(1, to); }
     }
 
     #endregion
